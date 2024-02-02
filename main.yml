@@ -1,0 +1,38 @@
+name: i18n Check
+on:
+  pull_request:
+    paths:
+    - 'i18n/**'
+
+jobs:
+  i18n-check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run ESLint i18n check
+      id: eslint-check
+      run: |
+        npx eslint --no-eslintrc --config .eslintrc.i18n.js --fix --ext .json --format node_modules/eslint-plugin-i18n-json/formatter.js i18n/
+
+    - name: Commit changes
+      if: steps.eslint-check.outcome == 'failure'
+      run: |
+        // Get failing keys and their locations
+        // Get the new translation
+        // Run the translation through the stub
+        // Insert the translation into each file
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -m "Automatically fix i18n files" -a
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
