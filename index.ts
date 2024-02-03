@@ -104,6 +104,16 @@ const generateTranslation = async (
 
                 for (let i = 0; i < splitText.length; i++) {
                     let line = splitText[i];
+                    while (line.startsWith('""') && line.endsWith('""')) {
+                        line = line.slice(1, -1);
+                    }
+
+                    splitText[i] = line;
+                }
+                text = splitText.join("\n");
+
+                for (let i = 0; i < splitText.length; i++) {
+                    let line = splitText[i];
                     if (!line.startsWith('"') || !line.endsWith('"')) {
                         generateTranslationGeminiChat =
                             model.startChat(successfulHistory);
