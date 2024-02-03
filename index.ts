@@ -22,8 +22,60 @@ const options = program.opts();
 const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
+const generateTranslation = async (geminiChat: any, inputLanguage: string, outputLanguage: string, batchedInput: string): Promise<string> => {
+    const generationPromptText = generationPrompt(inputLanguage, outputLanguage, batchedInput);
+    const templatedStringRegex = /{{[^{}]+}}/g;
+    const templatedStrings = generationPromptText.match(templatedStringRegex);
+
+    let translated = "";
+    try {
+    translated = await retryJob(async (): Promise<string> => {
+        const generatedContent = await geminiChat.sendMessage(generationPromptText);
+        const text = generatedContent.response.text();
+        if (text === "") {
+            return Promise.reject("Failed to generate content");
+        }
+
+        if (text.split("\n").length !== keys.length + 2) {
+            return Promise.reject(`Invalid number of lines. text = ${text}`);
+        }
+
+        try {
+            JSON.parse(text);
+        } catch (e) {
+            console.error(`Invalid JSON: ${e}. text = ${text}`);
+            return Promise.reject("Invalid JSON");
+        }
+
+        for (const templatedString of templatedStrings || []) {
+            if (!text.includes(templatedString)) {
+                return Promise.reject(`Missing templated string: ${templatedString}`);
+            }
+        }
+
+        const verification = await verifyTranslation(inputLanguage, outputLanguage, batchedInput, text);
+        if (verification === "NAK") {
+            return Promise.reject("Invalid translation");
+        }
+
+        return text;
+    },
+        [],
+        5,
+        true,
+        1000,
+        false
+    )
+    } catch (e) {
+        console.error(`Failed to translate: ${e}`);
+    }
+
+    return translated.split("\n").slice(1, -1).join("\n");
+
+}
+
 const generationPrompt = ((inputLanguage: string, outputLanguage: string, input: string): string =>
-    `Translate the given i18n JSON from ${inputLanguage} to ${outputLanguage}. Return them in the exact same format (maintaining the source's case sensitivity and whitespace), but replace the values with the translated string. Output only the translations. Do not format them or put them in a code block.
+    `Translate the given input from ${inputLanguage} to ${outputLanguage}. Return them in the exact same format (maintaining the source's case sensitivity and whitespace), but replace the values with the translated string. Output only the translations. Do not format them or put them in a code block.
 
 \`\`\`
 {
@@ -33,22 +85,56 @@ ${input}
 `
 );
 
+const verifyTranslation = async (inputLanguage: string, outputLanguage: string, batchedInput: string, generatedTranslation: string): Promise<string> => {
+    const verificationPromptText = verificationPrompt(inputLanguage, outputLanguage, batchedInput, generatedTranslation);
+    let verification = "";
+    try {
+    verification = await retryJob(async (): Promise<string> => {
+        const generatedContent = await model.generateContent(verificationPromptText);
+        const text = generatedContent.response.text();
+        if (text === "") {
+            return Promise.reject("Failed to generate content");
+        }
+
+        if (text !== "ACK" && text !== "NAK") {
+            return Promise.reject("Invalid response");
+        }
+
+        return text;
+    },
+        [],
+        3,
+        true,
+        1000,
+        false
+    )
+    } catch (e) {
+        console.error(`Failed to verify: ${e}`);
+    }
+
+    return verification;
+}
+
 const verificationPrompt = ((inputLanguage: string, outputLanguage: string, input: string, output: string): string =>
 `
-A "suitable translation" entirely translates ${outputLanguage} to ${inputLanguage} while maintaining the source's case sensitivity and whitespace. It accurately gets the full meaning across. It does not modify templated variable names.
+A "suitable translation" entirely translates ${inputLanguage} to ${outputLanguage} while maintaining the source's case sensitivity and whitespace. It accurately gets the full meaning across. It does not modify templated variable names.
 
-If every line provides a "suitable translation" from ${outputLanguage} to ${inputLanguage}, return ACK. If at least one line is not a "suitable translation", return NAK. Do not return additional output. Do not format your response.
+If every line provides a "suitable translation" from ${inputLanguage} to ${outputLanguage}, return ACK. If at least one line is not a "suitable translation", return NAK. Do not return additional output. Do not format your response.
 
-${outputLanguage}:
-\`\`\`
-${output}
-\`\`\`
+Fields with keys ending with "name" are often multiple English words, and should be translated word by word. For example, "botnews" should not be translated as "bot" and "news" separately.
+
+Fields with keys ending with "title" should be in title case.
 
 ${inputLanguage}:
 \`\`\`
 {
 ${input}
 }
+\`\`\`
+
+${outputLanguage}:
+\`\`\`
+${output}
 \`\`\`
 `
 )
@@ -77,7 +163,7 @@ const BATCH_SIZE = 15;
 
     let inputJSON = {}
     try {
-        const inputFile = fs.readFileSync(inputPath, "utf-8").replaceAll("\\n", "[NEWLINE]");
+        const inputFile = fs.readFileSync(inputPath, "utf-8").replaceAll("\\n", "{{NEWLINE}}");
         inputJSON = JSON.parse(inputFile);
     } catch (e) {
         console.error(`Invalid JSON: ${e}`);
@@ -105,79 +191,8 @@ const BATCH_SIZE = 15;
     for (let i = 0; i < Object.keys(flatInput).length; i += BATCH_SIZE) {
         const keys = Object.keys(flatInput).slice(i, i + BATCH_SIZE);
         const batchedInput = keys.map((x) => `    "${x}": "${flatInput[x]}"`).join(",\n");
-        const generationPromptText = generationPrompt(inputLanguage, outputLanguage, batchedInput);
-        const templatedStringRegex = /{{[^{}]+}}/g;
-        const templatedStrings = generationPromptText.match(templatedStringRegex);
 
-        let translated = "";
-        try {
-        translated = await retryJob(async (): Promise<string> => {
-            const generatedContent = await generateTranslationChat.sendMessage(generationPromptText);
-            const text = generatedContent.response.text();
-            if (text === "") {
-                return Promise.reject("Failed to generate content");
-            }
-
-            if (text.split("\n").length !== keys.length + 2) {
-                return Promise.reject(`Invalid number of lines. text = ${text}`);
-            }
-
-            try {
-                JSON.parse(text);
-            } catch (e) {
-                console.error(`Invalid JSON: ${e}. text = ${text}`);
-                return Promise.reject("Invalid JSON");
-            }
-
-            for (const templatedString of templatedStrings || []) {
-                if (!text.includes(templatedString)) {
-                    return Promise.reject(`Missing templated string: ${templatedString}`);
-                }
-            }
-
-            return text;
-        },
-            [],
-            5,
-            true,
-            500,
-            false
-        )
-        } catch (e) {
-            console.error(`Failed to translate: ${e}`);
-            continue;
-        }
-
-        translated = translated.split("\n").slice(1, -1).join("\n");
-
-        const verificationPromptText = verificationPrompt(inputLanguage, outputLanguage, batchedInput, translated);
-        let verification = "";
-        try {
-        verification = await retryJob(async (): Promise<string> => {
-            const generatedContent = await model.generateContent(verificationPromptText);
-            const text = generatedContent.response.text();
-            if (text === "") {
-                return Promise.reject("Failed to generate content");
-            }
-
-            if (text !== "ACK" && text !== "NAK") {
-                return Promise.reject("Invalid response");
-            } else if (text === "NAK") {
-                return Promise.reject(`Invalid translation. text = ${text}. input = ${batchedInput}. output = ${translated}`);
-            }
-
-            return text;
-        },
-            [],
-            5,
-            true,
-            500,
-            false
-        )
-        } catch (e) {
-            console.error(`Failed to verify: ${e}`);
-            continue;
-        }
+        const generatedTranslation = generateTranslation(inputLanguage, outputLanguage, batchedInput);
 
         // TODO: Get the ones marked as BAD, add them to the end of the array, skip over them here
         const splitVerificationText = verification.split("\n");
@@ -200,7 +215,7 @@ const BATCH_SIZE = 15;
 
     const unflattenedOutput = unflatten(output);
     const outputPath = path.resolve(__dirname, options.output);
-    const outputText = JSON.stringify(unflattenedOutput, null, 4).replaceAll("[NEWLINE]", "\\n");
+    const outputText = JSON.stringify(unflattenedOutput, null, 4).replaceAll("{{NEWLINE}}", "\\n");
     fs.writeFileSync(outputPath, outputText);
 })()
 
