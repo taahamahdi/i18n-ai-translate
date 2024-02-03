@@ -22,7 +22,7 @@ const options = program.opts();
 const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-const generateTranslation = async (geminiChat: any, inputLanguage: string, outputLanguage: string, batchedInput: string): Promise<string> => {
+const generateTranslation = async (geminiChat: any, inputLanguage: string, outputLanguage: string, batchedInput: string, keys: Array<string>): Promise<string> => {
     const generationPromptText = generationPrompt(inputLanguage, outputLanguage, batchedInput);
     const templatedStringRegex = /{{[^{}]+}}/g;
     const templatedStrings = generationPromptText.match(templatedStringRegex);
@@ -30,8 +30,15 @@ const generateTranslation = async (geminiChat: any, inputLanguage: string, outpu
     let translated = "";
     try {
     translated = await retryJob(async (): Promise<string> => {
-        const generatedContent = await geminiChat.sendMessage(generationPromptText);
-        const text = generatedContent.response.text();
+        let generatedContent: any;
+        let text = "";
+        try {
+            generatedContent = await geminiChat.sendMessage(generationPromptText);
+            text = generatedContent.response.text();
+        } catch (err) {
+            return Promise.reject("Failed to generate content")
+        }
+
         if (text === "") {
             return Promise.reject("Failed to generate content");
         }
@@ -61,7 +68,7 @@ const generateTranslation = async (geminiChat: any, inputLanguage: string, outpu
         return text;
     },
         [],
-        5,
+        10,
         true,
         1000,
         false
@@ -117,24 +124,24 @@ const verifyTranslation = async (inputLanguage: string, outputLanguage: string, 
 
 const verificationPrompt = ((inputLanguage: string, outputLanguage: string, input: string, output: string): string =>
 `
-A "suitable translation" entirely translates ${inputLanguage} to ${outputLanguage} while maintaining the source's case sensitivity and whitespace. It accurately gets the full meaning across. It does not modify templated variable names.
+A "suitable translation" entirely translates ${outputLanguage} to ${inputLanguage} while maintaining the source's case sensitivity and whitespace. It accurately gets the full meaning across. It does not modify templated variable names.
 
-If every line provides a "suitable translation" from ${inputLanguage} to ${outputLanguage}, return ACK. If at least one line is not a "suitable translation", return NAK. Do not return additional output. Do not format your response.
+If every line provides a "suitable translation" from ${outputLanguage} to ${inputLanguage}, return ACK. If at least one line is not a "suitable translation", return NAK. Do not return additional output. Do not format your response.
 
 Fields with keys ending with "name" are often multiple English words, and should be translated word by word. For example, "botnews" should not be translated as "bot" and "news" separately.
 
 Fields with keys ending with "title" should be in title case.
+
+${outputLanguage}:
+\`\`\`
+${output}
+\`\`\`
 
 ${inputLanguage}:
 \`\`\`
 {
 ${input}
 }
-\`\`\`
-
-${outputLanguage}:
-\`\`\`
-${output}
 \`\`\`
 `
 )
@@ -152,7 +159,7 @@ const getLanguageCodeFromFilename = (filename: string): string | null => {
     return null;
 }
 
-const BATCH_SIZE = 15;
+const BATCH_SIZE = 10;
 
 (async () => {
     const inputPath = path.resolve(__dirname, options.input);
@@ -182,6 +189,8 @@ const BATCH_SIZE = 15;
         return;
     }
 
+    console.log(`Translating from ${inputLanguage} to ${outputLanguage}...`);
+
     const generateTranslationChat = model.startChat();
 
     const output: { [key: string]: string } = {};
@@ -192,23 +201,16 @@ const BATCH_SIZE = 15;
         const keys = Object.keys(flatInput).slice(i, i + BATCH_SIZE);
         const batchedInput = keys.map((x) => `    "${x}": "${flatInput[x]}"`).join(",\n");
 
-        const generatedTranslation = generateTranslation(inputLanguage, outputLanguage, batchedInput);
-
-        // TODO: Get the ones marked as BAD, add them to the end of the array, skip over them here
-        const splitVerificationText = verification.split("\n");
+        const generatedTranslation = await generateTranslation(generateTranslationChat, inputLanguage, outputLanguage, batchedInput, keys);
 
         for (let i = 0; i < keys.length; i++) {
-            if (splitVerificationText[i] === "BAD") {
-                console.warn(`Skipping ${keys[i]} due to insufficient translation`);
-                continue;
-            }
-
             const keyLength = keys[i].length + 5;
-            output[keys[i]] = translated.split("\n")[i].trimStart().slice(keyLength, (i === keys.length - 1) ? -1 : -2);
-            console.log(`${keys[i]}: ${flatInput[keys[i]]} => ${output[keys[i]]}\n`);
+            output[keys[i]] = generatedTranslation.split("\n")[i].trimStart().slice(keyLength, (i === keys.length - 1) ? -1 : -2);
+            console.log(`${keys[i]}:\n${flatInput[keys[i]]}\n=>\n${output[keys[i]]}\n`);
         }
         const batchEndTime = Date.now();
         if (batchEndTime - batchStartTime < 2000) {
+            console.log(`Waiting for ${2000 - (batchEndTime - batchStartTime)}ms...`)
             await delay(2000 - (batchEndTime - batchStartTime));
         }
     }
