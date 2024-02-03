@@ -47,6 +47,7 @@ const generateTranslation = async (
         }
     }
 
+    const fixedTranslationMappings: { [input: string]: string } = {};
     const translationToRetryAttempts: { [translation: string]: number } = {};
 
     let translated = "";
@@ -110,6 +111,9 @@ const generateTranslation = async (
                     } else if (line === splitInput[i] && line.length > 2) {
                         if (translationToRetryAttempts[line] === undefined) {
                             translationToRetryAttempts[line] = 0;
+                        } else if (fixedTranslationMappings[line]) {
+                            splitText[i] = fixedTranslationMappings[line];
+                            continue;
                         }
 
                         const retryTranslationPromptText =
@@ -118,12 +122,13 @@ const generateTranslation = async (
                                 outputLanguage,
                                 line,
                             );
+                        let fixedText = "";
                         try {
                             generatedContent =
                                 await generateTranslationGeminiChat.sendMessage(
                                     retryTranslationPromptText,
                                 );
-                            text = generatedContent.response.text();
+                            fixedText = generatedContent.response.text();
                         } catch (err) {
                             console.error(
                                 JSON.stringify(
@@ -140,16 +145,23 @@ const generateTranslation = async (
                         }
 
                         const oldText = line;
-                        splitText[i] = text;
-                        line = text;
+                        splitText[i] = fixedText;
+                        line = fixedText;
 
                         // Move to helper
-                        // for (const templatedString in inputLineToTemplatedString[i]) {
-                        //     if (!splitText[i].includes(templatedString)) {
-                        //         generateTranslationGeminiChat = model.startChat(successfulHistory);
-                        //         return Promise.reject(`Missing templated string: ${templatedString}`);
-                        //     }
-                        // }
+                        for (const j in inputLineToTemplatedString[i]) {
+                            if (
+                                !splitText[i].includes(
+                                    inputLineToTemplatedString[i][j],
+                                )
+                            ) {
+                                generateTranslationGeminiChat =
+                                    model.startChat(successfulHistory);
+                                return Promise.reject(
+                                    `Missing templated string: ${inputLineToTemplatedString[i][j]}`,
+                                );
+                            }
+                        }
 
                         // Move to helper
                         if (!line.startsWith('"') || !line.endsWith('"')) {
@@ -162,6 +174,8 @@ const generateTranslation = async (
                             console.log(
                                 `Successfully translated: ${oldText} => ${line}`,
                             );
+                            text = splitText.join("\n");
+                            fixedTranslationMappings[oldText] = line;
                             continue;
                         }
 
@@ -219,7 +233,7 @@ const generateTranslation = async (
             [],
             50,
             true,
-            500,
+            0,
             false,
         );
     } catch (e) {
@@ -246,7 +260,7 @@ const failedTranslationPrompt = (
     outputLanguage: string,
     input: string,
 ): string =>
-    `You are a professional translator. The following translation from ${inputLanguage} to ${outputLanguage} failed. Attempt to translate it to ${outputLanguage} by considering it as a concatenation of ${inputLanguage} words, or re-interpreting it such that it makes sense in ${outputLanguage}. If it is already in an optimal format, just return the input. Return only the translation with no additioanl formatting.
+    `You are a professional translator. The following translation from ${inputLanguage} to ${outputLanguage} failed. Attempt to translate it to ${outputLanguage} by considering it as a concatenation of ${inputLanguage} words, or re-interpreting it such that it makes sense in ${outputLanguage}. If it is already in an optimal format, just return the input. Return only the translation with no additional formatting, apart from returning it in quotes.
 
 \`\`\`
 ${input}
@@ -300,7 +314,7 @@ const translationVerificationPrompt = (
         .map((x, i) => `${x},${splitOutput[i]}`)
         .join("\n");
     return `
-You are a translation verifier. Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated. Otherwise, reply with ACK. Only reply with ACK/NAK.
+Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated. Otherwise, reply with ACK. Only reply with ACK/NAK.
 
 **Be as nitpicky as possible**.
 
@@ -323,14 +337,11 @@ const stylingVerificationPrompt = (
         .map((x, i) => `${x},${splitOutput[i]}`)
         .join("\n");
     return `
-You are a text styling verifier. Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the exact styling of the original (capitalization, whitespace, etc.). Otherwise, reply with ACK. Only reply with ACK/NAK.
+Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original (differing capitalization, punctuation, or whitespaces). Otherwise, reply with ACK. Only reply with ACK/NAK.
 
 **Be as nitpicky as possible.**
 
-For example, "Error Removing Duration",Fout bij het verwijderen van duur" results in NAK because of inconsistent capitalization.
-
 \`\`\`
-${inputLanguage},${outputLanguage}
 ${mergedCsv}
 \`\`\`
 `;
@@ -342,15 +353,13 @@ const getLanguageCodeFromFilename = (filename: string): string | null => {
         if (languageCodes[languageCode as keyof typeof languageCodes]) {
             return languageCodes[languageCode as keyof typeof languageCodes]
                 .name;
-        } else if (languageCode.startsWith("en")) {
-            return "English";
         }
     }
 
     return null;
 };
 
-const BATCH_SIZE = 32;
+const BATCH_SIZE = 64;
 
 (async () => {
     const inputPath = path.resolve(__dirname, options.input);
