@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, StartChatParams } from "@google/generative-ai";
 import { program } from "commander";
 import { config } from "dotenv";
 import { flatten, unflatten } from "flat";
@@ -22,10 +22,19 @@ const options = program.opts();
 const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-const generateTranslation = async (geminiChat: any, inputLanguage: string, outputLanguage: string, batchedInput: string, keys: Array<string>): Promise<string> => {
-    const generationPromptText = generationPrompt(inputLanguage, outputLanguage, batchedInput);
+const generateTranslation = async (successfulHistory: StartChatParams, generateTranslationGeminiChat: any, verifyTranslationGeminiChat: any, verifyStylingGeminiChat: any, inputLanguage: string, outputLanguage: string, input: string, keys: Array<string>): Promise<string> => {
+    const generationPromptText = generationPrompt(inputLanguage, outputLanguage, input);
     const templatedStringRegex = /{{[^{}]+}}/g;
-    const templatedStrings = generationPromptText.match(templatedStringRegex);
+    const inputLineToTemplatedString: { [index: number]: Array<string> } = {};
+    const splitInput = input.split("\n");
+    for (let i = 0; i < splitInput.length; i++) {
+        const match = splitInput[i].match(templatedStringRegex);
+        if (match) {
+            inputLineToTemplatedString[i] = match;
+        }
+    }
+
+    const translationToRetryAttempts: { [translation: string]: number } = {};
 
     let translated = "";
     try {
@@ -33,61 +42,118 @@ const generateTranslation = async (geminiChat: any, inputLanguage: string, outpu
         let generatedContent: any;
         let text = "";
         try {
-            generatedContent = await geminiChat.sendMessage(generationPromptText);
+            generatedContent = await generateTranslationGeminiChat.sendMessage(generationPromptText);
             text = generatedContent.response.text();
         } catch (err) {
-            return Promise.reject("Failed to generate content")
+            console.error(JSON.stringify(generatedContent?.response, null, 4))
+            generateTranslationGeminiChat = model.startChat(successfulHistory);
+            return Promise.reject(`Failed to generate content due to exception. err = ${err}`)
         }
 
         if (text === "") {
-            return Promise.reject("Failed to generate content");
+            return Promise.reject("Failed to generate content due to empty response");
         }
 
-        if (text.split("\n").length !== keys.length + 2) {
+        const splitText = text.split("\n");
+        if (splitText.length !== keys.length) {
+            generateTranslationGeminiChat = model.startChat(successfulHistory);
             return Promise.reject(`Invalid number of lines. text = ${text}`);
         }
 
-        try {
-            JSON.parse(text);
-        } catch (e) {
-            console.error(`Invalid JSON: ${e}. text = ${text}`);
-            return Promise.reject("Invalid JSON");
-        }
-
-        for (const templatedString of templatedStrings || []) {
-            if (!text.includes(templatedString)) {
-                return Promise.reject(`Missing templated string: ${templatedString}`);
+        for (const i in inputLineToTemplatedString) {
+            for (const templatedString of inputLineToTemplatedString[i]) {
+                if (!splitText[i].includes(templatedString)) {
+                    generateTranslationGeminiChat = model.startChat(successfulHistory);
+                    return Promise.reject(`Missing templated string: ${templatedString}`);
+                }
             }
         }
 
-        const verification = await verifyTranslation(inputLanguage, outputLanguage, batchedInput, text);
-        if (verification === "NAK") {
-            return Promise.reject("Invalid translation");
+        for (let i = 0; i < splitText.length; i++) {
+            let line = splitText[i];
+            if (!line.startsWith('"') || !line.endsWith('"')) {
+                generateTranslationGeminiChat = model.startChat(successfulHistory);
+                return Promise.reject(`Invalid line: ${line}`);
+            } else if (line === splitInput[i] && line.length > 2) {
+                if (translationToRetryAttempts[line] === undefined) {
+                    translationToRetryAttempts[line] = 0;
+                }
+
+                const retryTranslationPromptText = failedTranslationPrompt(inputLanguage, outputLanguage, line);
+                try {
+                    generatedContent = await generateTranslationGeminiChat.sendMessage(retryTranslationPromptText);
+                    text = generatedContent.response.text();
+                } catch (err) {
+                    console.error(JSON.stringify(generatedContent?.response, null, 4))
+                    generateTranslationGeminiChat = model.startChat(successfulHistory);
+                    return Promise.reject(`Failed to generate content due to exception. err = ${err}`)
+                }
+
+                const oldText = line;
+                splitText[i] = text;
+                line = text;
+
+                // Move to helper
+                // for (const templatedString in inputLineToTemplatedString[i]) {
+                //     if (!splitText[i].includes(templatedString)) {
+                //         generateTranslationGeminiChat = model.startChat(successfulHistory);
+                //         return Promise.reject(`Missing templated string: ${templatedString}`);
+                //     }
+                // }
+
+                // Move to helper
+                if (!line.startsWith('"') || !line.endsWith('"')) {
+                    generateTranslationGeminiChat = model.startChat(successfulHistory);
+                    return Promise.reject(`Invalid line: ${line}`);
+                }
+
+                if (line !== splitInput[i]) {
+                    console.log(`Successfully translated: ${oldText} => ${line}`)
+                    continue;
+                }
+
+                translationToRetryAttempts[line]++;
+                if (translationToRetryAttempts[line] < 3) {
+                    generateTranslationGeminiChat = model.startChat(successfulHistory);
+                    return Promise.reject(`No translation: ${line}`);
+                }
+            }
         }
 
-        const reverseVerification = await verifyTranslation(outputLanguage, inputLanguage, text, batchedInput);
-        if (reverseVerification === "NAK") {
-            return Promise.reject("Invalid translation");
+        const translationVerificationPromptText = translationVerificationPrompt(inputLanguage, outputLanguage, input, text);
+        const translationVerification = await verify(verifyTranslationGeminiChat, translationVerificationPromptText);
+        if (translationVerification === "NAK") {
+            generateTranslationGeminiChat = model.startChat(successfulHistory);
+            return Promise.reject(`Invalid translation. text = ${text}`);
         }
+
+        const stylingVerificationPromptText = stylingVerificationPrompt(inputLanguage, outputLanguage, input, text);
+        const stylingVerification = await verify(verifyStylingGeminiChat, stylingVerificationPromptText);
+        if (stylingVerification === "NAK") {
+            generateTranslationGeminiChat = model.startChat(successfulHistory);
+            return Promise.reject(`Invalid styling. text = ${text}`);
+        }
+
+        successfulHistory.history!.push({ role: "user", parts: generationPromptText }, { role: "model", parts: text })
 
         return text;
     },
         [],
-        10,
+        50,
         true,
-        1000,
+        500,
         false
     )
     } catch (e) {
         console.error(`Failed to translate: ${e}`);
     }
 
-    return translated.split("\n").slice(1, -1).join("\n");
+    return translated;
 
 }
 
 const generationPrompt = ((inputLanguage: string, outputLanguage: string, input: string): string =>
-    `Translate the given input from ${inputLanguage} to ${outputLanguage}. Return them in the exact same format (maintaining the source's case sensitivity and whitespace), but replace the values with the translated string. Output only the translations. Do not format them or put them in a code block.
+    `You are a professional translator. Translate each line from ${inputLanguage} to ${outputLanguage}. Return translations in the same text formatting (maintaining exact case sensitivity and exact whitespacing). Output only the translations.
 
 \`\`\`
 ${input}
@@ -95,12 +161,20 @@ ${input}
 `
 );
 
-const verifyTranslation = async (inputLanguage: string, outputLanguage: string, batchedInput: string, generatedTranslation: string): Promise<string> => {
-    const verificationPromptText = verificationPrompt(inputLanguage, outputLanguage, batchedInput, generatedTranslation);
+const failedTranslationPrompt = ((inputLanguage: string, outputLanguage: string, input: string): string =>
+    `You are a professional translator. The following translation from ${inputLanguage} to ${outputLanguage} failed. Attempt to translate it to ${outputLanguage} by considering it as a concatenation of ${inputLanguage} words, or re-interpreting it such that it makes sense in ${outputLanguage}. If it is already in an optimal format, just return the input. Return only the translation with no additioanl formatting.
+
+\`\`\`
+${input}
+\`\`\`
+`
+)
+
+const verify = async (geminiChat: any, verificationPromptText: string): Promise<string> => {
     let verification = "";
     try {
     verification = await retryJob(async (): Promise<string> => {
-        const generatedContent = await model.generateContent(verificationPromptText);
+        const generatedContent = await geminiChat.sendMessage(verificationPromptText);
         const text = generatedContent.response.text();
         if (text === "") {
             return Promise.reject("Failed to generate content");
@@ -113,9 +187,9 @@ const verifyTranslation = async (inputLanguage: string, outputLanguage: string, 
         return text;
     },
         [],
-        3,
+        5,
         true,
-        1000,
+        500,
         false
     )
     } catch (e) {
@@ -125,27 +199,39 @@ const verifyTranslation = async (inputLanguage: string, outputLanguage: string, 
     return verification;
 }
 
-const verificationPrompt = ((inputLanguage: string, outputLanguage: string, input: string, output: string): string =>
-`
-A "suitable translation" entirely translates ${inputLanguage} to ${outputLanguage} while maintaining the source's case sensitivity and whitespace. It accurately gets the full meaning across. It does not modify templated variable names.
+const translationVerificationPrompt = ((inputLanguage: string, outputLanguage: string, input: string, output: string): string => {
+    const splitInput = input.split("\n");
+    const splitOutput = output.split("\n");
+    const mergedCsv = splitInput.map((x, i) => `${x},${splitOutput[i]}`).join("\n");
+return `
+You are a translation verifier. Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated. Otherwise, reply with ACK. Only reply with ACK/NAK.
 
-If every line provides a "suitable translation" from ${inputLanguage} to ${outputLanguage}, return ACK. If at least one line is not a "suitable translation", return NAK. Do not return additional output. Do not format your response.
+**Be as nitpicky as possible**.
 
-Fields with keys ending with "name" are often multiple English words, and should be translated word by word. For example, "botnews" should not be translated as "bot" and "news" separately.
-
-Fields with keys ending with "title" should be in title case.
-
-${inputLanguage}:
 \`\`\`
-${input}
-\`\`\`
-
-${outputLanguage}:
-\`\`\`
-${output}
+${inputLanguage},${outputLanguage}
+${mergedCsv}
 \`\`\`
 `
-)
+})
+
+const stylingVerificationPrompt = ((inputLanguage: string, outputLanguage: string, input: string, output: string): string => {
+    const splitInput = input.split("\n");
+    const splitOutput = output.split("\n");
+    const mergedCsv = splitInput.map((x, i) => `${x},${splitOutput[i]}`).join("\n");
+return `
+You are a text styling verifier. Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the exact styling of the original (capitalization, whitespace, etc.). Otherwise, reply with ACK. Only reply with ACK/NAK.
+
+**Be as nitpicky as possible.**
+
+For example, "Error Removing Duration",Fout bij het verwijderen van duur" results in NAK because of inconsistent capitalization.
+
+\`\`\`
+${inputLanguage},${outputLanguage}
+${mergedCsv}
+\`\`\`
+`
+})
 
 const getLanguageCodeFromFilename = (filename: string): string | null => {
     if (filename.includes(".")) {
@@ -160,7 +246,7 @@ const getLanguageCodeFromFilename = (filename: string): string | null => {
     return null;
 }
 
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 32;
 
 (async () => {
     const inputPath = path.resolve(__dirname, options.input);
@@ -178,13 +264,13 @@ const BATCH_SIZE = 10;
         return;
     }
 
-    const inputLanguage = getLanguageCodeFromFilename(options.input);
+    const inputLanguage = `"${getLanguageCodeFromFilename(options.input)}"`;
     if (!inputLanguage) {
         console.error("Invalid input file name. Use a valid ISO 639-1 language code as the file name.");
         return;
     }
 
-    const outputLanguage = getLanguageCodeFromFilename(options.output);
+    const outputLanguage = `"${getLanguageCodeFromFilename(options.output)}"`;
     if (!outputLanguage) {
         console.error("Invalid output file name. Use a valid ISO 639-1 language code as the file name.");
         return;
@@ -192,28 +278,35 @@ const BATCH_SIZE = 10;
 
     console.log(`Translating from ${inputLanguage} to ${outputLanguage}...`);
 
+    const successfulHistory: StartChatParams = { history: [] };
     const generateTranslationChat = model.startChat();
+    const verifyTranslationChat = model.startChat();
+    const verifyStylingChat = model.startChat();
 
     const output: { [key: string]: string } = {};
 
     const flatInput = flatten(inputJSON) as { [key: string]: string };
     const batchStartTime = Date.now();
     for (let i = 0; i < Object.keys(flatInput).length; i += BATCH_SIZE) {
+        console.log(`Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(2)}%`)
+        console.log(`Estimated time left: ${((Date.now() - batchStartTime) / (i + 1) * (Object.keys(flatInput).length - i) / 60000).toFixed(1)} minutes`)
         const keys = Object.keys(flatInput).slice(i, i + BATCH_SIZE);
-        let batchedInput = keys.map((x) => `    "${x}": "${flatInput[x]}"`).join(",\n");
-        batchedInput = `{\n${batchedInput}\n}`;
+        const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
 
-        const generatedTranslation = await generateTranslation(generateTranslationChat, inputLanguage, outputLanguage, batchedInput, keys);
+        const generatedTranslation = await generateTranslation(successfulHistory, generateTranslationChat, verifyTranslationChat, verifyStylingChat, inputLanguage, outputLanguage, input, keys);
+        if (generatedTranslation === "") {
+            console.error("Failed to generate translation");
+            return;
+        }
 
         for (let i = 0; i < keys.length; i++) {
-            const keyLength = keys[i].length + 5;
-            output[keys[i]] = generatedTranslation.split("\n")[i].trimStart().slice(keyLength, (i === keys.length - 1) ? -1 : -2);
+            output[keys[i]] = generatedTranslation.split("\n")[i].slice(1, -1);
             console.log(`${keys[i]}:\n${flatInput[keys[i]]}\n=>\n${output[keys[i]]}\n`);
         }
         const batchEndTime = Date.now();
-        if (batchEndTime - batchStartTime < 2000) {
-            console.log(`Waiting for ${2000 - (batchEndTime - batchStartTime)}ms...`)
-            await delay(2000 - (batchEndTime - batchStartTime));
+        if (batchEndTime - batchStartTime < 3000) {
+            console.log(`Waiting for ${3000 - (batchEndTime - batchStartTime)}ms...`)
+            await delay(3000 - (batchEndTime - batchStartTime));
         }
     }
 
