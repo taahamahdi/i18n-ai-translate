@@ -14,7 +14,8 @@ config({ path: path.resolve(__dirname, ".env") });
 
 program
     .requiredOption("-i, --input <input>", "Source i18n file")
-    .requiredOption("-o, --output <output>", "Output i18n file");
+    .requiredOption("-o, --output <output>", "Output i18n file")
+    .option("-f, --force-language <language name>", "Force language name");
 
 program.parse();
 const options = program.opts();
@@ -397,12 +398,17 @@ const BATCH_SIZE = 64;
         return;
     }
 
-    const outputLanguage = `"${getLanguageCodeFromFilename(options.output)}"`;
-    if (!outputLanguage) {
-        console.error(
-            "Invalid output file name. Use a valid ISO 639-1 language code as the file name.",
-        );
-        return;
+    let outputLanguage = "";
+    if (options.forceLanguage) {
+        outputLanguage = `"${options.forceLanguage}"`;
+    } else {
+        outputLanguage = `"${getLanguageCodeFromFilename(options.output)}"`;
+        if (!outputLanguage) {
+            console.error(
+                "Invalid output file name. Use a valid ISO 639-1 language code as the file name.",
+            );
+            return;
+        }
     }
 
     console.log(`Translating from ${inputLanguage} to ${outputLanguage}...`);
