@@ -107,6 +107,14 @@ const BATCH_SIZE = 32;
     const output: { [key: string]: string } = {};
 
     const flatInput = flatten(inputJSON) as { [key: string]: string };
+
+    // randomize flatInput ordering
+    const allKeys = Object.keys(flatInput);
+    for (let i = allKeys.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allKeys[i], allKeys[j]] = [allKeys[j], allKeys[i]];
+    }
+
     const batchStartTime = Date.now();
     for (let i = 0; i < Object.keys(flatInput).length; i += BATCH_SIZE) {
         if (i > 0) {
@@ -118,7 +126,7 @@ const BATCH_SIZE = 32;
             );
         }
 
-        const keys = Object.keys(flatInput).slice(i, i + BATCH_SIZE);
+        const keys = allKeys.slice(i, i + BATCH_SIZE);
         const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
 
         const generatedTranslation = await generateTranslation(
@@ -150,7 +158,15 @@ const BATCH_SIZE = 32;
         }
     }
 
-    const unflattenedOutput = unflatten(output);
+    // sort the keys
+    const sortedOutput: { [key: string]: string } = {};
+    Object.keys(flatInput)
+        .sort()
+        .forEach((key) => {
+            sortedOutput[key] = output[key];
+        });
+
+    const unflattenedOutput = unflatten(sortedOutput);
     const outputText = JSON.stringify(unflattenedOutput, null, 4).replaceAll(
         "{{NEWLINE}}",
         "\\n",
