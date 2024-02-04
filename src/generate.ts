@@ -8,7 +8,7 @@ const generationPrompt = (
     outputLanguage: string,
     input: string,
 ): string =>
-`You are a professional translator.
+    `You are a professional translator.
 
 Translate each line from ${inputLanguage} to ${outputLanguage}.
 

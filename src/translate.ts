@@ -1,4 +1,8 @@
-import { GenerativeModel, GoogleGenerativeAI, StartChatParams } from "@google/generative-ai";
+import {
+    GenerativeModel,
+    GoogleGenerativeAI,
+    StartChatParams,
+} from "@google/generative-ai";
 import { program } from "commander";
 import { config } from "dotenv";
 import { flatten, unflatten } from "flat";
@@ -20,14 +24,18 @@ program
         "Output i18n file, in the jsons/ directory if a relative path is given",
     )
     .option("-f, --force-language <language name>", "Force language name")
-    .option("-A, --all-languages", "Translate to all supported languages")
+    .option("-A, --all-languages", "Translate to all supported languages");
 
 program.parse();
 const options = program.opts();
 
 const BATCH_SIZE = 32;
 
-const translate = async (model: GenerativeModel, inputFileOrPath: string, outputFileOrPath: string) => {
+const translate = async (
+    model: GenerativeModel,
+    inputFileOrPath: string,
+    outputFileOrPath: string,
+) => {
     const jsonFolder = path.resolve(__dirname, "../jsons");
     let inputPath: string;
     if (path.isAbsolute(inputFileOrPath)) {
@@ -151,7 +159,7 @@ const translate = async (model: GenerativeModel, inputFileOrPath: string, output
     console.log(
         `Actual execution time: ${(endTime - batchStartTime) / 60000} minutes`,
     );
-}
+};
 
 (async () => {
     if (!process.env.API_KEY) {
@@ -171,12 +179,16 @@ const translate = async (model: GenerativeModel, inputFileOrPath: string, output
         translate(model, options.input, options.output);
     } else {
         if (options.forceLanguage) {
-            console.error("Cannot use both --all-languages and --force-language");
+            console.error(
+                "Cannot use both --all-languages and --force-language",
+            );
             return;
         }
 
         for (const languageCode of getAllLanguageCodes()) {
-            console.log(`Translating to ${getAllLanguageCodes().length} languages...`);
+            console.log(
+                `Translating to ${getAllLanguageCodes().length} languages...`,
+            );
             const output = options.input.replace(
                 getLanguageFromFilename(options.input)?.iso639_1,
                 languageCode,
