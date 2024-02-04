@@ -4,13 +4,9 @@ import { config } from "dotenv";
 import { flatten, unflatten } from "flat";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
 import { generateTranslation } from "./generate";
 import Chats from "./interfaces/chats";
 import { delay, getLanguageCodeFromFilename } from "./utils";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 config({ path: path.resolve(__dirname, "../.env") });
 

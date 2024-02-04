@@ -4,7 +4,7 @@
     "outDir": "./build",
     "allowJs": true,
     "target": "es2022",
-    "module": "es2022",
+    "module": "commonjs",
     "moduleResolution": "node",
     "baseUrl": ".",
     "rootDir": "src/",

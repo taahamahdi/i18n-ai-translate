@@ -13,7 +13,6 @@
   "name": "i18n-auto-translate",
   "version": "1.0.0",
   "main": "src/translate.js",
-  "type": "module",
   "devDependencies": {},
   "scripts": {
     "build": "npx tsc",
