@@ -8,7 +8,17 @@ const generationPrompt = (
     outputLanguage: string,
     input: string,
 ): string =>
-    `You are a professional translator. Translate each line from ${inputLanguage} to ${outputLanguage}. Return translations in the same text formatting. Maintain case sensitivity and whitespacing. Output only the translations. All lines should start and end with '"'.
+`You are a professional translator.
+
+Translate each line from ${inputLanguage} to ${outputLanguage}.
+
+Return translations in the same text formatting.
+
+Maintain case sensitivity and whitespacing.
+
+Output only the translations.
+
+All lines should start and end with a quotation mark.
 
 \`\`\`
 ${input}
