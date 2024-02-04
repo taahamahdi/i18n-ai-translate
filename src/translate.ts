@@ -62,7 +62,7 @@ const translate = async (
         return;
     }
 
-    const inputLanguage = `"${getLanguageFromFilename(inputFileOrPath)?.name}"`;
+    const inputLanguage = `[${getLanguageFromFilename(inputFileOrPath)?.name}]`;
     if (!inputLanguage) {
         console.error(
             "Invalid input file name. Use a valid ISO 639-1 language code as the file name.",
@@ -72,7 +72,7 @@ const translate = async (
 
     let outputLanguage = "";
     if (options.forceLanguage) {
-        outputLanguage = `"${options.forceLanguage}"`;
+        outputLanguage = `[${options.forceLanguage}]`;
     } else {
         const code = getLanguageFromFilename(outputFileOrPath)?.name;
         if (!code) {
@@ -82,7 +82,7 @@ const translate = async (
             return;
         }
 
-        outputLanguage = `"${code}"`;
+        outputLanguage = `[${code}]`;
         if (!outputLanguage) {
             console.error(
                 "Invalid output file name. Use a valid ISO 639-1 language code as the file name.",
@@ -201,9 +201,11 @@ const translate = async (
             return;
         }
 
+        let i = 0
         for (const languageCode of getAllLanguageCodes()) {
+            i++
             console.log(
-                `Translating to ${getAllLanguageCodes().length} languages...`,
+                `Translating ${i}/${getAllLanguageCodes().length} languages...`,
             );
             const output = options.input.replace(
                 getLanguageFromFilename(options.input)?.iso639_1,
