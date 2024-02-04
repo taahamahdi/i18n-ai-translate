@@ -15,7 +15,7 @@ const translationVerificationPrompt = (
     return `
 Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated. Otherwise, reply with ACK. Only reply with ACK/NAK.
 
-**Be as nitpicky as possible**.
+**Be as nitpicky as possible.** If even the smallest thing seems off, you should reply NAK.
 
 \`\`\`
 ${inputLanguage},${outputLanguage}
@@ -38,9 +38,10 @@ const stylingVerificationPrompt = (
     return `
 Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original. Check for differing capitalization, punctuation, or whitespaces. Otherwise, reply with ACK. Only reply with ACK/NAK.
 
-**Be as nitpicky as possible.**
+**Be as nitpicky as possible.** If even the smallest thing seems off, you should reply NAK.
 
 \`\`\`
+${inputLanguage},${outputLanguage}
 ${mergedCsv}
 \`\`\`
 `;

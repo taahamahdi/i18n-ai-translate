@@ -254,7 +254,7 @@ export async function generateTranslation(
                 return text;
             },
             [],
-            15,
+            50,
             true,
             0,
             false,

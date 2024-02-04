@@ -62,7 +62,7 @@ const translate = async (
         return;
     }
 
-    const inputLanguage = `"${getLanguageFromFilename(inputFileOrPath)?.name}"`;
+    const inputLanguage = `[${getLanguageFromFilename(inputFileOrPath)?.name}]`;
     if (!inputLanguage) {
         console.error(
             "Invalid input file name. Use a valid ISO 639-1 language code as the file name.",
@@ -72,7 +72,7 @@ const translate = async (
 
     let outputLanguage = "";
     if (options.forceLanguage) {
-        outputLanguage = `"${options.forceLanguage}"`;
+        outputLanguage = `[${options.forceLanguage}]`;
     } else {
         const code = getLanguageFromFilename(outputFileOrPath)?.name;
         if (!code) {
@@ -82,7 +82,7 @@ const translate = async (
             return;
         }
 
-        outputLanguage = `"${code}"`;
+        outputLanguage = `[${code}]`;
         if (!outputLanguage) {
             console.error(
                 "Invalid output file name. Use a valid ISO 639-1 language code as the file name.",
@@ -103,6 +103,14 @@ const translate = async (
     const output: { [key: string]: string } = {};
 
     const flatInput = flatten(inputJSON) as { [key: string]: string };
+
+    // randomize flatInput ordering
+    const allKeys = Object.keys(flatInput);
+    for (let i = allKeys.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allKeys[i], allKeys[j]] = [allKeys[j], allKeys[i]];
+    }
+
     const batchStartTime = Date.now();
     for (let i = 0; i < Object.keys(flatInput).length; i += BATCH_SIZE) {
         if (i > 0) {
@@ -114,7 +122,7 @@ const translate = async (
             );
         }
 
-        const keys = Object.keys(flatInput).slice(i, i + BATCH_SIZE);
+        const keys = allKeys.slice(i, i + BATCH_SIZE);
         const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
 
         const generatedTranslation = await generateTranslation(
@@ -146,7 +154,15 @@ const translate = async (
         }
     }
 
-    const unflattenedOutput = unflatten(output);
+    // sort the keys
+    const sortedOutput: { [key: string]: string } = {};
+    Object.keys(flatInput)
+        .sort()
+        .forEach((key) => {
+            sortedOutput[key] = output[key];
+        });
+
+    const unflattenedOutput = unflatten(sortedOutput);
     const outputText = JSON.stringify(unflattenedOutput, null, 4).replaceAll(
         "{{NEWLINE}}",
         "\\n",
@@ -185,9 +201,11 @@ const translate = async (
             return;
         }
 
+        let i = 0
         for (const languageCode of getAllLanguageCodes()) {
+            i++
             console.log(
-                `Translating to ${getAllLanguageCodes().length} languages...`,
+                `Translating ${i}/${getAllLanguageCodes().length} languages...`,
             );
             const output = options.input.replace(
                 getLanguageFromFilename(options.input)?.iso639_1,
