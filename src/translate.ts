@@ -10,7 +10,12 @@ import path from "path";
 import fs from "fs";
 import { generateTranslation } from "./generate";
 import Chats from "./interfaces/chats";
-import { delay, getAllLanguageCodes, getLanguageFromCode, getLanguageFromFilename } from "./utils";
+import {
+    delay,
+    getAllLanguageCodes,
+    getLanguageFromCode,
+    getLanguageFromFilename,
+} from "./utils";
 
 config({ path: path.resolve(__dirname, "../.env") });
 
@@ -25,8 +30,10 @@ program
     )
     .option("-f, --force-language <language name>", "Force language name")
     .option("-A, --all-languages", "Translate to all supported languages")
-    .option("-l, --languages [language codes...]", "Pass a list of languages to translate to");
-
+    .option(
+        "-l, --languages [language codes...]",
+        "Pass a list of languages to translate to",
+    );
 
 program.parse();
 const options = program.opts();
@@ -197,16 +204,12 @@ const translate = async (
         translate(model, options.input, options.output);
     } else if (options.languages) {
         if (options.forceLanguage) {
-            console.error(
-                "Cannot use both --languages and --force-language",
-            );
+            console.error("Cannot use both --languages and --force-language");
             return;
         }
 
         if (options.allLanguages) {
-            console.error(
-                "Cannot use both --all-languages and --languages",
-            );
+            console.error("Cannot use both --all-languages and --languages");
             return;
         }
 
@@ -215,12 +218,14 @@ const translate = async (
             return;
         }
 
-        const languageNames = options.languages.map((x: string) => getLanguageFromCode(x)?.name).filter((x: string | undefined) => x) as string[];
+        const languageNames = options.languages
+            .map((x: string) => getLanguageFromCode(x)?.name)
+            .filter((x: string | undefined) => x) as string[];
         console.log(`Translating to ${languageNames.join(", ")}...`);
 
-        let i = 0
+        let i = 0;
         for (const languageCode of options.languages) {
-            i++
+            i++;
             console.log(
                 `Translating ${i}/${options.languages.length} languages...`,
             );
@@ -247,9 +252,9 @@ const translate = async (
             return;
         }
 
-        let i = 0
+        let i = 0;
         for (const languageCode of getAllLanguageCodes()) {
-            i++
+            i++;
             console.log(
                 `Translating ${i}/${getAllLanguageCodes().length} languages...`,
             );
