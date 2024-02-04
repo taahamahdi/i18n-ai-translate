@@ -36,7 +36,7 @@ const stylingVerificationPrompt = (
         .map((x, i) => `${x},${splitOutput[i]}`)
         .join("\n");
     return `
-Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original (differing capitalization, punctuation, or whitespaces). Otherwise, reply with ACK. Only reply with ACK/NAK.
+Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original. Check for differing capitalization, punctuation, or whitespaces. Otherwise, reply with ACK. Only reply with ACK/NAK.
 
 **Be as nitpicky as possible.**
 

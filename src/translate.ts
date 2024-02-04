@@ -78,7 +78,15 @@ const BATCH_SIZE = 64;
     if (options.forceLanguage) {
         outputLanguage = `"${options.forceLanguage}"`;
     } else {
-        outputLanguage = `"${getLanguageCodeFromFilename(options.output)}"`;
+        const code = getLanguageCodeFromFilename(options.output);
+        if (!code) {
+            console.error(
+                "Invalid output file name. Use a valid ISO 639-1 language code as the file name. Consider using the --force-language option.",
+            );
+            return;
+        }
+
+        outputLanguage = `"${code}"`;
         if (!outputLanguage) {
             console.error(
                 "Invalid output file name. Use a valid ISO 639-1 language code as the file name.",
@@ -147,5 +155,12 @@ const BATCH_SIZE = 64;
         "{{NEWLINE}}",
         "\\n",
     );
+
+    console.log(outputText);
+
     fs.writeFileSync(outputPath, outputText);
+    const endTime = Date.now();
+    console.log(
+        `Actual execution time: ${(endTime - batchStartTime) / 60000} minutes`,
+    );
 })();

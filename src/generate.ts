@@ -8,7 +8,7 @@ const generationPrompt = (
     outputLanguage: string,
     input: string,
 ): string =>
-    `You are a professional translator. Translate each line from ${inputLanguage} to ${outputLanguage}. Return translations in the same text formatting (maintaining exact case sensitivity and exact whitespacing). Output only the translations.
+    `You are a professional translator. Translate each line from ${inputLanguage} to ${outputLanguage}. Return translations in the same text formatting. Maintain case sensitivity and whitespacing. Output only the translations. All lines should start and end with '"'.
 
 \`\`\`
 ${input}
@@ -20,7 +20,7 @@ const failedTranslationPrompt = (
     outputLanguage: string,
     input: string,
 ): string =>
-    `You are a professional translator. The following translation from ${inputLanguage} to ${outputLanguage} failed. Attempt to translate it to ${outputLanguage} by considering it as a concatenation of ${inputLanguage} words, or re-interpreting it such that it makes sense in ${outputLanguage}. If it is already in an optimal format, just return the input. Return only the translation with no additional formatting, apart from returning it in quotes.
+    `You are a professional translator. The following translation from ${inputLanguage} to ${outputLanguage} failed. Attempt to translate it to ${outputLanguage} by considering it as a concatenation of ${inputLanguage} words, or re-interpreting it such that it makes sense in ${outputLanguage}. Return only the translation with no additional formatting, apart from returning it in quotes. Maintain case sensitivity and whitespacing.
 
 \`\`\`
 ${input}
@@ -68,8 +68,10 @@ export async function generateTranslation(
                     text = generatedContent.response.text();
                 } catch (err) {
                     console.error(
-                        JSON.stringify(generatedContent?.response, null, 4),
+                        `Gemini exception encountered. err = ${JSON.stringify(generatedContent?.response, null, 4)}`,
                     );
+
+                    console.error(`Offending text = ${text}`);
                     chats.generateTranslationChat =
                         model.startChat(successfulHistory);
                     return Promise.reject(
@@ -83,6 +85,7 @@ export async function generateTranslation(
                     );
                 }
 
+                // Response length matches
                 const splitText = text.split("\n");
                 if (splitText.length !== keys.length) {
                     chats.generateTranslationChat =
@@ -92,6 +95,7 @@ export async function generateTranslation(
                     );
                 }
 
+                // Templated strings match
                 for (const i in inputLineToTemplatedString) {
                     for (const templatedString of inputLineToTemplatedString[
                         i
@@ -106,6 +110,7 @@ export async function generateTranslation(
                     }
                 }
 
+                // Trim extra quotes if they exist
                 for (let i = 0; i < splitText.length; i++) {
                     let line = splitText[i];
                     while (line.startsWith('""') && line.endsWith('""')) {
@@ -116,13 +121,14 @@ export async function generateTranslation(
                 }
                 text = splitText.join("\n");
 
+                // Per-line translation verification
                 for (let i = 0; i < splitText.length; i++) {
                     let line = splitText[i];
                     if (!line.startsWith('"') || !line.endsWith('"')) {
                         chats.generateTranslationChat =
                             model.startChat(successfulHistory);
                         return Promise.reject(`Invalid line: ${line}`);
-                    } else if (line === splitInput[i] && line.length > 2) {
+                    } else if (line === splitInput[i] && line.length > 4) {
                         if (translationToRetryAttempts[line] === undefined) {
                             translationToRetryAttempts[line] = 0;
                         } else if (fixedTranslationMappings[line]) {
