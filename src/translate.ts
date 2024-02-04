@@ -10,7 +10,7 @@ import path from "path";
 import fs from "fs";
 import { generateTranslation } from "./generate";
 import Chats from "./interfaces/chats";
-import { delay, getAllLanguageCodes, getLanguageFromFilename } from "./utils";
+import { delay, getAllLanguageCodes, getLanguageFromCode, getLanguageFromFilename } from "./utils";
 
 config({ path: path.resolve(__dirname, "../.env") });
 
@@ -24,7 +24,9 @@ program
         "Output i18n file, in the jsons/ directory if a relative path is given",
     )
     .option("-f, --force-language <language name>", "Force language name")
-    .option("-A, --all-languages", "Translate to all supported languages");
+    .option("-A, --all-languages", "Translate to all supported languages")
+    .option("-l, --languages [language codes...]", "Pass a list of languages to translate to");
+
 
 program.parse();
 const options = program.opts();
@@ -186,13 +188,57 @@ const translate = async (
     const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-    if (!options.allLanguages) {
+    if (!options.allLanguages && !options.languages) {
         if (!options.output) {
             console.error("Output file not specified");
             return;
         }
 
         translate(model, options.input, options.output);
+    } else if (options.languages) {
+        if (options.forceLanguage) {
+            console.error(
+                "Cannot use both --languages and --force-language",
+            );
+            return;
+        }
+
+        if (options.allLanguages) {
+            console.error(
+                "Cannot use both --all-languages and --languages",
+            );
+            return;
+        }
+
+        if (options.languages.length === 0) {
+            console.error("No languages specified");
+            return;
+        }
+
+        const languageNames = options.languages.map((x: string) => getLanguageFromCode(x)?.name).filter((x: string | undefined) => x) as string[];
+        console.log(`Translating to ${languageNames.join(", ")}...`);
+
+        let i = 0
+        for (const languageCode of options.languages) {
+            i++
+            console.log(
+                `Translating ${i}/${options.languages.length} languages...`,
+            );
+            const output = options.input.replace(
+                getLanguageFromFilename(options.input)?.iso639_1,
+                languageCode,
+            );
+
+            if (options.input === output) {
+                continue;
+            }
+
+            try {
+                await translate(model, options.input, output);
+            } catch (err) {
+                console.error(`Failed to translate to ${languageCode}: ${err}`);
+            }
+        }
     } else {
         if (options.forceLanguage) {
             console.error(
@@ -211,8 +257,6 @@ const translate = async (
                 getLanguageFromFilename(options.input)?.iso639_1,
                 languageCode,
             );
-
-            // console.log(output)
 
             if (options.input === output) {
                 continue;
