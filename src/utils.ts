@@ -51,5 +51,4 @@ export function getLanguageCodeFromFilename(filename: string): string | null {
     }
 
     return null;
-};
-
+}

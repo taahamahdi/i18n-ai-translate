@@ -46,22 +46,30 @@ ${mergedCsv}
 `;
 };
 
-export async function verifyTranslation(chat: ChatSession, inputLanguage: string, outputLanguage: string, input: string, outputToVerify: string): Promise<string> {
-    const translationVerificationPromptText =
-        translationVerificationPrompt(
-            inputLanguage,
-            outputLanguage,
-            input,
-            outputToVerify,
-        );
-
-    return verify(
-        chat,
-        translationVerificationPromptText,
+export async function verifyTranslation(
+    chat: ChatSession,
+    inputLanguage: string,
+    outputLanguage: string,
+    input: string,
+    outputToVerify: string,
+): Promise<string> {
+    const translationVerificationPromptText = translationVerificationPrompt(
+        inputLanguage,
+        outputLanguage,
+        input,
+        outputToVerify,
     );
+
+    return verify(chat, translationVerificationPromptText);
 }
 
-export async function verifyStyling(chat: ChatSession, inputLanguage: string, outputLanguage: string, input: string, outputToVerify: string): Promise<string> {
+export async function verifyStyling(
+    chat: ChatSession,
+    inputLanguage: string,
+    outputLanguage: string,
+    input: string,
+    outputToVerify: string,
+): Promise<string> {
     const stylingVerificationPromptText = stylingVerificationPrompt(
         inputLanguage,
         outputLanguage,
@@ -69,10 +77,7 @@ export async function verifyStyling(chat: ChatSession, inputLanguage: string, ou
         outputToVerify,
     );
 
-    return verify(
-        chat,
-        stylingVerificationPromptText,
-    );
+    return verify(chat, stylingVerificationPromptText);
 }
 
 const verify = async (

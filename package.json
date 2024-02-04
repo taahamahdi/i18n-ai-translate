@@ -18,7 +18,8 @@
     "build": "npx tsc",
     "convert": "npm run build && node build/translate.js",
     "clean": "rm -r build/ && rm tsconfig.tsbuildinfo",
-    "clean-build": "npm run clean && npm run build"
+    "clean-build": "npm run clean && npm run build",
+    "prettier": "prettier --write '**/*.{js,ts}'"
   },
   "keywords": [],
   "author": "",

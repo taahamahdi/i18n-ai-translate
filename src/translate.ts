@@ -11,8 +11,14 @@ import { delay, getLanguageCodeFromFilename } from "./utils";
 config({ path: path.resolve(__dirname, "../.env") });
 
 program
-    .requiredOption("-i, --input <input>", "Source i18n file, in the jsons/ directory if a relative path is given")
-    .requiredOption("-o, --output <output>", "Output i18n file, in the jsons/ directory if a relative path is given")
+    .requiredOption(
+        "-i, --input <input>",
+        "Source i18n file, in the jsons/ directory if a relative path is given",
+    )
+    .requiredOption(
+        "-o, --output <output>",
+        "Output i18n file, in the jsons/ directory if a relative path is given",
+    )
     .option("-f, --force-language <language name>", "Force language name");
 
 program.parse();
@@ -30,14 +36,14 @@ const BATCH_SIZE = 64;
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const jsonFolder = path.resolve(__dirname, "../jsons");
-    let inputPath: string
+    let inputPath: string;
     if (path.isAbsolute(options.input)) {
         inputPath = path.resolve(options.input);
     } else {
         inputPath = path.resolve(jsonFolder, options.input);
     }
 
-    let outputPath: string
+    let outputPath: string;
     if (path.isAbsolute(options.output)) {
         outputPath = path.resolve(options.output);
     } else {
@@ -88,7 +94,7 @@ const BATCH_SIZE = 64;
         generateTranslationChat: model.startChat(),
         verifyTranslationChat: model.startChat(),
         verifyStylingChat: model.startChat(),
-    }
+    };
 
     const output: { [key: string]: string } = {};
 

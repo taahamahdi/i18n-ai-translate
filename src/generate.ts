@@ -202,7 +202,13 @@ export async function generateTranslation(
                     }
                 }
 
-                const translationVerification = await verifyTranslation(chats.verifyTranslationChat, inputLanguage, outputLanguage, input, text);
+                const translationVerification = await verifyTranslation(
+                    chats.verifyTranslationChat,
+                    inputLanguage,
+                    outputLanguage,
+                    input,
+                    text,
+                );
                 if (translationVerification === "NAK") {
                     chats.generateTranslationChat =
                         model.startChat(successfulHistory);
@@ -211,7 +217,13 @@ export async function generateTranslation(
                     );
                 }
 
-                const stylingVerification = await verifyStyling(chats.verifyStylingChat, inputLanguage, outputLanguage, input, text);
+                const stylingVerification = await verifyStyling(
+                    chats.verifyStylingChat,
+                    inputLanguage,
+                    outputLanguage,
+                    input,
+                    text,
+                );
                 if (stylingVerification === "NAK") {
                     chats.generateTranslationChat =
                         model.startChat(successfulHistory);
@@ -236,4 +248,4 @@ export async function generateTranslation(
     }
 
     return translated;
-};
+}
