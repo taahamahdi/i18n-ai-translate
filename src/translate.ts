@@ -24,7 +24,7 @@ program
 program.parse();
 const options = program.opts();
 
-const BATCH_SIZE = 64;
+const BATCH_SIZE = 32;
 
 (async () => {
     if (!process.env.API_KEY) {
