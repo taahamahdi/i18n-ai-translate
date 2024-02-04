@@ -1,2 +1,5 @@
 .env
 node_modules/
+build/
+tsconfig.tsbuildinfo
+jsons/*json

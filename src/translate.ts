@@ -2,378 +2,52 @@ import { GoogleGenerativeAI, StartChatParams } from "@google/generative-ai";
 import { program } from "commander";
 import { config } from "dotenv";
 import { flatten, unflatten } from "flat";
-import { by639_1 as languageCodes } from "iso-language-codes";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { generateTranslation } from "./generate";
+import Chats from "./interfaces/chats";
+import { delay, getLanguageCodeFromFilename } from "./utils";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-config({ path: path.resolve(__dirname, ".env") });
+config({ path: path.resolve(__dirname, "../.env") });
 
 program
-    .requiredOption("-i, --input <input>", "Source i18n file")
-    .requiredOption("-o, --output <output>", "Output i18n file")
+    .requiredOption("-i, --input <input>", "Source i18n file, in the jsons/ directory if a relative path is given")
+    .requiredOption("-o, --output <output>", "Output i18n file, in the jsons/ directory if a relative path is given")
     .option("-f, --force-language <language name>", "Force language name");
 
 program.parse();
 const options = program.opts();
 
-const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
-const generateTranslation = async (
-    successfulHistory: StartChatParams,
-    generateTranslationGeminiChat: any,
-    verifyTranslationGeminiChat: any,
-    verifyStylingGeminiChat: any,
-    inputLanguage: string,
-    outputLanguage: string,
-    input: string,
-    keys: Array<string>,
-): Promise<string> => {
-    const generationPromptText = generationPrompt(
-        inputLanguage,
-        outputLanguage,
-        input,
-    );
-    const templatedStringRegex = /{{[^{}]+}}/g;
-    const inputLineToTemplatedString: { [index: number]: Array<string> } = {};
-    const splitInput = input.split("\n");
-    for (let i = 0; i < splitInput.length; i++) {
-        const match = splitInput[i].match(templatedStringRegex);
-        if (match) {
-            inputLineToTemplatedString[i] = match;
-        }
-    }
-
-    const fixedTranslationMappings: { [input: string]: string } = {};
-    const translationToRetryAttempts: { [translation: string]: number } = {};
-
-    let translated = "";
-    try {
-        translated = await retryJob(
-            async (): Promise<string> => {
-                let generatedContent: any;
-                let text = "";
-                try {
-                    generatedContent =
-                        await generateTranslationGeminiChat.sendMessage(
-                            generationPromptText,
-                        );
-                    text = generatedContent.response.text();
-                } catch (err) {
-                    console.error(
-                        JSON.stringify(generatedContent?.response, null, 4),
-                    );
-                    generateTranslationGeminiChat =
-                        model.startChat(successfulHistory);
-                    return Promise.reject(
-                        `Failed to generate content due to exception. err = ${err}`,
-                    );
-                }
-
-                if (text === "") {
-                    return Promise.reject(
-                        "Failed to generate content due to empty response",
-                    );
-                }
-
-                const splitText = text.split("\n");
-                if (splitText.length !== keys.length) {
-                    generateTranslationGeminiChat =
-                        model.startChat(successfulHistory);
-                    return Promise.reject(
-                        `Invalid number of lines. text = ${text}`,
-                    );
-                }
-
-                for (const i in inputLineToTemplatedString) {
-                    for (const templatedString of inputLineToTemplatedString[
-                        i
-                    ]) {
-                        if (!splitText[i].includes(templatedString)) {
-                            generateTranslationGeminiChat =
-                                model.startChat(successfulHistory);
-                            return Promise.reject(
-                                `Missing templated string: ${templatedString}`,
-                            );
-                        }
-                    }
-                }
-
-                for (let i = 0; i < splitText.length; i++) {
-                    let line = splitText[i];
-                    while (line.startsWith('""') && line.endsWith('""')) {
-                        line = line.slice(1, -1);
-                    }
-
-                    splitText[i] = line;
-                }
-                text = splitText.join("\n");
-
-                for (let i = 0; i < splitText.length; i++) {
-                    let line = splitText[i];
-                    if (!line.startsWith('"') || !line.endsWith('"')) {
-                        generateTranslationGeminiChat =
-                            model.startChat(successfulHistory);
-                        return Promise.reject(`Invalid line: ${line}`);
-                    } else if (line === splitInput[i] && line.length > 2) {
-                        if (translationToRetryAttempts[line] === undefined) {
-                            translationToRetryAttempts[line] = 0;
-                        } else if (fixedTranslationMappings[line]) {
-                            splitText[i] = fixedTranslationMappings[line];
-                            continue;
-                        }
-
-                        const retryTranslationPromptText =
-                            failedTranslationPrompt(
-                                inputLanguage,
-                                outputLanguage,
-                                line,
-                            );
-                        let fixedText = "";
-                        try {
-                            generatedContent =
-                                await generateTranslationGeminiChat.sendMessage(
-                                    retryTranslationPromptText,
-                                );
-                            fixedText = generatedContent.response.text();
-                        } catch (err) {
-                            console.error(
-                                JSON.stringify(
-                                    generatedContent?.response,
-                                    null,
-                                    4,
-                                ),
-                            );
-                            generateTranslationGeminiChat =
-                                model.startChat(successfulHistory);
-                            return Promise.reject(
-                                `Failed to generate content due to exception. err = ${err}`,
-                            );
-                        }
-
-                        const oldText = line;
-                        splitText[i] = fixedText;
-                        line = fixedText;
-
-                        // Move to helper
-                        for (const j in inputLineToTemplatedString[i]) {
-                            if (
-                                !splitText[i].includes(
-                                    inputLineToTemplatedString[i][j],
-                                )
-                            ) {
-                                generateTranslationGeminiChat =
-                                    model.startChat(successfulHistory);
-                                return Promise.reject(
-                                    `Missing templated string: ${inputLineToTemplatedString[i][j]}`,
-                                );
-                            }
-                        }
-
-                        // Move to helper
-                        if (!line.startsWith('"') || !line.endsWith('"')) {
-                            generateTranslationGeminiChat =
-                                model.startChat(successfulHistory);
-                            return Promise.reject(`Invalid line: ${line}`);
-                        }
-
-                        if (line !== splitInput[i]) {
-                            console.log(
-                                `Successfully translated: ${oldText} => ${line}`,
-                            );
-                            text = splitText.join("\n");
-                            fixedTranslationMappings[oldText] = line;
-                            continue;
-                        }
-
-                        translationToRetryAttempts[line]++;
-                        if (translationToRetryAttempts[line] < 3) {
-                            generateTranslationGeminiChat =
-                                model.startChat(successfulHistory);
-                            return Promise.reject(`No translation: ${line}`);
-                        }
-                    }
-                }
-
-                const translationVerificationPromptText =
-                    translationVerificationPrompt(
-                        inputLanguage,
-                        outputLanguage,
-                        input,
-                        text,
-                    );
-                const translationVerification = await verify(
-                    verifyTranslationGeminiChat,
-                    translationVerificationPromptText,
-                );
-                if (translationVerification === "NAK") {
-                    generateTranslationGeminiChat =
-                        model.startChat(successfulHistory);
-                    return Promise.reject(
-                        `Invalid translation. text = ${text}`,
-                    );
-                }
-
-                const stylingVerificationPromptText = stylingVerificationPrompt(
-                    inputLanguage,
-                    outputLanguage,
-                    input,
-                    text,
-                );
-                const stylingVerification = await verify(
-                    verifyStylingGeminiChat,
-                    stylingVerificationPromptText,
-                );
-                if (stylingVerification === "NAK") {
-                    generateTranslationGeminiChat =
-                        model.startChat(successfulHistory);
-                    return Promise.reject(`Invalid styling. text = ${text}`);
-                }
-
-                successfulHistory.history!.push(
-                    { role: "user", parts: generationPromptText },
-                    { role: "model", parts: text },
-                );
-
-                return text;
-            },
-            [],
-            50,
-            true,
-            0,
-            false,
-        );
-    } catch (e) {
-        console.error(`Failed to translate: ${e}`);
-    }
-
-    return translated;
-};
-
-const generationPrompt = (
-    inputLanguage: string,
-    outputLanguage: string,
-    input: string,
-): string =>
-    `You are a professional translator. Translate each line from ${inputLanguage} to ${outputLanguage}. Return translations in the same text formatting (maintaining exact case sensitivity and exact whitespacing). Output only the translations.
-
-\`\`\`
-${input}
-\`\`\`
-`;
-
-const failedTranslationPrompt = (
-    inputLanguage: string,
-    outputLanguage: string,
-    input: string,
-): string =>
-    `You are a professional translator. The following translation from ${inputLanguage} to ${outputLanguage} failed. Attempt to translate it to ${outputLanguage} by considering it as a concatenation of ${inputLanguage} words, or re-interpreting it such that it makes sense in ${outputLanguage}. If it is already in an optimal format, just return the input. Return only the translation with no additional formatting, apart from returning it in quotes.
-
-\`\`\`
-${input}
-\`\`\`
-`;
-
-const verify = async (
-    geminiChat: any,
-    verificationPromptText: string,
-): Promise<string> => {
-    let verification = "";
-    try {
-        verification = await retryJob(
-            async (): Promise<string> => {
-                const generatedContent = await geminiChat.sendMessage(
-                    verificationPromptText,
-                );
-                const text = generatedContent.response.text();
-                if (text === "") {
-                    return Promise.reject("Failed to generate content");
-                }
-
-                if (text !== "ACK" && text !== "NAK") {
-                    return Promise.reject("Invalid response");
-                }
-
-                return text;
-            },
-            [],
-            5,
-            true,
-            500,
-            false,
-        );
-    } catch (e) {
-        console.error(`Failed to verify: ${e}`);
-    }
-
-    return verification;
-};
-
-const translationVerificationPrompt = (
-    inputLanguage: string,
-    outputLanguage: string,
-    input: string,
-    output: string,
-): string => {
-    const splitInput = input.split("\n");
-    const splitOutput = output.split("\n");
-    const mergedCsv = splitInput
-        .map((x, i) => `${x},${splitOutput[i]}`)
-        .join("\n");
-    return `
-Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated. Otherwise, reply with ACK. Only reply with ACK/NAK.
-
-**Be as nitpicky as possible**.
-
-\`\`\`
-${inputLanguage},${outputLanguage}
-${mergedCsv}
-\`\`\`
-`;
-};
-
-const stylingVerificationPrompt = (
-    inputLanguage: string,
-    outputLanguage: string,
-    input: string,
-    output: string,
-): string => {
-    const splitInput = input.split("\n");
-    const splitOutput = output.split("\n");
-    const mergedCsv = splitInput
-        .map((x, i) => `${x},${splitOutput[i]}`)
-        .join("\n");
-    return `
-Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original (differing capitalization, punctuation, or whitespaces). Otherwise, reply with ACK. Only reply with ACK/NAK.
-
-**Be as nitpicky as possible.**
-
-\`\`\`
-${mergedCsv}
-\`\`\`
-`;
-};
-
-const getLanguageCodeFromFilename = (filename: string): string | null => {
-    if (filename.includes(".")) {
-        const languageCode = filename.split(".")[0];
-        if (languageCodes[languageCode as keyof typeof languageCodes]) {
-            return languageCodes[languageCode as keyof typeof languageCodes]
-                .name;
-        }
-    }
-
-    return null;
-};
-
 const BATCH_SIZE = 64;
 
 (async () => {
-    const inputPath = path.resolve(__dirname, options.input);
+    if (!process.env.API_KEY) {
+        console.error("API_KEY not found in .env file");
+        return;
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+    const jsonFolder = path.resolve(__dirname, "../jsons");
+    let inputPath: string
+    if (path.isAbsolute(options.input)) {
+        inputPath = path.resolve(options.input);
+    } else {
+        inputPath = path.resolve(jsonFolder, options.input);
+    }
+
+    let outputPath: string
+    if (path.isAbsolute(options.output)) {
+        outputPath = path.resolve(options.output);
+    } else {
+        outputPath = path.resolve(jsonFolder, options.output);
+    }
+
     if (!fs.existsSync(inputPath)) {
         console.error(`File not found: ${inputPath}`);
         return;
@@ -414,9 +88,11 @@ const BATCH_SIZE = 64;
     console.log(`Translating from ${inputLanguage} to ${outputLanguage}...`);
 
     const successfulHistory: StartChatParams = { history: [] };
-    const generateTranslationChat = model.startChat();
-    const verifyTranslationChat = model.startChat();
-    const verifyStylingChat = model.startChat();
+    const chats: Chats = {
+        generateTranslationChat: model.startChat(),
+        verifyTranslationChat: model.startChat(),
+        verifyStylingChat: model.startChat(),
+    }
 
     const output: { [key: string]: string } = {};
 
@@ -433,10 +109,9 @@ const BATCH_SIZE = 64;
         const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
 
         const generatedTranslation = await generateTranslation(
+            model,
+            chats,
             successfulHistory,
-            generateTranslationChat,
-            verifyTranslationChat,
-            verifyStylingChat,
             inputLanguage,
             outputLanguage,
             input,
@@ -463,51 +138,9 @@ const BATCH_SIZE = 64;
     }
 
     const unflattenedOutput = unflatten(output);
-    const outputPath = path.resolve(__dirname, options.output);
     const outputText = JSON.stringify(unflattenedOutput, null, 4).replaceAll(
         "{{NEWLINE}}",
         "\\n",
     );
     fs.writeFileSync(outputPath, outputText);
 })();
-
-export function delay(delayDuration: number): Promise<void> {
-    // eslint-disable-next-line no-promise-executor-return
-    return new Promise((resolve) => setTimeout(resolve, delayDuration));
-}
-
-/**
- * @param job - the function to retry
- * @param jobArgs - arguments to pass to job
- * @param maxRetries - retries of job before throwing
- * @param firstTry - whether this is the first try
- * @param delayDuration - time (in ms) before attempting job retry
- * @param sendError - whether to send a warning or error
- * @returns the result of job
- */
-export async function retryJob<Type>(
-    job: (...args: any) => Promise<Type>,
-    jobArgs: Array<any>,
-    maxRetries: number,
-    firstTry: boolean,
-    delayDuration?: number,
-    sendError = true,
-): Promise<Type> {
-    if (!firstTry && delayDuration) {
-        await delay(delayDuration);
-    }
-
-    return job(...jobArgs).catch((err) => {
-        if (sendError) {
-            console.error(`err = ${err}`);
-        } else {
-            console.warn(`err = ${err}`);
-        }
-
-        if (maxRetries <= 0) {
-            throw err;
-        }
-
-        return retryJob(job, jobArgs, maxRetries - 1, false, delayDuration);
-    });
-}

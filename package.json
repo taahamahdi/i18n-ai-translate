@@ -16,7 +16,10 @@
   "type": "module",
   "devDependencies": {},
   "scripts": {
-    "convert": "ts-node --esm translate.ts"
+    "build": "npx tsc",
+    "convert": "npm run build && node build/translate.js",
+    "clean": "rm -r build/ && rm tsconfig.tsbuildinfo",
+    "clean-build": "npm run clean && npm run build"
   },
   "keywords": [],
   "author": "",
