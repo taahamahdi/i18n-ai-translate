@@ -24,7 +24,7 @@ program
 program.parse();
 const options = program.opts();
 
-const BATCH_SIZE = 64;
+// const BATCH_SIZE = 32;
 
 (async () => {
     if (!process.env.API_KEY) {
@@ -107,8 +107,20 @@ const BATCH_SIZE = 64;
     const output: { [key: string]: string } = {};
 
     const flatInput = flatten(inputJSON) as { [key: string]: string };
+
+    const groupedFlatInput = groupBySecondLastKey(flatInput);
+
+    // Put the keys in random order:
+    const randomGroupedFlatInput: GroupedObject = {};
+    const keys = Object.keys(groupedFlatInput);
+    keys.sort(() => Math.random() - 0.5);
+    keys.forEach((key) => {
+        randomGroupedFlatInput[key] = groupedFlatInput[key];
+    });
+
     const batchStartTime = Date.now();
-    for (let i = 0; i < Object.keys(flatInput).length; i += BATCH_SIZE) {
+    let i = 0
+    for (const group in randomGroupedFlatInput) {
         if (i > 0) {
             console.log(
                 `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
@@ -118,7 +130,8 @@ const BATCH_SIZE = 64;
             );
         }
 
-        const keys = Object.keys(flatInput).slice(i, i + BATCH_SIZE);
+        const keys = Object.keys(randomGroupedFlatInput[group]);
+        i += keys.length
         const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
 
         const generatedTranslation = await generateTranslation(
@@ -164,3 +177,28 @@ const BATCH_SIZE = 64;
         `Actual execution time: ${(endTime - batchStartTime) / 60000} minutes`,
     );
 })();
+
+type FlattenedObject = { [key: string]: any };
+type GroupedObject = { [group: string]: FlattenedObject };
+
+function groupBySecondLastKey(flatObj: FlattenedObject): GroupedObject {
+    const grouped: GroupedObject = {};
+
+    Object.entries(flatObj).forEach(([key, value]) => {
+        // Split the key to analyze its structure
+        const parts = key.split('.');
+        // Determine the group name (second-last part of the key)
+        // Default to '__root__' if there's no second-last part
+        const groupName = parts.length > 1 ? parts[parts.length - 2] : '__root__';
+
+        // Initialize the group in the result if it doesn't exist
+        if (!grouped[groupName]) {
+            grouped[groupName] = {};
+        }
+
+        // Assign the value to the correct group while preserving the full key
+        grouped[groupName][key] = value;
+    });
+
+    return grouped;
+}
