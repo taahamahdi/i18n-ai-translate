@@ -101,12 +101,15 @@ const BATCH_SIZE = 64;
     const flatInput = flatten(inputJSON) as { [key: string]: string };
     const batchStartTime = Date.now();
     for (let i = 0; i < Object.keys(flatInput).length; i += BATCH_SIZE) {
-        console.log(
-            `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(2)}%`,
-        );
-        console.log(
-            `Estimated time left: ${((((Date.now() - batchStartTime) / (i + 1)) * (Object.keys(flatInput).length - i)) / 60000).toFixed(1)} minutes`,
-        );
+        if (i > 0) {
+            console.log(
+                `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
+            );
+            console.log(
+                `Estimated time left: ${((((Date.now() - batchStartTime) / (i + 1)) * (Object.keys(flatInput).length - i)) / 60000).toFixed(0)} minutes`,
+            );
+        }
+
         const keys = Object.keys(flatInput).slice(i, i + BATCH_SIZE);
         const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
 
