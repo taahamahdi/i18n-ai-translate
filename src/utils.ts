@@ -1,4 +1,4 @@
-import { by639_1 as languageCodes } from "iso-language-codes";
+import { Code, by639_1 as languageCodes } from "iso-language-codes";
 
 export function delay(delayDuration: number): Promise<void> {
     // eslint-disable-next-line no-promise-executor-return
@@ -41,14 +41,17 @@ export async function retryJob<Type>(
     });
 }
 
-export function getLanguageCodeFromFilename(filename: string): string | null {
+export function getLanguageFromFilename(filename: string): Code | null {
     if (filename.includes(".")) {
         const languageCode = filename.split(".")[0];
         if (languageCodes[languageCode as keyof typeof languageCodes]) {
-            return languageCodes[languageCode as keyof typeof languageCodes]
-                .name;
+            return languageCodes[languageCode as keyof typeof languageCodes];
         }
     }
 
     return null;
+}
+
+export function getAllLanguageCodes(): string[] {
+    return Object.keys(languageCodes);
 }
