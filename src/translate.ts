@@ -139,8 +139,9 @@ const translate = async (inputFileOrPath: string, outputFileOrPath: string) => {
             keys,
         );
         if (generatedTranslation === "") {
-            console.error("Failed to generate translation");
-            return;
+            console.error(`Failed to generate translation for ${inputLanguage}, outputting partial translation to /tmp.`);
+            outputPath = path.resolve("/tmp", `partial-translation-${outputLanguage}.json`);
+            break;
         }
 
         for (let i = 0; i < keys.length; i++) {
