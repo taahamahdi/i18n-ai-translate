@@ -64,6 +64,7 @@ export async function generateTranslation(
     const fixedTranslationMappings: { [input: string]: string } = {};
     const translationToRetryAttempts: { [translation: string]: number } = {};
 
+    let generationRetries = 0;
     let translated = "";
     try {
         translated = await retryJob(
@@ -75,13 +76,23 @@ export async function generateTranslation(
                         await chats.generateTranslationChat.sendMessage(
                             generationPromptText,
                         );
+
                     text = generatedContent.response.text();
                 } catch (err) {
+                    generationRetries++;
                     console.error(
                         `Gemini exception encountered. err = ${JSON.stringify(generatedContent?.response, null, 4)}`,
                     );
 
-                    console.error(`Offending text = ${text}`);
+                    if (generationRetries > 10) {
+                        successfulHistory.history = [];
+                        chats.generateTranslationChat = model.startChat();
+                        return Promise.reject(
+                            `Failed to generate content due to exception. Resetting history. err = ${err}`,
+                        );
+                    }
+
+                    console.error(`Erroring text = ${input}`);
                     chats.generateTranslationChat =
                         model.startChat(successfulHistory);
                     return Promise.reject(
@@ -94,6 +105,8 @@ export async function generateTranslation(
                         "Failed to generate content due to empty response",
                     );
                 }
+
+                generationRetries = 0;
 
                 // Response length matches
                 const splitText = text.split("\n");
@@ -260,7 +273,7 @@ export async function generateTranslation(
             [],
             50,
             true,
-            0,
+            1000,
             false,
         );
     } catch (e) {

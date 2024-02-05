@@ -1,8 +1,4 @@
-import {
-    GenerativeModel,
-    GoogleGenerativeAI,
-    StartChatParams,
-} from "@google/generative-ai";
+import { GoogleGenerativeAI, StartChatParams } from "@google/generative-ai";
 import { program } from "commander";
 import { config } from "dotenv";
 import { flatten, unflatten } from "flat";
@@ -40,11 +36,10 @@ const options = program.opts();
 
 const BATCH_SIZE = 32;
 
-const translate = async (
-    model: GenerativeModel,
-    inputFileOrPath: string,
-    outputFileOrPath: string,
-) => {
+const translate = async (inputFileOrPath: string, outputFileOrPath: string) => {
+    const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
     const jsonFolder = path.resolve(__dirname, "../jsons");
     let inputPath: string;
     if (path.isAbsolute(inputFileOrPath)) {
@@ -192,16 +187,13 @@ const translate = async (
         return;
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
     if (!options.allLanguages && !options.languages) {
         if (!options.output) {
             console.error("Output file not specified");
             return;
         }
 
-        translate(model, options.input, options.output);
+        translate(options.input, options.output);
     } else if (options.languages) {
         if (options.forceLanguage) {
             console.error("Cannot use both --languages and --force-language");
@@ -239,7 +231,7 @@ const translate = async (
             }
 
             try {
-                await translate(model, options.input, output);
+                await translate(options.input, output);
             } catch (err) {
                 console.error(`Failed to translate to ${languageCode}: ${err}`);
             }
@@ -268,7 +260,7 @@ const translate = async (
             }
 
             try {
-                await translate(model, options.input, output);
+                await translate(options.input, output);
             } catch (err) {
                 console.error(`Failed to translate to ${languageCode}: ${err}`);
             }
