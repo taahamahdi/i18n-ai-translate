@@ -200,6 +200,10 @@ export async function generateTranslation(
                             return Promise.reject(`Invalid line: ${line}`);
                         }
 
+                        while (line.startsWith('""') && line.endsWith('""')) {
+                            line = line.slice(1, -1);
+                        }
+
                         if (line !== splitInput[i]) {
                             console.log(
                                 `Successfully translated: ${oldText} => ${line}`,

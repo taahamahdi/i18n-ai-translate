@@ -52,6 +52,14 @@ export function getLanguageFromFilename(filename: string): Code | null {
     return null;
 }
 
+export function getLanguageFromCode(code: string): Code | null {
+    if (languageCodes[code as keyof typeof languageCodes]) {
+        return languageCodes[code as keyof typeof languageCodes];
+    }
+
+    return null;
+}
+
 export function getAllLanguageCodes(): string[] {
     return Object.keys(languageCodes);
 }
