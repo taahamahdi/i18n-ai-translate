@@ -5,4 +5,5 @@ export default interface TranslationOptions {
     outputLanguage: string;
     templatedStringPrefix?: string;
     templatedStringSuffix?: string;
+    verbose?: boolean;
 }

@@ -47,6 +47,7 @@ export async function generateTranslation(
     keys: Array<string>,
     templatedStringPrefix: string,
     templatedStringSuffix: string,
+    verboseLogging: boolean,
 ): Promise<string> {
     const generationPromptText = generationPrompt(
         inputLanguage,
@@ -220,9 +221,11 @@ export async function generateTranslation(
                         }
 
                         if (line !== splitInput[i]) {
-                            console.log(
-                                `Successfully translated: ${oldText} => ${line}`,
-                            );
+                            if (verboseLogging) {
+                                console.log(
+                                    `Successfully translated: ${oldText} => ${line}`,
+                                );
+                            }
                             text = splitText.join("\n");
                             fixedTranslationMappings[oldText] = line;
                             continue;

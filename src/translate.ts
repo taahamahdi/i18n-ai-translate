@@ -46,7 +46,8 @@ program
         "Suffix for templated strings",
         DEFAULT_TEMPLATED_STRING_SUFFIX,
     )
-    .option("-k, --api-key", "Gemini API key");
+    .option("-k, --api-key", "Gemini API key")
+    .option("--verbose", "Print logs about progress", false);
 
 const translateFile = async (options: TranslateFileOptions) => {
     const jsonFolder = path.resolve(__dirname, "../jsons");
@@ -120,9 +121,11 @@ const translateFile = async (options: TranslateFileOptions) => {
 };
 
 export async function translate(options: TranslationOptions): Promise<string> {
-    console.log(
-        `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
-    );
+    if (options.verbose) {
+        console.log(
+            `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
+        );
+    }
 
     const genAI = new GoogleGenerativeAI(options.apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
@@ -159,7 +162,7 @@ export async function translate(options: TranslationOptions): Promise<string> {
 
     const batchStartTime = Date.now();
     for (let i = 0; i < Object.keys(flatInput).length; i += BATCH_SIZE) {
-        if (i > 0) {
+        if (i > 0 && options.verbose) {
             console.log(
                 `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
             );
@@ -181,6 +184,7 @@ export async function translate(options: TranslationOptions): Promise<string> {
             keys,
             templatedStringPrefix,
             templatedStringSuffix,
+            options.verbose ?? false,
         );
 
         if (generatedTranslation === "") {
@@ -190,17 +194,23 @@ export async function translate(options: TranslationOptions): Promise<string> {
             break;
         }
 
-        for (let i = 0; i < keys.length; i++) {
-            output[keys[i]] = generatedTranslation.split("\n")[i].slice(1, -1);
-            console.log(
-                `${keys[i]}:\n${flatInput[keys[i]]}\n=>\n${output[keys[i]]}\n`,
-            );
+        if (options.verbose) {
+            for (let i = 0; i < keys.length; i++) {
+                output[keys[i]] = generatedTranslation
+                    .split("\n")
+                    [i].slice(1, -1);
+                console.log(
+                    `${keys[i]}:\n${flatInput[keys[i]]}\n=>\n${output[keys[i]]}\n`,
+                );
+            }
         }
         const batchEndTime = Date.now();
         if (batchEndTime - batchStartTime < 3000) {
-            console.log(
-                `Waiting for ${3000 - (batchEndTime - batchStartTime)}ms...`,
-            );
+            if (options.verbose) {
+                console.log(
+                    `Waiting for ${3000 - (batchEndTime - batchStartTime)}ms...`,
+                );
+            }
             await delay(3000 - (batchEndTime - batchStartTime));
         }
     }
@@ -219,12 +229,16 @@ export async function translate(options: TranslationOptions): Promise<string> {
         "\\n",
     );
 
-    console.log(outputText);
+    if (options.verbose) {
+        console.log(outputText);
+    }
 
-    const endTime = Date.now();
-    console.log(
-        `Actual execution time: ${(endTime - batchStartTime) / 60000} minutes`,
-    );
+    if (options.verbose) {
+        const endTime = Date.now();
+        console.log(
+            `Actual execution time: ${(endTime - batchStartTime) / 60000} minutes`,
+        );
+    }
 
     return outputText;
 }
@@ -253,6 +267,7 @@ export async function translate(options: TranslationOptions): Promise<string> {
             forceLanguageName: options.forceLanguageName,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
+            verbose: options.verbose,
         });
     } else if (options.languages) {
         if (options.forceLanguageName) {
@@ -273,7 +288,9 @@ export async function translate(options: TranslationOptions): Promise<string> {
         const languageNames = options.languages
             .map((x: string) => getLanguageFromCode(x)?.name)
             .filter((x: string | undefined) => x) as string[];
-        console.log(`Translating to ${languageNames.join(", ")}...`);
+        if (options.verbose) {
+            console.log(`Translating to ${languageNames.join(", ")}...`);
+        }
 
         let i = 0;
         for (const languageCode of options.languages) {
@@ -297,6 +314,7 @@ export async function translate(options: TranslationOptions): Promise<string> {
                     outputFileOrPath: output,
                     templatedStringPrefix: options.templatedStringPrefix,
                     templatedStringSuffix: options.templatedStringSuffix,
+                    verbose: options.verbose,
                 });
             } catch (err) {
                 console.error(`Failed to translate to ${languageCode}: ${err}`);
@@ -317,9 +335,11 @@ export async function translate(options: TranslationOptions): Promise<string> {
         let i = 0;
         for (const languageCode of getAllLanguageCodes()) {
             i++;
-            console.log(
-                `Translating ${i}/${getAllLanguageCodes().length} languages...`,
-            );
+            if (options.verbose) {
+                console.log(
+                    `Translating ${i}/${getAllLanguageCodes().length} languages...`,
+                );
+            }
             const output = options.input.replace(
                 getLanguageFromFilename(options.input)?.iso639_1,
                 languageCode,
@@ -336,6 +356,7 @@ export async function translate(options: TranslationOptions): Promise<string> {
                     outputFileOrPath: output,
                     templatedStringPrefix: options.templatedStringPrefix,
                     templatedStringSuffix: options.templatedStringSuffix,
+                    verbose: options.verbose,
                 });
             } catch (err) {
                 console.error(`Failed to translate to ${languageCode}: ${err}`);

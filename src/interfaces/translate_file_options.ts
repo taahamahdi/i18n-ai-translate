@@ -5,4 +5,5 @@ export default interface TranslateFileOptions {
     forceLanguageName?: string;
     templatedStringPrefix: string;
     templatedStringSuffix: string;
+    verbose?: boolean;
 }
