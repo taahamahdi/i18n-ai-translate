@@ -45,13 +45,15 @@ export async function generateTranslation(
     outputLanguage: string,
     input: string,
     keys: Array<string>,
+    templatedStringPrefix: string,
+    templatedStringSuffix: string,
 ): Promise<string> {
     const generationPromptText = generationPrompt(
         inputLanguage,
         outputLanguage,
         input,
     );
-    const templatedStringRegex = /{{[^{}]+}}/g;
+    const templatedStringRegex = `/${templatedStringPrefix}[^{}]+${templatedStringSuffix}/g`;
     const inputLineToTemplatedString: { [index: number]: Array<string> } = {};
     const splitInput = input.split("\n");
     for (let i = 0; i < splitInput.length; i++) {

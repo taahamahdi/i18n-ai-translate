@@ -12,6 +12,12 @@ import {
     getLanguageFromCode,
     getLanguageFromFilename,
 } from "./utils";
+import TranslateFileOptions from "./interfaces/translate_file_options";
+import TranslationOptions from "./interfaces/translate_options";
+
+const BATCH_SIZE = 32;
+const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
+const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 
 config({ path: path.resolve(__dirname, "../.env") });
 
@@ -24,78 +30,102 @@ program
         "-o, --output <output>",
         "Output i18n file, in the jsons/ directory if a relative path is given",
     )
-    .option("-f, --force-language <language name>", "Force language name")
+    .option("-f, --force-language-name <language name>", "Force language name")
     .option("-A, --all-languages", "Translate to all supported languages")
     .option(
         "-l, --languages [language codes...]",
         "Pass a list of languages to translate to",
-    );
+    )
+    .option(
+        "-p, --templated-string-prefix <prefix>",
+        "Prefix for templated strings",
+        DEFAULT_TEMPLATED_STRING_PREFIX,
+    )
+    .option(
+        "-s, --templated-string-suffix <suffix>",
+        "Suffix for templated strings",
+        DEFAULT_TEMPLATED_STRING_SUFFIX,
+    )
+    .option("-k, --api-key", "Gemini API key");
 
-program.parse();
-const options = program.opts();
-
-const BATCH_SIZE = 32;
-
-const translate = async (inputFileOrPath: string, outputFileOrPath: string) => {
-    const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
+const translateFile = async (options: TranslateFileOptions) => {
     const jsonFolder = path.resolve(__dirname, "../jsons");
     let inputPath: string;
-    if (path.isAbsolute(inputFileOrPath)) {
-        inputPath = path.resolve(inputFileOrPath);
+    if (path.isAbsolute(options.inputFileOrPath)) {
+        inputPath = path.resolve(options.inputFileOrPath);
     } else {
-        inputPath = path.resolve(jsonFolder, inputFileOrPath);
+        inputPath = path.resolve(jsonFolder, options.inputFileOrPath);
     }
 
     let outputPath: string;
-    if (path.isAbsolute(outputFileOrPath)) {
-        outputPath = path.resolve(outputFileOrPath);
+    if (path.isAbsolute(options.outputFileOrPath)) {
+        outputPath = path.resolve(options.outputFileOrPath);
     } else {
-        outputPath = path.resolve(jsonFolder, outputFileOrPath);
+        outputPath = path.resolve(jsonFolder, options.outputFileOrPath);
     }
 
     let inputJSON = {};
     try {
-        const inputFile = fs
-            .readFileSync(inputPath, "utf-8")
-            .replaceAll("\\n", "{{NEWLINE}}");
+        const inputFile = fs.readFileSync(inputPath, "utf-8");
         inputJSON = JSON.parse(inputFile);
     } catch (e) {
         console.error(`Invalid JSON: ${e}`);
         return;
     }
 
-    const inputLanguage = `[${getLanguageFromFilename(inputFileOrPath)?.name}]`;
+    const inputLanguage = getLanguageFromFilename(
+        options.inputFileOrPath,
+    )?.name;
     if (!inputLanguage) {
-        console.error(
+        throw new Error(
             "Invalid input file name. Use a valid ISO 639-1 language code as the file name.",
         );
-        return;
     }
 
     let outputLanguage = "";
-    if (options.forceLanguage) {
-        outputLanguage = `[${options.forceLanguage}]`;
+    if (options.forceLanguageName) {
+        outputLanguage = options.forceLanguageName;
     } else {
-        const code = getLanguageFromFilename(outputFileOrPath)?.name;
-        if (!code) {
-            console.error(
+        const language = getLanguageFromFilename(
+            options.outputFileOrPath,
+        )?.name;
+        if (!language) {
+            throw new Error(
                 "Invalid output file name. Use a valid ISO 639-1 language code as the file name. Consider using the --force-language option.",
             );
-            return;
         }
 
-        outputLanguage = `[${code}]`;
+        outputLanguage = language;
         if (!outputLanguage) {
-            console.error(
+            throw new Error(
                 "Invalid output file name. Use a valid ISO 639-1 language code as the file name.",
             );
-            return;
         }
     }
 
-    console.log(`Translating from ${inputLanguage} to ${outputLanguage}...`);
+    try {
+        const outputText = await translate({
+            apiKey: options.apiKey,
+            inputJSON,
+            inputLanguage,
+            outputLanguage,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+        });
+
+        fs.writeFileSync(outputPath, outputText);
+    } catch (err) {
+        console.error(`Failed to translate file to ${outputLanguage}: ${err}`);
+    }
+};
+
+export async function translate(options: TranslationOptions): Promise<string> {
+    console.log(
+        `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
+    );
+
+    const genAI = new GoogleGenerativeAI(options.apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const successfulHistory: StartChatParams = { history: [] };
     const chats: Chats = {
@@ -106,7 +136,19 @@ const translate = async (inputFileOrPath: string, outputFileOrPath: string) => {
 
     const output: { [key: string]: string } = {};
 
-    const flatInput = flatten(inputJSON) as { [key: string]: string };
+    const templatedStringPrefix =
+        options.templatedStringPrefix || DEFAULT_TEMPLATED_STRING_PREFIX;
+    const templatedStringSuffix =
+        options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
+
+    for (const key in options.inputJSON) {
+        options.inputJSON[key] = options.inputJSON[key].replaceAll(
+            "\\n",
+            `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
+        );
+    }
+
+    const flatInput = flatten(options.inputJSON) as { [key: string]: string };
 
     // randomize flatInput ordering
     const allKeys = Object.keys(flatInput);
@@ -133,14 +175,18 @@ const translate = async (inputFileOrPath: string, outputFileOrPath: string) => {
             model,
             chats,
             successfulHistory,
-            inputLanguage,
-            outputLanguage,
+            `[${options.inputLanguage}]`,
+            `[${options.outputLanguage}]`,
             input,
             keys,
+            templatedStringPrefix,
+            templatedStringSuffix,
         );
+
         if (generatedTranslation === "") {
-            console.error(`Failed to generate translation for ${inputLanguage}, outputting partial translation to /tmp.`);
-            outputPath = path.resolve("/tmp", `partial-translation-${outputLanguage}.json`);
+            console.error(
+                `Failed to generate translation for ${options.inputLanguage}`,
+            );
             break;
         }
 
@@ -175,18 +221,24 @@ const translate = async (inputFileOrPath: string, outputFileOrPath: string) => {
 
     console.log(outputText);
 
-    fs.writeFileSync(outputPath, outputText);
     const endTime = Date.now();
     console.log(
         `Actual execution time: ${(endTime - batchStartTime) / 60000} minutes`,
     );
-};
+
+    return outputText;
+}
 
 (async () => {
-    if (!process.env.API_KEY) {
+    program.parse();
+    const options = program.opts();
+
+    if (!process.env.API_KEY && !options.apiKey) {
         console.error("API_KEY not found in .env file");
         return;
     }
+
+    const apiKey = options.apiKey || process.env.API_KEY;
 
     if (!options.allLanguages && !options.languages) {
         if (!options.output) {
@@ -194,9 +246,16 @@ const translate = async (inputFileOrPath: string, outputFileOrPath: string) => {
             return;
         }
 
-        translate(options.input, options.output);
+        await translateFile({
+            apiKey,
+            inputFileOrPath: options.input,
+            outputFileOrPath: options.output,
+            forceLanguageName: options.forceLanguageName,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+        });
     } else if (options.languages) {
-        if (options.forceLanguage) {
+        if (options.forceLanguageName) {
             console.error("Cannot use both --languages and --force-language");
             return;
         }
@@ -232,18 +291,28 @@ const translate = async (inputFileOrPath: string, outputFileOrPath: string) => {
             }
 
             try {
-                await translate(options.input, output);
+                await translateFile({
+                    apiKey,
+                    inputFileOrPath: options.input,
+                    outputFileOrPath: output,
+                    templatedStringPrefix: options.templatedStringPrefix,
+                    templatedStringSuffix: options.templatedStringSuffix,
+                });
             } catch (err) {
                 console.error(`Failed to translate to ${languageCode}: ${err}`);
             }
         }
     } else {
-        if (options.forceLanguage) {
+        if (options.forceLanguageName) {
             console.error(
                 "Cannot use both --all-languages and --force-language",
             );
             return;
         }
+
+        console.warn(
+            "Some languages may fail to translate due to the model's limitations",
+        );
 
         let i = 0;
         for (const languageCode of getAllLanguageCodes()) {
@@ -261,7 +330,13 @@ const translate = async (inputFileOrPath: string, outputFileOrPath: string) => {
             }
 
             try {
-                await translate(options.input, output);
+                await translateFile({
+                    apiKey,
+                    inputFileOrPath: options.input,
+                    outputFileOrPath: output,
+                    templatedStringPrefix: options.templatedStringPrefix,
+                    templatedStringSuffix: options.templatedStringSuffix,
+                });
             } catch (err) {
                 console.error(`Failed to translate to ${languageCode}: ${err}`);
             }
