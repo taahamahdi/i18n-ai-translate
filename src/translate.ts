@@ -112,6 +112,7 @@ const translateFile = async (options: TranslateFileOptions) => {
             outputLanguage,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
+            verbose: options.verbose,
         });
 
         fs.writeFileSync(outputPath, outputText);

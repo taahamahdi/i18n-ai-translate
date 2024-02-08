@@ -1,5 +1,5 @@
 import { GenerativeModel, StartChatParams } from "@google/generative-ai";
-import { retryJob } from "./utils";
+import { delay, retryJob } from "./utils";
 import { verifyStyling, verifyTranslation } from "./verify";
 import Chats from "./interfaces/chats";
 
@@ -72,6 +72,7 @@ export async function generateTranslation(
     try {
         translated = await retryJob(
             async (): Promise<string> => {
+                let lastGeminiCall = Date.now();
                 let generatedContent: any;
                 let text = "";
                 try {
@@ -162,6 +163,8 @@ export async function generateTranslation(
                             continue;
                         }
 
+                        await delay(1000 - (Date.now() - lastGeminiCall));
+                        lastGeminiCall = Date.now();
                         const retryTranslationPromptText =
                             failedTranslationPrompt(
                                 inputLanguage,
@@ -194,7 +197,7 @@ export async function generateTranslation(
                         splitText[i] = fixedText;
                         line = fixedText;
 
-                        // Move to helper
+                        // TODO: Move to helper
                         for (const j in inputLineToTemplatedString[i]) {
                             if (
                                 !splitText[i].includes(
@@ -209,7 +212,7 @@ export async function generateTranslation(
                             }
                         }
 
-                        // Move to helper
+                        // TODO: Move to helper
                         if (!line.startsWith('"') || !line.endsWith('"')) {
                             chats.generateTranslationChat =
                                 model.startChat(successfulHistory);
@@ -240,6 +243,8 @@ export async function generateTranslation(
                     }
                 }
 
+                await delay(1000 - (Date.now() - lastGeminiCall));
+                lastGeminiCall = Date.now();
                 const translationVerification = await verifyTranslation(
                     chats.verifyTranslationChat,
                     inputLanguage,
@@ -255,6 +260,8 @@ export async function generateTranslation(
                     );
                 }
 
+                await delay(1000 - (Date.now() - lastGeminiCall));
+                lastGeminiCall = Date.now();
                 const stylingVerification = await verifyStyling(
                     chats.verifyStylingChat,
                     inputLanguage,
