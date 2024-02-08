@@ -1,6 +1,6 @@
 export default interface TranslationOptions {
     apiKey: string;
-    inputJSON: any;
+    inputJSON: Object;
     inputLanguage: string;
     outputLanguage: string;
     templatedStringPrefix?: string;

@@ -144,14 +144,13 @@ export async function translate(options: TranslationOptions): Promise<string> {
     const templatedStringSuffix =
         options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
 
-    for (const key in options.inputJSON) {
-        options.inputJSON[key] = options.inputJSON[key].replaceAll(
+    const flatInput = flatten(options.inputJSON) as { [key: string]: string };
+    for (const key in flatInput) {
+        flatInput[key] = flatInput[key].replaceAll(
             "\\n",
             `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
         );
     }
-
-    const flatInput = flatten(options.inputJSON) as { [key: string]: string };
 
     // randomize flatInput ordering
     const allKeys = Object.keys(flatInput);
