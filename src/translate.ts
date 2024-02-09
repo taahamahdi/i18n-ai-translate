@@ -457,3 +457,8 @@ export async function translate(options: TranslationOptions): Promise<Object> {
         }
     }
 })();
+
+module.exports = {
+    translate,
+    translateDiff,
+};
