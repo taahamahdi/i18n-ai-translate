@@ -25,12 +25,42 @@ Options:
   -h, --help                                 display help for command
 ```
 
-Alternatively, import this project and use it to convert JSONs on-the-fly with `translate()`, or use the `translateDiff()` method to only fetch updates to modified keys when your source i18n file has changed.
-
 ### Example usage
 `npm run convert -- -i en.json -o fr.json` -- Translate the `en.json` file in `jsons/` to French, and save the output in `fr.json`
 
 `npm run convert -- -i en.json -l es de nl` -- Translate the `en.json` file in `jsons/` to Spanish, German, and Dutch, and save each file in `jsons/`
+
+### As a library
+Alternatively, import this project and use it to convert JSONs on-the-fly with `translate()`, or use `translateDiff()` to fetch updates to modified keys when your source i18n file has changed.
+
+```ts
+import { translate, translateDiff } from "i18n-ai-translate";
+
+...
+
+const translation = await translate({
+    apiKey, // Gemini API key
+    inputJSON, // JSON to translate
+    inputLanguage, // Language of inputJSON
+    outputLanguage, // Targeted language (e.g. French, Spanish, etc.)
+    templatedStringPrefix, // The start of inline variables; defaults to "{{"
+    templatedStringSuffix, // The end of inline variables; defaults to "}}"
+    verbose, // Print status of conversion to stdout/stderr
+});
+
+const translations = await translateDiff({
+    apiKey, // Gemini API key
+    inputLanguage, // Language of inputJSONBefore/After
+    inputJSONBefore, // The source translation before a change
+    inputJSONAfter, // The source translation after a change
+    inputLanguage, // Language of inputJSONBefore/After
+    toUpdateJSONs, // An object of language names to their translations
+    templatedStringPrefix, // The start of inline variables; defaults to "{{"
+    templatedStringSuffix, // The end of inline variables; defaults to "}}"
+    verbose, // Print status of conversion to stdout/stderr
+});
+```
+
 
 ## Translation prompt
 Batches of the i18n input are passed in. Each call is checked to ensure no keys are lost, all templated strings are retained, and no translations were skipped.
