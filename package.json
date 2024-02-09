@@ -22,7 +22,7 @@
     "prettier": "prettier --write '**/*.{js,ts}'"
   },
   "keywords": [],
-  "author": "",
+  "author": "Taaha Mahdi",
   "license": "",
   "description": ""
 }
