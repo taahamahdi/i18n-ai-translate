@@ -10,7 +10,7 @@
     "prettier": "^3.2.4",
     "typescript": "^5.1.6"
   },
-  "name": "@taahamahdi/i18n-ai-translate",
+  "name": "i18n-ai-translate",
   "version": "1.0.0",
   "main": "src/translate.js",
   "devDependencies": {},
