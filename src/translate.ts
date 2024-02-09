@@ -128,12 +128,21 @@ const translateFile = async (options: TranslateFileOptions) => {
     }
 };
 
-export async function translateDiff(options: TranslationDiffOptions): Promise<{ [language: string]: Object }> {
-    const flatInputBefore = flatten(options.inputJSONBefore) as { [key: string]: string };
-    const flatInputAfter = flatten(options.inputJSONAfter) as { [key: string]: string };
-    const flatToUpdateJSONs: { [language: string]: { [key: string]: string } } = {};
+export async function translateDiff(
+    options: TranslationDiffOptions,
+): Promise<{ [language: string]: Object }> {
+    const flatInputBefore = flatten(options.inputJSONBefore) as {
+        [key: string]: string;
+    };
+    const flatInputAfter = flatten(options.inputJSONAfter) as {
+        [key: string]: string;
+    };
+    const flatToUpdateJSONs: { [language: string]: { [key: string]: string } } =
+        {};
     for (const lang in options.toUpdateJSONs) {
-        const flatToUpdateJSON = flatten(options.toUpdateJSONs[lang]) as { [key: string]: string };
+        const flatToUpdateJSON = flatten(options.toUpdateJSONs[lang]) as {
+            [key: string]: string;
+        };
         flatToUpdateJSONs[lang] = flatToUpdateJSON;
     }
 
