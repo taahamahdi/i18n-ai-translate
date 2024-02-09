@@ -12,9 +12,9 @@ import {
     getLanguageFromCode,
     getLanguageFromFilename,
 } from "./utils";
-import TranslateFileOptions from "./interfaces/translate_file_options";
-import TranslationOptions from "./interfaces/translate_options";
-import TranslationDiffOptions from "./interfaces/translate_diff_options";
+import TranslateFileOptions from "./interfaces/translation_file_options";
+import TranslationOptions from "./interfaces/translation_options";
+import TranslationDiffOptions from "./interfaces/translation_diff_options";
 
 const BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
