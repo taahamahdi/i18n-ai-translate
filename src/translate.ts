@@ -14,6 +14,7 @@ import {
 } from "./utils";
 import TranslateFileOptions from "./interfaces/translate_file_options";
 import TranslationOptions from "./interfaces/translate_options";
+import TranslationDiffOptions from "./interfaces/translate_diff_options";
 
 const BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
@@ -105,7 +106,7 @@ const translateFile = async (options: TranslateFileOptions) => {
     }
 
     try {
-        const outputText = await translate({
+        const outputJSON = await translate({
             apiKey: options.apiKey,
             inputJSON,
             inputLanguage,
@@ -115,13 +116,98 @@ const translateFile = async (options: TranslateFileOptions) => {
             verbose: options.verbose,
         });
 
+        const outputText = JSON.stringify(outputJSON, null, 4);
+
+        if (options.verbose) {
+            console.log(outputText);
+        }
+
         fs.writeFileSync(outputPath, outputText);
     } catch (err) {
         console.error(`Failed to translate file to ${outputLanguage}: ${err}`);
     }
 };
 
-export async function translate(options: TranslationOptions): Promise<string> {
+export async function translateDiff(options: TranslationDiffOptions): Promise<{ [language: string]: Object }> {
+    const flatInputBefore = flatten(options.inputJSONBefore) as { [key: string]: string };
+    const flatInputAfter = flatten(options.inputJSONAfter) as { [key: string]: string };
+    const flatToUpdateJSONs: { [language: string]: { [key: string]: string } } = {};
+    for (const lang in options.toUpdateJSONs) {
+        const flatToUpdateJSON = flatten(options.toUpdateJSONs[lang]) as { [key: string]: string };
+        flatToUpdateJSONs[lang] = flatToUpdateJSON;
+    }
+
+    const addedKeys = [];
+    const modifiedKeys = [];
+    const deletedKeys = [];
+
+    for (const key in flatInputBefore) {
+        if (flatInputBefore[key] !== flatInputAfter[key]) {
+            if (flatInputAfter[key] === undefined) {
+                deletedKeys.push(key);
+            } else {
+                modifiedKeys.push(key);
+            }
+        }
+    }
+
+    for (const key in flatInputAfter) {
+        if (flatInputBefore[key] === undefined) {
+            addedKeys.push(key);
+        }
+    }
+
+    if (options.verbose) {
+        console.log(`Added keys: ${addedKeys.join("\n")}\n`);
+        console.log(`Modified keys: ${modifiedKeys.join("\n")}\n`);
+        console.log(`Deleted keys: ${deletedKeys.join("\n")}\n`);
+    }
+
+    for (const key of deletedKeys) {
+        for (const lang in flatToUpdateJSONs) {
+            delete flatToUpdateJSONs[lang][key];
+        }
+    }
+
+    for (const language in flatToUpdateJSONs) {
+        const addedAndModifiedTranslations: { [key: string]: string } = {};
+        for (const key of addedKeys) {
+            addedAndModifiedTranslations[key] = flatInputAfter[key];
+        }
+        for (const key of modifiedKeys) {
+            addedAndModifiedTranslations[key] = flatInputAfter[key];
+        }
+
+        const translated = await translate({
+            apiKey: options.apiKey,
+            inputJSON: addedAndModifiedTranslations,
+            inputLanguage: options.inputLanguage,
+            outputLanguage: language,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+            verbose: options.verbose,
+        });
+
+        const flatTranslated = flatten(translated) as { [key: string]: string };
+        for (const key in flatTranslated) {
+            flatToUpdateJSONs[language][key] = flatTranslated[key];
+        }
+    }
+
+    const unflatToUpdateJSONs: { [language: string]: Object } = {};
+    for (const lang in flatToUpdateJSONs) {
+        unflatToUpdateJSONs[lang] = unflatten(flatToUpdateJSONs[lang]);
+    }
+
+    if (options.verbose) {
+        console.log("Updated JSONs:");
+        console.log(unflatToUpdateJSONs);
+    }
+
+    return unflatToUpdateJSONs;
+}
+
+export async function translate(options: TranslationOptions): Promise<Object> {
     if (options.verbose) {
         console.log(
             `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
@@ -223,16 +309,14 @@ export async function translate(options: TranslationOptions): Promise<string> {
             sortedOutput[key] = output[key];
         });
 
-    const unflattenedOutput = unflatten(sortedOutput);
-    const outputText = JSON.stringify(unflattenedOutput, null, 4).replaceAll(
-        "{{NEWLINE}}",
-        "\\n",
-    );
-
-    if (options.verbose) {
-        console.log(outputText);
+    for (const key in sortedOutput) {
+        sortedOutput[key] = sortedOutput[key].replaceAll(
+            `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
+            "\\n",
+        );
     }
 
+    const unflattenedOutput = unflatten(sortedOutput);
     if (options.verbose) {
         const endTime = Date.now();
         console.log(
@@ -240,7 +324,7 @@ export async function translate(options: TranslationOptions): Promise<string> {
         );
     }
 
-    return outputText;
+    return unflattenedOutput as Object;
 }
 
 (async () => {
