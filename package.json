@@ -10,7 +10,7 @@
     "prettier": "^3.2.4",
     "typescript": "^5.1.6"
   },
-  "name": "i18n-auto-translate",
+  "name": "@taahamahdi/i18n-ai-translate",
   "version": "1.0.0",
   "main": "src/translate.js",
   "devDependencies": {},
@@ -23,6 +23,14 @@
   },
   "keywords": [],
   "author": "Taaha Mahdi",
-  "license": "",
-  "description": ""
+  "license": "GPL-3.0",
+  "description": "Use [Gemini Pro](https://ai.google.dev/) to translate your i18n JSON to any language.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taahamahdi/i18n-ai-translate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/taahamahdi/i18n-ai-translate/issues"
+  },
+  "homepage": "https://github.com/taahamahdi/i18n-ai-translate#readme"
 }
