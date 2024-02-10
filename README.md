@@ -114,14 +114,14 @@ Options:
 ```
 
 ### Example usage
-#### `npm run convert -- translate -i en.json -o fr.json`
+#### `npx i18n-ai-translate translate -i en.json -o fr.json`
 * Translate the `en.json` file in `jsons/` to French, and save the output in `fr.json`
 
-#### `npm run convert -- translate -i en.json -l es de nl`
+#### `npx i18n-ai-translate translate -i en.json -l es de nl`
 * Translate the `en.json` file in `jsons/` to Spanish, German, and Dutch, and save each file in `jsons/`
 
-#### `npm run i18n-ai-translate -- diff -b en.json -a en-after.json -l English --verbose`
-* Translate the keys that have changed between `en.json` and `en-after.json` for all files in the `en.json`/`en-after.json` directory, with logging enabled
+#### `npx i18n-ai-translate diff -b en.json -a en-after.json -l English --verbose`
+* Translate the keys that have changed between `en.json` and `en-after.json` for all files in the `en.json` directory, with logging enabled
 
 ## As a library
 Alternatively, import this project and use it to convert JSONs on-the-fly with `translate()`, or use `translateDiff()` to fetch updates to modified keys when your source i18n file has changed.
