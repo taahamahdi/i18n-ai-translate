@@ -18,7 +18,7 @@ Maintain case sensitivity and whitespacing.
 
 Output only the translations.
 
-All lines should start and end with a quotation mark (").
+All lines should start and end with an ASCII quotation mark (").
 
 \`\`\`
 ${input}

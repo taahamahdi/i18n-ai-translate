@@ -403,6 +403,7 @@ const translateFileDiff = async (
     }
 
     const toUpdateJSONs: { [language: string]: Object } = {};
+    const languageCodeToOutputPath: { [language: string]: string } = {};
     for (const outputPath of outputPaths) {
         const languageCode = getLanguageCodeFromFilename(
             path.basename(outputPath),
@@ -417,6 +418,7 @@ const translateFileDiff = async (
         try {
             const outputFile = fs.readFileSync(outputPath, "utf-8");
             toUpdateJSONs[languageCode] = JSON.parse(outputFile);
+            languageCodeToOutputPath[languageCode] = outputPath;
         } catch (e) {
             console.error(`Invalid output JSON: ${e}`);
         }
@@ -447,7 +449,7 @@ const translateFileDiff = async (
                 }
 
                 fs.writeFileSync(
-                    path.resolve(jsonFolder, `${language}.json`),
+                    languageCodeToOutputPath[language],
                     outputText,
                 );
             }

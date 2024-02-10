@@ -4770,7 +4770,7 @@ Maintain case sensitivity and whitespacing.
 
 Output only the translations.
 
-All lines should start and end with a quotation mark (").
+All lines should start and end with an ASCII quotation mark (").
 
 \`\`\`
 ${input}
@@ -5314,6 +5314,7 @@ var translateFileDiff = async (options) => {
     return;
   }
   const toUpdateJSONs = {};
+  const languageCodeToOutputPath = {};
   for (const outputPath of outputPaths) {
     const languageCode = getLanguageCodeFromFilename(
       import_path.default.basename(outputPath)
@@ -5326,6 +5327,7 @@ var translateFileDiff = async (options) => {
     try {
       const outputFile = import_fs.default.readFileSync(outputPath, "utf-8");
       toUpdateJSONs[languageCode] = JSON.parse(outputFile);
+      languageCodeToOutputPath[languageCode] = outputPath;
     } catch (e) {
       console.error(`Invalid output JSON: ${e}`);
     }
@@ -5352,7 +5354,7 @@ var translateFileDiff = async (options) => {
           console.log(outputText);
         }
         import_fs.default.writeFileSync(
-          import_path.default.resolve(jsonFolder, `${language}.json`),
+          languageCodeToOutputPath[language],
           outputText
         );
       }
