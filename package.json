@@ -11,12 +11,15 @@
     "typescript": "^5.1.6"
   },
   "name": "i18n-ai-translate",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "src/translate.js",
+  "bin": {
+    "i18n-ai-translate": "src/translate.js"
+  },
   "devDependencies": {},
   "scripts": {
     "build": "npx tsc",
-    "convert": "npm run build && node build/translate.js",
+    "i18n-ai-translate": "npm run build && node build/translate.js",
     "clean": "rm -r build/ && rm tsconfig.tsbuildinfo",
     "clean-build": "npm run clean && npm run build",
     "prettier": "prettier --write '**/*.{js,ts}'"

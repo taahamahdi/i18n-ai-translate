@@ -6,4 +6,5 @@ export default interface TranslationOptions {
     templatedStringPrefix?: string;
     templatedStringSuffix?: string;
     verbose?: boolean;
+    ensureChangedTranslation?: boolean;
 }

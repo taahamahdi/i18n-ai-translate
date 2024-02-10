@@ -48,6 +48,7 @@ export async function generateTranslation(
     templatedStringPrefix: string,
     templatedStringSuffix: string,
     verboseLogging: boolean,
+    ensureChangedTranslation: boolean,
 ): Promise<string> {
     const generationPromptText = generationPrompt(
         inputLanguage,
@@ -155,7 +156,11 @@ export async function generateTranslation(
                         chats.generateTranslationChat =
                             model.startChat(successfulHistory);
                         return Promise.reject(`Invalid line: ${line}`);
-                    } else if (line === splitInput[i] && line.length > 4) {
+                    } else if (
+                        ensureChangedTranslation &&
+                        line === splitInput[i] &&
+                        line.length > 4
+                    ) {
                         if (translationToRetryAttempts[line] === undefined) {
                             translationToRetryAttempts[line] = 0;
                         } else if (fixedTranslationMappings[line]) {
