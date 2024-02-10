@@ -4781,11 +4781,7 @@ var translateFileDiff = async (options) => {
 };
 program.name("i18n-ai-translate").description(
   "Use Google Gemini to translate your i18n JSON to any language"
-).option("-k, --api-key", "Gemini API key").option(
-  "--ensure-changed-translation",
-  "Each generated translation key must differ from the input (for keys longer than 4)",
-  false
-).option("--verbose", "Print logs about progress", false).version("1.1.0");
+).version("1.1.0");
 program.command("translate").requiredOption(
   "-i, --input <input>",
   "Source i18n file, in the jsons/ directory if a relative path is given"
@@ -4803,7 +4799,11 @@ program.command("translate").requiredOption(
   "-s, --templated-string-suffix <suffix>",
   "Suffix for templated strings",
   DEFAULT_TEMPLATED_STRING_SUFFIX
-).action(async (options) => {
+).option("-k, --api-key", "Gemini API key").option(
+  "--ensure-changed-translation",
+  "Each generated translation key must differ from the input (for keys longer than 4)",
+  false
+).option("--verbose", "Print logs about progress", false).action(async (options) => {
   if (!process.env.API_KEY && !options.apiKey) {
     console.error("API_KEY not found in .env file");
     return;
@@ -4923,7 +4923,11 @@ program.command("diff").requiredOption(
 ).requiredOption(
   "-l, --input-language <inputLanguage>",
   "The full input language name"
-).action(async (options) => {
+).option("-k, --api-key", "Gemini API key").option(
+  "--ensure-changed-translation",
+  "Each generated translation key must differ from the input (for keys longer than 4)",
+  false
+).option("--verbose", "Print logs about progress", false).action(async (options) => {
   if (!process.env.API_KEY && !options.apiKey) {
     console.error("API_KEY not found in .env file");
     return;

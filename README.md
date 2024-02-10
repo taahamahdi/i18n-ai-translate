@@ -17,16 +17,13 @@ Usage: i18n-ai-translate [options] [command]
 Use Google Gemini to translate your i18n JSON to any language
 
 Options:
-  -k, --api-key                 Gemini API key
-  --ensure-changed-translation  Each generated translation key must differ from the input (for keys longer than 4) (default: false)
-  --verbose                     Print logs about progress (default: false)
-  -V, --version                 output the version number
-  -h, --help                    display help for command
+  -V, --version        output the version number
+  -h, --help           display help for command
 
 Commands:
   translate [options]
   diff [options]
-  help [command]                display help for command
+  help [command]       display help for command
 ```
 
 ```
@@ -40,6 +37,9 @@ Options:
   -l, --languages [language codes...]        Pass a list of languages to translate to
   -p, --templated-string-prefix <prefix>     Prefix for templated strings (default: "{{")
   -s, --templated-string-suffix <suffix>     Suffix for templated strings (default: "}}")
+  -k, --api-key                              Gemini API key
+  --ensure-changed-translation               Each generated translation key must differ from the input (for keys longer than 4) (default: false)
+  --verbose                                  Print logs about progress (default: false)
   -h, --help                                 display help for command
 ```
 
@@ -50,6 +50,9 @@ Options:
   -b, --before <fileBefore>             Source i18n file before changes, in the jsons/ directory if a relative path is given
   -a, --after <fileAfter>               Source i18n file after changes, in the jsons/ directory if a relative path is given
   -l, --input-language <inputLanguage>  The full input language name
+  -k, --api-key                         Gemini API key
+  --ensure-changed-translation          Each generated translation key must differ from the input (for keys longer than 4) (default: false)
+  --verbose                             Print logs about progress (default: false)
   -h, --help                            display help for command
 ```
 

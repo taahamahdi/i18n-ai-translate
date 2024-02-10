@@ -456,13 +456,6 @@ program
     .description(
         "Use Google Gemini to translate your i18n JSON to any language",
     )
-    .option("-k, --api-key", "Gemini API key")
-    .option(
-        "--ensure-changed-translation",
-        "Each generated translation key must differ from the input (for keys longer than 4)",
-        false,
-    )
-    .option("--verbose", "Print logs about progress", false)
     .version("1.1.0");
 
 program
@@ -491,6 +484,13 @@ program
         "Suffix for templated strings",
         DEFAULT_TEMPLATED_STRING_SUFFIX,
     )
+    .option("-k, --api-key", "Gemini API key")
+    .option(
+        "--ensure-changed-translation",
+        "Each generated translation key must differ from the input (for keys longer than 4)",
+        false,
+    )
+    .option("--verbose", "Print logs about progress", false)
     .action(async (options: any) => {
         if (!process.env.API_KEY && !options.apiKey) {
             console.error("API_KEY not found in .env file");
@@ -636,6 +636,13 @@ program
         "-l, --input-language <inputLanguage>",
         "The full input language name",
     )
+    .option("-k, --api-key", "Gemini API key")
+    .option(
+        "--ensure-changed-translation",
+        "Each generated translation key must differ from the input (for keys longer than 4)",
+        false,
+    )
+    .option("--verbose", "Print logs about progress", false)
     .action(async (options: any) => {
         if (!process.env.API_KEY && !options.apiKey) {
             console.error("API_KEY not found in .env file");
