@@ -103,7 +103,10 @@ const translateFileDiff = async (options: TranslateFileDiffOptions) => {
     if (path.isAbsolute(options.inputBeforeFileOrPath)) {
         inputBeforePath = path.resolve(options.inputBeforeFileOrPath);
     } else {
-        inputBeforePath = path.resolve(jsonFolder, options.inputBeforeFileOrPath);
+        inputBeforePath = path.resolve(
+            jsonFolder,
+            options.inputBeforeFileOrPath,
+        );
     }
 
     if (path.isAbsolute(options.inputAfterFileOrPath)) {
@@ -181,7 +184,7 @@ const translateFileDiff = async (options: TranslateFileDiffOptions) => {
     } catch (err) {
         console.error(`Failed to translate file diff: ${err}`);
     }
-}
+};
 
 export async function translateDiff(
     options: TranslationDiffOptions,
@@ -351,14 +354,12 @@ export async function translate(options: TranslationOptions): Promise<Object> {
         }
 
         for (let i = 0; i < keys.length; i++) {
-            output[keys[i]] = generatedTranslation
-                .split("\n")
-                [i].slice(1, -1);
+            output[keys[i]] = generatedTranslation.split("\n")[i].slice(1, -1);
 
             if (options.verbose)
-            console.log(
-                `${keys[i]}:\n${flatInput[keys[i]]}\n=>\n${output[keys[i]]}\n`,
-            );
+                console.log(
+                    `${keys[i]}:\n${flatInput[keys[i]]}\n=>\n${output[keys[i]]}\n`,
+                );
         }
 
         const batchEndTime = Date.now();
@@ -400,7 +401,9 @@ export async function translate(options: TranslationOptions): Promise<Object> {
 
 program
     .name("i18n-ai-translate")
-    .description("Use Google Gemini to translate your i18n JSON to any language")
+    .description(
+        "Use Google Gemini to translate your i18n JSON to any language",
+    )
     .option("-k, --api-key", "Gemini API key")
     .option(
         "--ensure-changed-translation",
@@ -435,124 +438,133 @@ program
         "-s, --templated-string-suffix <suffix>",
         "Suffix for templated strings",
         DEFAULT_TEMPLATED_STRING_SUFFIX,
-    ).action(async (options: any) => {
-    if (!process.env.API_KEY && !options.apiKey) {
-        console.error("API_KEY not found in .env file");
-        return;
-    }
-
-    const apiKey = options.apiKey || process.env.API_KEY;
-
-    if (!options.allLanguages && !options.languages) {
-        if (!options.output) {
-            console.error("Output file not specified");
+    )
+    .action(async (options: any) => {
+        if (!process.env.API_KEY && !options.apiKey) {
+            console.error("API_KEY not found in .env file");
             return;
         }
 
-        await translateFile({
-            apiKey,
-            inputFileOrPath: options.input,
-            outputFileOrPath: options.output,
-            forceLanguageName: options.forceLanguageName,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
-            verbose: options.verbose,
-        });
-    } else if (options.languages) {
-        if (options.forceLanguageName) {
-            console.error("Cannot use both --languages and --force-language");
-            return;
-        }
+        const apiKey = options.apiKey || process.env.API_KEY;
 
-        if (options.allLanguages) {
-            console.error("Cannot use both --all-languages and --languages");
-            return;
-        }
-
-        if (options.languages.length === 0) {
-            console.error("No languages specified");
-            return;
-        }
-
-        const languageNames = options.languages
-            .map((x: string) => getLanguageFromCode(x)?.name)
-            .filter((x: string | undefined) => x) as string[];
-        if (options.verbose) {
-            console.log(`Translating to ${languageNames.join(", ")}...`);
-        }
-
-        let i = 0;
-        for (const languageCode of options.languages) {
-            i++;
-            console.log(
-                `Translating ${i}/${options.languages.length} languages...`,
-            );
-            const output = options.input.replace(
-                getLanguageFromFilename(options.input)?.iso639_1,
-                languageCode,
-            );
-
-            if (options.input === output) {
-                continue;
+        if (!options.allLanguages && !options.languages) {
+            if (!options.output) {
+                console.error("Output file not specified");
+                return;
             }
 
-            try {
-                await translateFile({
-                    apiKey,
-                    inputFileOrPath: options.input,
-                    outputFileOrPath: output,
-                    templatedStringPrefix: options.templatedStringPrefix,
-                    templatedStringSuffix: options.templatedStringSuffix,
-                    verbose: options.verbose,
-                });
-            } catch (err) {
-                console.error(`Failed to translate to ${languageCode}: ${err}`);
-            }
-        }
-    } else {
-        if (options.forceLanguageName) {
-            console.error(
-                "Cannot use both --all-languages and --force-language",
-            );
-            return;
-        }
-
-        console.warn(
-            "Some languages may fail to translate due to the model's limitations",
-        );
-
-        let i = 0;
-        for (const languageCode of getAllLanguageCodes()) {
-            i++;
-            if (options.verbose) {
-                console.log(
-                    `Translating ${i}/${getAllLanguageCodes().length} languages...`,
+            await translateFile({
+                apiKey,
+                inputFileOrPath: options.input,
+                outputFileOrPath: options.output,
+                forceLanguageName: options.forceLanguageName,
+                templatedStringPrefix: options.templatedStringPrefix,
+                templatedStringSuffix: options.templatedStringSuffix,
+                verbose: options.verbose,
+            });
+        } else if (options.languages) {
+            if (options.forceLanguageName) {
+                console.error(
+                    "Cannot use both --languages and --force-language",
                 );
+                return;
             }
-            const output = options.input.replace(
-                getLanguageFromFilename(options.input)?.iso639_1,
-                languageCode,
+
+            if (options.allLanguages) {
+                console.error(
+                    "Cannot use both --all-languages and --languages",
+                );
+                return;
+            }
+
+            if (options.languages.length === 0) {
+                console.error("No languages specified");
+                return;
+            }
+
+            const languageNames = options.languages
+                .map((x: string) => getLanguageFromCode(x)?.name)
+                .filter((x: string | undefined) => x) as string[];
+            if (options.verbose) {
+                console.log(`Translating to ${languageNames.join(", ")}...`);
+            }
+
+            let i = 0;
+            for (const languageCode of options.languages) {
+                i++;
+                console.log(
+                    `Translating ${i}/${options.languages.length} languages...`,
+                );
+                const output = options.input.replace(
+                    getLanguageFromFilename(options.input)?.iso639_1,
+                    languageCode,
+                );
+
+                if (options.input === output) {
+                    continue;
+                }
+
+                try {
+                    await translateFile({
+                        apiKey,
+                        inputFileOrPath: options.input,
+                        outputFileOrPath: output,
+                        templatedStringPrefix: options.templatedStringPrefix,
+                        templatedStringSuffix: options.templatedStringSuffix,
+                        verbose: options.verbose,
+                    });
+                } catch (err) {
+                    console.error(
+                        `Failed to translate to ${languageCode}: ${err}`,
+                    );
+                }
+            }
+        } else {
+            if (options.forceLanguageName) {
+                console.error(
+                    "Cannot use both --all-languages and --force-language",
+                );
+                return;
+            }
+
+            console.warn(
+                "Some languages may fail to translate due to the model's limitations",
             );
 
-            if (options.input === output) {
-                continue;
-            }
+            let i = 0;
+            for (const languageCode of getAllLanguageCodes()) {
+                i++;
+                if (options.verbose) {
+                    console.log(
+                        `Translating ${i}/${getAllLanguageCodes().length} languages...`,
+                    );
+                }
+                const output = options.input.replace(
+                    getLanguageFromFilename(options.input)?.iso639_1,
+                    languageCode,
+                );
 
-            try {
-                await translateFile({
-                    apiKey,
-                    inputFileOrPath: options.input,
-                    outputFileOrPath: output,
-                    templatedStringPrefix: options.templatedStringPrefix,
-                    templatedStringSuffix: options.templatedStringSuffix,
-                    verbose: options.verbose,
-                });
-            } catch (err) {
-                console.error(`Failed to translate to ${languageCode}: ${err}`);
+                if (options.input === output) {
+                    continue;
+                }
+
+                try {
+                    await translateFile({
+                        apiKey,
+                        inputFileOrPath: options.input,
+                        outputFileOrPath: output,
+                        templatedStringPrefix: options.templatedStringPrefix,
+                        templatedStringSuffix: options.templatedStringSuffix,
+                        verbose: options.verbose,
+                    });
+                } catch (err) {
+                    console.error(
+                        `Failed to translate to ${languageCode}: ${err}`,
+                    );
+                }
             }
         }
-    }
-});
+    });
 
 program
     .command("diff")
@@ -564,8 +576,11 @@ program
         "-a, --after <fileAfter>",
         "Source i18n file after changes, in the jsons/ directory if a relative path is given",
     )
-    .requiredOption("-l, --input-language <inputLanguage>", "The full input language name"
-    ).action(async (options: any) => {
+    .requiredOption(
+        "-l, --input-language <inputLanguage>",
+        "The full input language name",
+    )
+    .action(async (options: any) => {
         if (!process.env.API_KEY && !options.apiKey) {
             console.error("API_KEY not found in .env file");
             return;
@@ -596,8 +611,14 @@ program
         }
 
         // Get all the *json files from the same path as beforeInputPath
-        const outputFilesOrPaths = fs.readdirSync(path.dirname(beforeInputPath)).filter((file) => file.endsWith('.json'))
-        .filter((file) => file !== path.basename(beforeInputPath) && file !== path.basename(afterInputPath));
+        const outputFilesOrPaths = fs
+            .readdirSync(path.dirname(beforeInputPath))
+            .filter((file) => file.endsWith(".json"))
+            .filter(
+                (file) =>
+                    file !== path.basename(beforeInputPath) &&
+                    file !== path.basename(afterInputPath),
+            );
 
         await translateFileDiff({
             apiKey,
@@ -609,9 +630,7 @@ program
             templatedStringSuffix: options.templatedStringSuffix,
             verbose: options.verbose,
         });
-
-
-});
+    });
 
 // TODO: options to adjust batch size and indentation
 
