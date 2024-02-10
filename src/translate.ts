@@ -48,6 +48,11 @@ program
         DEFAULT_TEMPLATED_STRING_SUFFIX,
     )
     .option("-k, --api-key", "Gemini API key")
+    .option(
+        "--ensure-changed-translation",
+        "Each generated translation key must differ from the input (for keys longer than 4)",
+        false,
+    )
     .option("--verbose", "Print logs about progress", false);
 
 const translateFile = async (options: TranslateFileOptions) => {
@@ -280,6 +285,7 @@ export async function translate(options: TranslationOptions): Promise<Object> {
             templatedStringPrefix,
             templatedStringSuffix,
             options.verbose ?? false,
+            options.ensureChangedTranslation ?? false,
         );
 
         if (generatedTranslation === "") {
