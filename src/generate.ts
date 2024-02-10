@@ -171,7 +171,7 @@ export default async function generateTranslation(
                 // Trim extra quotes if they exist
                 for (let i = 0; i < splitText.length; i++) {
                     let line = splitText[i];
-                    while (line.startsWith('""') && line.endsWith('""')) {
+                    while (line.startsWith("\"\"") && line.endsWith("\"\"")) {
                         line = line.slice(1, -1);
                     }
 
@@ -183,7 +183,7 @@ export default async function generateTranslation(
                 // Per-line translation verification
                 for (let i = 0; i < splitText.length; i++) {
                     let line = splitText[i];
-                    if (!line.startsWith('"') || !line.endsWith('"')) {
+                    if (!line.startsWith("\"") || !line.endsWith("\"")) {
                         chats.generateTranslationChat =
                             model.startChat(successfulHistory);
                         return Promise.reject(
@@ -259,7 +259,7 @@ export default async function generateTranslation(
                         }
 
                         // TODO: Move to helper
-                        if (!line.startsWith('"') || !line.endsWith('"')) {
+                        if (!line.startsWith("\"") || !line.endsWith("\"")) {
                             chats.generateTranslationChat =
                                 model.startChat(successfulHistory);
                             return Promise.reject(
@@ -267,7 +267,7 @@ export default async function generateTranslation(
                             );
                         }
 
-                        while (line.startsWith('""') && line.endsWith('""')) {
+                        while (line.startsWith("\"\"") && line.endsWith("\"\"")) {
                             line = line.slice(1, -1);
                         }
 
