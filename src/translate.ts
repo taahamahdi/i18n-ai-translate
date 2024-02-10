@@ -341,7 +341,7 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
             console.log(outputText);
         }
 
-        fs.writeFileSync(outputPath, outputText);
+        fs.writeFileSync(outputPath, `${outputText}\n`);
     } catch (err) {
         console.error(`Failed to translate file to ${outputLanguage}: ${err}`);
     }
@@ -450,7 +450,7 @@ const translateFileDiff = async (
 
                 fs.writeFileSync(
                     languageCodeToOutputPath[language],
-                    outputText,
+                    `${outputText}\n`,
                 );
             }
         }

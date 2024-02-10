@@ -4,7 +4,64 @@ Use [Gemini Pro](https://ai.google.dev/) to translate your i18n JSON to any lang
 
 Chains three prompts to ensure each translation is well-formed. History is retained between calls to ensure consistency when translating the entire file.
 
-## Usage
+# Usage
+## GitHub Actions
+Incorporate it into your CI with a GitHub Action to auto-translate keys for every pull request:
+```yaml
+name: i18n-ai-translate
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'i18n/en.json'
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.head_ref }}
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Dependencies
+      run: yarn add i18n-ai-translate
+
+    - name: Setup Git Config
+      run: |
+        git config --global user.email "mahditaaha11@gmail.com"
+        git config --global user.name "Taaha Mahdi"
+
+    - name: Copy .env for CI
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: |
+        echo "API_KEY=$GEMINI_API_KEY" >> .env
+      shell: bash
+
+    - name: Fetch original translation
+      run: |
+        cp i18n/en.json i18n/en-latest.json
+        git checkout origin/master -- i18n/en.json
+
+    - name: Translate the diff
+      run: |
+        npx i18n-ai-translate diff -b i18n/en.json -a i18n/en-latest.json -l "English" --verbose
+        mv i18n/en-latest.json i18n/en.json
+        git add .
+        git commit -m "Update translations" || echo "No changes to commit"
+        git push
+```
+
+## Script
 Use `i18n-ai-translate translate` to convert a local i18n JSON file to any language. Relative paths begin from the `jsons/` directory.
 
 Use `i18n-ai-translate diff` to find translate the differences between a source language, and apply them to all language files in the same directory.
@@ -66,7 +123,7 @@ Options:
 #### `npm run i18n-ai-translate -- diff -b en.json -a en-after.json -l English --verbose`
 * Translate the keys that have changed between `en.json` and `en-after.json` for all files in the `en.json`/`en-after.json` directory, with logging enabled
 
-### As a library
+## As a library
 Alternatively, import this project and use it to convert JSONs on-the-fly with `translate()`, or use `translateDiff()` to fetch updates to modified keys when your source i18n file has changed.
 
 ```ts
@@ -112,7 +169,7 @@ Maintain case sensitivity and whitespacing.
 
 Output only the translations.
 
-All lines should start and end with a quotation mark.
+All lines should start and end with an ASCII quotation mark (").
 
 ${input}
 ```
