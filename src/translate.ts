@@ -690,8 +690,3 @@ program
 // TODO: options to adjust batch size and indentation
 
 program.parse();
-
-// module.exports = {
-//     translate,
-//     translateDiff,
-// };
