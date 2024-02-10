@@ -1,21 +1,22 @@
-import { GoogleGenerativeAI, StartChatParams } from "@google/generative-ai";
-import { program } from "commander";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { config } from "dotenv";
-import { flatten, unflatten } from "flat";
-import path from "path";
-import fs from "fs";
-import { generateTranslation } from "./generate";
-import Chats from "./interfaces/chats";
 import {
     delay,
     getAllLanguageCodes,
     getLanguageFromCode,
     getLanguageFromFilename,
 } from "./utils";
-import TranslateFileOptions from "./interfaces/translation_file_options";
-import TranslationOptions from "./interfaces/translation_options";
-import TranslationDiffOptions from "./interfaces/translation_diff_options";
-import TranslateFileDiffOptions from "./interfaces/translation_file_diff_options";
+import { flatten, unflatten } from "flat";
+import { program } from "commander";
+import fs from "fs";
+import generateTranslation from "./generate";
+import path from "path";
+import type { StartChatParams } from "@google/generative-ai";
+import type Chats from "./interfaces/chats";
+import type TranslateFileDiffOptions from "./interfaces/translation_file_diff_options";
+import type TranslateFileOptions from "./interfaces/translation_file_options";
+import type TranslationDiffOptions from "./interfaces/translation_diff_options";
+import type TranslationOptions from "./interfaces/translation_options";
 
 const BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
@@ -23,7 +24,259 @@ const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 
 config({ path: path.resolve(__dirname, "../.env") });
 
-const translateFile = async (options: TranslateFileOptions) => {
+/**
+ * Translate the difference of an input JSON to the given languages
+ * @param options - The options for the translation
+ */
+export async function translateDiff(
+    options: TranslationDiffOptions,
+): Promise<{ [language: string]: Object }> {
+    const flatInputBefore = flatten(options.inputJSONBefore) as {
+        [key: string]: string;
+    };
+
+    const flatInputAfter = flatten(options.inputJSONAfter) as {
+        [key: string]: string;
+    };
+
+    const flatToUpdateJSONs: { [language: string]: { [key: string]: string } } =
+        {};
+
+    for (const lang in options.toUpdateJSONs) {
+        if (Object.prototype.hasOwnProperty.call(options.toUpdateJSONs, lang)) {
+            const flatToUpdateJSON = flatten(options.toUpdateJSONs[lang]) as {
+                [key: string]: string;
+            };
+
+            flatToUpdateJSONs[lang] = flatToUpdateJSON;
+        }
+    }
+
+    const addedKeys = [];
+    const modifiedKeys = [];
+    const deletedKeys = [];
+
+    for (const key in flatInputBefore) {
+        if (flatInputBefore[key] !== flatInputAfter[key]) {
+            if (flatInputAfter[key] === undefined) {
+                deletedKeys.push(key);
+            } else {
+                modifiedKeys.push(key);
+            }
+        }
+    }
+
+    for (const key in flatInputAfter) {
+        if (flatInputBefore[key] === undefined) {
+            addedKeys.push(key);
+        }
+    }
+
+    if (options.verbose) {
+        console.log(`Added keys: ${addedKeys.join("\n")}\n`);
+        console.log(`Modified keys: ${modifiedKeys.join("\n")}\n`);
+        console.log(`Deleted keys: ${deletedKeys.join("\n")}\n`);
+    }
+
+    for (const key of deletedKeys) {
+        for (const lang in flatToUpdateJSONs) {
+            if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
+                delete flatToUpdateJSONs[lang][key];
+            }
+        }
+    }
+
+    for (const languageCode in flatToUpdateJSONs) {
+        if (
+            Object.prototype.hasOwnProperty.call(
+                flatToUpdateJSONs,
+                languageCode,
+            )
+        ) {
+            const addedAndModifiedTranslations: { [key: string]: string } = {};
+            for (const key of addedKeys) {
+                addedAndModifiedTranslations[key] = flatInputAfter[key];
+            }
+
+            for (const key of modifiedKeys) {
+                addedAndModifiedTranslations[key] = flatInputAfter[key];
+            }
+
+            const language = getLanguageFromCode(languageCode)?.name;
+            if (!language) {
+                throw new Error(`Invalid language code: ${languageCode}`);
+            }
+
+            // eslint-disable-next-line no-await-in-loop, @typescript-eslint/no-use-before-define
+            const translated = await translate({
+                apiKey: options.apiKey,
+                inputJSON: addedAndModifiedTranslations,
+                inputLanguage: options.inputLanguage,
+                outputLanguage: language,
+                templatedStringPrefix: options.templatedStringPrefix,
+                templatedStringSuffix: options.templatedStringSuffix,
+                verbose: options.verbose,
+            });
+
+            const flatTranslated = flatten(translated) as {
+                [key: string]: string;
+            };
+
+            for (const key in flatTranslated) {
+                if (Object.prototype.hasOwnProperty.call(flatTranslated, key)) {
+                    flatToUpdateJSONs[languageCode][key] = flatTranslated[key];
+                }
+            }
+        }
+    }
+
+    const unflatToUpdateJSONs: { [language: string]: Object } = {};
+    for (const lang in flatToUpdateJSONs) {
+        if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
+            unflatToUpdateJSONs[lang] = unflatten(flatToUpdateJSONs[lang]);
+        }
+    }
+
+    if (options.verbose) {
+        console.log("Updated JSONs:");
+        console.log(unflatToUpdateJSONs);
+    }
+
+    return unflatToUpdateJSONs;
+}
+
+/**
+ * Translate the input JSON to the given language
+ * @param options - The options for the translation
+ */
+export async function translate(options: TranslationOptions): Promise<Object> {
+    if (options.verbose) {
+        console.log(
+            `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
+        );
+    }
+
+    const genAI = new GoogleGenerativeAI(options.apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+    const successfulHistory: StartChatParams = { history: [] };
+    const chats: Chats = {
+        generateTranslationChat: model.startChat(),
+        verifyTranslationChat: model.startChat(),
+        verifyStylingChat: model.startChat(),
+    };
+
+    const output: { [key: string]: string } = {};
+
+    const templatedStringPrefix =
+        options.templatedStringPrefix || DEFAULT_TEMPLATED_STRING_PREFIX;
+
+    const templatedStringSuffix =
+        options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
+
+    const flatInput = flatten(options.inputJSON) as { [key: string]: string };
+    for (const key in flatInput) {
+        if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
+            flatInput[key] = flatInput[key].replaceAll(
+                "\\n",
+                `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
+            );
+        }
+    }
+
+    // randomize flatInput ordering
+    const allKeys = Object.keys(flatInput);
+    for (let i = allKeys.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allKeys[i], allKeys[j]] = [allKeys[j], allKeys[i]];
+    }
+
+    const batchStartTime = Date.now();
+    for (let i = 0; i < Object.keys(flatInput).length; i += BATCH_SIZE) {
+        if (i > 0 && options.verbose) {
+            console.log(
+                `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
+            );
+
+            console.log(
+                `Estimated time left: ${((((Date.now() - batchStartTime) / (i + 1)) * (Object.keys(flatInput).length - i)) / 60000).toFixed(0)} minutes`,
+            );
+        }
+
+        const keys = allKeys.slice(i, i + BATCH_SIZE);
+        const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
+
+        // eslint-disable-next-line no-await-in-loop
+        const generatedTranslation = await generateTranslation(
+            model,
+            chats,
+            successfulHistory,
+            `[${options.inputLanguage}]`,
+            `[${options.outputLanguage}]`,
+            input,
+            keys,
+            templatedStringPrefix,
+            templatedStringSuffix,
+            options.verbose ?? false,
+            options.ensureChangedTranslation ?? false,
+        );
+
+        if (generatedTranslation === "") {
+            console.error(
+                `Failed to generate translation for ${options.inputLanguage}`,
+            );
+            break;
+        }
+
+        for (let j = 0; j < keys.length; j++) {
+            output[keys[j]] = generatedTranslation.split("\n")[j].slice(1, -1);
+
+            if (options.verbose)
+                console.log(
+                    `${keys[j]}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
+                );
+        }
+
+        const batchEndTime = Date.now();
+        if (batchEndTime - batchStartTime < 3000) {
+            if (options.verbose) {
+                console.log(
+                    `Waiting for ${3000 - (batchEndTime - batchStartTime)}ms...`,
+                );
+            }
+
+            // eslint-disable-next-line no-await-in-loop
+            await delay(3000 - (batchEndTime - batchStartTime));
+        }
+    }
+
+    // sort the keys
+    const sortedOutput: { [key: string]: string } = {};
+    for (const key of Object.keys(flatInput).sort()) {
+        sortedOutput[key] = output[key];
+    }
+
+    for (const key in sortedOutput) {
+        if (Object.prototype.hasOwnProperty.call(sortedOutput, key)) {
+            sortedOutput[key] = sortedOutput[key].replaceAll(
+                `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
+                "\\n",
+            );
+        }
+    }
+
+    const unflattenedOutput = unflatten(sortedOutput);
+    if (options.verbose) {
+        const endTime = Date.now();
+        console.log(
+            `Actual execution time: ${(endTime - batchStartTime) / 60000} minutes`,
+        );
+    }
+
+    return unflattenedOutput as Object;
+}
+
+const translateFile = async (options: TranslateFileOptions): Promise<void> => {
     const jsonFolder = path.resolve(__dirname, "../jsons");
     let inputPath: string;
     if (path.isAbsolute(options.inputFileOrPath)) {
@@ -51,6 +304,7 @@ const translateFile = async (options: TranslateFileOptions) => {
     const inputLanguage = getLanguageFromFilename(
         options.inputFileOrPath,
     )?.name;
+
     if (!inputLanguage) {
         throw new Error(
             "Invalid input file name. Use a valid ISO 639-1 language code as the file name.",
@@ -64,6 +318,7 @@ const translateFile = async (options: TranslateFileOptions) => {
         const language = getLanguageFromFilename(
             options.outputFileOrPath,
         )?.name;
+
         if (!language) {
             throw new Error(
                 "Invalid output file name. Use a valid ISO 639-1 language code as the file name. Consider using the --force-language option.",
@@ -96,7 +351,9 @@ const translateFile = async (options: TranslateFileOptions) => {
     }
 };
 
-const translateFileDiff = async (options: TranslateFileDiffOptions) => {
+const translateFileDiff = async (
+    options: TranslateFileDiffOptions,
+): Promise<void> => {
     const jsonFolder = path.resolve(__dirname, "../jsons");
     let inputBeforePath: string;
     let inputAfterPath: string;
@@ -115,7 +372,7 @@ const translateFileDiff = async (options: TranslateFileDiffOptions) => {
         inputAfterPath = path.resolve(jsonFolder, options.inputAfterFileOrPath);
     }
 
-    let outputPaths: Array<string> = [];
+    const outputPaths: Array<string> = [];
     for (const outputFileOrPath of options.outputFilesOrPaths) {
         let outputPath: string;
         if (path.isAbsolute(outputFileOrPath)) {
@@ -123,6 +380,7 @@ const translateFileDiff = async (options: TranslateFileDiffOptions) => {
         } else {
             outputPath = path.resolve(jsonFolder, outputFileOrPath);
         }
+
         outputPaths.push(outputPath);
     }
 
@@ -143,6 +401,7 @@ const translateFileDiff = async (options: TranslateFileDiffOptions) => {
         const languageCode = getLanguageFromFilename(
             path.basename(outputPath),
         )?.iso639_1;
+
         if (!languageCode) {
             throw new Error(
                 "Invalid output file name. Use a valid ISO 639-1 language code as the file name. Consider using the --force-language option.",
@@ -170,234 +429,27 @@ const translateFileDiff = async (options: TranslateFileDiffOptions) => {
         });
 
         for (const language in outputJSON) {
-            const outputText = JSON.stringify(outputJSON[language], null, 4);
+            if (Object.prototype.hasOwnProperty.call(outputJSON, language)) {
+                const outputText = JSON.stringify(
+                    outputJSON[language],
+                    null,
+                    4,
+                );
 
-            if (options.verbose) {
-                console.log(outputText);
+                if (options.verbose) {
+                    console.log(outputText);
+                }
+
+                fs.writeFileSync(
+                    path.resolve(jsonFolder, `${language}.json`),
+                    outputText,
+                );
             }
-
-            fs.writeFileSync(
-                path.resolve(jsonFolder, `${language}.json`),
-                outputText,
-            );
         }
     } catch (err) {
         console.error(`Failed to translate file diff: ${err}`);
     }
 };
-
-export async function translateDiff(
-    options: TranslationDiffOptions,
-): Promise<{ [language: string]: Object }> {
-    const flatInputBefore = flatten(options.inputJSONBefore) as {
-        [key: string]: string;
-    };
-    const flatInputAfter = flatten(options.inputJSONAfter) as {
-        [key: string]: string;
-    };
-    const flatToUpdateJSONs: { [language: string]: { [key: string]: string } } =
-        {};
-    for (const lang in options.toUpdateJSONs) {
-        const flatToUpdateJSON = flatten(options.toUpdateJSONs[lang]) as {
-            [key: string]: string;
-        };
-        flatToUpdateJSONs[lang] = flatToUpdateJSON;
-    }
-
-    const addedKeys = [];
-    const modifiedKeys = [];
-    const deletedKeys = [];
-
-    for (const key in flatInputBefore) {
-        if (flatInputBefore[key] !== flatInputAfter[key]) {
-            if (flatInputAfter[key] === undefined) {
-                deletedKeys.push(key);
-            } else {
-                modifiedKeys.push(key);
-            }
-        }
-    }
-
-    for (const key in flatInputAfter) {
-        if (flatInputBefore[key] === undefined) {
-            addedKeys.push(key);
-        }
-    }
-
-    if (options.verbose) {
-        console.log(`Added keys: ${addedKeys.join("\n")}\n`);
-        console.log(`Modified keys: ${modifiedKeys.join("\n")}\n`);
-        console.log(`Deleted keys: ${deletedKeys.join("\n")}\n`);
-    }
-
-    for (const key of deletedKeys) {
-        for (const lang in flatToUpdateJSONs) {
-            delete flatToUpdateJSONs[lang][key];
-        }
-    }
-
-    for (const languageCode in flatToUpdateJSONs) {
-        const addedAndModifiedTranslations: { [key: string]: string } = {};
-        for (const key of addedKeys) {
-            addedAndModifiedTranslations[key] = flatInputAfter[key];
-        }
-        for (const key of modifiedKeys) {
-            addedAndModifiedTranslations[key] = flatInputAfter[key];
-        }
-
-        const language = getLanguageFromCode(languageCode)?.name;
-        if (!language) {
-            throw new Error(`Invalid language code: ${languageCode}`);
-        }
-
-        const translated = await translate({
-            apiKey: options.apiKey,
-            inputJSON: addedAndModifiedTranslations,
-            inputLanguage: options.inputLanguage,
-            outputLanguage: language,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
-            verbose: options.verbose,
-        });
-
-        const flatTranslated = flatten(translated) as { [key: string]: string };
-        for (const key in flatTranslated) {
-            flatToUpdateJSONs[languageCode][key] = flatTranslated[key];
-        }
-    }
-
-    const unflatToUpdateJSONs: { [language: string]: Object } = {};
-    for (const lang in flatToUpdateJSONs) {
-        unflatToUpdateJSONs[lang] = unflatten(flatToUpdateJSONs[lang]);
-    }
-
-    if (options.verbose) {
-        console.log("Updated JSONs:");
-        console.log(unflatToUpdateJSONs);
-    }
-
-    return unflatToUpdateJSONs;
-}
-
-export async function translate(options: TranslationOptions): Promise<Object> {
-    if (options.verbose) {
-        console.log(
-            `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
-        );
-    }
-
-    const genAI = new GoogleGenerativeAI(options.apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
-    const successfulHistory: StartChatParams = { history: [] };
-    const chats: Chats = {
-        generateTranslationChat: model.startChat(),
-        verifyTranslationChat: model.startChat(),
-        verifyStylingChat: model.startChat(),
-    };
-
-    const output: { [key: string]: string } = {};
-
-    const templatedStringPrefix =
-        options.templatedStringPrefix || DEFAULT_TEMPLATED_STRING_PREFIX;
-    const templatedStringSuffix =
-        options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
-
-    const flatInput = flatten(options.inputJSON) as { [key: string]: string };
-    for (const key in flatInput) {
-        flatInput[key] = flatInput[key].replaceAll(
-            "\\n",
-            `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
-        );
-    }
-
-    // randomize flatInput ordering
-    const allKeys = Object.keys(flatInput);
-    for (let i = allKeys.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [allKeys[i], allKeys[j]] = [allKeys[j], allKeys[i]];
-    }
-
-    const batchStartTime = Date.now();
-    for (let i = 0; i < Object.keys(flatInput).length; i += BATCH_SIZE) {
-        if (i > 0 && options.verbose) {
-            console.log(
-                `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
-            );
-            console.log(
-                `Estimated time left: ${((((Date.now() - batchStartTime) / (i + 1)) * (Object.keys(flatInput).length - i)) / 60000).toFixed(0)} minutes`,
-            );
-        }
-
-        const keys = allKeys.slice(i, i + BATCH_SIZE);
-        const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
-
-        const generatedTranslation = await generateTranslation(
-            model,
-            chats,
-            successfulHistory,
-            `[${options.inputLanguage}]`,
-            `[${options.outputLanguage}]`,
-            input,
-            keys,
-            templatedStringPrefix,
-            templatedStringSuffix,
-            options.verbose ?? false,
-            options.ensureChangedTranslation ?? false,
-        );
-
-        if (generatedTranslation === "") {
-            console.error(
-                `Failed to generate translation for ${options.inputLanguage}`,
-            );
-            break;
-        }
-
-        for (let i = 0; i < keys.length; i++) {
-            output[keys[i]] = generatedTranslation.split("\n")[i].slice(1, -1);
-
-            if (options.verbose)
-                console.log(
-                    `${keys[i]}:\n${flatInput[keys[i]]}\n=>\n${output[keys[i]]}\n`,
-                );
-        }
-
-        const batchEndTime = Date.now();
-        if (batchEndTime - batchStartTime < 3000) {
-            if (options.verbose) {
-                console.log(
-                    `Waiting for ${3000 - (batchEndTime - batchStartTime)}ms...`,
-                );
-            }
-            await delay(3000 - (batchEndTime - batchStartTime));
-        }
-    }
-
-    // sort the keys
-    const sortedOutput: { [key: string]: string } = {};
-    Object.keys(flatInput)
-        .sort()
-        .forEach((key) => {
-            sortedOutput[key] = output[key];
-        });
-
-    for (const key in sortedOutput) {
-        sortedOutput[key] = sortedOutput[key].replaceAll(
-            `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
-            "\\n",
-        );
-    }
-
-    const unflattenedOutput = unflatten(sortedOutput);
-    if (options.verbose) {
-        const endTime = Date.now();
-        console.log(
-            `Actual execution time: ${(endTime - batchStartTime) / 60000} minutes`,
-        );
-    }
-
-    return unflattenedOutput as Object;
-}
 
 program
     .name("i18n-ai-translate")
@@ -485,6 +537,7 @@ program
             const languageNames = options.languages
                 .map((x: string) => getLanguageFromCode(x)?.name)
                 .filter((x: string | undefined) => x) as string[];
+
             if (options.verbose) {
                 console.log(`Translating to ${languageNames.join(", ")}...`);
             }
@@ -505,6 +558,7 @@ program
                 }
 
                 try {
+                    // eslint-disable-next-line no-await-in-loop
                     await translateFile({
                         apiKey,
                         inputFileOrPath: options.input,
@@ -539,6 +593,7 @@ program
                         `Translating ${i}/${getAllLanguageCodes().length} languages...`,
                     );
                 }
+
                 const output = options.input.replace(
                     getLanguageFromFilename(options.input)?.iso639_1,
                     languageCode,
@@ -549,6 +604,7 @@ program
                 }
 
                 try {
+                    // eslint-disable-next-line no-await-in-loop
                     await translateFile({
                         apiKey,
                         inputFileOrPath: options.input,
@@ -600,7 +656,6 @@ program
         if (path.isAbsolute(options.after)) {
             afterInputPath = path.resolve(options.after);
         } else {
-            const jsonFolder = path.resolve(__dirname, "../jsons");
             afterInputPath = path.resolve(jsonFolder, options.after);
         }
 
@@ -636,7 +691,7 @@ program
 
 program.parse();
 
-module.exports = {
-    translate,
-    translateDiff,
-};
+// module.exports = {
+//     translate,
+//     translateDiff,
+// };

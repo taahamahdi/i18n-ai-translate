@@ -1,7 +1,7 @@
-import { GenerativeModel, StartChatParams } from "@google/generative-ai";
 import { delay, retryJob } from "./utils";
 import { verifyStyling, verifyTranslation } from "./verify";
-import Chats from "./interfaces/chats";
+import type { GenerativeModel, StartChatParams } from "@google/generative-ai";
+import type Chats from "./interfaces/chats";
 
 const generationPrompt = (
     inputLanguage: string,
@@ -37,7 +37,21 @@ ${input}
 \`\`\`
 `;
 
-export async function generateTranslation(
+/**
+ * Complete the initial translation of the input text.
+ * @param model - Gemini model
+ * @param chats - State of chats
+ * @param successfulHistory - Messages that have been successfully translated in the past; used for rolling back
+ * @param inputLanguage - Language of the input text
+ * @param outputLanguage - Language to translate the input text to
+ * @param input - Text to translate
+ * @param keys - The keys of the input text
+ * @param templatedStringPrefix - Prefix of the templated string
+ * @param templatedStringSuffix - Suffix of the templated string
+ * @param verboseLogging - Whether to log verbose output
+ * @param ensureChangedTranslation - Whether to ensure that each key has changed
+ */
+export default async function generateTranslation(
     model: GenerativeModel,
     chats: Chats,
     successfulHistory: StartChatParams,
@@ -55,6 +69,7 @@ export async function generateTranslation(
         outputLanguage,
         input,
     );
+
     const templatedStringRegex = `/${templatedStringPrefix}[^{}]+${templatedStringSuffix}/g`;
     const inputLineToTemplatedString: { [index: number]: Array<string> } = {};
     const splitInput = input.split("\n");
@@ -93,7 +108,9 @@ export async function generateTranslation(
                         successfulHistory.history = [];
                         chats.generateTranslationChat = model.startChat();
                         return Promise.reject(
-                            `Failed to generate content due to exception. Resetting history. err = ${err}`,
+                            new Error(
+                                `Failed to generate content due to exception. Resetting history. err = ${err}`,
+                            ),
                         );
                     }
 
@@ -101,13 +118,17 @@ export async function generateTranslation(
                     chats.generateTranslationChat =
                         model.startChat(successfulHistory);
                     return Promise.reject(
-                        `Failed to generate content due to exception. err = ${err}`,
+                        new Error(
+                            `Failed to generate content due to exception. err = ${err}`,
+                        ),
                     );
                 }
 
                 if (text === "") {
                     return Promise.reject(
-                        "Failed to generate content due to empty response",
+                        new Error(
+                            "Failed to generate content due to empty response",
+                        ),
                     );
                 }
 
@@ -119,21 +140,30 @@ export async function generateTranslation(
                     chats.generateTranslationChat =
                         model.startChat(successfulHistory);
                     return Promise.reject(
-                        `Invalid number of lines. text = ${text}`,
+                        new Error(`Invalid number of lines. text = ${text}`),
                     );
                 }
 
                 // Templated strings match
                 for (const i in inputLineToTemplatedString) {
-                    for (const templatedString of inputLineToTemplatedString[
-                        i
-                    ]) {
-                        if (!splitText[i].includes(templatedString)) {
-                            chats.generateTranslationChat =
-                                model.startChat(successfulHistory);
-                            return Promise.reject(
-                                `Missing templated string: ${templatedString}`,
-                            );
+                    if (
+                        Object.prototype.hasOwnProperty.call(
+                            inputLineToTemplatedString,
+                            i,
+                        )
+                    ) {
+                        for (const templatedString of inputLineToTemplatedString[
+                            i
+                        ]) {
+                            if (!splitText[i].includes(templatedString)) {
+                                chats.generateTranslationChat =
+                                    model.startChat(successfulHistory);
+                                return Promise.reject(
+                                    new Error(
+                                        `Missing templated string: ${templatedString}`,
+                                    ),
+                                );
+                            }
                         }
                     }
                 }
@@ -141,21 +171,24 @@ export async function generateTranslation(
                 // Trim extra quotes if they exist
                 for (let i = 0; i < splitText.length; i++) {
                     let line = splitText[i];
-                    while (line.startsWith('""') && line.endsWith('""')) {
+                    while (line.startsWith("\"\"") && line.endsWith("\"\"")) {
                         line = line.slice(1, -1);
                     }
 
                     splitText[i] = line;
                 }
+
                 text = splitText.join("\n");
 
                 // Per-line translation verification
                 for (let i = 0; i < splitText.length; i++) {
                     let line = splitText[i];
-                    if (!line.startsWith('"') || !line.endsWith('"')) {
+                    if (!line.startsWith("\"") || !line.endsWith("\"")) {
                         chats.generateTranslationChat =
                             model.startChat(successfulHistory);
-                        return Promise.reject(`Invalid line: ${line}`);
+                        return Promise.reject(
+                            new Error(`Invalid line: ${line}`),
+                        );
                     } else if (
                         ensureChangedTranslation &&
                         line === splitInput[i] &&
@@ -168,6 +201,7 @@ export async function generateTranslation(
                             continue;
                         }
 
+                        // eslint-disable-next-line no-await-in-loop
                         await delay(1000 - (Date.now() - lastGeminiCall));
                         lastGeminiCall = Date.now();
                         const retryTranslationPromptText =
@@ -176,9 +210,11 @@ export async function generateTranslation(
                                 outputLanguage,
                                 line,
                             );
+
                         let fixedText = "";
                         try {
                             generatedContent =
+                                // eslint-disable-next-line no-await-in-loop
                                 await chats.generateTranslationChat.sendMessage(
                                     retryTranslationPromptText,
                                 );
@@ -191,10 +227,13 @@ export async function generateTranslation(
                                     4,
                                 ),
                             );
+
                             chats.generateTranslationChat =
                                 model.startChat(successfulHistory);
                             return Promise.reject(
-                                `Failed to generate content due to exception. err = ${err}`,
+                                new Error(
+                                    `Failed to generate content due to exception. err = ${err}`,
+                                ),
                             );
                         }
 
@@ -212,19 +251,23 @@ export async function generateTranslation(
                                 chats.generateTranslationChat =
                                     model.startChat(successfulHistory);
                                 return Promise.reject(
-                                    `Missing templated string: ${inputLineToTemplatedString[i][j]}`,
+                                    new Error(
+                                        `Missing templated string: ${inputLineToTemplatedString[i][j]}`,
+                                    ),
                                 );
                             }
                         }
 
                         // TODO: Move to helper
-                        if (!line.startsWith('"') || !line.endsWith('"')) {
+                        if (!line.startsWith("\"") || !line.endsWith("\"")) {
                             chats.generateTranslationChat =
                                 model.startChat(successfulHistory);
-                            return Promise.reject(`Invalid line: ${line}`);
+                            return Promise.reject(
+                                new Error(`Invalid line: ${line}`),
+                            );
                         }
 
-                        while (line.startsWith('""') && line.endsWith('""')) {
+                        while (line.startsWith("\"\"") && line.endsWith("\"\"")) {
                             line = line.slice(1, -1);
                         }
 
@@ -234,6 +277,7 @@ export async function generateTranslation(
                                     `Successfully translated: ${oldText} => ${line}`,
                                 );
                             }
+
                             text = splitText.join("\n");
                             fixedTranslationMappings[oldText] = line;
                             continue;
@@ -243,7 +287,9 @@ export async function generateTranslation(
                         if (translationToRetryAttempts[line] < 3) {
                             chats.generateTranslationChat =
                                 model.startChat(successfulHistory);
-                            return Promise.reject(`No translation: ${line}`);
+                            return Promise.reject(
+                                new Error(`No translation: ${line}`),
+                            );
                         }
                     }
                 }
@@ -257,11 +303,12 @@ export async function generateTranslation(
                     input,
                     text,
                 );
+
                 if (translationVerification === "NAK") {
                     chats.generateTranslationChat =
                         model.startChat(successfulHistory);
                     return Promise.reject(
-                        `Invalid translation. text = ${text}`,
+                        new Error(`Invalid translation. text = ${text}`),
                     );
                 }
 
@@ -274,10 +321,13 @@ export async function generateTranslation(
                     input,
                     text,
                 );
+
                 if (stylingVerification === "NAK") {
                     chats.generateTranslationChat =
                         model.startChat(successfulHistory);
-                    return Promise.reject(`Invalid styling. text = ${text}`);
+                    return Promise.reject(
+                        new Error(`Invalid styling. text = ${text}`),
+                    );
                 }
 
                 successfulHistory.history!.push(

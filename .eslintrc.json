@@ -1,0 +1,162 @@
+{
+    "extends": [
+        "airbnb-base","airbnb-typescript/base", "prettier"
+    ],
+    "plugins": [
+        "eslint-plugin-tsdoc",
+        "jsdoc",
+        "only-warn",
+        "import",
+        "sort-imports-es6-autofix",
+        "deprecation",
+        "eslint-plugin-n"
+    ],
+    "parserOptions": {
+        "project": "./tsconfig.json"
+    },
+    "rules": {
+        "import/order": ["off"],
+        "no-lonely-if":["off"],
+        "no-else-return":["off"],
+        "deprecation/deprecation": "warn",
+        "@typescript-eslint/await-thenable": [
+            "error"
+        ],
+        "@typescript-eslint/require-await": [
+            "error"
+        ],
+        "@typescript-eslint/quotes": [
+            "warn",
+            "double"
+        ],
+        "@typescript-eslint/explicit-function-return-type": [
+            "warn",
+            {
+                "allowExpressions": true
+            }
+        ],
+        "@typescript-eslint/type-annotation-spacing": [
+            "warn"
+        ],
+        "import/no-cycle": [
+            "warn"
+        ],
+        "@typescript-eslint/consistent-type-imports": ["warn"],
+        "jsdoc/require-jsdoc": [
+            "warn",
+            {
+                "publicOnly": true
+            }
+        ],
+        "sort-imports-es6-autofix/sort-imports-es6": ["warn"],
+        "valid-jsdoc": [
+            "warn",
+            {
+                "requireReturnType": false,
+                "requireParamType": false,
+                "requireReturn": false
+            }
+        ],
+        "tsdoc/syntax": [
+            "warn"
+        ],
+        "max-len": [
+            "warn",
+            {
+                "ignoreStrings": true,
+                "ignoreTemplateLiterals": true,
+                "code": 200
+            }
+        ],
+        "no-restricted-syntax": [
+            "warn",
+            {
+                "selector": "CallExpression[callee.property.name='forEach']",
+                "message": "Do not use `forEach()`, use `for/of` instead"
+            }
+        ],
+        "no-continue": [
+            "off"
+        ],
+        "no-plusplus": [
+            "off"
+        ],
+        "no-async-promise-executor": [
+            "off"
+        ],
+        "lines-between-class-members": ["error", "always", { "exceptAfterSingleLine": true }],
+        "@typescript-eslint/lines-between-class-members": ["off"],
+        "no-param-reassign": [
+            "off"
+        ],
+        "@typescript-eslint/no-unused-vars": [
+            "warn",
+            {
+                "argsIgnorePattern": "^_"
+            }
+        ],
+        "@typescript-eslint/member-ordering": [
+            "warn",
+            {
+                "default": [
+                    "public-field",
+                    "protected-field",
+                    "private-field",
+                    "public-method",
+                    "protected-method",
+                    "private-method"
+                ]
+            }
+        ],
+        "prefer-destructuring": [
+            "off"
+        ],
+        "func-names": [
+            "off"
+        ],
+        "@typescript-eslint/dot-notation": [
+            "off"
+        ],
+        "no-multi-str": [
+            "off"
+        ],
+        "no-console": [
+            "off"
+        ],
+        "padding-line-between-statements": [
+            "warn",
+            {
+                "blankLine": "always",
+                "prev": "block-like",
+                "next": "*"
+            },
+            {
+                "blankLine": "always",
+                "prev": "multiline-expression",
+                "next": "multiline-expression"
+            },
+            {
+                "blankLine": "always",
+                "prev": "multiline-let",
+                "next": "*"
+            },
+            {
+                "blankLine": "always",
+                "prev": "multiline-const",
+                "next": "*"
+            },
+            {
+                "blankLine": "always",
+                "prev": "multiline-block-like",
+                "next": "*"
+            },
+            {
+                "blankLine": "always",
+                "prev": "*",
+                "next": "function"
+            }
+        ],
+        "no-bitwise": ["off"],
+        "class-methods-use-this": ["off"]
+    }
+}

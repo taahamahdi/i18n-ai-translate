@@ -5,9 +5,9 @@
     "@types/node": "^20.11.16",
     "commander": "^11.1.0",
     "dotenv": "^16.4.1",
+    "eslint-plugin-n": "^16.6.2",
     "flat": "5.0.2",
     "iso-language-codes": "^2.0.0",
-    "prettier": "^3.2.4",
     "typescript": "^5.1.6"
   },
   "name": "i18n-ai-translate",
@@ -16,15 +16,36 @@
   "bin": {
     "i18n-ai-translate": "src/translate.js"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.56.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.1.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-deprecation": "^2.0.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsdoc": "^48.0.6",
+    "eslint-plugin-only-warn": "^1.1.0",
+    "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
+    "eslint-plugin-tsdoc": "^0.2.17",
+    "prettier": "^3.2.5"
+  },
   "scripts": {
     "build": "npx tsc",
     "i18n-ai-translate": "npm run build && node build/translate.js",
     "clean": "rm -r build/ && rm tsconfig.tsbuildinfo",
     "clean-build": "npm run clean && npm run build",
-    "prettier": "prettier --write '**/*.{js,ts}'"
+    "prettier": "prettier --write '**/*.{js,ts}'",
+    "lint": "npx eslint --cache src/ --ext .js,.ts",
+    "lint-fix": "npx eslint --fix --cache src/ --ext .js,.ts"
   },
-  "keywords": ["gemini-pro", "i18n", "translate", "ai"],
+  "keywords": [
+    "gemini-pro",
+    "i18n",
+    "translate",
+    "ai"
+  ],
   "author": "Taaha Mahdi",
   "license": "GPL-3.0",
   "description": "Use Gemini Pro to translate your i18n JSON to any language.",
