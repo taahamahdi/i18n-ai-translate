@@ -1,4 +1,4 @@
-import { translate, translateDiff } from './translate';
+import { translate, translateDiff } from "./translate";
 
 module.exports = {
     translate,

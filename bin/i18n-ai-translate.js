@@ -4438,7 +4438,7 @@ var import_path = __toESM(require("path"));
 var BATCH_SIZE = 32;
 var DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 var DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
-(0, import_dotenv.config)({ path: import_path.default.resolve(__dirname, "../.env") });
+(0, import_dotenv.config)({ path: import_path.default.resolve(process.cwd(), ".env") });
 async function translateDiff(options) {
   const flatInputBefore = (0, import_flat.flatten)(options.inputJSONBefore);
   const flatInputAfter = (0, import_flat.flatten)(options.inputJSONAfter);
@@ -4631,18 +4631,24 @@ ${output[keys[j]]}
   return unflattenedOutput;
 }
 var translateFile = async (options) => {
-  const jsonFolder = import_path.default.resolve(__dirname, "../jsons");
+  const jsonFolder = import_path.default.resolve(process.cwd(), "jsons");
   let inputPath;
   if (import_path.default.isAbsolute(options.inputFileOrPath)) {
     inputPath = import_path.default.resolve(options.inputFileOrPath);
   } else {
     inputPath = import_path.default.resolve(jsonFolder, options.inputFileOrPath);
+    if (!import_fs.default.existsSync(inputPath)) {
+      inputPath = import_path.default.resolve(process.cwd(), options.inputFileOrPath);
+    }
   }
   let outputPath;
   if (import_path.default.isAbsolute(options.outputFileOrPath)) {
     outputPath = import_path.default.resolve(options.outputFileOrPath);
   } else {
     outputPath = import_path.default.resolve(jsonFolder, options.outputFileOrPath);
+    if (!import_fs.default.existsSync(jsonFolder)) {
+      outputPath = import_path.default.resolve(process.cwd(), options.outputFileOrPath);
+    }
   }
   let inputJSON = {};
   try {
@@ -4694,7 +4700,7 @@ var translateFile = async (options) => {
   }
 };
 var translateFileDiff = async (options) => {
-  const jsonFolder = import_path.default.resolve(__dirname, "../jsons");
+  const jsonFolder = import_path.default.resolve(process.cwd(), "jsons");
   let inputBeforePath;
   let inputAfterPath;
   if (import_path.default.isAbsolute(options.inputBeforeFileOrPath)) {
@@ -4704,6 +4710,12 @@ var translateFileDiff = async (options) => {
       jsonFolder,
       options.inputBeforeFileOrPath
     );
+    if (!import_fs.default.existsSync(inputBeforePath)) {
+      inputBeforePath = import_path.default.resolve(
+        process.cwd(),
+        options.inputBeforeFileOrPath
+      );
+    }
   }
   if (import_path.default.isAbsolute(options.inputAfterFileOrPath)) {
     inputAfterPath = import_path.default.resolve(options.inputAfterFileOrPath);
@@ -4717,6 +4729,9 @@ var translateFileDiff = async (options) => {
       outputPath = import_path.default.resolve(outputFileOrPath);
     } else {
       outputPath = import_path.default.resolve(jsonFolder, outputFileOrPath);
+      if (!import_fs.default.existsSync(jsonFolder)) {
+        outputPath = import_path.default.resolve(process.cwd(), outputFileOrPath);
+      }
     }
     outputPaths.push(outputPath);
   }
@@ -4738,7 +4753,7 @@ var translateFileDiff = async (options) => {
     )?.iso639_1;
     if (!languageCode) {
       throw new Error(
-        "Invalid output file name. Use a valid ISO 639-1 language code as the file name. Consider using the --force-language option."
+        "Invalid output file name. Use a valid ISO 639-1 language code as the file name."
       );
     }
     try {
@@ -4933,18 +4948,24 @@ program.command("diff").requiredOption(
     return;
   }
   const apiKey = options.apiKey || process.env.API_KEY;
-  const jsonFolder = import_path.default.resolve(__dirname, "../jsons");
+  const jsonFolder = import_path.default.resolve(process.cwd(), "jsons");
   let beforeInputPath;
   if (import_path.default.isAbsolute(options.before)) {
     beforeInputPath = import_path.default.resolve(options.before);
   } else {
     beforeInputPath = import_path.default.resolve(jsonFolder, options.before);
+    if (!import_fs.default.existsSync(beforeInputPath)) {
+      beforeInputPath = import_path.default.resolve(process.cwd(), options.before);
+    }
   }
   let afterInputPath;
   if (import_path.default.isAbsolute(options.after)) {
     afterInputPath = import_path.default.resolve(options.after);
   } else {
     afterInputPath = import_path.default.resolve(jsonFolder, options.after);
+    if (!import_fs.default.existsSync(afterInputPath)) {
+      afterInputPath = import_path.default.resolve(process.cwd(), options.after);
+    }
   }
   if (import_path.default.dirname(beforeInputPath) !== import_path.default.dirname(afterInputPath)) {
     console.error("Input files are not in the same directory");
@@ -4952,7 +4973,7 @@ program.command("diff").requiredOption(
   }
   const outputFilesOrPaths = import_fs.default.readdirSync(import_path.default.dirname(beforeInputPath)).filter((file) => file.endsWith(".json")).filter(
     (file) => file !== import_path.default.basename(beforeInputPath) && file !== import_path.default.basename(afterInputPath)
-  );
+  ).map((file) => import_path.default.resolve(import_path.default.dirname(beforeInputPath), file));
   await translateFileDiff({
     apiKey,
     inputLanguage: options.inputLanguage,

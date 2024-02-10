@@ -22,7 +22,7 @@ const BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 
-config({ path: path.resolve(__dirname, "../.env") });
+config({ path: path.resolve(process.cwd(), ".env") });
 
 /**
  * Translate the difference of an input JSON to the given languages
@@ -277,12 +277,15 @@ export async function translate(options: TranslationOptions): Promise<Object> {
 }
 
 const translateFile = async (options: TranslateFileOptions): Promise<void> => {
-    const jsonFolder = path.resolve(__dirname, "../jsons");
+    const jsonFolder = path.resolve(process.cwd(), "jsons");
     let inputPath: string;
     if (path.isAbsolute(options.inputFileOrPath)) {
         inputPath = path.resolve(options.inputFileOrPath);
     } else {
         inputPath = path.resolve(jsonFolder, options.inputFileOrPath);
+        if (!fs.existsSync(inputPath)) {
+            inputPath = path.resolve(process.cwd(), options.inputFileOrPath);
+        }
     }
 
     let outputPath: string;
@@ -290,6 +293,9 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
         outputPath = path.resolve(options.outputFileOrPath);
     } else {
         outputPath = path.resolve(jsonFolder, options.outputFileOrPath);
+        if (!fs.existsSync(jsonFolder)) {
+            outputPath = path.resolve(process.cwd(), options.outputFileOrPath);
+        }
     }
 
     let inputJSON = {};
@@ -354,7 +360,7 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
 const translateFileDiff = async (
     options: TranslateFileDiffOptions,
 ): Promise<void> => {
-    const jsonFolder = path.resolve(__dirname, "../jsons");
+    const jsonFolder = path.resolve(process.cwd(), "jsons");
     let inputBeforePath: string;
     let inputAfterPath: string;
     if (path.isAbsolute(options.inputBeforeFileOrPath)) {
@@ -364,6 +370,13 @@ const translateFileDiff = async (
             jsonFolder,
             options.inputBeforeFileOrPath,
         );
+
+        if (!fs.existsSync(inputBeforePath)) {
+            inputBeforePath = path.resolve(
+                process.cwd(),
+                options.inputBeforeFileOrPath,
+            );
+        }
     }
 
     if (path.isAbsolute(options.inputAfterFileOrPath)) {
@@ -379,6 +392,9 @@ const translateFileDiff = async (
             outputPath = path.resolve(outputFileOrPath);
         } else {
             outputPath = path.resolve(jsonFolder, outputFileOrPath);
+            if (!fs.existsSync(jsonFolder)) {
+                outputPath = path.resolve(process.cwd(), outputFileOrPath);
+            }
         }
 
         outputPaths.push(outputPath);
@@ -404,7 +420,7 @@ const translateFileDiff = async (
 
         if (!languageCode) {
             throw new Error(
-                "Invalid output file name. Use a valid ISO 639-1 language code as the file name. Consider using the --force-language option.",
+                "Invalid output file name. Use a valid ISO 639-1 language code as the file name.",
             );
         }
 
@@ -651,12 +667,15 @@ program
 
         const apiKey = options.apiKey || process.env.API_KEY;
 
-        const jsonFolder = path.resolve(__dirname, "../jsons");
+        const jsonFolder = path.resolve(process.cwd(), "jsons");
         let beforeInputPath: string;
         if (path.isAbsolute(options.before)) {
             beforeInputPath = path.resolve(options.before);
         } else {
             beforeInputPath = path.resolve(jsonFolder, options.before);
+            if (!fs.existsSync(beforeInputPath)) {
+                beforeInputPath = path.resolve(process.cwd(), options.before);
+            }
         }
 
         let afterInputPath: string;
@@ -664,6 +683,9 @@ program
             afterInputPath = path.resolve(options.after);
         } else {
             afterInputPath = path.resolve(jsonFolder, options.after);
+            if (!fs.existsSync(afterInputPath)) {
+                afterInputPath = path.resolve(process.cwd(), options.after);
+            }
         }
 
         // Ensure they're in the same path
@@ -680,7 +702,8 @@ program
                 (file) =>
                     file !== path.basename(beforeInputPath) &&
                     file !== path.basename(afterInputPath),
-            );
+            )
+            .map((file) => path.resolve(path.dirname(beforeInputPath), file));
 
         await translateFileDiff({
             apiKey,
