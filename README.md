@@ -60,7 +60,7 @@ Options:
 #### `npm run convert -- -i en.json -l es de nl`
 * Translate the `en.json` file in `jsons/` to Spanish, German, and Dutch, and save each file in `jsons/`
 
-####`npm run i18n-ai-translate -- diff -b en.json -a en-after.json -l English --verbose`
+#### `npm run i18n-ai-translate -- diff -b en.json -a en-after.json -l English --verbose`
 * Translate the keys that have changed between `en.json` and `en-after.json` for all files in the `en.json`/`en-after.json` directory, with logging enabled
 
 ### As a library
