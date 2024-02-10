@@ -5,15 +5,16 @@
     "@types/node": "^20.11.16",
     "commander": "^11.1.0",
     "dotenv": "^16.4.1",
+    "esbuild": "^0.20.0",
     "flat": "5.0.2",
     "iso-language-codes": "^2.0.0",
     "typescript": "^5.1.6"
   },
   "name": "i18n-ai-translate",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "main": "src/translate.js",
   "bin": {
-    "i18n-ai-translate": "src/translate.js"
+    "i18n-ai-translate": "bin/i18n-ai-translate.js"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.21.0",
@@ -25,14 +26,14 @@
     "eslint-plugin-deprecation": "^2.0.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jsdoc": "^48.0.6",
+    "eslint-plugin-n": "^16.6.2",
     "eslint-plugin-only-warn": "^1.1.0",
     "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
     "eslint-plugin-tsdoc": "^0.2.17",
-    "eslint-plugin-n": "^16.6.2",
     "prettier": "^3.2.5"
   },
   "scripts": {
-    "build": "npx tsc",
+    "build": "npx tsc && npx esbuild src/translate.ts --bundle --platform=node --outfile=bin/i18n-ai-translate.js --banner:js='#!/usr/bin/env node'",
     "i18n-ai-translate": "npm run build && node build/translate.js",
     "clean": "rm -r build/ && rm tsconfig.tsbuildinfo",
     "clean-build": "npm run clean && npm run build",
