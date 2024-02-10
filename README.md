@@ -54,10 +54,10 @@ Options:
 ```
 
 ### Example usage
-#### `npm run convert -- -i en.json -o fr.json`
+#### `npm run convert -- translate -i en.json -o fr.json`
 * Translate the `en.json` file in `jsons/` to French, and save the output in `fr.json`
 
-#### `npm run convert -- -i en.json -l es de nl`
+#### `npm run convert -- translate -i en.json -l es de nl`
 * Translate the `en.json` file in `jsons/` to Spanish, German, and Dutch, and save each file in `jsons/`
 
 #### `npm run i18n-ai-translate -- diff -b en.json -a en-after.json -l English --verbose`
