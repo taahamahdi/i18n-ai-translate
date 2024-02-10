@@ -3,8 +3,7 @@ import { config } from "dotenv";
 import {
     delay,
     getAllLanguageCodes,
-    getLanguageFromCode,
-    getLanguageFromFilename,
+    getLanguageCodeFromFilename,
 } from "./utils";
 import { flatten, unflatten } from "flat";
 import { program } from "commander";
@@ -102,17 +101,12 @@ export async function translateDiff(
                 addedAndModifiedTranslations[key] = flatInputAfter[key];
             }
 
-            const language = getLanguageFromCode(languageCode)?.name;
-            if (!language) {
-                throw new Error(`Invalid language code: ${languageCode}`);
-            }
-
             // eslint-disable-next-line no-await-in-loop, @typescript-eslint/no-use-before-define
             const translated = await translate({
                 apiKey: options.apiKey,
                 inputJSON: addedAndModifiedTranslations,
                 inputLanguage: options.inputLanguage,
-                outputLanguage: language,
+                outputLanguage: languageCode,
                 templatedStringPrefix: options.templatedStringPrefix,
                 templatedStringSuffix: options.templatedStringSuffix,
                 verbose: options.verbose,
@@ -307,9 +301,7 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
         return;
     }
 
-    const inputLanguage = getLanguageFromFilename(
-        options.inputFileOrPath,
-    )?.name;
+    const inputLanguage = getLanguageCodeFromFilename(options.inputFileOrPath);
 
     if (!inputLanguage) {
         throw new Error(
@@ -321,9 +313,7 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
     if (options.forceLanguageName) {
         outputLanguage = options.forceLanguageName;
     } else {
-        const language = getLanguageFromFilename(
-            options.outputFileOrPath,
-        )?.name;
+        const language = getLanguageCodeFromFilename(options.outputFileOrPath);
 
         if (!language) {
             throw new Error(
@@ -414,9 +404,9 @@ const translateFileDiff = async (
 
     const toUpdateJSONs: { [language: string]: Object } = {};
     for (const outputPath of outputPaths) {
-        const languageCode = getLanguageFromFilename(
+        const languageCode = getLanguageCodeFromFilename(
             path.basename(outputPath),
-        )?.iso639_1;
+        );
 
         if (!languageCode) {
             throw new Error(
@@ -500,7 +490,7 @@ program
         "Suffix for templated strings",
         DEFAULT_TEMPLATED_STRING_SUFFIX,
     )
-    .option("-k, --api-key", "Gemini API key")
+    .option("-k, --api-key <Gemini API key>", "Gemini API key")
     .option(
         "--ensure-changed-translation",
         "Each generated translation key must differ from the input (for keys longer than 4)",
@@ -550,12 +540,10 @@ program
                 return;
             }
 
-            const languageNames = options.languages
-                .map((x: string) => getLanguageFromCode(x)?.name)
-                .filter((x: string | undefined) => x) as string[];
-
             if (options.verbose) {
-                console.log(`Translating to ${languageNames.join(", ")}...`);
+                console.log(
+                    `Translating to ${options.languages.join(", ")}...`,
+                );
             }
 
             let i = 0;
@@ -565,7 +553,7 @@ program
                     `Translating ${i}/${options.languages.length} languages...`,
                 );
                 const output = options.input.replace(
-                    getLanguageFromFilename(options.input)?.iso639_1,
+                    getLanguageCodeFromFilename(options.input),
                     languageCode,
                 );
 
@@ -611,7 +599,7 @@ program
                 }
 
                 const output = options.input.replace(
-                    getLanguageFromFilename(options.input)?.iso639_1,
+                    getLanguageCodeFromFilename(options.input),
                     languageCode,
                 );
 
@@ -652,7 +640,7 @@ program
         "-l, --input-language <inputLanguage>",
         "The full input language name",
     )
-    .option("-k, --api-key", "Gemini API key")
+    .option("-k, --api-key <Gemini API key>", "Gemini API key")
     .option(
         "--ensure-changed-translation",
         "Each generated translation key must differ from the input (for keys longer than 4)",

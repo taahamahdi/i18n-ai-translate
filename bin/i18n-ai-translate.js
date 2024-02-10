@@ -361,6 +361,795 @@ var require_main = __commonJS({
   }
 });
 
+// node_modules/iso-639-1/src/data.js
+var require_data = __commonJS({
+  "node_modules/iso-639-1/src/data.js"(exports2, module2) {
+    var LANGUAGES_LIST = {
+      aa: {
+        name: "Afar",
+        nativeName: "Afaraf"
+      },
+      ab: {
+        name: "Abkhaz",
+        nativeName: "\u0430\u04A7\u0441\u0443\u0430 \u0431\u044B\u0437\u0448\u04D9\u0430"
+      },
+      ae: {
+        name: "Avestan",
+        nativeName: "avesta"
+      },
+      af: {
+        name: "Afrikaans",
+        nativeName: "Afrikaans"
+      },
+      ak: {
+        name: "Akan",
+        nativeName: "Akan"
+      },
+      am: {
+        name: "Amharic",
+        nativeName: "\u12A0\u121B\u122D\u129B"
+      },
+      an: {
+        name: "Aragonese",
+        nativeName: "aragon\xE9s"
+      },
+      ar: {
+        name: "Arabic",
+        nativeName: "\u0627\u064E\u0644\u0652\u0639\u064E\u0631\u064E\u0628\u0650\u064A\u064E\u0651\u0629\u064F"
+      },
+      as: {
+        name: "Assamese",
+        nativeName: "\u0985\u09B8\u09AE\u09C0\u09AF\u09BC\u09BE"
+      },
+      av: {
+        name: "Avaric",
+        nativeName: "\u0430\u0432\u0430\u0440 \u043C\u0430\u0446\u04C0"
+      },
+      ay: {
+        name: "Aymara",
+        nativeName: "aymar aru"
+      },
+      az: {
+        name: "Azerbaijani",
+        nativeName: "az\u0259rbaycan dili"
+      },
+      ba: {
+        name: "Bashkir",
+        nativeName: "\u0431\u0430\u0448\u04A1\u043E\u0440\u0442 \u0442\u0435\u043B\u0435"
+      },
+      be: {
+        name: "Belarusian",
+        nativeName: "\u0431\u0435\u043B\u0430\u0440\u0443\u0441\u043A\u0430\u044F \u043C\u043E\u0432\u0430"
+      },
+      bg: {
+        name: "Bulgarian",
+        nativeName: "\u0431\u044A\u043B\u0433\u0430\u0440\u0441\u043A\u0438 \u0435\u0437\u0438\u043A"
+      },
+      bi: {
+        name: "Bislama",
+        nativeName: "Bislama"
+      },
+      bm: {
+        name: "Bambara",
+        nativeName: "bamanankan"
+      },
+      bn: {
+        name: "Bengali",
+        nativeName: "\u09AC\u09BE\u0982\u09B2\u09BE"
+      },
+      bo: {
+        name: "Tibetan",
+        nativeName: "\u0F56\u0F7C\u0F51\u0F0B\u0F61\u0F72\u0F42"
+      },
+      br: {
+        name: "Breton",
+        nativeName: "brezhoneg"
+      },
+      bs: {
+        name: "Bosnian",
+        nativeName: "bosanski jezik"
+      },
+      ca: {
+        name: "Catalan",
+        nativeName: "Catal\xE0"
+      },
+      ce: {
+        name: "Chechen",
+        nativeName: "\u043D\u043E\u0445\u0447\u0438\u0439\u043D \u043C\u043E\u0442\u0442"
+      },
+      ch: {
+        name: "Chamorro",
+        nativeName: "Chamoru"
+      },
+      co: {
+        name: "Corsican",
+        nativeName: "corsu"
+      },
+      cr: {
+        name: "Cree",
+        nativeName: "\u14C0\u1426\u1403\u152D\u140D\u140F\u1423"
+      },
+      cs: {
+        name: "Czech",
+        nativeName: "\u010De\u0161tina"
+      },
+      cu: {
+        name: "Old Church Slavonic",
+        nativeName: "\u0469\u0437\u044B\u043A\u044A \u0441\u043B\u043E\u0432\u0463\u043D\u044C\u0441\u043A\u044A"
+      },
+      cv: {
+        name: "Chuvash",
+        nativeName: "\u0447\u04D1\u0432\u0430\u0448 \u0447\u04D7\u043B\u0445\u0438"
+      },
+      cy: {
+        name: "Welsh",
+        nativeName: "Cymraeg"
+      },
+      da: {
+        name: "Danish",
+        nativeName: "dansk"
+      },
+      de: {
+        name: "German",
+        nativeName: "Deutsch"
+      },
+      dv: {
+        name: "Divehi",
+        nativeName: "\u078B\u07A8\u0788\u07AC\u0780\u07A8"
+      },
+      dz: {
+        name: "Dzongkha",
+        nativeName: "\u0F62\u0FAB\u0F7C\u0F44\u0F0B\u0F41"
+      },
+      ee: {
+        name: "Ewe",
+        nativeName: "E\u028Begbe"
+      },
+      el: {
+        name: "Greek",
+        nativeName: "\u0395\u03BB\u03BB\u03B7\u03BD\u03B9\u03BA\u03AC"
+      },
+      en: {
+        name: "English",
+        nativeName: "English"
+      },
+      eo: {
+        name: "Esperanto",
+        nativeName: "Esperanto"
+      },
+      es: {
+        name: "Spanish",
+        nativeName: "Espa\xF1ol"
+      },
+      et: {
+        name: "Estonian",
+        nativeName: "eesti"
+      },
+      eu: {
+        name: "Basque",
+        nativeName: "euskara"
+      },
+      fa: {
+        name: "Persian",
+        nativeName: "\u0641\u0627\u0631\u0633\u06CC"
+      },
+      ff: {
+        name: "Fula",
+        nativeName: "Fulfulde"
+      },
+      fi: {
+        name: "Finnish",
+        nativeName: "suomi"
+      },
+      fj: {
+        name: "Fijian",
+        nativeName: "vosa Vakaviti"
+      },
+      fo: {
+        name: "Faroese",
+        nativeName: "f\xF8royskt"
+      },
+      fr: {
+        name: "French",
+        nativeName: "Fran\xE7ais"
+      },
+      fy: {
+        name: "Western Frisian",
+        nativeName: "Frysk"
+      },
+      ga: {
+        name: "Irish",
+        nativeName: "Gaeilge"
+      },
+      gd: {
+        name: "Scottish Gaelic",
+        nativeName: "G\xE0idhlig"
+      },
+      gl: {
+        name: "Galician",
+        nativeName: "galego"
+      },
+      gn: {
+        name: "Guaran\xED",
+        nativeName: "Ava\xF1e'\u1EBD"
+      },
+      gu: {
+        name: "Gujarati",
+        nativeName: "\u0A97\u0AC1\u0A9C\u0AB0\u0ABE\u0AA4\u0AC0"
+      },
+      gv: {
+        name: "Manx",
+        nativeName: "Gaelg"
+      },
+      ha: {
+        name: "Hausa",
+        nativeName: "\u0647\u064E\u0648\u064F\u0633\u064E"
+      },
+      he: {
+        name: "Hebrew",
+        nativeName: "\u05E2\u05D1\u05E8\u05D9\u05EA"
+      },
+      hi: {
+        name: "Hindi",
+        nativeName: "\u0939\u093F\u0928\u094D\u0926\u0940"
+      },
+      ho: {
+        name: "Hiri Motu",
+        nativeName: "Hiri Motu"
+      },
+      hr: {
+        name: "Croatian",
+        nativeName: "Hrvatski"
+      },
+      ht: {
+        name: "Haitian",
+        nativeName: "Krey\xF2l ayisyen"
+      },
+      hu: {
+        name: "Hungarian",
+        nativeName: "magyar"
+      },
+      hy: {
+        name: "Armenian",
+        nativeName: "\u0540\u0561\u0575\u0565\u0580\u0565\u0576"
+      },
+      hz: {
+        name: "Herero",
+        nativeName: "Otjiherero"
+      },
+      ia: {
+        name: "Interlingua",
+        nativeName: "Interlingua"
+      },
+      id: {
+        name: "Indonesian",
+        nativeName: "Bahasa Indonesia"
+      },
+      ie: {
+        name: "Interlingue",
+        nativeName: "Interlingue"
+      },
+      ig: {
+        name: "Igbo",
+        nativeName: "As\u1EE5s\u1EE5 Igbo"
+      },
+      ii: {
+        name: "Nuosu",
+        nativeName: "\uA188\uA320\uA4BF Nuosuhxop"
+      },
+      ik: {
+        name: "Inupiaq",
+        nativeName: "I\xF1upiaq"
+      },
+      io: {
+        name: "Ido",
+        nativeName: "Ido"
+      },
+      is: {
+        name: "Icelandic",
+        nativeName: "\xCDslenska"
+      },
+      it: {
+        name: "Italian",
+        nativeName: "Italiano"
+      },
+      iu: {
+        name: "Inuktitut",
+        nativeName: "\u1403\u14C4\u1483\u144E\u1450\u1466"
+      },
+      ja: {
+        name: "Japanese",
+        nativeName: "\u65E5\u672C\u8A9E"
+      },
+      jv: {
+        name: "Javanese",
+        nativeName: "basa Jawa"
+      },
+      ka: {
+        name: "Georgian",
+        nativeName: "\u10E5\u10D0\u10E0\u10D7\u10E3\u10DA\u10D8"
+      },
+      kg: {
+        name: "Kongo",
+        nativeName: "Kikongo"
+      },
+      ki: {
+        name: "Kikuyu",
+        nativeName: "G\u0129k\u0169y\u0169"
+      },
+      kj: {
+        name: "Kwanyama",
+        nativeName: "Kuanyama"
+      },
+      kk: {
+        name: "Kazakh",
+        nativeName: "\u049B\u0430\u0437\u0430\u049B \u0442\u0456\u043B\u0456"
+      },
+      kl: {
+        name: "Kalaallisut",
+        nativeName: "kalaallisut"
+      },
+      km: {
+        name: "Khmer",
+        nativeName: "\u1781\u17C1\u1798\u179A\u1797\u17B6\u179F\u17B6"
+      },
+      kn: {
+        name: "Kannada",
+        nativeName: "\u0C95\u0CA8\u0CCD\u0CA8\u0CA1"
+      },
+      ko: {
+        name: "Korean",
+        nativeName: "\uD55C\uAD6D\uC5B4"
+      },
+      kr: {
+        name: "Kanuri",
+        nativeName: "Kanuri"
+      },
+      ks: {
+        name: "Kashmiri",
+        nativeName: "\u0915\u0936\u094D\u092E\u0940\u0930\u0940"
+      },
+      ku: {
+        name: "Kurdish",
+        nativeName: "Kurd\xEE"
+      },
+      kv: {
+        name: "Komi",
+        nativeName: "\u043A\u043E\u043C\u0438 \u043A\u044B\u0432"
+      },
+      kw: {
+        name: "Cornish",
+        nativeName: "Kernewek"
+      },
+      ky: {
+        name: "Kyrgyz",
+        nativeName: "\u041A\u044B\u0440\u0433\u044B\u0437\u0447\u0430"
+      },
+      la: {
+        name: "Latin",
+        nativeName: "latine"
+      },
+      lb: {
+        name: "Luxembourgish",
+        nativeName: "L\xEBtzebuergesch"
+      },
+      lg: {
+        name: "Ganda",
+        nativeName: "Luganda"
+      },
+      li: {
+        name: "Limburgish",
+        nativeName: "Limburgs"
+      },
+      ln: {
+        name: "Lingala",
+        nativeName: "Ling\xE1la"
+      },
+      lo: {
+        name: "Lao",
+        nativeName: "\u0E9E\u0EB2\u0EAA\u0EB2\u0EA5\u0EB2\u0EA7"
+      },
+      lt: {
+        name: "Lithuanian",
+        nativeName: "lietuvi\u0173 kalba"
+      },
+      lu: {
+        name: "Luba-Katanga",
+        nativeName: "Kiluba"
+      },
+      lv: {
+        name: "Latvian",
+        nativeName: "latvie\u0161u valoda"
+      },
+      mg: {
+        name: "Malagasy",
+        nativeName: "fiteny malagasy"
+      },
+      mh: {
+        name: "Marshallese",
+        nativeName: "Kajin M\u0327aje\u013C"
+      },
+      mi: {
+        name: "M\u0101ori",
+        nativeName: "te reo M\u0101ori"
+      },
+      mk: {
+        name: "Macedonian",
+        nativeName: "\u043C\u0430\u043A\u0435\u0434\u043E\u043D\u0441\u043A\u0438 \u0458\u0430\u0437\u0438\u043A"
+      },
+      ml: {
+        name: "Malayalam",
+        nativeName: "\u0D2E\u0D32\u0D2F\u0D3E\u0D33\u0D02"
+      },
+      mn: {
+        name: "Mongolian",
+        nativeName: "\u041C\u043E\u043D\u0433\u043E\u043B \u0445\u044D\u043B"
+      },
+      mr: {
+        name: "Marathi",
+        nativeName: "\u092E\u0930\u093E\u0920\u0940"
+      },
+      ms: {
+        name: "Malay",
+        nativeName: "Bahasa Melayu"
+      },
+      mt: {
+        name: "Maltese",
+        nativeName: "Malti"
+      },
+      my: {
+        name: "Burmese",
+        nativeName: "\u1017\u1019\u102C\u1005\u102C"
+      },
+      na: {
+        name: "Nauru",
+        nativeName: "Dorerin Naoero"
+      },
+      nb: {
+        name: "Norwegian Bokm\xE5l",
+        nativeName: "Norsk bokm\xE5l"
+      },
+      nd: {
+        name: "Northern Ndebele",
+        nativeName: "isiNdebele"
+      },
+      ne: {
+        name: "Nepali",
+        nativeName: "\u0928\u0947\u092A\u093E\u0932\u0940"
+      },
+      ng: {
+        name: "Ndonga",
+        nativeName: "Owambo"
+      },
+      nl: {
+        name: "Dutch",
+        nativeName: "Nederlands"
+      },
+      nn: {
+        name: "Norwegian Nynorsk",
+        nativeName: "Norsk nynorsk"
+      },
+      no: {
+        name: "Norwegian",
+        nativeName: "Norsk"
+      },
+      nr: {
+        name: "Southern Ndebele",
+        nativeName: "isiNdebele"
+      },
+      nv: {
+        name: "Navajo",
+        nativeName: "Din\xE9 bizaad"
+      },
+      ny: {
+        name: "Chichewa",
+        nativeName: "chiChe\u0175a"
+      },
+      oc: {
+        name: "Occitan",
+        nativeName: "occitan"
+      },
+      oj: {
+        name: "Ojibwe",
+        nativeName: "\u140A\u14C2\u1511\u14C8\u142F\u14A7\u140E\u14D0"
+      },
+      om: {
+        name: "Oromo",
+        nativeName: "Afaan Oromoo"
+      },
+      or: {
+        name: "Oriya",
+        nativeName: "\u0B13\u0B21\u0B3C\u0B3F\u0B06"
+      },
+      os: {
+        name: "Ossetian",
+        nativeName: "\u0438\u0440\u043E\u043D \xE6\u0432\u0437\u0430\u0433"
+      },
+      pa: {
+        name: "Panjabi",
+        nativeName: "\u0A2A\u0A70\u0A1C\u0A3E\u0A2C\u0A40"
+      },
+      pi: {
+        name: "P\u0101li",
+        nativeName: "\u092A\u093E\u0934\u093F"
+      },
+      pl: {
+        name: "Polish",
+        nativeName: "Polski"
+      },
+      ps: {
+        name: "Pashto",
+        nativeName: "\u067E\u069A\u062A\u0648"
+      },
+      pt: {
+        name: "Portuguese",
+        nativeName: "Portugu\xEAs"
+      },
+      qu: {
+        name: "Quechua",
+        nativeName: "Runa Simi"
+      },
+      rm: {
+        name: "Romansh",
+        nativeName: "rumantsch grischun"
+      },
+      rn: {
+        name: "Kirundi",
+        nativeName: "Ikirundi"
+      },
+      ro: {
+        name: "Romanian",
+        nativeName: "Rom\xE2n\u0103"
+      },
+      ru: {
+        name: "Russian",
+        nativeName: "\u0420\u0443\u0441\u0441\u043A\u0438\u0439"
+      },
+      rw: {
+        name: "Kinyarwanda",
+        nativeName: "Ikinyarwanda"
+      },
+      sa: {
+        name: "Sanskrit",
+        nativeName: "\u0938\u0902\u0938\u094D\u0915\u0943\u0924\u092E\u094D"
+      },
+      sc: {
+        name: "Sardinian",
+        nativeName: "sardu"
+      },
+      sd: {
+        name: "Sindhi",
+        nativeName: "\u0938\u093F\u0928\u094D\u0927\u0940"
+      },
+      se: {
+        name: "Northern Sami",
+        nativeName: "Davvis\xE1megiella"
+      },
+      sg: {
+        name: "Sango",
+        nativeName: "y\xE2ng\xE2 t\xEE s\xE4ng\xF6"
+      },
+      si: {
+        name: "Sinhala",
+        nativeName: "\u0DC3\u0DD2\u0D82\u0DC4\u0DBD"
+      },
+      sk: {
+        name: "Slovak",
+        nativeName: "sloven\u010Dina"
+      },
+      sl: {
+        name: "Slovenian",
+        nativeName: "sloven\u0161\u010Dina"
+      },
+      sm: {
+        name: "Samoan",
+        nativeName: "gagana fa'a Samoa"
+      },
+      sn: {
+        name: "Shona",
+        nativeName: "chiShona"
+      },
+      so: {
+        name: "Somali",
+        nativeName: "Soomaaliga"
+      },
+      sq: {
+        name: "Albanian",
+        nativeName: "Shqip"
+      },
+      sr: {
+        name: "Serbian",
+        nativeName: "\u0441\u0440\u043F\u0441\u043A\u0438 \u0458\u0435\u0437\u0438\u043A"
+      },
+      ss: {
+        name: "Swati",
+        nativeName: "SiSwati"
+      },
+      st: {
+        name: "Southern Sotho",
+        nativeName: "Sesotho"
+      },
+      su: {
+        name: "Sundanese",
+        nativeName: "Basa Sunda"
+      },
+      sv: {
+        name: "Swedish",
+        nativeName: "Svenska"
+      },
+      sw: {
+        name: "Swahili",
+        nativeName: "Kiswahili"
+      },
+      ta: {
+        name: "Tamil",
+        nativeName: "\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD"
+      },
+      te: {
+        name: "Telugu",
+        nativeName: "\u0C24\u0C46\u0C32\u0C41\u0C17\u0C41"
+      },
+      tg: {
+        name: "Tajik",
+        nativeName: "\u0442\u043E\u04B7\u0438\u043A\u04E3"
+      },
+      th: {
+        name: "Thai",
+        nativeName: "\u0E44\u0E17\u0E22"
+      },
+      ti: {
+        name: "Tigrinya",
+        nativeName: "\u1275\u130D\u122D\u129B"
+      },
+      tk: {
+        name: "Turkmen",
+        nativeName: "T\xFCrkmen\xE7e"
+      },
+      tl: {
+        name: "Tagalog",
+        nativeName: "Wikang Tagalog"
+      },
+      tn: {
+        name: "Tswana",
+        nativeName: "Setswana"
+      },
+      to: {
+        name: "Tonga",
+        nativeName: "faka Tonga"
+      },
+      tr: {
+        name: "Turkish",
+        nativeName: "T\xFCrk\xE7e"
+      },
+      ts: {
+        name: "Tsonga",
+        nativeName: "Xitsonga"
+      },
+      tt: {
+        name: "Tatar",
+        nativeName: "\u0442\u0430\u0442\u0430\u0440 \u0442\u0435\u043B\u0435"
+      },
+      tw: {
+        name: "Twi",
+        nativeName: "Twi"
+      },
+      ty: {
+        name: "Tahitian",
+        nativeName: "Reo Tahiti"
+      },
+      ug: {
+        name: "Uyghur",
+        nativeName: "\u0626\u06C7\u064A\u063A\u06C7\u0631\u0686\u06D5\u200E"
+      },
+      uk: {
+        name: "Ukrainian",
+        nativeName: "\u0423\u043A\u0440\u0430\u0457\u043D\u0441\u044C\u043A\u0430"
+      },
+      ur: {
+        name: "Urdu",
+        nativeName: "\u0627\u0631\u062F\u0648"
+      },
+      uz: {
+        name: "Uzbek",
+        nativeName: "\u040E\u0437\u0431\u0435\u043A"
+      },
+      ve: {
+        name: "Venda",
+        nativeName: "Tshiven\u1E13a"
+      },
+      vi: {
+        name: "Vietnamese",
+        nativeName: "Ti\u1EBFng Vi\u1EC7t"
+      },
+      vo: {
+        name: "Volap\xFCk",
+        nativeName: "Volap\xFCk"
+      },
+      wa: {
+        name: "Walloon",
+        nativeName: "walon"
+      },
+      wo: {
+        name: "Wolof",
+        nativeName: "Wollof"
+      },
+      xh: {
+        name: "Xhosa",
+        nativeName: "isiXhosa"
+      },
+      yi: {
+        name: "Yiddish",
+        nativeName: "\u05D9\u05D9\u05B4\u05D3\u05D9\u05E9"
+      },
+      yo: {
+        name: "Yoruba",
+        nativeName: "Yor\xF9b\xE1"
+      },
+      za: {
+        name: "Zhuang",
+        nativeName: "Sa\u026F cue\u014B\u0185"
+      },
+      zh: {
+        name: "Chinese",
+        nativeName: "\u4E2D\u6587"
+      },
+      zu: {
+        name: "Zulu",
+        nativeName: "isiZulu"
+      }
+    };
+    module2.exports = LANGUAGES_LIST;
+  }
+});
+
+// node_modules/iso-639-1/src/index.js
+var require_src = __commonJS({
+  "node_modules/iso-639-1/src/index.js"(exports2, module2) {
+    var LANGUAGES_LIST = require_data();
+    var LANGUAGES = {};
+    var LANGUAGES_BY_NAME = {};
+    var LANGUAGE_CODES = [];
+    var LANGUAGE_NAMES = [];
+    var LANGUAGE_NATIVE_NAMES = [];
+    for (const code in LANGUAGES_LIST) {
+      const { name, nativeName } = LANGUAGES_LIST[code];
+      LANGUAGES[code] = LANGUAGES_BY_NAME[name.toLowerCase()] = LANGUAGES_BY_NAME[nativeName.toLowerCase()] = { code, name, nativeName };
+      LANGUAGE_CODES.push(code);
+      LANGUAGE_NAMES.push(name);
+      LANGUAGE_NATIVE_NAMES.push(nativeName);
+    }
+    module2.exports = class ISO63912 {
+      static getLanguages(codes = []) {
+        return codes.map(
+          (code) => ISO63912.validate(code) ? Object.assign({}, LANGUAGES[code]) : { code, name: "", nativeName: "" }
+        );
+      }
+      static getName(code) {
+        return ISO63912.validate(code) ? LANGUAGES_LIST[code].name : "";
+      }
+      static getAllNames() {
+        return LANGUAGE_NAMES.slice();
+      }
+      static getNativeName(code) {
+        return ISO63912.validate(code) ? LANGUAGES_LIST[code].nativeName : "";
+      }
+      static getAllNativeNames() {
+        return LANGUAGE_NATIVE_NAMES.slice();
+      }
+      static getCode(name) {
+        name = name.toLowerCase();
+        return LANGUAGES_BY_NAME.hasOwnProperty(name) ? LANGUAGES_BY_NAME[name].code : "";
+      }
+      static getAllCodes() {
+        return LANGUAGE_CODES.slice();
+      }
+      static validate(code) {
+        return LANGUAGES_LIST.hasOwnProperty(code);
+      }
+    };
+  }
+});
+
 // node_modules/flat/index.js
 var require_flat = __commonJS({
   "node_modules/flat/index.js"(exports2, module2) {
@@ -3839,210 +4628,8 @@ var GoogleGenerativeAI = class {
 // src/translate.ts
 var import_dotenv = __toESM(require_main());
 
-// node_modules/iso-language-codes/dist/index.mjs
-var data_default = [
-  ["Serbian", "\u0441\u0440\u043F\u0441\u043A\u0438 \u0458\u0435\u0437\u0438\u043A", "sr", "srp", "srp"],
-  ["Romanian, Moldavian, Moldovan", "Rom\xE2n\u0103", "ro", "ron", "rum"],
-  ["Sichuan Yi, Nuosu", "\uA188\uA320\uA4BF Nuosuhxop", "ii", "iii", "iii"],
-  ["Tahitian", "Reo Tahiti", "ty", "tah", "tah"],
-  ["Tagalog", "Wikang Tagalog", "tl", "tgl", "tgl"],
-  ["Yiddish", "\u05D9\u05D9\u05B4\u05D3\u05D9\u05E9", "yi", "yid", "yid"],
-  ["Akan", "Akan", "ak", "aka", "aka"],
-  ["Malay", "Bahasa Melayu, \u0628\u0647\u0627\u0633 \u0645\u0644\u0627\u064A\u0648", "ms", "msa", "may"],
-  ["Arabic", "\u0627\u0644\u0639\u0631\u0628\u064A\u0629", "ar", "ara", "ara"],
-  ["Norwegian", "Norsk", "no", "nor", "nor"],
-  ["Ojibwa", "\u140A\u14C2\u1511\u14C8\u142F\u14A7\u140E\u14D0", "oj", "oji", "oji"],
-  ["Fulah", "Fulfulde, Pulaar, Pular", "ff", "ful", "ful"],
-  ["Persian", "\u0641\u0627\u0631\u0633\u06CC", "fa", "fas", "per"],
-  ["Albanian", "Shqip", "sq", "sqi", "alb"],
-  ["Aymara", "aymar aru", "ay", "aym", "aym"],
-  ["Azerbaijani", "az\u0259rbaycan dili", "az", "aze", "aze"],
-  ["Chinese", "\u4E2D\u6587 (Zh\u014Dngw\xE9n), \u6C49\u8BED, \u6F22\u8A9E", "zh", "zho", "chi"],
-  ["Cree", "\u14C0\u1426\u1403\u152D\u140D\u140F\u1423", "cr", "cre", "cre"],
-  ["Estonian", "eesti, eesti keel", "et", "est", "est"],
-  ["Guaran\xED", "Ava\xF1e'\u1EBD", "gn", "grn", "grn"],
-  ["Inupiaq", "I\xF1upiaq, I\xF1upiatun", "ik", "ipk", "ipk"],
-  ["Inuktitut", "\u1403\u14C4\u1483\u144E\u1450\u1466", "iu", "iku", "iku"],
-  ["Kanuri", "Kanuri", "kr", "kau", "kau"],
-  ["Komi", "\u043A\u043E\u043C\u0438 \u043A\u044B\u0432", "kv", "kom", "kom"],
-  ["Kongo", "Kikongo", "kg", "kon", "kon"],
-  ["Kurdish", "Kurd\xEE, \u0623\u06C7\u0632\u0628\u06D0\u0643", "ku", "kur", "kur"],
-  ["Latvian", "latvie\u0161u valoda", "lv", "lav", "lav"],
-  ["Malagasy", "fiteny malagasy", "mg", "mlg", "mlg"],
-  ["Mongolian", "\u041C\u043E\u043D\u0433\u043E\u043B \u0445\u044D\u043B", "mn", "mon", "mon"],
-  ["Oromo", "Afaan Oromoo", "om", "orm", "orm"],
-  ["Pashto, Pushto", "\u067E\u069A\u062A\u0648", "ps", "pus", "pus"],
-  ["Quechua", "Runa Simi, Kichwa", "qu", "que", "que"],
-  ["Sardinian", "sardu", "sc", "srd", "srd"],
-  ["Swahili", "Kiswahili", "sw", "swa", "swa"],
-  ["Uzbek", "O\u02BBzbek, \u040E\u0437\u0431\u0435\u043A, ", "uz", "uzb", "uzb"],
-  ["Zhuang, Chuang", "Sa\u026F cue\u014B\u0185, Saw cuengh", "za", "zha", "zha"],
-  ["Bislama", "Bislama", "bi", "bis", "bis"],
-  ["Norwegian Bokm\xE5l", "Norsk Bokm\xE5l", "nb", "nob", "nob"],
-  ["Norwegian Nynorsk", "Norsk Nynorsk", "nn", "nno", "nno"],
-  ["Indonesian", "Bahasa Indonesia", "id", "ind", "ind"],
-  ["Twi", "Twi", "tw", "twi", "twi"],
-  ["Esperanto", "Esperanto", "eo", "epo", "epo"],
-  ["Interlingua", "Interlingua", "ia", "ina", "ina"],
-  ["Interlingue", "Originally called Occidental; then Interlingue after WWII", "ie", "ile", "ile"],
-  ["Ido", "Ido", "io", "ido", "ido"],
-  ["Volap\xFCk", "Volap\xFCk", "vo", "vol", "vol"],
-  ["Bihari languages", "\u092D\u094B\u091C\u092A\u0941\u0930\u0940", "bh", "bih", "bih"],
-  ["Hebrew (modern)", "\u05E2\u05D1\u05E8\u05D9\u05EA", "he", "heb", "heb"],
-  ["Sanskrit", "\u0938\u0902\u0938\u094D\u0915\u0943\u0924\u092E\u094D", "sa", "san", "san"],
-  ["Church Slavic, Church Slavonic, Old Church Slavonic, Old Slavonic, Old Bulgarian", "\u0469\u0437\u044B\u043A\u044A \u0441\u043B\u043E\u0432\u0463\u043D\u044C\u0441\u043A\u044A", "cu", "chu", "chu"],
-  ["Pali", "\u092A\u093E\u0934\u093F", "pi", "pli", "pli"],
-  ["Avestan", "avesta", "ae", "ave", "ave"],
-  ["Latin", "latine, lingua latina", "la", "lat", "lat"],
-  ["Armenian", "\u0540\u0561\u0575\u0565\u0580\u0565\u0576", "hy", "hye", "arm"],
-  ["Swati", "SiSwati", "ss", "ssw", "ssw"],
-  ["Tibetan", "\u0F56\u0F7C\u0F51\u0F0B\u0F61\u0F72\u0F42", "bo", "bod", "tib"],
-  ["South Ndebele", "isiNdebele", "nr", "nbl", "nbl"],
-  ["Slovene", "Slovenski Jezik, Sloven\u0161\u010Dina", "sl", "slv", "slv"],
-  ["Oriya", "\u0B13\u0B21\u0B3C\u0B3F\u0B06", "or", "ori", "ori"],
-  ["North Ndebele", "isiNdebele", "nd", "nde", "nde"],
-  ["Nauru", "Dorerin Naoero", "na", "nau", "nau"],
-  ["Maori", "te reo M\u0101ori", "mi", "mri", "mao"],
-  ["Marathi", "\u092E\u0930\u093E\u0920\u0940", "mr", "mar", "mar"],
-  ["Luba-Katanga", "Kiluba", "lu", "lub", "lub"],
-  ["Rundi", "Ikirundi", "rn", "run", "run"],
-  ["Central Khmer", "\u1781\u17D2\u1798\u17C2\u179A, \u1781\u17C1\u1798\u179A\u1797\u17B6\u179F\u17B6, \u1797\u17B6\u179F\u17B6\u1781\u17D2\u1798\u17C2\u179A", "km", "khm", "khm"],
-  ["Western Frisian", "Frysk", "fy", "fry", "fry"],
-  ["Bengali", "\u09AC\u09BE\u0982\u09B2\u09BE", "bn", "ben", "ben"],
-  ["Avaric", "\u0430\u0432\u0430\u0440 \u043C\u0430\u0446\u04C0, \u043C\u0430\u0433\u04C0\u0430\u0440\u0443\u043B \u043C\u0430\u0446\u04C0", "av", "ava", "ava"],
-  ["Abkhazian", "\u0430\u04A7\u0441\u0443\u0430 \u0431\u044B\u0437\u0448\u04D9\u0430, \u0430\u04A7\u0441\u0448\u04D9\u0430", "ab", "abk", "abk"],
-  ["Afar", "Afaraf", "aa", "aar", "aar"],
-  ["Afrikaans", "Afrikaans", "af", "afr", "afr"],
-  ["Amharic", "\u12A0\u121B\u122D\u129B", "am", "amh", "amh"],
-  ["Aragonese", "aragon\xE9s", "an", "arg", "arg"],
-  ["Assamese", "\u0985\u09B8\u09AE\u09C0\u09AF\u09BC\u09BE", "as", "asm", "asm"],
-  ["Bambara", "bamanankan", "bm", "bam", "bam"],
-  ["Bashkir", "\u0431\u0430\u0448\u04A1\u043E\u0440\u0442 \u0442\u0435\u043B\u0435", "ba", "bak", "bak"],
-  ["Basque", "euskara, euskera", "eu", "eus", "baq"],
-  ["Belarusian", "\u0431\u0435\u043B\u0430\u0440\u0443\u0441\u043A\u0430\u044F \u043C\u043E\u0432\u0430", "be", "bel", "bel"],
-  ["Bosnian", "bosanski jezik", "bs", "bos", "bos"],
-  ["Breton", "brezhoneg", "br", "bre", "bre"],
-  ["Bulgarian", "\u0431\u044A\u043B\u0433\u0430\u0440\u0441\u043A\u0438 \u0435\u0437\u0438\u043A", "bg", "bul", "bul"],
-  ["Burmese", "\u1017\u1019\u102C\u1005\u102C", "my", "mya", "bur"],
-  ["Catalan, Valencian", "catal\xE0, valenci\xE0", "ca", "cat", "cat"],
-  ["Chamorro", "Chamoru", "ch", "cha", "cha"],
-  ["Chechen", "\u043D\u043E\u0445\u0447\u0438\u0439\u043D \u043C\u043E\u0442\u0442", "ce", "che", "che"],
-  ["Chichewa, Chewa, Nyanja", "chiChe\u0175a, chinyanja", "ny", "nya", "nya"],
-  ["Chuvash", "\u0447\u04D1\u0432\u0430\u0448 \u0447\u04D7\u043B\u0445\u0438", "cv", "chv", "chv"],
-  ["Cornish", "Kernewek", "kw", "cor", "cor"],
-  ["Corsican", "corsu, lingua corsa", "co", "cos", "cos"],
-  ["Croatian", "hrvatski jezik", "hr", "hrv", "hrv"],
-  ["Czech", "\u010De\u0161tina, \u010Desk\xFD jazyk", "cs", "ces", "cze"],
-  ["Danish", "dansk", "da", "dan", "dan"],
-  ["Divehi, Dhivehi, Maldivian", "\u078B\u07A8\u0788\u07AC\u0780\u07A8", "dv", "div", "div"],
-  ["Dutch, Flemish", "Nederlands, Vlaams", "nl", "nld", "dut"],
-  ["Dzongkha", "\u0F62\u0FAB\u0F7C\u0F44\u0F0B\u0F41", "dz", "dzo", "dzo"],
-  ["English", "English", "en", "eng", "eng"],
-  ["Ewe", "E\u028Begbe", "ee", "ewe", "ewe"],
-  ["Faroese", "f\xF8royskt", "fo", "fao", "fao"],
-  ["Fijian", "vosa Vakaviti", "fj", "fij", "fij"],
-  ["Finnish", "suomi, suomen kieli", "fi", "fin", "fin"],
-  ["French", "fran\xE7ais, langue fran\xE7aise", "fr", "fra", "fre"],
-  ["Galician", "Galego", "gl", "glg", "glg"],
-  ["Georgian", "\u10E5\u10D0\u10E0\u10D7\u10E3\u10DA\u10D8", "ka", "kat", "geo"],
-  ["German", "Deutsch", "de", "deu", "ger"],
-  ["Greek (modern)", "\u03B5\u03BB\u03BB\u03B7\u03BD\u03B9\u03BA\u03AC", "el", "ell", "gre"],
-  ["Gujarati", "\u0A97\u0AC1\u0A9C\u0AB0\u0ABE\u0AA4\u0AC0", "gu", "guj", "guj"],
-  ["Haitian, Haitian Creole", "Krey\xF2l ayisyen", "ht", "hat", "hat"],
-  ["Hausa", "(Hausa) \u0647\u064E\u0648\u064F\u0633\u064E", "ha", "hau", "hau"],
-  ["Herero", "Otjiherero", "hz", "her", "her"],
-  ["Hindi", "\u0939\u093F\u0928\u094D\u0926\u0940, \u0939\u093F\u0902\u0926\u0940", "hi", "hin", "hin"],
-  ["Hiri Motu", "Hiri Motu", "ho", "hmo", "hmo"],
-  ["Hungarian", "magyar", "hu", "hun", "hun"],
-  ["Irish", "Gaeilge", "ga", "gle", "gle"],
-  ["Igbo", "As\u1EE5s\u1EE5 Igbo", "ig", "ibo", "ibo"],
-  ["Icelandic", "\xCDslenska", "is", "isl", "ice"],
-  ["Italian", "Italiano", "it", "ita", "ita"],
-  ["Japanese", "\u65E5\u672C\u8A9E (\u306B\u307B\u3093\u3054)", "ja", "jpn", "jpn"],
-  ["Javanese", "\uA9A7\uA9B1\uA997\uA9AE, Basa Jawa", "jv", "jav", "jav"],
-  ["Kalaallisut, Greenlandic", "kalaallisut, kalaallit oqaasii", "kl", "kal", "kal"],
-  ["Kannada", "\u0C95\u0CA8\u0CCD\u0CA8\u0CA1", "kn", "kan", "kan"],
-  ["Kashmiri", "\u0915\u0936\u094D\u092E\u0940\u0930\u0940, \u0643\u0634\u0645\u064A\u0631\u064A", "ks", "kas", "kas"],
-  ["Kazakh", "\u049B\u0430\u0437\u0430\u049B \u0442\u0456\u043B\u0456", "kk", "kaz", "kaz"],
-  ["Kikuyu, Gikuyu", "G\u0129k\u0169y\u0169", "ki", "kik", "kik"],
-  ["Kinyarwanda", "Ikinyarwanda", "rw", "kin", "kin"],
-  ["Kirghiz, Kyrgyz", "\u041A\u044B\u0440\u0433\u044B\u0437\u0447\u0430, \u041A\u044B\u0440\u0433\u044B\u0437 \u0442\u0438\u043B\u0438", "ky", "kir", "kir"],
-  ["Korean", "\uD55C\uAD6D\uC5B4", "ko", "kor", "kor"],
-  ["Kuanyama, Kwanyama", "Kuanyama", "kj", "kua", "kua"],
-  ["Luxembourgish, Letzeburgesch", "L\xEBtzebuergesch", "lb", "ltz", "ltz"],
-  ["Ganda", "Luganda", "lg", "lug", "lug"],
-  ["Limburgan, Limburger, Limburgish", "Limburgs", "li", "lim", "lim"],
-  ["Lingala", "Ling\xE1la", "ln", "lin", "lin"],
-  ["Lao", "\u0E9E\u0EB2\u0EAA\u0EB2\u0EA5\u0EB2\u0EA7", "lo", "lao", "lao"],
-  ["Lithuanian", "lietuvi\u0173 kalba", "lt", "lit", "lit"],
-  ["Manx", "Gaelg, Gailck", "gv", "glv", "glv"],
-  ["Macedonian", "\u043C\u0430\u043A\u0435\u0434\u043E\u043D\u0441\u043A\u0438 \u0458\u0430\u0437\u0438\u043A", "mk", "mkd", "mac"],
-  ["Malayalam", "\u0D2E\u0D32\u0D2F\u0D3E\u0D33\u0D02", "ml", "mal", "mal"],
-  ["Maltese", "Malti", "mt", "mlt", "mlt"],
-  ["Marshallese", "Kajin M\u0327aje\u013C", "mh", "mah", "mah"],
-  ["Navajo, Navaho", "Din\xE9 bizaad", "nv", "nav", "nav"],
-  ["Nepali", "\u0928\u0947\u092A\u093E\u0932\u0940", "ne", "nep", "nep"],
-  ["Ndonga", "Owambo", "ng", "ndo", "ndo"],
-  ["Occitan", "occitan, lenga d'\xF2c", "oc", "oci", "oci"],
-  ["Ossetian, Ossetic", "\u0438\u0440\u043E\u043D \xE6\u0432\u0437\u0430\u0433", "os", "oss", "oss"],
-  ["Panjabi, Punjabi", "\u0A2A\u0A70\u0A1C\u0A3E\u0A2C\u0A40", "pa", "pan", "pan"],
-  ["Polish", "j\u0119zyk polski, polszczyzna", "pl", "pol", "pol"],
-  ["Portuguese", "Portugu\xEAs", "pt", "por", "por"],
-  ["Romansh", "Rumantsch Grischun", "rm", "roh", "roh"],
-  ["Russian", "\u0440\u0443\u0441\u0441\u043A\u0438\u0439", "ru", "rus", "rus"],
-  ["Sindhi", "\u0938\u093F\u0928\u094D\u0927\u0940, \u0633\u0646\u068C\u064A\u060C \u0633\u0646\u062F\u06BE\u06CC", "sd", "snd", "snd"],
-  ["Northern Sami", "Davvis\xE1megiella", "se", "sme", "sme"],
-  ["Samoan", "gagana fa'a Samoa", "sm", "smo", "smo"],
-  ["Sango", "y\xE2ng\xE2 t\xEE s\xE4ng\xF6", "sg", "sag", "sag"],
-  ["Gaelic, Scottish Gaelic", "G\xE0idhlig", "gd", "gla", "gla"],
-  ["Shona", "chiShona", "sn", "sna", "sna"],
-  ["Sinhala, Sinhalese", "\u0DC3\u0DD2\u0D82\u0DC4\u0DBD", "si", "sin", "sin"],
-  ["Slovak", "Sloven\u010Dina, Slovensk\xFD Jazyk", "sk", "slk", "slo"],
-  ["Somali", "Soomaaliga, af Soomaali", "so", "som", "som"],
-  ["Southern Sotho", "Sesotho", "st", "sot", "sot"],
-  ["Spanish, Castilian", "Espa\xF1ol", "es", "spa", "spa"],
-  ["Sundanese", "Basa Sunda", "su", "sun", "sun"],
-  ["Swedish", "Svenska", "sv", "swe", "swe"],
-  ["Tamil", "\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD", "ta", "tam", "tam"],
-  ["Telugu", "\u0C24\u0C46\u0C32\u0C41\u0C17\u0C41", "te", "tel", "tel"],
-  ["Tajik", "\u0442\u043E\u04B7\u0438\u043A\u04E3, to\xE7ik\u012B, \u062A\u0627\u062C\u06CC\u06A9\u06CC", "tg", "tgk", "tgk"],
-  ["Thai", "\u0E44\u0E17\u0E22", "th", "tha", "tha"],
-  ["Tigrinya", "\u1275\u130D\u122D\u129B", "ti", "tir", "tir"],
-  ["Turkmen", "T\xFCrkmen, \u0422\u04AF\u0440\u043A\u043C\u0435\u043D", "tk", "tuk", "tuk"],
-  ["Tswana", "Setswana", "tn", "tsn", "tsn"],
-  ["Tongan (Tonga Islands)", "Faka Tonga", "to", "ton", "ton"],
-  ["Turkish", "T\xFCrk\xE7e", "tr", "tur", "tur"],
-  ["Tsonga", "Xitsonga", "ts", "tso", "tso"],
-  ["Tatar", "\u0442\u0430\u0442\u0430\u0440 \u0442\u0435\u043B\u0435, tatar tele", "tt", "tat", "tat"],
-  ["Uighur, Uyghur", "\u0626\u06C7\u064A\u063A\u06C7\u0631\u0686\u06D5, Uyghurche", "ug", "uig", "uig"],
-  ["Ukrainian", "\u0423\u043A\u0440\u0430\u0457\u043D\u0441\u044C\u043A\u0430", "uk", "ukr", "ukr"],
-  ["Urdu", "\u0627\u0631\u062F\u0648", "ur", "urd", "urd"],
-  ["Venda", "Tshiven\u1E13a", "ve", "ven", "ven"],
-  ["Vietnamese", "Ti\u1EBFng Vi\u1EC7t", "vi", "vie", "vie"],
-  ["Walloon", "Walon", "wa", "wln", "wln"],
-  ["Welsh", "Cymraeg", "cy", "cym", "wel"],
-  ["Wolof", "Wollof", "wo", "wol", "wol"],
-  ["Xhosa", "isiXhosa", "xh", "xho", "xho"],
-  ["Yoruba", "Yor\xF9b\xE1", "yo", "yor", "yor"],
-  ["Zulu", "isiZulu", "zu", "zul", "zul"]
-];
-var codes = [];
-var by639_1 = {};
-var by639_2T = {};
-var by639_2B = {};
-data_default.forEach((row) => {
-  var code = {
-    name: row[0],
-    nativeName: row[1],
-    iso639_1: row[2],
-    iso639_2T: row[3],
-    iso639_2B: row[4]
-  };
-  by639_1[row[2]] = by639_2T[row[3]] = by639_2B[row[4]] = code;
-  codes.push(code);
-});
-
 // src/utils.ts
+var import_iso_639_1 = __toESM(require_src());
 function delay(delayDuration) {
   return new Promise((resolve) => setTimeout(resolve, delayDuration));
 }
@@ -4062,23 +4649,11 @@ async function retryJob(job, jobArgs, maxRetries, firstTry, delayDuration, sendE
     return retryJob(job, jobArgs, maxRetries - 1, false, delayDuration);
   });
 }
-function getLanguageFromFilename(filename) {
-  if (filename.includes(".")) {
-    const languageCode = filename.split(".")[0];
-    if (by639_1[languageCode]) {
-      return by639_1[languageCode];
-    }
-  }
-  return null;
-}
-function getLanguageFromCode(code) {
-  if (by639_1[code]) {
-    return by639_1[code];
-  }
-  return null;
+function getLanguageCodeFromFilename(filename) {
+  return filename.split(".")[0];
 }
 function getAllLanguageCodes() {
-  return Object.keys(by639_1);
+  return import_iso_639_1.default.getAllCodes();
 }
 
 // src/translate.ts
@@ -4195,7 +4770,7 @@ Maintain case sensitivity and whitespacing.
 
 Output only the translations.
 
-All lines should start and end with a quotation mark.
+All lines should start and end with a quotation mark (").
 
 \`\`\`
 ${input}
@@ -4493,15 +5068,11 @@ async function translateDiff(options) {
       for (const key of modifiedKeys) {
         addedAndModifiedTranslations[key] = flatInputAfter[key];
       }
-      const language = getLanguageFromCode(languageCode)?.name;
-      if (!language) {
-        throw new Error(`Invalid language code: ${languageCode}`);
-      }
       const translated = await translate({
         apiKey: options.apiKey,
         inputJSON: addedAndModifiedTranslations,
         inputLanguage: options.inputLanguage,
-        outputLanguage: language,
+        outputLanguage: languageCode,
         templatedStringPrefix: options.templatedStringPrefix,
         templatedStringSuffix: options.templatedStringSuffix,
         verbose: options.verbose
@@ -4658,9 +5229,7 @@ var translateFile = async (options) => {
     console.error(`Invalid input JSON: ${e}`);
     return;
   }
-  const inputLanguage = getLanguageFromFilename(
-    options.inputFileOrPath
-  )?.name;
+  const inputLanguage = getLanguageCodeFromFilename(options.inputFileOrPath);
   if (!inputLanguage) {
     throw new Error(
       "Invalid input file name. Use a valid ISO 639-1 language code as the file name."
@@ -4670,9 +5239,7 @@ var translateFile = async (options) => {
   if (options.forceLanguageName) {
     outputLanguage = options.forceLanguageName;
   } else {
-    const language = getLanguageFromFilename(
-      options.outputFileOrPath
-    )?.name;
+    const language = getLanguageCodeFromFilename(options.outputFileOrPath);
     if (!language) {
       throw new Error(
         "Invalid output file name. Use a valid ISO 639-1 language code as the file name. Consider using the --force-language option."
@@ -4748,9 +5315,9 @@ var translateFileDiff = async (options) => {
   }
   const toUpdateJSONs = {};
   for (const outputPath of outputPaths) {
-    const languageCode = getLanguageFromFilename(
+    const languageCode = getLanguageCodeFromFilename(
       import_path.default.basename(outputPath)
-    )?.iso639_1;
+    );
     if (!languageCode) {
       throw new Error(
         "Invalid output file name. Use a valid ISO 639-1 language code as the file name."
@@ -4814,7 +5381,7 @@ program.command("translate").requiredOption(
   "-s, --templated-string-suffix <suffix>",
   "Suffix for templated strings",
   DEFAULT_TEMPLATED_STRING_SUFFIX
-).option("-k, --api-key", "Gemini API key").option(
+).option("-k, --api-key <Gemini API key>", "Gemini API key").option(
   "--ensure-changed-translation",
   "Each generated translation key must differ from the input (for keys longer than 4)",
   false
@@ -4855,9 +5422,10 @@ program.command("translate").requiredOption(
       console.error("No languages specified");
       return;
     }
-    const languageNames = options.languages.map((x) => getLanguageFromCode(x)?.name).filter((x) => x);
     if (options.verbose) {
-      console.log(`Translating to ${languageNames.join(", ")}...`);
+      console.log(
+        `Translating to ${options.languages.join(", ")}...`
+      );
     }
     let i = 0;
     for (const languageCode of options.languages) {
@@ -4866,7 +5434,7 @@ program.command("translate").requiredOption(
         `Translating ${i}/${options.languages.length} languages...`
       );
       const output = options.input.replace(
-        getLanguageFromFilename(options.input)?.iso639_1,
+        getLanguageCodeFromFilename(options.input),
         languageCode
       );
       if (options.input === output) {
@@ -4906,7 +5474,7 @@ program.command("translate").requiredOption(
         );
       }
       const output = options.input.replace(
-        getLanguageFromFilename(options.input)?.iso639_1,
+        getLanguageCodeFromFilename(options.input),
         languageCode
       );
       if (options.input === output) {
@@ -4938,7 +5506,7 @@ program.command("diff").requiredOption(
 ).requiredOption(
   "-l, --input-language <inputLanguage>",
   "The full input language name"
-).option("-k, --api-key", "Gemini API key").option(
+).option("-k, --api-key <Gemini API key>", "Gemini API key").option(
   "--ensure-changed-translation",
   "Each generated translation key must differ from the input (for keys longer than 4)",
   false

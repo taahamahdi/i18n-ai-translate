@@ -1,5 +1,4 @@
-import { by639_1 as languageCodes } from "iso-language-codes";
-import type { Code } from "iso-language-codes";
+import ISO6391 from "iso-639-1";
 
 /**
  * @param delayDuration - time (in ms) to delay
@@ -50,32 +49,13 @@ export async function retryJob<Type>(
  * @param filename - the filename to get the language from
  * @returns the language code from the filename
  */
-export function getLanguageFromFilename(filename: string): Code | null {
-    if (filename.includes(".")) {
-        const languageCode = filename.split(".")[0];
-        if (languageCodes[languageCode as keyof typeof languageCodes]) {
-            return languageCodes[languageCode as keyof typeof languageCodes];
-        }
-    }
-
-    return null;
-}
-
-/**
- * @param code - the language code to get the language from
- * @returns the language from the language code
- */
-export function getLanguageFromCode(code: string): Code | null {
-    if (languageCodes[code as keyof typeof languageCodes]) {
-        return languageCodes[code as keyof typeof languageCodes];
-    }
-
-    return null;
+export function getLanguageCodeFromFilename(filename: string): string {
+    return filename.split(".")[0];
 }
 
 /**
  * @returns all language codes
  */
 export function getAllLanguageCodes(): string[] {
-    return Object.keys(languageCodes);
+    return ISO6391.getAllCodes();
 }
