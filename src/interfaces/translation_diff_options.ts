@@ -3,7 +3,7 @@ export default interface TranslationDiffOptions {
     inputLanguage: string;
     inputJSONBefore: Object;
     inputJSONAfter: Object;
-    toUpdateJSONs: { [language: string]: Object };
+    toUpdateJSONs: { [languageCode: string]: Object };
     templatedStringPrefix?: string;
     templatedStringSuffix?: string;
     verbose?: boolean;

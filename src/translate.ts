@@ -15,45 +15,13 @@ import {
 import TranslateFileOptions from "./interfaces/translation_file_options";
 import TranslationOptions from "./interfaces/translation_options";
 import TranslationDiffOptions from "./interfaces/translation_diff_options";
+import TranslateFileDiffOptions from "./interfaces/translation_file_diff_options";
 
 const BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 
 config({ path: path.resolve(__dirname, "../.env") });
-
-program
-    .requiredOption(
-        "-i, --input <input>",
-        "Source i18n file, in the jsons/ directory if a relative path is given",
-    )
-    .option(
-        "-o, --output <output>",
-        "Output i18n file, in the jsons/ directory if a relative path is given",
-    )
-    .option("-f, --force-language-name <language name>", "Force language name")
-    .option("-A, --all-languages", "Translate to all supported languages")
-    .option(
-        "-l, --languages [language codes...]",
-        "Pass a list of languages to translate to",
-    )
-    .option(
-        "-p, --templated-string-prefix <prefix>",
-        "Prefix for templated strings",
-        DEFAULT_TEMPLATED_STRING_PREFIX,
-    )
-    .option(
-        "-s, --templated-string-suffix <suffix>",
-        "Suffix for templated strings",
-        DEFAULT_TEMPLATED_STRING_SUFFIX,
-    )
-    .option("-k, --api-key", "Gemini API key")
-    .option(
-        "--ensure-changed-translation",
-        "Each generated translation key must differ from the input (for keys longer than 4)",
-        false,
-    )
-    .option("--verbose", "Print logs about progress", false);
 
 const translateFile = async (options: TranslateFileOptions) => {
     const jsonFolder = path.resolve(__dirname, "../jsons");
@@ -76,7 +44,7 @@ const translateFile = async (options: TranslateFileOptions) => {
         const inputFile = fs.readFileSync(inputPath, "utf-8");
         inputJSON = JSON.parse(inputFile);
     } catch (e) {
-        console.error(`Invalid JSON: ${e}`);
+        console.error(`Invalid input JSON: ${e}`);
         return;
     }
 
@@ -103,11 +71,6 @@ const translateFile = async (options: TranslateFileOptions) => {
         }
 
         outputLanguage = language;
-        if (!outputLanguage) {
-            throw new Error(
-                "Invalid output file name. Use a valid ISO 639-1 language code as the file name.",
-            );
-        }
     }
 
     try {
@@ -132,6 +95,93 @@ const translateFile = async (options: TranslateFileOptions) => {
         console.error(`Failed to translate file to ${outputLanguage}: ${err}`);
     }
 };
+
+const translateFileDiff = async (options: TranslateFileDiffOptions) => {
+    const jsonFolder = path.resolve(__dirname, "../jsons");
+    let inputBeforePath: string;
+    let inputAfterPath: string;
+    if (path.isAbsolute(options.inputBeforeFileOrPath)) {
+        inputBeforePath = path.resolve(options.inputBeforeFileOrPath);
+    } else {
+        inputBeforePath = path.resolve(jsonFolder, options.inputBeforeFileOrPath);
+    }
+
+    if (path.isAbsolute(options.inputAfterFileOrPath)) {
+        inputAfterPath = path.resolve(options.inputAfterFileOrPath);
+    } else {
+        inputAfterPath = path.resolve(jsonFolder, options.inputAfterFileOrPath);
+    }
+
+    let outputPaths: Array<string> = [];
+    for (const outputFileOrPath of options.outputFilesOrPaths) {
+        let outputPath: string;
+        if (path.isAbsolute(outputFileOrPath)) {
+            outputPath = path.resolve(outputFileOrPath);
+        } else {
+            outputPath = path.resolve(jsonFolder, outputFileOrPath);
+        }
+        outputPaths.push(outputPath);
+    }
+
+    let inputBeforeJSON = {};
+    let inputAfterJSON = {};
+    try {
+        let inputFile = fs.readFileSync(inputBeforePath, "utf-8");
+        inputBeforeJSON = JSON.parse(inputFile);
+        inputFile = fs.readFileSync(inputAfterPath, "utf-8");
+        inputAfterJSON = JSON.parse(inputFile);
+    } catch (e) {
+        console.error(`Invalid input JSON: ${e}`);
+        return;
+    }
+
+    const toUpdateJSONs: { [language: string]: Object } = {};
+    for (const outputPath of outputPaths) {
+        const languageCode = getLanguageFromFilename(
+            path.basename(outputPath),
+        )?.iso639_1;
+        if (!languageCode) {
+            throw new Error(
+                "Invalid output file name. Use a valid ISO 639-1 language code as the file name. Consider using the --force-language option.",
+            );
+        }
+
+        try {
+            const outputFile = fs.readFileSync(outputPath, "utf-8");
+            toUpdateJSONs[languageCode] = JSON.parse(outputFile);
+        } catch (e) {
+            console.error(`Invalid output JSON: ${e}`);
+        }
+    }
+
+    try {
+        const outputJSON = await translateDiff({
+            apiKey: options.apiKey,
+            inputLanguage: options.inputLanguage,
+            inputJSONBefore: inputBeforeJSON,
+            inputJSONAfter: inputAfterJSON,
+            toUpdateJSONs,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+            verbose: options.verbose,
+        });
+
+        for (const language in outputJSON) {
+            const outputText = JSON.stringify(outputJSON[language], null, 4);
+
+            if (options.verbose) {
+                console.log(outputText);
+            }
+
+            fs.writeFileSync(
+                path.resolve(jsonFolder, `${language}.json`),
+                outputText,
+            );
+        }
+    } catch (err) {
+        console.error(`Failed to translate file diff: ${err}`);
+    }
+}
 
 export async function translateDiff(
     options: TranslationDiffOptions,
@@ -183,13 +233,18 @@ export async function translateDiff(
         }
     }
 
-    for (const language in flatToUpdateJSONs) {
+    for (const languageCode in flatToUpdateJSONs) {
         const addedAndModifiedTranslations: { [key: string]: string } = {};
         for (const key of addedKeys) {
             addedAndModifiedTranslations[key] = flatInputAfter[key];
         }
         for (const key of modifiedKeys) {
             addedAndModifiedTranslations[key] = flatInputAfter[key];
+        }
+
+        const language = getLanguageFromCode(languageCode)?.name;
+        if (!language) {
+            throw new Error(`Invalid language code: ${languageCode}`);
         }
 
         const translated = await translate({
@@ -204,7 +259,7 @@ export async function translateDiff(
 
         const flatTranslated = flatten(translated) as { [key: string]: string };
         for (const key in flatTranslated) {
-            flatToUpdateJSONs[language][key] = flatTranslated[key];
+            flatToUpdateJSONs[languageCode][key] = flatTranslated[key];
         }
     }
 
@@ -295,16 +350,17 @@ export async function translate(options: TranslationOptions): Promise<Object> {
             break;
         }
 
-        if (options.verbose) {
-            for (let i = 0; i < keys.length; i++) {
-                output[keys[i]] = generatedTranslation
-                    .split("\n")
-                    [i].slice(1, -1);
-                console.log(
-                    `${keys[i]}:\n${flatInput[keys[i]]}\n=>\n${output[keys[i]]}\n`,
-                );
-            }
+        for (let i = 0; i < keys.length; i++) {
+            output[keys[i]] = generatedTranslation
+                .split("\n")
+                [i].slice(1, -1);
+
+            if (options.verbose)
+            console.log(
+                `${keys[i]}:\n${flatInput[keys[i]]}\n=>\n${output[keys[i]]}\n`,
+            );
         }
+
         const batchEndTime = Date.now();
         if (batchEndTime - batchStartTime < 3000) {
             if (options.verbose) {
@@ -342,10 +398,44 @@ export async function translate(options: TranslationOptions): Promise<Object> {
     return unflattenedOutput as Object;
 }
 
-(async () => {
-    program.parse();
-    const options = program.opts();
+program
+    .name("i18n-ai-translate")
+    .description("Use Google Gemini to translate your i18n JSON to any language")
+    .option("-k, --api-key", "Gemini API key")
+    .option(
+        "--ensure-changed-translation",
+        "Each generated translation key must differ from the input (for keys longer than 4)",
+        false,
+    )
+    .option("--verbose", "Print logs about progress", false)
+    .version("1.1.0");
 
+program
+    .command("translate")
+    .requiredOption(
+        "-i, --input <input>",
+        "Source i18n file, in the jsons/ directory if a relative path is given",
+    )
+    .option(
+        "-o, --output <output>",
+        "Output i18n file, in the jsons/ directory if a relative path is given",
+    )
+    .option("-f, --force-language-name <language name>", "Force language name")
+    .option("-A, --all-languages", "Translate to all supported languages")
+    .option(
+        "-l, --languages [language codes...]",
+        "Pass a list of languages to translate to",
+    )
+    .option(
+        "-p, --templated-string-prefix <prefix>",
+        "Prefix for templated strings",
+        DEFAULT_TEMPLATED_STRING_PREFIX,
+    )
+    .option(
+        "-s, --templated-string-suffix <suffix>",
+        "Suffix for templated strings",
+        DEFAULT_TEMPLATED_STRING_SUFFIX,
+    ).action(async (options: any) => {
     if (!process.env.API_KEY && !options.apiKey) {
         console.error("API_KEY not found in .env file");
         return;
@@ -462,7 +552,70 @@ export async function translate(options: TranslationOptions): Promise<Object> {
             }
         }
     }
-})();
+});
+
+program
+    .command("diff")
+    .requiredOption(
+        "-b, --before <fileBefore>",
+        "Source i18n file before changes, in the jsons/ directory if a relative path is given",
+    )
+    .requiredOption(
+        "-a, --after <fileAfter>",
+        "Source i18n file after changes, in the jsons/ directory if a relative path is given",
+    )
+    .requiredOption("-l, --input-language <inputLanguage>", "The full input language name"
+    ).action(async (options: any) => {
+        if (!process.env.API_KEY && !options.apiKey) {
+            console.error("API_KEY not found in .env file");
+            return;
+        }
+
+        const apiKey = options.apiKey || process.env.API_KEY;
+
+        const jsonFolder = path.resolve(__dirname, "../jsons");
+        let beforeInputPath: string;
+        if (path.isAbsolute(options.before)) {
+            beforeInputPath = path.resolve(options.before);
+        } else {
+            beforeInputPath = path.resolve(jsonFolder, options.before);
+        }
+
+        let afterInputPath: string;
+        if (path.isAbsolute(options.after)) {
+            afterInputPath = path.resolve(options.after);
+        } else {
+            const jsonFolder = path.resolve(__dirname, "../jsons");
+            afterInputPath = path.resolve(jsonFolder, options.after);
+        }
+
+        // Ensure they're in the same path
+        if (path.dirname(beforeInputPath) !== path.dirname(afterInputPath)) {
+            console.error("Input files are not in the same directory");
+            return;
+        }
+
+        // Get all the *json files from the same path as beforeInputPath
+        const outputFilesOrPaths = fs.readdirSync(path.dirname(beforeInputPath)).filter((file) => file.endsWith('.json'))
+        .filter((file) => file !== path.basename(beforeInputPath) && file !== path.basename(afterInputPath));
+
+        await translateFileDiff({
+            apiKey,
+            inputLanguage: options.inputLanguage,
+            inputBeforeFileOrPath: beforeInputPath,
+            inputAfterFileOrPath: afterInputPath,
+            outputFilesOrPaths,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+            verbose: options.verbose,
+        });
+
+
+});
+
+// TODO: options to adjust batch size and indentation
+
+program.parse();
 
 module.exports = {
     translate,
