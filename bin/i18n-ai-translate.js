@@ -4868,15 +4868,18 @@ async function generateTranslation(model, chats, successfulHistory, inputLanguag
         }
         for (let i = 0; i < splitText.length; i++) {
           let line = splitText[i];
-          while (line.startsWith('""') && line.endsWith('""')) {
-            line = line.slice(1, -1);
+          while (line.startsWith('""')) {
+            line = line.slice(1);
+          }
+          while (line.endsWith('""')) {
+            line = line.slice(0, -1);
           }
           splitText[i] = line;
         }
         text = splitText.join("\n");
         for (let i = 0; i < splitText.length; i++) {
           let line = splitText[i];
-          if (!line.startsWith('"') || !line.endsWith('"')) {
+          if (!line.startsWith('"') || !line.endsWith('"') || line.endsWith('\\"')) {
             chats.generateTranslationChat = model.startChat(successfulHistory);
             return Promise.reject(
               new Error(`Invalid line: ${line}`)
