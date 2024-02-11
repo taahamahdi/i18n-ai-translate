@@ -5261,7 +5261,8 @@ var translateFile = async (options) => {
     if (options.verbose) {
       console.log(outputText);
     }
-    import_fs.default.writeFileSync(outputPath, outputText);
+    import_fs.default.writeFileSync(outputPath, `${outputText}
+`);
   } catch (err) {
     console.error(`Failed to translate file to ${outputLanguage}: ${err}`);
   }
@@ -5355,7 +5356,8 @@ var translateFileDiff = async (options) => {
         }
         import_fs.default.writeFileSync(
           languageCodeToOutputPath[language],
-          outputText
+          `${outputText}
+`
         );
       }
     }
