@@ -5393,11 +5393,11 @@ program.command("translate").requiredOption(
   "Each generated translation key must differ from the input (for keys longer than 4)",
   false
 ).option("--verbose", "Print logs about progress", false).action(async (options) => {
-  if (!process.env.API_KEY && !options.apiKey) {
-    console.error("API_KEY not found in .env file");
+  if (!process.env.GEMINI_API_KEY && !options.apiKey) {
+    console.error("GEMINI_API_KEY not found in .env file");
     return;
   }
-  const apiKey = options.apiKey || process.env.API_KEY;
+  const apiKey = options.apiKey || process.env.GEMINI_API_KEY;
   if (!options.allLanguages && !options.languages) {
     if (!options.output) {
       console.error("Output file not specified");
@@ -5518,11 +5518,11 @@ program.command("diff").requiredOption(
   "Each generated translation key must differ from the input (for keys longer than 4)",
   false
 ).option("--verbose", "Print logs about progress", false).action(async (options) => {
-  if (!process.env.API_KEY && !options.apiKey) {
-    console.error("API_KEY not found in .env file");
+  if (!process.env.GEMINI_API_KEY && !options.apiKey) {
+    console.error("GEMINI_API_KEY not found in .env file");
     return;
   }
-  const apiKey = options.apiKey || process.env.API_KEY;
+  const apiKey = options.apiKey || process.env.GEMINI_API_KEY;
   const jsonFolder = import_path.default.resolve(process.cwd(), "jsons");
   let beforeInputPath;
   if (import_path.default.isAbsolute(options.before)) {

@@ -44,7 +44,7 @@ jobs:
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
-        echo "API_KEY=$GEMINI_API_KEY" >> .env
+        echo "GEMINI_API_KEY=$GEMINI_API_KEY" >> .env
       shell: bash
 
     - name: Fetch original translation
@@ -66,7 +66,7 @@ Use `i18n-ai-translate translate` to convert a local i18n JSON file to any langu
 
 Use `i18n-ai-translate diff` to find translate the differences between a source language, and apply them to all language files in the same directory.
 
-Create a `.env` file with an entry `API_KEY=<your Gemini API key>`, or pass the `--api-key` flag.
+Create a `.env` file with an entry `GEMINI_API_KEY=<your Gemini API key>`, or pass the `--api-key` flag.
 
 ```
 Usage: i18n-ai-translate [options] [command]
