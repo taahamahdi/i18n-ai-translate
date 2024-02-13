@@ -172,7 +172,7 @@ export async function translate(options: TranslationOptions): Promise<Object> {
     for (const key in flatInput) {
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
             flatInput[key] = flatInput[key].replaceAll(
-                "\\n",
+                "\n",
                 `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
             );
         }
@@ -217,7 +217,7 @@ export async function translate(options: TranslationOptions): Promise<Object> {
 
         if (generatedTranslation === "") {
             console.error(
-                `Failed to generate translation for ${options.inputLanguage}`,
+                `Failed to generate translation for ${options.outputLanguage}`,
             );
             break;
         }
@@ -254,7 +254,7 @@ export async function translate(options: TranslationOptions): Promise<Object> {
         if (Object.prototype.hasOwnProperty.call(sortedOutput, key)) {
             sortedOutput[key] = sortedOutput[key].replaceAll(
                 `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
-                "\\n",
+                "\n",
             );
         }
     }

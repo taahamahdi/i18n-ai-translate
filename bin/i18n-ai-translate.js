@@ -5121,7 +5121,7 @@ async function translate(options) {
   for (const key in flatInput) {
     if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
       flatInput[key] = flatInput[key].replaceAll(
-        "\\n",
+        "\n",
         `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`
       );
     }
@@ -5158,7 +5158,7 @@ async function translate(options) {
     );
     if (generatedTranslation === "") {
       console.error(
-        `Failed to generate translation for ${options.inputLanguage}`
+        `Failed to generate translation for ${options.outputLanguage}`
       );
       break;
     }
@@ -5191,7 +5191,7 @@ ${output[keys[j]]}
     if (Object.prototype.hasOwnProperty.call(sortedOutput, key)) {
       sortedOutput[key] = sortedOutput[key].replaceAll(
         `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
-        "\\n"
+        "\n"
       );
     }
   }
