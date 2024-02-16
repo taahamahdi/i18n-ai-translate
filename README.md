@@ -1,6 +1,6 @@
 # `i18n-ai-translate`
 
-Use [Gemini Pro](https://ai.google.dev/) to translate your i18n JSON to any language.
+Use [Google Gemini](https://ai.google.dev/) to translate your i18n JSON to any language.
 
 Chains three prompts to ensure each translation is well-formed. History is retained between calls to ensure consistency when translating the entire file.
 
