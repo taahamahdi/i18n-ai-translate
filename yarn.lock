@@ -1388,9 +1388,9 @@ isexe@^2.0.0:
   integrity sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==
 
 iso-639-1@^3.1.0:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/iso-639-1/-/iso-639-1-3.1.0.tgz#62611c680eba80ccedb57c3fa00d048f7c866693"
-  integrity sha512-rWcHp9dcNbxa5C8jA/cxFlWNFNwy5Vup0KcFvgA8sPQs9ZeJHj/Eq0Y8Yz2eL8XlWYpxw4iwh9FfTeVxyqdRMw==
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/iso-639-1/-/iso-639-1-3.1.1.tgz#bb4994266d12df135d4cc8ce5c8b321a2bef50ee"
+  integrity sha512-5gT/IjVnt/ZDkAzd2pseoxlI5iAgxz/2ZJIrtdyFu9iqeK5/NpgowYwsFy1p5x6+jjG+r7vmik7r4XImSpaSOw==
 
 jju@~1.4.0:
   version "1.4.0"
