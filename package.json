@@ -10,7 +10,7 @@
     "typescript": "^5.1.6"
   },
   "name": "i18n-ai-translate",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "main": "src/translate.js",
   "bin": {
     "i18n-ai-translate": "bin/i18n-ai-translate.js"
@@ -42,9 +42,10 @@
     "lint-fix": "npx eslint --fix --cache src/ --ext .js,.ts"
   },
   "keywords": [
-    "gemini-pro",
     "i18n",
+    "gemini-pro",
     "translate",
+    "google-gemini",
     "ai"
   ],
   "author": "Taaha Mahdi",
