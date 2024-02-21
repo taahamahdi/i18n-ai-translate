@@ -17,7 +17,7 @@ import type TranslateFileOptions from "./interfaces/translation_file_options";
 import type TranslationDiffOptions from "./interfaces/translation_diff_options";
 import type TranslationOptions from "./interfaces/translation_options";
 
-const BATCH_SIZE = 32;
+const DEFAULT_BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 
@@ -110,6 +110,7 @@ export async function translateDiff(
                 templatedStringPrefix: options.templatedStringPrefix,
                 templatedStringSuffix: options.templatedStringSuffix,
                 verbose: options.verbose,
+                batchSize: options.batchSize,
             });
 
             const flatTranslated = flatten(translated) as {
@@ -185,8 +186,9 @@ export async function translate(options: TranslationOptions): Promise<Object> {
         [allKeys[i], allKeys[j]] = [allKeys[j], allKeys[i]];
     }
 
+    const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
     const batchStartTime = Date.now();
-    for (let i = 0; i < Object.keys(flatInput).length; i += BATCH_SIZE) {
+    for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
         if (i > 0 && options.verbose) {
             console.log(
                 `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
@@ -197,7 +199,7 @@ export async function translate(options: TranslationOptions): Promise<Object> {
             );
         }
 
-        const keys = allKeys.slice(i, i + BATCH_SIZE);
+        const keys = allKeys.slice(i, i + batchSize);
         const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
 
         // eslint-disable-next-line no-await-in-loop
@@ -302,7 +304,6 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
     }
 
     const inputLanguage = getLanguageCodeFromFilename(options.inputFileOrPath);
-
     if (!inputLanguage) {
         throw new Error(
             "Invalid input file name. Use a valid ISO 639-1 language code as the file name.",
@@ -314,7 +315,6 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
         outputLanguage = options.forceLanguageName;
     } else {
         const language = getLanguageCodeFromFilename(options.outputFileOrPath);
-
         if (!language) {
             throw new Error(
                 "Invalid output file name. Use a valid ISO 639-1 language code as the file name. Consider using the --force-language option.",
@@ -333,14 +333,10 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
             verbose: options.verbose,
+            batchSize: options.batchSize,
         });
 
         const outputText = JSON.stringify(outputJSON, null, 4);
-
-        if (options.verbose) {
-            console.log(outputText);
-        }
-
         fs.writeFileSync(outputPath, `${outputText}\n`);
     } catch (err) {
         console.error(`Failed to translate file to ${outputLanguage}: ${err}`);
@@ -434,6 +430,7 @@ const translateFileDiff = async (
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
             verbose: options.verbose,
+            batchSize: options.batchSize,
         });
 
         for (const language in outputJSON) {
@@ -498,6 +495,7 @@ program
         "Each generated translation key must differ from the input (for keys longer than 4)",
         false,
     )
+    .option("-n, --batch-size <batchSize>", "How many keys to process at a time", String(DEFAULT_BATCH_SIZE))
     .option("--verbose", "Print logs about progress", false)
     .action(async (options: any) => {
         if (!process.env.GEMINI_API_KEY && !options.apiKey) {
@@ -521,6 +519,8 @@ program
                 templatedStringPrefix: options.templatedStringPrefix,
                 templatedStringSuffix: options.templatedStringSuffix,
                 verbose: options.verbose,
+                ensureChangedTranslation: options.ensureChangedTranslation,
+                batchSize: options.batchSize,
             });
         } else if (options.languages) {
             if (options.forceLanguageName) {
@@ -572,6 +572,8 @@ program
                         templatedStringPrefix: options.templatedStringPrefix,
                         templatedStringSuffix: options.templatedStringSuffix,
                         verbose: options.verbose,
+                        ensureChangedTranslation: options.ensureChangedTranslation,
+                        batchSize: options.batchSize,
                     });
                 } catch (err) {
                     console.error(
@@ -618,6 +620,8 @@ program
                         templatedStringPrefix: options.templatedStringPrefix,
                         templatedStringSuffix: options.templatedStringSuffix,
                         verbose: options.verbose,
+                        ensureChangedTranslation: options.ensureChangedTranslation,
+                        batchSize: options.batchSize,
                     });
                 } catch (err) {
                     console.error(
@@ -648,6 +652,7 @@ program
         "Each generated translation key must differ from the input (for keys longer than 4)",
         false,
     )
+    .option("-n, --batch-size <batchSize>", "How many keys to process at a time", String(DEFAULT_BATCH_SIZE))
     .option("--verbose", "Print logs about progress", false)
     .action(async (options: any) => {
         if (!process.env.GEMINI_API_KEY && !options.apiKey) {
@@ -704,6 +709,8 @@ program
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
             verbose: options.verbose,
+            ensureChangedTranslation: options.ensureChangedTranslation,
+            batchSize: options.batchSize,
         });
     });
 

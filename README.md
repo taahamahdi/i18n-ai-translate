@@ -94,8 +94,9 @@ Options:
   -l, --languages [language codes...]        Pass a list of languages to translate to
   -p, --templated-string-prefix <prefix>     Prefix for templated strings (default: "{{")
   -s, --templated-string-suffix <suffix>     Suffix for templated strings (default: "}}")
-  -k, --api-key                              Gemini API key
+  -k, --api-key <Gemini API key>             Gemini API key
   --ensure-changed-translation               Each generated translation key must differ from the input (for keys longer than 4) (default: false)
+  -n, --batch-size <batchSize>               How many keys to process at a time (default: "32")
   --verbose                                  Print logs about progress (default: false)
   -h, --help                                 display help for command
 ```
@@ -107,8 +108,9 @@ Options:
   -b, --before <fileBefore>             Source i18n file before changes, in the jsons/ directory if a relative path is given
   -a, --after <fileAfter>               Source i18n file after changes, in the jsons/ directory if a relative path is given
   -l, --input-language <inputLanguage>  The full input language name
-  -k, --api-key                         Gemini API key
+  -k, --api-key <Gemini API key>        Gemini API key
   --ensure-changed-translation          Each generated translation key must differ from the input (for keys longer than 4) (default: false)
+  -n, --batch-size <batchSize>          How many keys to process at a time (default: "32")
   --verbose                             Print logs about progress (default: false)
   -h, --help                            display help for command
 ```
@@ -140,6 +142,7 @@ const translation = await translate({
     templatedStringSuffix, // The end of inline variables; defaults to "}}"
     verbose, // Print status of conversion to stdout/stderr
     ensureChangedTranslation, // Every key longer than 4 characters must be different than the input
+    batchSize, // How many keys to process at a time
 });
 
 const translations = await translateDiff({
@@ -152,6 +155,7 @@ const translations = await translateDiff({
     templatedStringPrefix, // The start of inline variables; defaults to "{{"
     templatedStringSuffix, // The end of inline variables; defaults to "}}"
     verbose, // Print status of conversion to stdout/stderr
+    batchSize, // How many keys to process at a time
 });
 ```
 

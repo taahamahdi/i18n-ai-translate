@@ -7,4 +7,6 @@ export default interface TranslationDiffOptions {
     templatedStringPrefix?: string;
     templatedStringSuffix?: string;
     verbose?: boolean;
+    ensureChangedTranslation?: boolean;
+    batchSize?: number;
 }

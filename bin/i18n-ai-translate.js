@@ -5013,7 +5013,7 @@ async function generateTranslation(model, chats, successfulHistory, inputLanguag
 
 // src/translate.ts
 var import_path = __toESM(require("path"));
-var BATCH_SIZE = 32;
+var DEFAULT_BATCH_SIZE = 32;
 var DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 var DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 (0, import_dotenv.config)({ path: import_path.default.resolve(process.cwd(), ".env") });
@@ -5078,7 +5078,8 @@ async function translateDiff(options) {
         outputLanguage: languageCode,
         templatedStringPrefix: options.templatedStringPrefix,
         templatedStringSuffix: options.templatedStringSuffix,
-        verbose: options.verbose
+        verbose: options.verbose,
+        batchSize: options.batchSize
       });
       const flatTranslated = (0, import_flat.flatten)(translated);
       for (const key in flatTranslated) {
@@ -5131,8 +5132,9 @@ async function translate(options) {
     const j = Math.floor(Math.random() * (i + 1));
     [allKeys[i], allKeys[j]] = [allKeys[j], allKeys[i]];
   }
+  const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
   const batchStartTime = Date.now();
-  for (let i = 0; i < Object.keys(flatInput).length; i += BATCH_SIZE) {
+  for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
     if (i > 0 && options.verbose) {
       console.log(
         `Completed ${(i / Object.keys(flatInput).length * 100).toFixed(0)}%`
@@ -5141,7 +5143,7 @@ async function translate(options) {
         `Estimated time left: ${((Date.now() - batchStartTime) / (i + 1) * (Object.keys(flatInput).length - i) / 6e4).toFixed(0)} minutes`
       );
     }
-    const keys = allKeys.slice(i, i + BATCH_SIZE);
+    const keys = allKeys.slice(i, i + batchSize);
     const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
     const generatedTranslation = await generateTranslation(
       model,
@@ -5258,12 +5260,10 @@ var translateFile = async (options) => {
       outputLanguage,
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
-      verbose: options.verbose
+      verbose: options.verbose,
+      batchSize: options.batchSize
     });
     const outputText = JSON.stringify(outputJSON, null, 4);
-    if (options.verbose) {
-      console.log(outputText);
-    }
     import_fs.default.writeFileSync(outputPath, `${outputText}
 `);
   } catch (err) {
@@ -5345,7 +5345,8 @@ var translateFileDiff = async (options) => {
       toUpdateJSONs,
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
-      verbose: options.verbose
+      verbose: options.verbose,
+      batchSize: options.batchSize
     });
     for (const language in outputJSON) {
       if (Object.prototype.hasOwnProperty.call(outputJSON, language)) {
@@ -5392,7 +5393,7 @@ program.command("translate").requiredOption(
   "--ensure-changed-translation",
   "Each generated translation key must differ from the input (for keys longer than 4)",
   false
-).option("--verbose", "Print logs about progress", false).action(async (options) => {
+).option("-n, --batch-size <batchSize>", "How many keys to process at a time", String(DEFAULT_BATCH_SIZE)).option("--verbose", "Print logs about progress", false).action(async (options) => {
   if (!process.env.GEMINI_API_KEY && !options.apiKey) {
     console.error("GEMINI_API_KEY not found in .env file");
     return;
@@ -5410,7 +5411,9 @@ program.command("translate").requiredOption(
       forceLanguageName: options.forceLanguageName,
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
-      verbose: options.verbose
+      verbose: options.verbose,
+      ensureChangedTranslation: options.ensureChangedTranslation,
+      batchSize: options.batchSize
     });
   } else if (options.languages) {
     if (options.forceLanguageName) {
@@ -5454,7 +5457,9 @@ program.command("translate").requiredOption(
           outputFileOrPath: output,
           templatedStringPrefix: options.templatedStringPrefix,
           templatedStringSuffix: options.templatedStringSuffix,
-          verbose: options.verbose
+          verbose: options.verbose,
+          ensureChangedTranslation: options.ensureChangedTranslation,
+          batchSize: options.batchSize
         });
       } catch (err) {
         console.error(
@@ -5494,7 +5499,9 @@ program.command("translate").requiredOption(
           outputFileOrPath: output,
           templatedStringPrefix: options.templatedStringPrefix,
           templatedStringSuffix: options.templatedStringSuffix,
-          verbose: options.verbose
+          verbose: options.verbose,
+          ensureChangedTranslation: options.ensureChangedTranslation,
+          batchSize: options.batchSize
         });
       } catch (err) {
         console.error(
@@ -5517,7 +5524,7 @@ program.command("diff").requiredOption(
   "--ensure-changed-translation",
   "Each generated translation key must differ from the input (for keys longer than 4)",
   false
-).option("--verbose", "Print logs about progress", false).action(async (options) => {
+).option("-n, --batch-size <batchSize>", "How many keys to process at a time", String(DEFAULT_BATCH_SIZE)).option("--verbose", "Print logs about progress", false).action(async (options) => {
   if (!process.env.GEMINI_API_KEY && !options.apiKey) {
     console.error("GEMINI_API_KEY not found in .env file");
     return;
@@ -5557,7 +5564,9 @@ program.command("diff").requiredOption(
     outputFilesOrPaths,
     templatedStringPrefix: options.templatedStringPrefix,
     templatedStringSuffix: options.templatedStringSuffix,
-    verbose: options.verbose
+    verbose: options.verbose,
+    ensureChangedTranslation: options.ensureChangedTranslation,
+    batchSize: options.batchSize
   });
 });
 program.parse();

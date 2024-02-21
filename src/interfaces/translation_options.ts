@@ -7,4 +7,5 @@ export default interface TranslationOptions {
     templatedStringSuffix?: string;
     verbose?: boolean;
     ensureChangedTranslation?: boolean;
+    batchSize?: number;
 }
