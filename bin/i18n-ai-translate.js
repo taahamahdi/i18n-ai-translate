@@ -5235,22 +5235,11 @@ var translateFile = async (options) => {
     return;
   }
   const inputLanguage = getLanguageCodeFromFilename(options.inputFileOrPath);
-  if (!inputLanguage) {
-    throw new Error(
-      "Invalid input file name. Use a valid ISO 639-1 language code as the file name."
-    );
-  }
   let outputLanguage = "";
   if (options.forceLanguageName) {
     outputLanguage = options.forceLanguageName;
   } else {
-    const language = getLanguageCodeFromFilename(options.outputFileOrPath);
-    if (!language) {
-      throw new Error(
-        "Invalid output file name. Use a valid ISO 639-1 language code as the file name. Consider using the --force-language option."
-      );
-    }
-    outputLanguage = language;
+    outputLanguage = getLanguageCodeFromFilename(options.outputFileOrPath);
   }
   try {
     const outputJSON = await translate({
