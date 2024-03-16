@@ -154,6 +154,7 @@ const translations = await translateDiff({
     toUpdateJSONs, // An object of language codes to their translations
     templatedStringPrefix, // The start of inline variables; defaults to "{{"
     templatedStringSuffix, // The end of inline variables; defaults to "}}"
+    ensureChangedTranslation, // Every key longer than 4 characters must be different than the input
     verbose, // Print status of conversion to stdout/stderr
     batchSize, // How many keys to process at a time
 });
