@@ -7,17 +7,6 @@ import type { ChatParams, Model } from "../types";
 import type ChatInterface from "./chat_interface";
 import type RateLimiter from "src/rate_limiter";
 
-const defaultModel = (engine: Engine): string => {
-    switch (engine) {
-        case Engine.Gemini:
-            return "gemini-pro";
-        case Engine.ChatGPT:
-            return "gpt-4";
-        default:
-            throw new Error("Invalid model");
-    }
-};
-
 export default class ChatFactory {
     static newChat(
         engine: Engine,
@@ -27,11 +16,6 @@ export default class ChatFactory {
     ): ChatInterface {
         let chat: ChatInterface;
         let params: ChatParams;
-
-        if (!model) {
-            model = defaultModel(engine);
-        }
-
         switch (engine) {
             case Engine.Gemini: {
                 const genAI = new GoogleGenerativeAI(apiKey);
