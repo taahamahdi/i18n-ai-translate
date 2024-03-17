@@ -32,10 +32,34 @@ npx i18n-ai-translate translate -i en.json -o fr.json
 ```ts
 import { translate } from "i18n-ai-translate";
 ...
-const translation = await translate({
+const englishJSON = {
+  "welcomeMessage": "Welcome, ${name}!",
+  "messages": {
+    "notifications_one": "You have one notification",
+    "notifications_other": "You have ${count} notifications",
+    "delete": "Would you like to delete the \"${name}\" category?"
+  }
+};
+
+const frenchTranslation = await translate({
+  inputJSON: englishJSON,
+  inputLanguage: "English",
+  outputLanguage: "French",
   ...
 });
 
+console.log(frenchTranslation);
+```
+
+```
+{
+  "welcomeMessage": "Bienvenue, ${name} !",
+  "messages": {
+    "notifications_one": "Vous avez une notification",
+    "notifications_other": "Vous avez ${count} notifications",
+    "delete": "Voulez-vous supprimer la catégorie « ${name} » ?"
+  }
+}
 ```
 
 
