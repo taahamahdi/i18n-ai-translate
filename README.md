@@ -1,8 +1,14 @@
 # `i18n-ai-translate`
 
-Use [Google Gemini](https://ai.google.dev/) to translate your i18n JSON to any language.
+Use ChatGPT or Google Gemini to translate your i18n JSON to any language.
 
-Chains three prompts to ensure each translation is well-formed. History is retained between calls to ensure consistency when translating the entire file.
+Three prompts are chained to ensure each translation is well-formed.
+
+1. The translation prompt attempts a translation
+2. The translation validation prompt uses a separate context to verify the translation
+3. The styling validation prompt uses a separate context to verify the translation's formatting is consistent with the source
+
+History is retained between calls to ensure consistency when translating the entire file.
 
 # Usage
 ## GitHub Actions

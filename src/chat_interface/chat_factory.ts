@@ -37,7 +37,7 @@ export default class ChatFactory {
                 const genAI = new GoogleGenerativeAI(apiKey);
                 const geminiModel = genAI.getGenerativeModel({ model });
 
-                // Gemini limits us to 1 call per second
+                // Gemini limits us to 60 RPM => 1 call per second
                 chat = new Gemini(geminiModel, rateLimiter);
                 params = {
                     history: [],
@@ -49,6 +49,8 @@ export default class ChatFactory {
                 const openAI = new OpenAI({ apiKey });
 
                 // Free-tier rate limits are 3 RPM => 1 call every 20 seconds
+                // Tier 1 is a reasonable 500 RPM => 1 call every 120ms
+                // TODO: token limits
                 chat = new ChatGPT(openAI, rateLimiter);
                 params = {
                     model,

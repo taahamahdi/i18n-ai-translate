@@ -19185,33 +19185,79 @@ var RateLimiter = class {
 // src/translate.ts
 var import_fs2 = __toESM(require("fs"));
 
+// src/prompts.ts
+function generationPrompt(inputLanguage, outputLanguage, input) {
+  return `You are a professional translator.
+
+Translate each line from ${inputLanguage} to ${outputLanguage}.
+
+Return translations in the same text formatting.
+
+Maintain case sensitivity and whitespacing.
+
+Output only the translations.
+
+All lines should start and end with an ASCII quotation mark (").
+
+\`\`\`
+${input}
+\`\`\`
+`;
+}
+function failedTranslationPrompt(inputLanguage, outputLanguage, input) {
+  return `You are a professional translator.
+
+The following translation from ${inputLanguage} to ${outputLanguage} failed.
+
+Attempt to translate it to ${outputLanguage} by considering it as a concatenation of ${inputLanguage} words, or re-interpreting it such that it makes sense in ${outputLanguage}.
+
+Return only the translation with no additional formatting, apart from returning it in quotes.
+
+Maintain case sensitivity and whitespacing.
+
+\`\`\`
+${input}
+\`\`\`
+`;
+}
+function translationVerificationPrompt(inputLanguage, outputLanguage, input, output) {
+  const splitInput = input.split("\n");
+  const splitOutput = output.split("\n");
+  const mergedCsv = splitInput.map((x2, i2) => `${x2},${splitOutput[i2]}`).join("\n");
+  return `
+Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated.
+
+Otherwise, reply with ACK.
+
+Only reply with ACK/NAK.
+
+\`\`\`
+${inputLanguage},${outputLanguage}
+${mergedCsv}
+\`\`\`
+`;
+}
+function stylingVerificationPrompt(inputLanguage, outputLanguage, input, output) {
+  const splitInput = input.split("\n");
+  const splitOutput = output.split("\n");
+  const mergedCsv = splitInput.map((x2, i2) => `${x2},${splitOutput[i2]}`).join("\n");
+  return `
+Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original.
+
+Check for differing capitalization, punctuation, or whitespaces.
+
+Otherwise, reply with ACK.
+
+Only reply with ACK/NAK.
+
+\`\`\`
+${inputLanguage},${outputLanguage}
+${mergedCsv}
+\`\`\`
+`;
+}
+
 // src/verify.ts
-var translationVerificationPrompt = (inputLanguage, outputLanguage, input, output) => {
-  const splitInput = input.split("\n");
-  const splitOutput = output.split("\n");
-  const mergedCsv = splitInput.map((x2, i2) => `${x2},${splitOutput[i2]}`).join("\n");
-  return `
-Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated. Otherwise, reply with ACK. Only reply with ACK/NAK.
-
-\`\`\`
-${inputLanguage},${outputLanguage}
-${mergedCsv}
-\`\`\`
-`;
-};
-var stylingVerificationPrompt = (inputLanguage, outputLanguage, input, output) => {
-  const splitInput = input.split("\n");
-  const splitOutput = output.split("\n");
-  const mergedCsv = splitInput.map((x2, i2) => `${x2},${splitOutput[i2]}`).join("\n");
-  return `
-Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original. Check for differing capitalization, punctuation, or whitespaces. Otherwise, reply with ACK. Only reply with ACK/NAK.
-
-\`\`\`
-${inputLanguage},${outputLanguage}
-${mergedCsv}
-\`\`\`
-`;
-};
 async function verifyTranslation(chat, inputLanguage, outputLanguage, input, outputToVerify) {
   const translationVerificationPromptText = translationVerificationPrompt(
     inputLanguage,
@@ -19259,28 +19305,6 @@ var verify = async (chat, verificationPromptText) => {
 };
 
 // src/generate.ts
-var generationPrompt = (inputLanguage, outputLanguage, input) => `You are a professional translator.
-
-Translate each line from ${inputLanguage} to ${outputLanguage}.
-
-Return translations in the same text formatting.
-
-Maintain case sensitivity and whitespacing.
-
-Output only the translations.
-
-All lines should start and end with an ASCII quotation mark (").
-
-\`\`\`
-${input}
-\`\`\`
-`;
-var failedTranslationPrompt = (inputLanguage, outputLanguage, input) => `You are a professional translator. The following translation from ${inputLanguage} to ${outputLanguage} failed. Attempt to translate it to ${outputLanguage} by considering it as a concatenation of ${inputLanguage} words, or re-interpreting it such that it makes sense in ${outputLanguage}. Return only the translation with no additional formatting, apart from returning it in quotes. Maintain case sensitivity and whitespacing.
-
-\`\`\`
-${input}
-\`\`\`
-`;
 async function generateTranslation(chats, inputLanguage, outputLanguage, input, keys, templatedStringPrefix, templatedStringSuffix, verboseLogging, ensureChangedTranslation) {
   const generationPromptText = generationPrompt(
     inputLanguage,
