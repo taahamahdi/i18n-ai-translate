@@ -206,7 +206,7 @@ export async function translate(options: TranslationOptions): Promise<Object> {
         [allKeys[i], allKeys[j]] = [allKeys[j], allKeys[i]];
     }
 
-    const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
+    const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
     const batchStartTime = Date.now();
     for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
         if (i > 0 && options.verbose) {

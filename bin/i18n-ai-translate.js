@@ -19624,7 +19624,7 @@ async function translate(options) {
     const j2 = Math.floor(Math.random() * (i2 + 1));
     [allKeys[i2], allKeys[j2]] = [allKeys[j2], allKeys[i2]];
   }
-  const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
+  const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
   const batchStartTime = Date.now();
   for (let i2 = 0; i2 < Object.keys(flatInput).length; i2 += batchSize) {
     if (i2 > 0 && options.verbose) {
