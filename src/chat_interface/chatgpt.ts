@@ -67,9 +67,12 @@ export default class ChatGPT extends ChatInterface {
 
     rollbackLastMessage(): void {
         if (this.history[this.history.length - 1].role === Role.Assistant) {
+            // Remove the last two messages (user and assistant)
+            // so we can get back to the last successful state in history
             this.history.pop();
             this.history.pop();
         } else if (this.history[this.history.length - 1].role === Role.User) {
+            // The model didn't respond, so we only need to remove the user message
             this.history.pop();
         }
     }
