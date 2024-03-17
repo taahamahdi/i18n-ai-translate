@@ -38,7 +38,7 @@ var require_package = __commonJS({
   "node_modules/dotenv/package.json"(exports2, module2) {
     module2.exports = {
       name: "dotenv",
-      version: "16.4.1",
+      version: "16.4.5",
       description: "Loads environment variables from .env file",
       main: "lib/main.js",
       types: "lib/main.d.ts",
@@ -62,6 +62,7 @@ var require_package = __commonJS({
         "lint-readme": "standard-markdown",
         pretest: "npm run lint && npm run dts-check",
         test: "tap tests/*.js --100 -Rspec",
+        "test:coverage": "tap --coverage-report=lcov",
         prerelease: "npm test",
         release: "standard-version"
       },
@@ -69,7 +70,7 @@ var require_package = __commonJS({
         type: "git",
         url: "git://github.com/motdotla/dotenv.git"
       },
-      funding: "https://github.com/motdotla/dotenv?sponsor=1",
+      funding: "https://dotenvx.com",
       keywords: [
         "dotenv",
         "env",
@@ -181,7 +182,7 @@ var require_main = __commonJS({
         uri = new URL(dotenvKey);
       } catch (error) {
         if (error.code === "ERR_INVALID_URL") {
-          const err = new Error("INVALID_DOTENV_KEY: Wrong format. Must be in valid uri format like dotenv://:key_1234@dotenv.org/vault/.env.vault?environment=development");
+          const err = new Error("INVALID_DOTENV_KEY: Wrong format. Must be in valid uri format like dotenv://:key_1234@dotenvx.com/vault/.env.vault?environment=development");
           err.code = "INVALID_DOTENV_KEY";
           throw err;
         }
@@ -242,43 +243,49 @@ var require_main = __commonJS({
       return { parsed };
     }
     function configDotenv(options) {
-      let dotenvPath = path2.resolve(process.cwd(), ".env");
+      const dotenvPath = path2.resolve(process.cwd(), ".env");
       let encoding = "utf8";
       const debug2 = Boolean(options && options.debug);
-      if (options) {
-        if (options.path != null) {
-          let envPath = options.path;
-          if (Array.isArray(envPath)) {
-            for (const filepath of options.path) {
-              if (fs3.existsSync(filepath)) {
-                envPath = filepath;
-                break;
-              }
-            }
-          }
-          dotenvPath = _resolveHome(envPath);
+      if (options && options.encoding) {
+        encoding = options.encoding;
+      } else {
+        if (debug2) {
+          _debug("No encoding is specified. UTF-8 is used by default");
         }
-        if (options.encoding != null) {
-          encoding = options.encoding;
+      }
+      let optionPaths = [dotenvPath];
+      if (options && options.path) {
+        if (!Array.isArray(options.path)) {
+          optionPaths = [_resolveHome(options.path)];
         } else {
-          if (debug2) {
-            _debug("No encoding is specified. UTF-8 is used by default");
+          optionPaths = [];
+          for (const filepath of options.path) {
+            optionPaths.push(_resolveHome(filepath));
           }
         }
       }
-      try {
-        const parsed = DotenvModule.parse(fs3.readFileSync(dotenvPath, { encoding }));
-        let processEnv = process.env;
-        if (options && options.processEnv != null) {
-          processEnv = options.processEnv;
+      let lastError;
+      const parsedAll = {};
+      for (const path3 of optionPaths) {
+        try {
+          const parsed = DotenvModule.parse(fs3.readFileSync(path3, { encoding }));
+          DotenvModule.populate(parsedAll, parsed, options);
+        } catch (e2) {
+          if (debug2) {
+            _debug(`Failed to load ${path3} ${e2.message}`);
+          }
+          lastError = e2;
         }
-        DotenvModule.populate(processEnv, parsed, options);
-        return { parsed };
-      } catch (e2) {
-        if (debug2) {
-          _debug(`Failed to load ${dotenvPath} ${e2.message}`);
-        }
-        return { error: e2 };
+      }
+      let processEnv = process.env;
+      if (options && options.processEnv != null) {
+        processEnv = options.processEnv;
+      }
+      DotenvModule.populate(processEnv, parsedAll, options);
+      if (lastError) {
+        return { parsed: parsedAll, error: lastError };
+      } else {
+        return { parsed: parsedAll };
       }
     }
     function config2(options) {
@@ -602,7 +609,7 @@ var require_data = __commonJS({
       },
       da: {
         name: "Danish",
-        nativeName: "dansk"
+        nativeName: "Dansk"
       },
       de: {
         name: "German",
@@ -662,7 +669,7 @@ var require_data = __commonJS({
       },
       fo: {
         name: "Faroese",
-        nativeName: "f\xF8royskt"
+        nativeName: "F\xF8royskt"
       },
       fr: {
         name: "French",
@@ -1350,7 +1357,7 @@ var require_argument = __commonJS({
         return this._name;
       }
       /**
-       * @api private
+       * @package internal use only
        */
       _concatValue(value, previous) {
         if (previous === this.defaultValue || !Array.isArray(previous)) {
@@ -1442,12 +1449,8 @@ var require_help = __commonJS({
        */
       visibleCommands(cmd) {
         const visibleCommands = cmd.commands.filter((cmd2) => !cmd2._hidden);
-        if (cmd._hasImplicitHelpCommand()) {
-          const [, helpName, helpArgs] = cmd._helpCommandnameAndArgs.match(/([^ ]+) *(.*)/);
-          const helpCommand = cmd.createCommand(helpName).helpOption(false);
-          helpCommand.description(cmd._helpCommandDescription);
-          if (helpArgs)
-            helpCommand.arguments(helpArgs);
+        const helpCommand = cmd._getHelpCommand();
+        if (helpCommand && !helpCommand._hidden) {
           visibleCommands.push(helpCommand);
         }
         if (this.sortSubcommands) {
@@ -1478,18 +1481,17 @@ var require_help = __commonJS({
        */
       visibleOptions(cmd) {
         const visibleOptions = cmd.options.filter((option) => !option.hidden);
-        const showShortHelpFlag = cmd._hasHelpOption && cmd._helpShortFlag && !cmd._findOption(cmd._helpShortFlag);
-        const showLongHelpFlag = cmd._hasHelpOption && !cmd._findOption(cmd._helpLongFlag);
-        if (showShortHelpFlag || showLongHelpFlag) {
-          let helpOption;
-          if (!showShortHelpFlag) {
-            helpOption = cmd.createOption(cmd._helpLongFlag, cmd._helpDescription);
-          } else if (!showLongHelpFlag) {
-            helpOption = cmd.createOption(cmd._helpShortFlag, cmd._helpDescription);
-          } else {
-            helpOption = cmd.createOption(cmd._helpFlags, cmd._helpDescription);
+        const helpOption = cmd._getHelpOption();
+        if (helpOption && !helpOption.hidden) {
+          const removeShort = helpOption.short && cmd._findOption(helpOption.short);
+          const removeLong = helpOption.long && cmd._findOption(helpOption.long);
+          if (!removeShort && !removeLong) {
+            visibleOptions.push(helpOption);
+          } else if (helpOption.long && !removeLong) {
+            visibleOptions.push(cmd.createOption(helpOption.long, helpOption.description));
+          } else if (helpOption.short && !removeShort) {
+            visibleOptions.push(cmd.createOption(helpOption.short, helpOption.description));
           }
-          visibleOptions.push(helpOption);
         }
         if (this.sortOptions) {
           visibleOptions.sort(this.compareOptions);
@@ -1880,7 +1882,7 @@ var require_option = __commonJS({
        * new Option('--rgb').conflicts('cmyk');
        * new Option('--js').conflicts(['ts', 'jsx']);
        *
-       * @param {string | string[]} names
+       * @param {(string | string[])} names
        * @return {Option}
        */
       conflicts(names) {
@@ -1952,7 +1954,7 @@ var require_option = __commonJS({
         return this;
       }
       /**
-       * @api private
+       * @package internal use only
        */
       _concatValue(value, previous) {
         if (previous === this.defaultValue || !Array.isArray(previous)) {
@@ -1995,7 +1997,6 @@ var require_option = __commonJS({
        * as a object attribute key.
        *
        * @return {string}
-       * @api private
        */
       attributeName() {
         return camelcase(this.name().replace(/^no-/, ""));
@@ -2005,7 +2006,7 @@ var require_option = __commonJS({
        *
        * @param {string} arg
        * @return {boolean}
-       * @api private
+       * @package internal use only
        */
       is(arg) {
         return this.short === arg || this.long === arg;
@@ -2016,7 +2017,7 @@ var require_option = __commonJS({
        * Options are one of boolean, negated, required argument, or optional argument.
        *
        * @return {boolean}
-       * @api private
+       * @package internal use only
        */
       isBoolean() {
         return !this.required && !this.optional && !this.negate;
@@ -2078,7 +2079,6 @@ var require_option = __commonJS({
       return { shortFlag, longFlag };
     }
     exports2.Option = Option2;
-    exports2.splitOptionFlags = splitOptionFlags;
     exports2.DualOptions = DualOptions;
   }
 });
@@ -2176,7 +2176,7 @@ var require_command = __commonJS({
     var { Argument: Argument2, humanReadableArgName } = require_argument();
     var { CommanderError: CommanderError2 } = require_error();
     var { Help: Help2 } = require_help();
-    var { Option: Option2, splitOptionFlags, DualOptions } = require_option();
+    var { Option: Option2, DualOptions } = require_option();
     var { suggestSimilar } = require_suggestSimilar();
     var Command2 = class _Command extends EventEmitter {
       /**
@@ -2225,15 +2225,9 @@ var require_command = __commonJS({
           outputError: (str2, write) => write(str2)
         };
         this._hidden = false;
-        this._hasHelpOption = true;
-        this._helpFlags = "-h, --help";
-        this._helpDescription = "display help for command";
-        this._helpShortFlag = "-h";
-        this._helpLongFlag = "--help";
+        this._helpOption = void 0;
         this._addImplicitHelpCommand = void 0;
-        this._helpCommandName = "help";
-        this._helpCommandnameAndArgs = "help [command]";
-        this._helpCommandDescription = "display help for command";
+        this._helpCommand = void 0;
         this._helpConfiguration = {};
       }
       /**
@@ -2246,14 +2240,8 @@ var require_command = __commonJS({
        */
       copyInheritedSettings(sourceCommand) {
         this._outputConfiguration = sourceCommand._outputConfiguration;
-        this._hasHelpOption = sourceCommand._hasHelpOption;
-        this._helpFlags = sourceCommand._helpFlags;
-        this._helpDescription = sourceCommand._helpDescription;
-        this._helpShortFlag = sourceCommand._helpShortFlag;
-        this._helpLongFlag = sourceCommand._helpLongFlag;
-        this._helpCommandName = sourceCommand._helpCommandName;
-        this._helpCommandnameAndArgs = sourceCommand._helpCommandnameAndArgs;
-        this._helpCommandDescription = sourceCommand._helpCommandDescription;
+        this._helpOption = sourceCommand._helpOption;
+        this._helpCommand = sourceCommand._helpCommand;
         this._helpConfiguration = sourceCommand._helpConfiguration;
         this._exitCallback = sourceCommand._exitCallback;
         this._storeOptionsAsProperties = sourceCommand._storeOptionsAsProperties;
@@ -2266,7 +2254,7 @@ var require_command = __commonJS({
       }
       /**
        * @returns {Command[]}
-       * @api private
+       * @private
        */
       _getCommandAndAncestors() {
         const result = [];
@@ -2295,7 +2283,7 @@ var require_command = __commonJS({
        *   .command('stop [service]', 'stop named service, or all if no name supplied');
        *
        * @param {string} nameAndArgs - command name and arguments, args are `<required>` or `[optional]` and last may also be `variadic...`
-       * @param {Object|string} [actionOptsOrExecDesc] - configuration options (for action), or description (for executable)
+       * @param {(Object|string)} [actionOptsOrExecDesc] - configuration options (for action), or description (for executable)
        * @param {Object} [execOpts] - configuration options (for executable)
        * @return {Command} returns new command for action handler, or `this` for executable command
        */
@@ -2319,7 +2307,7 @@ var require_command = __commonJS({
         cmd._executableFile = opts.executableFile || null;
         if (args)
           cmd.arguments(args);
-        this.commands.push(cmd);
+        this._registerCommand(cmd);
         cmd.parent = this;
         cmd.copyInheritedSettings(this);
         if (desc)
@@ -2352,7 +2340,7 @@ var require_command = __commonJS({
        * or with a subclass of Help by overriding createHelp().
        *
        * @param {Object} [configuration] - configuration options
-       * @return {Command|Object} `this` command for chaining, or stored configuration
+       * @return {(Command|Object)} `this` command for chaining, or stored configuration
        */
       configureHelp(configuration) {
         if (configuration === void 0)
@@ -2376,7 +2364,7 @@ var require_command = __commonJS({
        *     outputError(str, write) // used for displaying errors, and not used for displaying help
        *
        * @param {Object} [configuration] - configuration options
-       * @return {Command|Object} `this` command for chaining, or stored configuration
+       * @return {(Command|Object)} `this` command for chaining, or stored configuration
        */
       configureOutput(configuration) {
         if (configuration === void 0)
@@ -2387,7 +2375,7 @@ var require_command = __commonJS({
       /**
        * Display the help or a custom message after an error occurs.
        *
-       * @param {boolean|string} [displayHelp]
+       * @param {(boolean|string)} [displayHelp]
        * @return {Command} `this` command for chaining
        */
       showHelpAfterError(displayHelp = true) {
@@ -2425,8 +2413,9 @@ var require_command = __commonJS({
           this._defaultCommandName = cmd._name;
         if (opts.noHelp || opts.hidden)
           cmd._hidden = true;
-        this.commands.push(cmd);
+        this._registerCommand(cmd);
         cmd.parent = this;
+        cmd._checkForBrokenPassThrough();
         return this;
       }
       /**
@@ -2454,7 +2443,7 @@ var require_command = __commonJS({
        *
        * @param {string} name
        * @param {string} [description]
-       * @param {Function|*} [fn] - custom argument processing function
+       * @param {(Function|*)} [fn] - custom argument processing function
        * @param {*} [defaultValue]
        * @return {Command} `this` command for chaining
        */
@@ -2503,36 +2492,66 @@ var require_command = __commonJS({
         return this;
       }
       /**
-       * Override default decision whether to add implicit help command.
+       * Customise or override default help command. By default a help command is automatically added if your command has subcommands.
        *
-       *    addHelpCommand() // force on
-       *    addHelpCommand(false); // force off
-       *    addHelpCommand('help [cmd]', 'display help for [cmd]'); // force on with custom details
+       *    program.helpCommand('help [cmd]');
+       *    program.helpCommand('help [cmd]', 'show help');
+       *    program.helpCommand(false); // suppress default help command
+       *    program.helpCommand(true); // add help command even if no subcommands
        *
+       * @param {string|boolean} enableOrNameAndArgs - enable with custom name and/or arguments, or boolean to override whether added
+       * @param {string} [description] - custom description
        * @return {Command} `this` command for chaining
        */
-      addHelpCommand(enableOrNameAndArgs, description) {
-        if (enableOrNameAndArgs === false) {
-          this._addImplicitHelpCommand = false;
-        } else {
-          this._addImplicitHelpCommand = true;
-          if (typeof enableOrNameAndArgs === "string") {
-            this._helpCommandName = enableOrNameAndArgs.split(" ")[0];
-            this._helpCommandnameAndArgs = enableOrNameAndArgs;
-          }
-          this._helpCommandDescription = description || this._helpCommandDescription;
+      helpCommand(enableOrNameAndArgs, description) {
+        if (typeof enableOrNameAndArgs === "boolean") {
+          this._addImplicitHelpCommand = enableOrNameAndArgs;
+          return this;
         }
+        enableOrNameAndArgs = enableOrNameAndArgs ?? "help [command]";
+        const [, helpName, helpArgs] = enableOrNameAndArgs.match(/([^ ]+) *(.*)/);
+        const helpDescription = description ?? "display help for command";
+        const helpCommand = this.createCommand(helpName);
+        helpCommand.helpOption(false);
+        if (helpArgs)
+          helpCommand.arguments(helpArgs);
+        if (helpDescription)
+          helpCommand.description(helpDescription);
+        this._addImplicitHelpCommand = true;
+        this._helpCommand = helpCommand;
         return this;
       }
       /**
-       * @return {boolean}
-       * @api private
+       * Add prepared custom help command.
+       *
+       * @param {(Command|string|boolean)} helpCommand - custom help command, or deprecated enableOrNameAndArgs as for `.helpCommand()`
+       * @param {string} [deprecatedDescription] - deprecated custom description used with custom name only
+       * @return {Command} `this` command for chaining
        */
-      _hasImplicitHelpCommand() {
-        if (this._addImplicitHelpCommand === void 0) {
-          return this.commands.length && !this._actionHandler && !this._findCommand("help");
+      addHelpCommand(helpCommand, deprecatedDescription) {
+        if (typeof helpCommand !== "object") {
+          this.helpCommand(helpCommand, deprecatedDescription);
+          return this;
         }
-        return this._addImplicitHelpCommand;
+        this._addImplicitHelpCommand = true;
+        this._helpCommand = helpCommand;
+        return this;
+      }
+      /**
+       * Lazy create help command.
+       *
+       * @return {(Command|null)}
+       * @package
+       */
+      _getHelpCommand() {
+        const hasImplicitHelpCommand = this._addImplicitHelpCommand ?? (this.commands.length && !this._actionHandler && !this._findCommand("help"));
+        if (hasImplicitHelpCommand) {
+          if (this._helpCommand === void 0) {
+            this.helpCommand(void 0, void 0);
+          }
+          return this._helpCommand;
+        }
+        return null;
       }
       /**
        * Add hook for life cycle event.
@@ -2580,7 +2599,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @param {string} code an id string representing the error
        * @param {string} message human-readable description of the error
        * @return never
-       * @api private
+       * @private
        */
       _exit(exitCode, code, message) {
         if (this._exitCallback) {
@@ -2633,11 +2652,11 @@ Expecting one of '${allowedValues.join("', '")}'`);
       /**
        * Wrap parseArgs to catch 'commander.invalidArgument'.
        *
-       * @param {Option | Argument} target
+       * @param {(Option | Argument)} target
        * @param {string} value
        * @param {*} previous
        * @param {string} invalidArgumentMessage
-       * @api private
+       * @private
        */
       _callParseArg(target, value, previous, invalidArgumentMessage) {
         try {
@@ -2651,12 +2670,48 @@ Expecting one of '${allowedValues.join("', '")}'`);
         }
       }
       /**
+       * Check for option flag conflicts.
+       * Register option if no conflicts found, or throw on conflict.
+       *
+       * @param {Option} option
+       * @api private
+       */
+      _registerOption(option) {
+        const matchingOption = option.short && this._findOption(option.short) || option.long && this._findOption(option.long);
+        if (matchingOption) {
+          const matchingFlag = option.long && this._findOption(option.long) ? option.long : option.short;
+          throw new Error(`Cannot add option '${option.flags}'${this._name && ` to command '${this._name}'`} due to conflicting flag '${matchingFlag}'
+-  already used by option '${matchingOption.flags}'`);
+        }
+        this.options.push(option);
+      }
+      /**
+       * Check for command name and alias conflicts with existing commands.
+       * Register command if no conflicts found, or throw on conflict.
+       *
+       * @param {Command} command
+       * @api private
+       */
+      _registerCommand(command) {
+        const knownBy = (cmd) => {
+          return [cmd.name()].concat(cmd.aliases());
+        };
+        const alreadyUsed = knownBy(command).find((name) => this._findCommand(name));
+        if (alreadyUsed) {
+          const existingCmd = knownBy(this._findCommand(alreadyUsed)).join("|");
+          const newCmd = knownBy(command).join("|");
+          throw new Error(`cannot add command '${newCmd}' as already have command '${existingCmd}'`);
+        }
+        this.commands.push(command);
+      }
+      /**
        * Add an option.
        *
        * @param {Option} option
        * @return {Command} `this` command for chaining
        */
       addOption(option) {
+        this._registerOption(option);
         const oname = option.name();
         const name = option.attributeName();
         if (option.negate) {
@@ -2667,7 +2722,6 @@ Expecting one of '${allowedValues.join("', '")}'`);
         } else if (option.defaultValue !== void 0) {
           this.setOptionValueWithSource(name, option.defaultValue, "default");
         }
-        this.options.push(option);
         const handleOptionValue = (val, invalidValueMessage, valueSource) => {
           if (val == null && option.presetArg !== void 0) {
             val = option.presetArg;
@@ -2704,7 +2758,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
       /**
        * Internal implementation shared by .option() and .requiredOption()
        *
-       * @api private
+       * @private
        */
       _optionEx(config2, flags, description, fn, defaultValue) {
         if (typeof flags === "object" && flags instanceof Option2) {
@@ -2743,7 +2797,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        *
        * @param {string} flags
        * @param {string} [description]
-       * @param {Function|*} [parseArg] - custom option processing function or default value
+       * @param {(Function|*)} [parseArg] - custom option processing function or default value
        * @param {*} [defaultValue]
        * @return {Command} `this` command for chaining
        */
@@ -2758,7 +2812,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
       *
       * @param {string} flags
       * @param {string} [description]
-      * @param {Function|*} [parseArg] - custom option processing function or default value
+      * @param {(Function|*)} [parseArg] - custom option processing function or default value
       * @param {*} [defaultValue]
       * @return {Command} `this` command for chaining
       */
@@ -2773,7 +2827,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * program.combineFlagAndOptionalValue(true);  // `-f80` is treated like `--flag=80`, this is the default behaviour
        * program.combineFlagAndOptionalValue(false) // `-fb` is treated like `-f -b`
        *
-       * @param {Boolean} [combine=true] - if `true` or omitted, an optional value can be specified directly after the flag.
+       * @param {boolean} [combine=true] - if `true` or omitted, an optional value can be specified directly after the flag.
        */
       combineFlagAndOptionalValue(combine = true) {
         this._combineFlagAndOptionalValue = !!combine;
@@ -2782,7 +2836,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
       /**
        * Allow unknown options on the command line.
        *
-       * @param {Boolean} [allowUnknown=true] - if `true` or omitted, no error will be thrown
+       * @param {boolean} [allowUnknown=true] - if `true` or omitted, no error will be thrown
        * for unknown options.
        */
       allowUnknownOption(allowUnknown = true) {
@@ -2792,7 +2846,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
       /**
        * Allow excess command-arguments on the command line. Pass false to make excess arguments an error.
        *
-       * @param {Boolean} [allowExcess=true] - if `true` or omitted, no error will be thrown
+       * @param {boolean} [allowExcess=true] - if `true` or omitted, no error will be thrown
        * for excess arguments.
        */
       allowExcessArguments(allowExcess = true) {
@@ -2804,7 +2858,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * subcommands reuse the same option names, and also enables subcommands to turn on passThroughOptions.
        * The default behaviour is non-positional and global options may appear anywhere on the command line.
        *
-       * @param {Boolean} [positional=true]
+       * @param {boolean} [positional=true]
        */
       enablePositionalOptions(positional = true) {
         this._enablePositionalOptions = !!positional;
@@ -2816,15 +2870,21 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * positional options to have been enabled on the program (parent commands).
        * The default behaviour is non-positional and options may appear before or after command-arguments.
        *
-       * @param {Boolean} [passThrough=true]
+       * @param {boolean} [passThrough=true]
        * for unknown options.
        */
       passThroughOptions(passThrough = true) {
         this._passThroughOptions = !!passThrough;
-        if (!!this.parent && passThrough && !this.parent._enablePositionalOptions) {
-          throw new Error("passThroughOptions can not be used without turning on enablePositionalOptions for parent command(s)");
-        }
+        this._checkForBrokenPassThrough();
         return this;
+      }
+      /**
+       * @private
+       */
+      _checkForBrokenPassThrough() {
+        if (this.parent && this._passThroughOptions && !this.parent._enablePositionalOptions) {
+          throw new Error(`passThroughOptions cannot be used for '${this._name}' without turning on enablePositionalOptions for parent command(s)`);
+        }
       }
       /**
         * Whether to store option values as properties on command object,
@@ -2836,6 +2896,9 @@ Expecting one of '${allowedValues.join("', '")}'`);
       storeOptionsAsProperties(storeAsProperties = true) {
         if (this.options.length) {
           throw new Error("call .storeOptionsAsProperties() before adding options");
+        }
+        if (Object.keys(this._optionValues).length) {
+          throw new Error("call .storeOptionsAsProperties() before setting option values");
         }
         this._storeOptionsAsProperties = !!storeAsProperties;
         return this;
@@ -2909,7 +2972,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Get user arguments from implied or explicit arguments.
        * Side-effects: set _scriptPath if args included script. Used for default program name, and subcommand searches.
        *
-       * @api private
+       * @private
        */
       _prepareUserArgs(argv, parseOptions) {
         if (argv !== void 0 && !Array.isArray(argv)) {
@@ -2996,7 +3059,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
       /**
        * Execute a sub-command executable.
        *
-       * @api private
+       * @private
        */
       _executeSubCommand(subcommand, args) {
         args = args.slice();
@@ -3062,13 +3125,14 @@ Expecting one of '${allowedValues.join("', '")}'`);
           });
         }
         const exitCallback = this._exitCallback;
-        if (!exitCallback) {
-          proc.on("close", process2.exit.bind(process2));
-        } else {
-          proc.on("close", () => {
-            exitCallback(new CommanderError2(process2.exitCode || 0, "commander.executeSubCommandAsync", "(close)"));
-          });
-        }
+        proc.on("close", (code, _signal) => {
+          code = code ?? 1;
+          if (!exitCallback) {
+            process2.exit(code);
+          } else {
+            exitCallback(new CommanderError2(code, "commander.executeSubCommandAsync", "(close)"));
+          }
+        });
         proc.on("error", (err) => {
           if (err.code === "ENOENT") {
             const executableDirMessage = executableDir ? `searched for local subcommand relative to directory '${executableDir}'` : "no directory for search for local subcommand, use .executableDir() to supply a custom directory";
@@ -3091,7 +3155,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
         this.runningCommand = proc;
       }
       /**
-       * @api private
+       * @private
        */
       _dispatchSubcommand(commandName, operands, unknown) {
         const subCommand = this._findCommand(commandName);
@@ -3112,7 +3176,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Invoke help directly if possible, or dispatch if necessary.
        * e.g. help foo
        *
-       * @api private
+       * @private
        */
       _dispatchHelpCommand(subcommandName) {
         if (!subcommandName) {
@@ -3123,13 +3187,13 @@ Expecting one of '${allowedValues.join("', '")}'`);
           subCommand.help();
         }
         return this._dispatchSubcommand(subcommandName, [], [
-          this._helpLongFlag || this._helpShortFlag
+          this._getHelpOption()?.long ?? this._getHelpOption()?.short ?? "--help"
         ]);
       }
       /**
        * Check this.args against expected this.registeredArguments.
        *
-       * @api private
+       * @private
        */
       _checkNumberOfArguments() {
         this.registeredArguments.forEach((arg, i2) => {
@@ -3147,7 +3211,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
       /**
        * Process this.args using this.registeredArguments and save as this.processedArgs!
        *
-       * @api private
+       * @private
        */
       _processArguments() {
         const myParseArg = (argument, value, previous) => {
@@ -3186,10 +3250,10 @@ Expecting one of '${allowedValues.join("', '")}'`);
       /**
        * Once we have a promise we chain, but call synchronously until then.
        *
-       * @param {Promise|undefined} promise
+       * @param {(Promise|undefined)} promise
        * @param {Function} fn
-       * @return {Promise|undefined}
-       * @api private
+       * @return {(Promise|undefined)}
+       * @private
        */
       _chainOrCall(promise, fn) {
         if (promise && promise.then && typeof promise.then === "function") {
@@ -3199,10 +3263,10 @@ Expecting one of '${allowedValues.join("', '")}'`);
       }
       /**
        *
-       * @param {Promise|undefined} promise
+       * @param {(Promise|undefined)} promise
        * @param {string} event
-       * @return {Promise|undefined}
-       * @api private
+       * @return {(Promise|undefined)}
+       * @private
        */
       _chainOrCallHooks(promise, event) {
         let result = promise;
@@ -3224,11 +3288,11 @@ Expecting one of '${allowedValues.join("', '")}'`);
       }
       /**
        *
-       * @param {Promise|undefined} promise
+       * @param {(Promise|undefined)} promise
        * @param {Command} subCommand
        * @param {string} event
-       * @return {Promise|undefined}
-       * @api private
+       * @return {(Promise|undefined)}
+       * @private
        */
       _chainOrCallSubCommandHook(promise, subCommand, event) {
         let result = promise;
@@ -3245,7 +3309,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Process arguments in context of this command.
        * Returns action result, in case it is a promise.
        *
-       * @api private
+       * @private
        */
       _parseCommand(operands, unknown) {
         const parsed = this.parseOptions(unknown);
@@ -3257,17 +3321,17 @@ Expecting one of '${allowedValues.join("', '")}'`);
         if (operands && this._findCommand(operands[0])) {
           return this._dispatchSubcommand(operands[0], operands.slice(1), unknown);
         }
-        if (this._hasImplicitHelpCommand() && operands[0] === this._helpCommandName) {
+        if (this._getHelpCommand() && operands[0] === this._getHelpCommand().name()) {
           return this._dispatchHelpCommand(operands[1]);
         }
         if (this._defaultCommandName) {
-          outputHelpIfRequested(this, unknown);
+          this._outputHelpIfRequested(unknown);
           return this._dispatchSubcommand(this._defaultCommandName, operands, unknown);
         }
         if (this.commands.length && this.args.length === 0 && !this._actionHandler && !this._defaultCommandName) {
           this.help({ error: true });
         }
-        outputHelpIfRequested(this, parsed.unknown);
+        this._outputHelpIfRequested(parsed.unknown);
         this._checkForMissingMandatoryOptions();
         this._checkForConflictingOptions();
         const checkForUnknownOptions = () => {
@@ -3317,7 +3381,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
       /**
        * Find matching command.
        *
-       * @api private
+       * @private
        */
       _findCommand(name) {
         if (!name)
@@ -3329,7 +3393,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        *
        * @param {string} arg
        * @return {Option}
-       * @api private
+       * @package internal use only
        */
       _findOption(arg) {
         return this.options.find((option) => option.is(arg));
@@ -3338,7 +3402,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Display an error message if a mandatory option does not have a value.
        * Called after checking for help flags in leaf subcommand.
        *
-       * @api private
+       * @private
        */
       _checkForMissingMandatoryOptions() {
         this._getCommandAndAncestors().forEach((cmd) => {
@@ -3352,7 +3416,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
       /**
        * Display an error message if conflicting options are used together in this.
        *
-       * @api private
+       * @private
        */
       _checkForConflictingLocalOptions() {
         const definedNonDefaultOptions = this.options.filter(
@@ -3380,7 +3444,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Display an error message if conflicting options are used together.
        * Called after checking for help flags in leaf subcommand.
        *
-       * @api private
+       * @private
        */
       _checkForConflictingOptions() {
         this._getCommandAndAncestors().forEach((cmd) => {
@@ -3399,8 +3463,8 @@ Expecting one of '${allowedValues.join("', '")}'`);
        *     sub --unknown uuu op => [sub], [--unknown uuu op]
        *     sub -- --unknown uuu op => [sub --unknown uuu op], []
        *
-       * @param {String[]} argv
-       * @return {{operands: String[], unknown: String[]}}
+       * @param {string[]} argv
+       * @return {{operands: string[], unknown: string[]}}
        */
       parseOptions(argv) {
         const operands = [];
@@ -3474,7 +3538,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
               if (args.length > 0)
                 unknown.push(...args);
               break;
-            } else if (arg === this._helpCommandName && this._hasImplicitHelpCommand()) {
+            } else if (this._getHelpCommand() && arg === this._getHelpCommand().name()) {
               operands.push(arg);
               if (args.length > 0)
                 operands.push(...args);
@@ -3551,7 +3615,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Apply any option related environment variables, if option does
        * not have a value from cli or client code.
        *
-       * @api private
+       * @private
        */
       _parseOptionsEnv() {
         this.options.forEach((option) => {
@@ -3570,7 +3634,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
       /**
        * Apply any implied option values, if option is undefined or default value.
        *
-       * @api private
+       * @private
        */
       _parseOptionsImplied() {
         const dualHelper = new DualOptions(this.options);
@@ -3587,7 +3651,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Argument `name` is missing.
        *
        * @param {string} name
-       * @api private
+       * @private
        */
       missingArgument(name) {
         const message = `error: missing required argument '${name}'`;
@@ -3597,7 +3661,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * `Option` is missing an argument.
        *
        * @param {Option} option
-       * @api private
+       * @private
        */
       optionMissingArgument(option) {
         const message = `error: option '${option.flags}' argument missing`;
@@ -3607,7 +3671,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * `Option` does not have a value, and is a mandatory option.
        *
        * @param {Option} option
-       * @api private
+       * @private
        */
       missingMandatoryOptionValue(option) {
         const message = `error: required option '${option.flags}' not specified`;
@@ -3618,7 +3682,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        *
        * @param {Option} option
        * @param {Option} conflictingOption
-       * @api private
+       * @private
        */
       _conflictingOption(option, conflictingOption) {
         const findBestOptionFromValue = (option2) => {
@@ -3647,7 +3711,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Unknown option `flag`.
        *
        * @param {string} flag
-       * @api private
+       * @private
        */
       unknownOption(flag) {
         if (this._allowUnknownOption)
@@ -3670,7 +3734,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Excess arguments, more than expected.
        *
        * @param {string[]} receivedArgs
-       * @api private
+       * @private
        */
       _excessArguments(receivedArgs) {
         if (this._allowExcessArguments)
@@ -3684,7 +3748,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
       /**
        * Unknown command.
        *
-       * @api private
+       * @private
        */
       unknownCommand() {
         const unknownName = this.args[0];
@@ -3711,7 +3775,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @param {string} [str]
        * @param {string} [flags]
        * @param {string} [description]
-       * @return {this | string | undefined} `this` command for chaining, or version string if no arguments
+       * @return {(this | string | undefined)} `this` command for chaining, or version string if no arguments
        */
       version(str2, flags, description) {
         if (str2 === void 0)
@@ -3721,7 +3785,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
         description = description || "output the version number";
         const versionOption = this.createOption(flags, description);
         this._versionOptionName = versionOption.attributeName();
-        this.options.push(versionOption);
+        this._registerOption(versionOption);
         this.on("option:" + versionOption.name(), () => {
           this._outputConfiguration.writeOut(`${str2}
 `);
@@ -3734,7 +3798,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        *
        * @param {string} [str]
        * @param {Object} [argsDescription]
-       * @return {string|Command}
+       * @return {(string|Command)}
        */
       description(str2, argsDescription) {
         if (str2 === void 0 && argsDescription === void 0)
@@ -3749,7 +3813,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Set the summary. Used when listed as subcommand of parent.
        *
        * @param {string} [str]
-       * @return {string|Command}
+       * @return {(string|Command)}
        */
       summary(str2) {
         if (str2 === void 0)
@@ -3763,7 +3827,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * You may call more than once to add multiple aliases. Only the first alias is shown in the auto-generated help.
        *
        * @param {string} [alias]
-       * @return {string|Command}
+       * @return {(string|Command)}
        */
       alias(alias) {
         if (alias === void 0)
@@ -3774,6 +3838,11 @@ Expecting one of '${allowedValues.join("', '")}'`);
         }
         if (alias === command._name)
           throw new Error("Command alias can't be the same as its name");
+        const matchingCommand = this.parent?._findCommand(alias);
+        if (matchingCommand) {
+          const existingCmd = [matchingCommand.name()].concat(matchingCommand.aliases()).join("|");
+          throw new Error(`cannot add alias '${alias}' to command '${this.name()}' as already have command '${existingCmd}'`);
+        }
         command._aliases.push(alias);
         return this;
       }
@@ -3783,7 +3852,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Only the first alias is shown in the auto-generated help.
        *
        * @param {string[]} [aliases]
-       * @return {string[]|Command}
+       * @return {(string[]|Command)}
        */
       aliases(aliases) {
         if (aliases === void 0)
@@ -3795,7 +3864,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Set / get the command usage `str`.
        *
        * @param {string} [str]
-       * @return {String|Command}
+       * @return {(string|Command)}
        */
       usage(str2) {
         if (str2 === void 0) {
@@ -3805,7 +3874,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
             return humanReadableArgName(arg);
           });
           return [].concat(
-            this.options.length || this._hasHelpOption ? "[options]" : [],
+            this.options.length || this._helpOption !== null ? "[options]" : [],
             this.commands.length ? "[command]" : [],
             this.registeredArguments.length ? args : []
           ).join(" ");
@@ -3817,7 +3886,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Get or set the name of the command.
        *
        * @param {string} [str]
-       * @return {string|Command}
+       * @return {(string|Command)}
        */
       name(str2) {
         if (str2 === void 0)
@@ -3850,7 +3919,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * program.executableDir('subcommands');
        *
        * @param {string} [path]
-       * @return {string|null|Command}
+       * @return {(string|null|Command)}
        */
       executableDir(path3) {
         if (path3 === void 0)
@@ -3872,7 +3941,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
         return helper.formatHelp(this, helper);
       }
       /**
-       * @api private
+       * @private
        */
       _getHelpContext(contextOptions) {
         contextOptions = contextOptions || {};
@@ -3911,31 +3980,60 @@ Expecting one of '${allowedValues.join("', '")}'`);
           }
         }
         context.write(helpInformation);
-        if (this._helpLongFlag) {
-          this.emit(this._helpLongFlag);
+        if (this._getHelpOption()?.long) {
+          this.emit(this._getHelpOption().long);
         }
         this.emit("afterHelp", context);
         this._getCommandAndAncestors().forEach((command) => command.emit("afterAllHelp", context));
       }
       /**
-       * You can pass in flags and a description to override the help
-       * flags and help description for your command. Pass in false to
-       * disable the built-in help option.
+       * You can pass in flags and a description to customise the built-in help option.
+       * Pass in false to disable the built-in help option.
        *
-       * @param {string | boolean} [flags]
+       * @example
+       * program.helpOption('-?, --help' 'show help'); // customise
+       * program.helpOption(false); // disable
+       *
+       * @param {(string | boolean)} flags
        * @param {string} [description]
        * @return {Command} `this` command for chaining
        */
       helpOption(flags, description) {
         if (typeof flags === "boolean") {
-          this._hasHelpOption = flags;
+          if (flags) {
+            this._helpOption = this._helpOption ?? void 0;
+          } else {
+            this._helpOption = null;
+          }
           return this;
         }
-        this._helpFlags = flags || this._helpFlags;
-        this._helpDescription = description || this._helpDescription;
-        const helpFlags = splitOptionFlags(this._helpFlags);
-        this._helpShortFlag = helpFlags.shortFlag;
-        this._helpLongFlag = helpFlags.longFlag;
+        flags = flags ?? "-h, --help";
+        description = description ?? "display help for command";
+        this._helpOption = this.createOption(flags, description);
+        return this;
+      }
+      /**
+       * Lazy create help option.
+       * Returns null if has been disabled with .helpOption(false).
+       *
+       * @returns {(Option | null)} the help option
+       * @package internal use only
+       */
+      _getHelpOption() {
+        if (this._helpOption === void 0) {
+          this.helpOption(void 0, void 0);
+        }
+        return this._helpOption;
+      }
+      /**
+       * Supply your own option to use for the built-in help option.
+       * This is an alternative to using helpOption() to customise the flags and description etc.
+       *
+       * @param {Option} option
+       * @return {Command} `this` command for chaining
+       */
+      addHelpOption(option) {
+        this._helpOption = option;
         return this;
       }
       /**
@@ -3960,7 +4058,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * and 'beforeAll' or 'afterAll' to affect this command and all its subcommands.
        *
        * @param {string} position - before or after built-in help
-       * @param {string | Function} text - string to add, or a function returning a string
+       * @param {(string | Function)} text - string to add, or a function returning a string
        * @return {Command} `this` command for chaining
        */
       addHelpText(position, text) {
@@ -3984,14 +4082,21 @@ Expecting one of '${allowedValues.join("', '")}'`);
         });
         return this;
       }
-    };
-    function outputHelpIfRequested(cmd, args) {
-      const helpOption = cmd._hasHelpOption && args.find((arg) => arg === cmd._helpLongFlag || arg === cmd._helpShortFlag);
-      if (helpOption) {
-        cmd.outputHelp();
-        cmd._exit(0, "commander.helpDisplayed", "(outputHelp)");
+      /**
+       * Output help information if help flags specified
+       *
+       * @param {Array} args - array of options to search for help flags
+       * @private
+       */
+      _outputHelpIfRequested(args) {
+        const helpOption = this._getHelpOption();
+        const helpRequested = helpOption && args.find((arg) => helpOption.is(arg));
+        if (helpRequested) {
+          this.outputHelp();
+          this._exit(0, "commander.helpDisplayed", "(outputHelp)");
+        }
       }
-    }
+    };
     function incrementNodeInspectorPort(args) {
       return args.map((arg) => {
         if (!arg.startsWith("--inspect")) {
@@ -4027,14 +4132,16 @@ Expecting one of '${allowedValues.join("', '")}'`);
 
 // node_modules/commander/index.js
 var require_commander = __commonJS({
-  "node_modules/commander/index.js"(exports2, module2) {
+  "node_modules/commander/index.js"(exports2) {
     var { Argument: Argument2 } = require_argument();
     var { Command: Command2 } = require_command();
     var { CommanderError: CommanderError2, InvalidArgumentError: InvalidArgumentError2 } = require_error();
     var { Help: Help2 } = require_help();
     var { Option: Option2 } = require_option();
-    exports2 = module2.exports = new Command2();
-    exports2.program = exports2;
+    exports2.program = new Command2();
+    exports2.createCommand = (name) => new Command2(name);
+    exports2.createOption = (flags, description) => new Option2(flags, description);
+    exports2.createArgument = (name, description) => new Argument2(name, description);
     exports2.Command = Command2;
     exports2.Option = Option2;
     exports2.Argument = Argument2;
@@ -14998,6 +15105,7 @@ var {
 } = import_index.default;
 
 // node_modules/@google/generative-ai/dist/index.mjs
+var POSSIBLE_ROLES = ["user", "model", "function"];
 var HarmCategory;
 (function(HarmCategory2) {
   HarmCategory2["HARM_CATEGORY_UNSPECIFIED"] = "HARM_CATEGORY_UNSPECIFIED";
@@ -15046,6 +15154,15 @@ var TaskType;
   TaskType2["CLASSIFICATION"] = "CLASSIFICATION";
   TaskType2["CLUSTERING"] = "CLUSTERING";
 })(TaskType || (TaskType = {}));
+var FunctionDeclarationSchemaType;
+(function(FunctionDeclarationSchemaType2) {
+  FunctionDeclarationSchemaType2["STRING"] = "STRING";
+  FunctionDeclarationSchemaType2["NUMBER"] = "NUMBER";
+  FunctionDeclarationSchemaType2["INTEGER"] = "INTEGER";
+  FunctionDeclarationSchemaType2["BOOLEAN"] = "BOOLEAN";
+  FunctionDeclarationSchemaType2["ARRAY"] = "ARRAY";
+  FunctionDeclarationSchemaType2["OBJECT"] = "OBJECT";
+})(FunctionDeclarationSchemaType || (FunctionDeclarationSchemaType = {}));
 var GoogleGenerativeAIError = class extends Error {
   constructor(message) {
     super(`[GoogleGenerativeAI Error]: ${message}`);
@@ -15058,8 +15175,8 @@ var GoogleGenerativeAIResponseError = class extends GoogleGenerativeAIError {
   }
 };
 var BASE_URL = "https://generativelanguage.googleapis.com";
-var API_VERSION = "v1";
-var PACKAGE_VERSION = "0.2.0";
+var DEFAULT_API_VERSION = "v1";
+var PACKAGE_VERSION = "0.3.0";
 var PACKAGE_LOG_HEADER = "genai-js";
 var Task;
 (function(Task2) {
@@ -15070,14 +15187,17 @@ var Task;
   Task2["BATCH_EMBED_CONTENTS"] = "batchEmbedContents";
 })(Task || (Task = {}));
 var RequestUrl = class {
-  constructor(model, task, apiKey, stream) {
+  constructor(model, task, apiKey, stream, requestOptions) {
     this.model = model;
     this.task = task;
     this.apiKey = apiKey;
     this.stream = stream;
+    this.requestOptions = requestOptions;
   }
   toString() {
-    let url = `${BASE_URL}/${API_VERSION}/models/${this.model}:${this.task}`;
+    var _a2;
+    const apiVersion = ((_a2 = this.requestOptions) === null || _a2 === void 0 ? void 0 : _a2.apiVersion) || DEFAULT_API_VERSION;
+    let url = `${BASE_URL}/${apiVersion}/${this.model}:${this.task}`;
     if (this.stream) {
       url += "?alt=sse";
     }
@@ -15139,15 +15259,33 @@ function addHelpers(response) {
     }
     return "";
   };
+  response.functionCall = () => {
+    if (response.candidates && response.candidates.length > 0) {
+      if (response.candidates.length > 1) {
+        console.warn(`This response had ${response.candidates.length} candidates. Returning function call from the first candidate only. Access response.candidates directly to use the other candidates.`);
+      }
+      if (hadBadFinishReason(response.candidates[0])) {
+        throw new GoogleGenerativeAIResponseError(`${formatBlockErrorMessage(response)}`, response);
+      }
+      return getFunctionCall(response);
+    } else if (response.promptFeedback) {
+      throw new GoogleGenerativeAIResponseError(`Function call not available. ${formatBlockErrorMessage(response)}`, response);
+    }
+    return void 0;
+  };
   return response;
 }
 function getText(response) {
   var _a2, _b, _c, _d;
   if ((_d = (_c = (_b = (_a2 = response.candidates) === null || _a2 === void 0 ? void 0 : _a2[0].content) === null || _b === void 0 ? void 0 : _b.parts) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.text) {
-    return response.candidates[0].content.parts[0].text;
+    return response.candidates[0].content.parts.map(({ text }) => text).join("");
   } else {
     return "";
   }
+}
+function getFunctionCall(response) {
+  var _a2, _b, _c, _d;
+  return (_d = (_c = (_b = (_a2 = response.candidates) === null || _a2 === void 0 ? void 0 : _a2[0].content) === null || _b === void 0 ? void 0 : _b.parts) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.functionCall;
 }
 var badFinishReasons = [FinishReason.RECITATION, FinishReason.SAFETY];
 function hadBadFinishReason(candidate) {
@@ -15309,13 +15447,21 @@ function aggregateResponses(responses) {
           if (!aggregatedResponse.candidates[i2].content) {
             aggregatedResponse.candidates[i2].content = {
               role: candidate.content.role || "user",
-              parts: [{ text: "" }]
+              parts: []
             };
           }
+          const newPart = {};
           for (const part of candidate.content.parts) {
             if (part.text) {
-              aggregatedResponse.candidates[i2].content.parts[0].text += part.text;
+              newPart.text = part.text;
             }
+            if (part.functionCall) {
+              newPart.functionCall = part.functionCall;
+            }
+            if (Object.keys(newPart).length === 0) {
+              newPart.text = "";
+            }
+            aggregatedResponse.candidates[i2].content.parts.push(newPart);
           }
         }
       }
@@ -15329,7 +15475,8 @@ async function generateContentStream(apiKey, model, params, requestOptions) {
     Task.STREAM_GENERATE_CONTENT,
     apiKey,
     /* stream */
-    true
+    true,
+    requestOptions
   );
   const response = await makeRequest(url, JSON.stringify(params), requestOptions);
   return processStream(response);
@@ -15340,7 +15487,8 @@ async function generateContent(apiKey, model, params, requestOptions) {
     Task.GENERATE_CONTENT,
     apiKey,
     /* stream */
-    false
+    false,
+    requestOptions
   );
   const response = await makeRequest(url, JSON.stringify(params), requestOptions);
   const responseJson = await response.json();
@@ -15349,7 +15497,7 @@ async function generateContent(apiKey, model, params, requestOptions) {
     response: enhancedResponse
   };
 }
-function formatNewContent(request, role) {
+function formatNewContent(request) {
   let newParts = [];
   if (typeof request === "string") {
     newParts = [{ text: request }];
@@ -15362,22 +15510,104 @@ function formatNewContent(request, role) {
       }
     }
   }
-  return { role, parts: newParts };
+  return assignRoleToPartsAndValidateSendMessageRequest(newParts);
+}
+function assignRoleToPartsAndValidateSendMessageRequest(parts) {
+  const userContent = { role: "user", parts: [] };
+  const functionContent = { role: "function", parts: [] };
+  let hasUserContent = false;
+  let hasFunctionContent = false;
+  for (const part of parts) {
+    if ("functionResponse" in part) {
+      functionContent.parts.push(part);
+      hasFunctionContent = true;
+    } else {
+      userContent.parts.push(part);
+      hasUserContent = true;
+    }
+  }
+  if (hasUserContent && hasFunctionContent) {
+    throw new GoogleGenerativeAIError("Within a single message, FunctionResponse cannot be mixed with other type of part in the request for sending chat message.");
+  }
+  if (!hasUserContent && !hasFunctionContent) {
+    throw new GoogleGenerativeAIError("No content is provided for sending chat message.");
+  }
+  if (hasUserContent) {
+    return userContent;
+  }
+  return functionContent;
 }
 function formatGenerateContentInput(params) {
   if (params.contents) {
     return params;
   } else {
-    const content = formatNewContent(params, "user");
+    const content = formatNewContent(params);
     return { contents: [content] };
   }
 }
 function formatEmbedContentInput(params) {
   if (typeof params === "string" || Array.isArray(params)) {
-    const content = formatNewContent(params, "user");
+    const content = formatNewContent(params);
     return { content };
   }
   return params;
+}
+var VALID_PART_FIELDS = [
+  "text",
+  "inlineData",
+  "functionCall",
+  "functionResponse"
+];
+var VALID_PARTS_PER_ROLE = {
+  user: ["text", "inlineData"],
+  function: ["functionResponse"],
+  model: ["text", "functionCall"]
+};
+var VALID_PREVIOUS_CONTENT_ROLES = {
+  user: ["model"],
+  function: ["model"],
+  model: ["user", "function"]
+};
+function validateChatHistory(history) {
+  let prevContent;
+  for (const currContent of history) {
+    const { role, parts } = currContent;
+    if (!prevContent && role !== "user") {
+      throw new GoogleGenerativeAIError(`First content should be with role 'user', got ${role}`);
+    }
+    if (!POSSIBLE_ROLES.includes(role)) {
+      throw new GoogleGenerativeAIError(`Each item should include role field. Got ${role} but valid roles are: ${JSON.stringify(POSSIBLE_ROLES)}`);
+    }
+    if (parts.length === 0) {
+      throw new GoogleGenerativeAIError("Each Content should have at least one part");
+    }
+    const countFields = {
+      text: 0,
+      inlineData: 0,
+      functionCall: 0,
+      functionResponse: 0
+    };
+    for (const part of parts) {
+      for (const key of VALID_PART_FIELDS) {
+        if (key in part) {
+          countFields[key] += 1;
+        }
+      }
+    }
+    const validParts = VALID_PARTS_PER_ROLE[role];
+    for (const key of VALID_PART_FIELDS) {
+      if (!validParts.includes(key) && countFields[key] > 0) {
+        throw new GoogleGenerativeAIError(`Content with role '${role}' can't contain '${key}' part`);
+      }
+    }
+    if (prevContent) {
+      const validPreviousContentRoles = VALID_PREVIOUS_CONTENT_ROLES[role];
+      if (!validPreviousContentRoles.includes(prevContent.role)) {
+        throw new GoogleGenerativeAIError(`Content with role '${role}' can't follow '${prevContent.role}'`);
+      }
+    }
+    prevContent = currContent;
+  }
 }
 var SILENT_ERROR = "SILENT_ERROR";
 var ChatSession = class {
@@ -15389,12 +15619,8 @@ var ChatSession = class {
     this._sendPromise = Promise.resolve();
     this._apiKey = apiKey;
     if (params === null || params === void 0 ? void 0 : params.history) {
-      this._history = params.history.map((content) => {
-        if (!content.role) {
-          throw new Error("Missing role for history item: " + JSON.stringify(content));
-        }
-        return formatNewContent(content.parts, content.role);
-      });
+      validateChatHistory(params.history);
+      this._history = params.history;
     }
   }
   /**
@@ -15411,12 +15637,13 @@ var ChatSession = class {
    * {@link GenerateContentResult}
    */
   async sendMessage(request) {
-    var _a2, _b;
+    var _a2, _b, _c;
     await this._sendPromise;
-    const newContent = formatNewContent(request, "user");
+    const newContent = formatNewContent(request);
     const generateContentRequest = {
       safetySettings: (_a2 = this.params) === null || _a2 === void 0 ? void 0 : _a2.safetySettings,
       generationConfig: (_b = this.params) === null || _b === void 0 ? void 0 : _b.generationConfig,
+      tools: (_c = this.params) === null || _c === void 0 ? void 0 : _c.tools,
       contents: [...this._history, newContent]
     };
     let finalResult;
@@ -15447,12 +15674,13 @@ var ChatSession = class {
    * and a response promise.
    */
   async sendMessageStream(request) {
-    var _a2, _b;
+    var _a2, _b, _c;
     await this._sendPromise;
-    const newContent = formatNewContent(request, "user");
+    const newContent = formatNewContent(request);
     const generateContentRequest = {
       safetySettings: (_a2 = this.params) === null || _a2 === void 0 ? void 0 : _a2.safetySettings,
       generationConfig: (_b = this.params) === null || _b === void 0 ? void 0 : _b.generationConfig,
+      tools: (_c = this.params) === null || _c === void 0 ? void 0 : _c.tools,
       contents: [...this._history, newContent]
     };
     const streamPromise = generateContentStream(this._apiKey, this.model, generateContentRequest, this.requestOptions);
@@ -15481,34 +15709,34 @@ var ChatSession = class {
   }
 };
 async function countTokens(apiKey, model, params, requestOptions) {
-  const url = new RequestUrl(model, Task.COUNT_TOKENS, apiKey, false);
+  const url = new RequestUrl(model, Task.COUNT_TOKENS, apiKey, false, {});
   const response = await makeRequest(url, JSON.stringify(Object.assign(Object.assign({}, params), { model })), requestOptions);
   return response.json();
 }
 async function embedContent(apiKey, model, params, requestOptions) {
-  const url = new RequestUrl(model, Task.EMBED_CONTENT, apiKey, false);
+  const url = new RequestUrl(model, Task.EMBED_CONTENT, apiKey, false, {});
   const response = await makeRequest(url, JSON.stringify(params), requestOptions);
   return response.json();
 }
 async function batchEmbedContents(apiKey, model, params, requestOptions) {
-  const url = new RequestUrl(model, Task.BATCH_EMBED_CONTENTS, apiKey, false);
+  const url = new RequestUrl(model, Task.BATCH_EMBED_CONTENTS, apiKey, false, {});
   const requestsWithModel = params.requests.map((request) => {
-    return Object.assign(Object.assign({}, request), { model: `models/${model}` });
+    return Object.assign(Object.assign({}, request), { model });
   });
   const response = await makeRequest(url, JSON.stringify({ requests: requestsWithModel }), requestOptions);
   return response.json();
 }
 var GenerativeModel = class {
   constructor(apiKey, modelParams, requestOptions) {
-    var _a2;
     this.apiKey = apiKey;
-    if (modelParams.model.startsWith("models/")) {
-      this.model = (_a2 = modelParams.model.split("models/")) === null || _a2 === void 0 ? void 0 : _a2[1];
-    } else {
+    if (modelParams.model.includes("/")) {
       this.model = modelParams.model;
+    } else {
+      this.model = `models/${modelParams.model}`;
     }
     this.generationConfig = modelParams.generationConfig || {};
     this.safetySettings = modelParams.safetySettings || [];
+    this.tools = modelParams.tools;
     this.requestOptions = requestOptions || {};
   }
   /**
@@ -15517,7 +15745,7 @@ var GenerativeModel = class {
    */
   async generateContent(request) {
     const formattedParams = formatGenerateContentInput(request);
-    return generateContent(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings }, formattedParams), this.requestOptions);
+    return generateContent(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools }, formattedParams), this.requestOptions);
   }
   /**
    * Makes a single streaming call to the model
@@ -15527,14 +15755,14 @@ var GenerativeModel = class {
    */
   async generateContentStream(request) {
     const formattedParams = formatGenerateContentInput(request);
-    return generateContentStream(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings }, formattedParams), this.requestOptions);
+    return generateContentStream(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools }, formattedParams), this.requestOptions);
   }
   /**
    * Gets a new {@link ChatSession} instance which can be used for
    * multi-turn chats.
    */
   startChat(startChatParams) {
-    return new ChatSession(this.apiKey, this.model, startChatParams, this.requestOptions);
+    return new ChatSession(this.apiKey, this.model, Object.assign({ tools: this.tools }, startChatParams), this.requestOptions);
   }
   /**
    * Counts the tokens in the provided request.
@@ -15576,6 +15804,14 @@ var GoogleGenerativeAI = class {
 var ChatInterface = class {
 };
 
+// src/enums/role.ts
+var Role = /* @__PURE__ */ ((Role2) => {
+  Role2["User"] = "user";
+  Role2["System"] = "system";
+  return Role2;
+})(Role || {});
+var role_default = Role;
+
 // src/chat_interface/chatgpt.ts
 var ChatGPT = class extends ChatInterface {
   model;
@@ -15602,7 +15838,7 @@ var ChatGPT = class extends ChatInterface {
     }
     await this.rateLimiter.wait();
     this.rateLimiter.apiCalled();
-    this.history.push({ role: "user", content: message });
+    this.history.push({ role: role_default.User, content: message });
     try {
       const response = await this.model.chat.completions.create({
         ...this.chatParams,
@@ -15612,7 +15848,7 @@ var ChatGPT = class extends ChatInterface {
       if (!responseText) {
         return "";
       }
-      this.history.push({ role: "system", content: responseText });
+      this.history.push({ role: role_default.System, content: responseText });
       return responseText;
     } catch (err) {
       console.error(err);
@@ -15623,22 +15859,22 @@ var ChatGPT = class extends ChatInterface {
     this.history = [];
   }
   rollbackLastMessage() {
-    if (this.history[this.history.length - 1].role === "system") {
+    if (this.history[this.history.length - 1].role === role_default.System) {
       this.history.pop();
       this.history.pop();
-    } else if (this.history[this.history.length - 1].role === "user") {
+    } else if (this.history[this.history.length - 1].role === role_default.User) {
       this.history.pop();
     }
   }
   invalidTranslation() {
     this.history.push({
-      role: "user",
+      role: role_default.User,
       content: "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt."
     });
   }
   invalidStyling() {
     this.history.push({
-      role: "user",
+      role: role_default.User,
       content: "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt."
     });
   }
@@ -15670,7 +15906,12 @@ var Gemini = class extends ChatInterface {
   startChat(params) {
     this.params = params;
     if (this.history.length > 0) {
-      params.history = this.history;
+      params.history = this.history.map(
+        (x2) => ({
+          role: x2.role === role_default.User ? "user" : "model",
+          parts: [{ text: x2.parts }]
+        })
+      );
     }
     this.chat = this.model.startChat(params);
   }
@@ -15700,23 +15941,23 @@ var Gemini = class extends ChatInterface {
     this.startChat(this.params);
   }
   rollbackLastMessage() {
-    if (this.history[this.history.length - 1].role === "system") {
+    if (this.history[this.history.length - 1].role === role_default.System) {
       this.history.pop();
       this.history.pop();
-    } else if (this.history[this.history.length - 1].role === "user") {
+    } else if (this.history[this.history.length - 1].role === role_default.User) {
       this.history.pop();
     }
     this.startChat(this.params);
   }
   invalidTranslation() {
     this.history.push({
-      role: "user",
+      role: role_default.User,
       parts: "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt."
     });
   }
   invalidStyling() {
     this.history.push({
-      role: "user",
+      role: role_default.User,
       parts: "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt."
     });
   }
@@ -19112,23 +19353,10 @@ var { OpenAIError: OpenAIError2, APIError: APIError2, APIConnectionError: APICon
 var openai_default = OpenAI;
 
 // src/chat_interface/chat_factory.ts
-var defaultModel = (engine) => {
-  switch (engine) {
-    case engine_default.Gemini:
-      return "gemini-pro";
-    case engine_default.ChatGPT:
-      return "gpt-4";
-    default:
-      throw new Error("Invalid model");
-  }
-};
 var ChatFactory = class {
   static newChat(engine, model, apiKey, rateLimiter) {
     let chat;
     let params;
-    if (!model) {
-      model = defaultModel(engine);
-    }
     switch (engine) {
       case engine_default.Gemini: {
         const genAI = new GoogleGenerativeAI(apiKey);
@@ -20239,7 +20467,7 @@ node-domexception/index.js:
 @google/generative-ai/dist/index.mjs:
   (**
    * @license
-   * Copyright 2023 Google LLC
+   * Copyright 2024 Google LLC
    *
    * Licensed under the Apache License, Version 2.0 (the "License");
    * you may not use this file except in compliance with the License.
@@ -20257,7 +20485,7 @@ node-domexception/index.js:
 @google/generative-ai/dist/index.mjs:
   (**
    * @license
-   * Copyright 2023 Google LLC
+   * Copyright 2024 Google LLC
    *
    * Licensed under the Apache License, Version 2.0 (the "License");
    * you may not use this file except in compliance with the License.

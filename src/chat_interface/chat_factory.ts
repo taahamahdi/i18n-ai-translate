@@ -5,7 +5,7 @@ import Gemini from "./gemini";
 import OpenAI from "openai";
 import type { ChatParams, Model } from "../types";
 import type ChatInterface from "./chat_interface";
-import type RateLimiter from "src/rate_limiter";
+import type RateLimiter from "../rate_limiter";
 
 export default class ChatFactory {
     static newChat(

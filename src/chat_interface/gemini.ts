@@ -1,13 +1,15 @@
 import ChatInterface from "./chat_interface";
+import Role from "../enums/role";
 import type {
     ChatSession,
+    Content,
     GenerativeModel,
     StartChatParams,
 } from "@google/generative-ai";
-import type RateLimiter from "src/rate_limiter";
+import type RateLimiter from "../rate_limiter";
 
 interface HistoryEntry {
-    role: "user" | "system";
+    role: Role;
     parts: string;
 }
 
@@ -35,7 +37,12 @@ export default class Gemini extends ChatInterface {
         this.params = params;
 
         if (this.history.length > 0) {
-            params.history = this.history;
+            params.history = this.history.map(
+                (x): Content => ({
+                    role: x.role === Role.User ? "user" : "model",
+                    parts: [{ text: x.parts }],
+                }),
+            );
         }
 
         this.chat = this.model.startChat(params);
@@ -73,10 +80,10 @@ export default class Gemini extends ChatInterface {
     }
 
     rollbackLastMessage(): void {
-        if (this.history[this.history.length - 1].role === "system") {
+        if (this.history[this.history.length - 1].role === Role.System) {
             this.history.pop();
             this.history.pop();
-        } else if (this.history[this.history.length - 1].role === "user") {
+        } else if (this.history[this.history.length - 1].role === Role.User) {
             this.history.pop();
         }
 
@@ -85,14 +92,14 @@ export default class Gemini extends ChatInterface {
 
     invalidTranslation(): void {
         this.history.push({
-            role: "user",
+            role: Role.User,
             parts: "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt.",
         });
     }
 
     invalidStyling(): void {
         this.history.push({
-            role: "user",
+            role: Role.User,
             parts: "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt.",
         });
     }

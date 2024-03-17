@@ -1,6 +1,7 @@
 import ChatInterface from "./chat_interface";
+import Role from "../enums/role";
 import type OpenAI from "openai";
-import type RateLimiter from "src/rate_limiter";
+import type RateLimiter from "../rate_limiter";
 
 export default class ChatGPT extends ChatInterface {
     model: OpenAI;
@@ -34,7 +35,7 @@ export default class ChatGPT extends ChatInterface {
 
         await this.rateLimiter.wait();
         this.rateLimiter.apiCalled();
-        this.history.push({ role: "user", content: message });
+        this.history.push({ role: Role.User, content: message });
 
         try {
             const response = await this.model.chat.completions.create({
@@ -47,7 +48,7 @@ export default class ChatGPT extends ChatInterface {
                 return "";
             }
 
-            this.history.push({ role: "system", content: responseText });
+            this.history.push({ role: Role.System, content: responseText });
             return responseText;
         } catch (err) {
             console.error(err);
@@ -60,17 +61,17 @@ export default class ChatGPT extends ChatInterface {
     }
 
     rollbackLastMessage(): void {
-        if (this.history[this.history.length - 1].role === "system") {
+        if (this.history[this.history.length - 1].role === Role.System) {
             this.history.pop();
             this.history.pop();
-        } else if (this.history[this.history.length - 1].role === "user") {
+        } else if (this.history[this.history.length - 1].role === Role.User) {
             this.history.pop();
         }
     }
 
     invalidTranslation(): void {
         this.history.push({
-            role: "user",
+            role: Role.User,
             content:
                 "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt.",
         });
@@ -78,7 +79,7 @@ export default class ChatGPT extends ChatInterface {
 
     invalidStyling(): void {
         this.history.push({
-            role: "user",
+            role: Role.User,
             content:
                 "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt.",
         });
