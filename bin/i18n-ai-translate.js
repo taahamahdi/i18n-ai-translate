@@ -15802,6 +15802,12 @@ var GoogleGenerativeAI = class {
 
 // src/chat_interface/chat_interface.ts
 var ChatInterface = class {
+  invalidTranslationMessage() {
+    return "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt.";
+  }
+  invalidStylingMessage() {
+    return "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt.";
+  }
 };
 
 // src/enums/role.ts
@@ -15873,13 +15879,13 @@ var ChatGPT = class extends ChatInterface {
   invalidTranslation() {
     this.history.push({
       role: role_default.System,
-      content: "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt."
+      content: this.invalidTranslationMessage()
     });
   }
   invalidStyling() {
     this.history.push({
       role: role_default.System,
-      content: "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt."
+      content: this.invalidStylingMessage()
     });
   }
 };
@@ -15956,13 +15962,13 @@ var Gemini = class extends ChatInterface {
   invalidTranslation() {
     this.history.push({
       role: role_default.System,
-      parts: "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt."
+      parts: this.invalidTranslationMessage()
     });
   }
   invalidStyling() {
     this.history.push({
       role: role_default.System,
-      parts: "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt."
+      parts: this.invalidStylingMessage()
     });
   }
 };
