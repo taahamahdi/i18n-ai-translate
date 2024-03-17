@@ -4,15 +4,41 @@ Leverage ChatGPT or Google Gemini for seamless translation of application locali
 
 Three prompts are chained to ensure each translation is well-formed.
 
-1. The translation prompt attempts a translation
-2. The translation validation prompt uses a separate context to verify the translation
-3. The styling validation prompt uses a separate context to verify the translation's formatting is consistent with the source
+1. The [translation prompt](#translation-prompt) attempts a translation
+2. The [translation verification prompt](#translation-verification-prompt) uses a separate context to verify the translation
+3. The [styling verification prompt](#styling-verification-prompt) uses a separate context to verify the translation's formatting is consistent with the source
 
 History is retained between calls to ensure consistency when translating the entire file.
 
 With ChatGPT, a seed is supplied to ensure deterministic translations.
 
 # Usage
+## Quick-start
+### [Running directly](#script)
+```bash
+git clone git@github.com:taahamahdi/i18n-ai-translate.git
+yarn
+cp /home/en.json jsons/
+npm run i18n-ai-translate -- translate -i jsons/en.json -o jsons/fr.json
+```
+
+### [Running as a script in your own project](#script)
+```bash
+yarn add i18n-ai-translate
+npx i18n-ai-translate translate -i en.json -o fr.json
+```
+
+### [Running as a library](#as-a-library)
+```ts
+import { translate } from "i18n-ai-translate";
+...
+const translation = await translate({
+  ...
+});
+
+```
+
+
 ## GitHub Actions
 Incorporate it into your CI with a GitHub Action to auto-translate keys for every pull request:
 ```yaml
