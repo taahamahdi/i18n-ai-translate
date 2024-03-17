@@ -34,6 +34,7 @@ export default class ChatGPT extends ChatInterface {
 
         await this.rateLimiter.wait();
         this.rateLimiter.apiCalled();
+        this.history.push({ role: "user", content: message });
 
         try {
             const response = await this.model.chat.completions.create({
@@ -46,7 +47,6 @@ export default class ChatGPT extends ChatInterface {
                 return "";
             }
 
-            this.history.push({ role: "user", content: message });
             this.history.push({ role: "system", content: responseText });
             return responseText;
         } catch (err) {
@@ -66,5 +66,19 @@ export default class ChatGPT extends ChatInterface {
         } else if (this.history[this.history.length - 1].role === "user") {
             this.history.pop();
         }
+    }
+
+    invalidTranslation(): void {
+        this.history.push({
+            role: "user",
+            content: "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt.",
+        })
+    }
+
+    invalidStyling(): void {
+        this.history.push({
+            role: "user",
+            content: "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt."
+        })
     }
 }

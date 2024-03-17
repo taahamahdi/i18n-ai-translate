@@ -82,4 +82,18 @@ export default class Gemini extends ChatInterface {
 
         this.startChat(this.params!);
     }
+
+    invalidTranslation(): void {
+        this.history.push({
+            role: "user",
+            parts: "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt.",
+        })
+    }
+
+    invalidStyling(): void {
+        this.history.push({
+            role: "user",
+            parts: "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt."
+        })
+    }
 }

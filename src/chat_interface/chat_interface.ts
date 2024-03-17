@@ -5,4 +5,6 @@ export default abstract class ChatInterface {
     abstract sendMessage(message: string): Promise<string>;
     abstract resetChatHistory(): void;
     abstract rollbackLastMessage(): void;
+    abstract invalidTranslation(): void;
+    abstract invalidStyling(): void;
 }

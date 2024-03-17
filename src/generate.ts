@@ -1,7 +1,6 @@
 import { retryJob } from "./utils";
 import { verifyStyling, verifyTranslation } from "./verify";
 import type Chats from "./interfaces/chats";
-import type Engine from "./enums/engine";
 
 const generationPrompt = (
     inputLanguage: string,
@@ -39,7 +38,6 @@ ${input}
 
 /**
  * Complete the initial translation of the input text.
- * @param engine - The engine to use for translation
  * @param chats - State of chats
  * @param inputLanguage - Language of the input text
  * @param outputLanguage - Language to translate the input text to
@@ -51,7 +49,6 @@ ${input}
  * @param ensureChangedTranslation - Whether to ensure that each key has changed
  */
 export default async function generateTranslation(
-    engine: Engine,
     chats: Chats,
     inputLanguage: string,
     outputLanguage: string,
@@ -113,6 +110,14 @@ export default async function generateTranslation(
 
                 generationRetries = 0;
 
+                if (text.startsWith("```\n") && text.endsWith("\n```")) {
+                    if (verboseLogging) {
+                        console.log("Response started and ended with triple backticks");
+                    }
+
+                    text = text.slice(4, -4);
+                }
+
                 // Response length matches
                 const splitText = text.split("\n");
                 if (splitText.length !== keys.length) {
@@ -134,7 +139,10 @@ export default async function generateTranslation(
                             i
                         ]) {
                             if (!splitText[i].includes(templatedString)) {
-                                console.log("doesn't include", templatedString);
+                                if (verboseLogging) {
+                                    console.log("doesn't include", templatedString);
+                                }
+
                                 chats.generateTranslationChat.rollbackLastMessage();
                                 return Promise.reject(
                                     new Error(
@@ -271,7 +279,7 @@ export default async function generateTranslation(
                 );
 
                 if (translationVerification === "NAK") {
-                    chats.generateTranslationChat.rollbackLastMessage();
+                    chats.generateTranslationChat.invalidTranslation();
                     return Promise.reject(
                         new Error(`Invalid translation. text = ${text}`),
                     );
@@ -286,7 +294,7 @@ export default async function generateTranslation(
                 );
 
                 if (stylingVerification === "NAK") {
-                    chats.generateTranslationChat.rollbackLastMessage();
+                    chats.generateTranslationChat.invalidStyling();
                     return Promise.reject(
                         new Error(`Invalid styling. text = ${text}`),
                     );
@@ -295,9 +303,9 @@ export default async function generateTranslation(
                 return text;
             },
             [],
-            50,
+            25,
             true,
-            1000,
+            0,
             false,
         );
     } catch (e) {

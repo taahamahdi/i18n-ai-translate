@@ -5,9 +5,12 @@ export default class RateLimiter {
 
     delayBetweenCallsMs: number;
 
-    constructor(delayBetweenCallsMs: number) {
+    verboseLogging: boolean;
+
+    constructor(delayBetweenCallsMs: number, verboseLogging: boolean) {
         this.lastAPICall = null;
         this.delayBetweenCallsMs = delayBetweenCallsMs;
+        this.verboseLogging = verboseLogging;
     }
 
     apiCalled(): void {
@@ -16,9 +19,13 @@ export default class RateLimiter {
 
     async wait(): Promise<void> {
         if (this.lastAPICall) {
-            await delay(
-                this.delayBetweenCallsMs - (Date.now() - this.lastAPICall),
-            );
+            const timeToWait = this.delayBetweenCallsMs - (Date.now() - this.lastAPICall);
+            if (timeToWait > 0) {
+                await delay(timeToWait);
+                if (this.verboseLogging) {
+                    console.log(`RateLimiter | Waiting ${timeToWait}ms before next API call`);
+                }
+            }
         }
 
         return Promise.resolve();

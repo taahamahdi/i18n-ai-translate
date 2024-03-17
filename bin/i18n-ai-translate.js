@@ -15601,6 +15601,7 @@ var ChatGPT = class extends ChatInterface {
     }
     await this.rateLimiter.wait();
     this.rateLimiter.apiCalled();
+    this.history.push({ role: "user", content: message });
     try {
       const response = await this.model.chat.completions.create({
         ...this.chatParams,
@@ -15610,7 +15611,6 @@ var ChatGPT = class extends ChatInterface {
       if (!responseText) {
         return "";
       }
-      this.history.push({ role: "user", content: message });
       this.history.push({ role: "system", content: responseText });
       return responseText;
     } catch (err) {
@@ -15628,6 +15628,18 @@ var ChatGPT = class extends ChatInterface {
     } else if (this.history[this.history.length - 1].role === "user") {
       this.history.pop();
     }
+  }
+  invalidTranslation() {
+    this.history.push({
+      role: "user",
+      content: "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt."
+    });
+  }
+  invalidStyling() {
+    this.history.push({
+      role: "user",
+      content: "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt."
+    });
   }
 };
 
@@ -15694,6 +15706,18 @@ var Gemini = class extends ChatInterface {
       this.history.pop();
     }
     this.startChat(this.params);
+  }
+  invalidTranslation() {
+    this.history.push({
+      role: "user",
+      parts: "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt."
+    });
+  }
+  invalidStyling() {
+    this.history.push({
+      role: "user",
+      parts: "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt."
+    });
   }
 };
 
@@ -19135,18 +19159,24 @@ var ChatFactory = class {
 var RateLimiter = class {
   lastAPICall;
   delayBetweenCallsMs;
-  constructor(delayBetweenCallsMs) {
+  verboseLogging;
+  constructor(delayBetweenCallsMs, verboseLogging) {
     this.lastAPICall = null;
     this.delayBetweenCallsMs = delayBetweenCallsMs;
+    this.verboseLogging = verboseLogging;
   }
   apiCalled() {
     this.lastAPICall = Date.now();
   }
   async wait() {
     if (this.lastAPICall) {
-      await delay(
-        this.delayBetweenCallsMs - (Date.now() - this.lastAPICall)
-      );
+      const timeToWait = this.delayBetweenCallsMs - (Date.now() - this.lastAPICall);
+      if (timeToWait > 0) {
+        await delay(timeToWait);
+        if (this.verboseLogging) {
+          console.log(`RateLimiter | Waiting ${timeToWait}ms before next API call`);
+        }
+      }
     }
     return Promise.resolve();
   }
@@ -19163,8 +19193,6 @@ var translationVerificationPrompt = (inputLanguage, outputLanguage, input, outpu
   return `
 Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated. Otherwise, reply with ACK. Only reply with ACK/NAK.
 
-**Be as nitpicky as possible.** If even the smallest thing seems off, you should reply NAK.
-
 \`\`\`
 ${inputLanguage},${outputLanguage}
 ${mergedCsv}
@@ -19177,8 +19205,6 @@ var stylingVerificationPrompt = (inputLanguage, outputLanguage, input, output) =
   const mergedCsv = splitInput.map((x2, i2) => `${x2},${splitOutput[i2]}`).join("\n");
   return `
 Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original. Check for differing capitalization, punctuation, or whitespaces. Otherwise, reply with ACK. Only reply with ACK/NAK.
-
-**Be as nitpicky as possible.** If even the smallest thing seems off, you should reply NAK.
 
 \`\`\`
 ${inputLanguage},${outputLanguage}
@@ -19223,7 +19249,7 @@ var verify = async (chat, verificationPromptText) => {
       [],
       5,
       true,
-      500,
+      0,
       false
     );
   } catch (e2) {
@@ -19255,7 +19281,7 @@ var failedTranslationPrompt = (inputLanguage, outputLanguage, input) => `You are
 ${input}
 \`\`\`
 `;
-async function generateTranslation(engine, chats, inputLanguage, outputLanguage, input, keys, templatedStringPrefix, templatedStringSuffix, verboseLogging, ensureChangedTranslation) {
+async function generateTranslation(chats, inputLanguage, outputLanguage, input, keys, templatedStringPrefix, templatedStringSuffix, verboseLogging, ensureChangedTranslation) {
   const generationPromptText = generationPrompt(
     inputLanguage,
     outputLanguage,
@@ -19299,6 +19325,12 @@ async function generateTranslation(engine, chats, inputLanguage, outputLanguage,
           );
         }
         generationRetries = 0;
+        if (text.startsWith("```\n") && text.endsWith("\n```")) {
+          if (verboseLogging) {
+            console.log("Response started and ended with triple backticks");
+          }
+          text = text.slice(4, -4);
+        }
         const splitText = text.split("\n");
         if (splitText.length !== keys.length) {
           chats.generateTranslationChat.rollbackLastMessage();
@@ -19313,7 +19345,9 @@ async function generateTranslation(engine, chats, inputLanguage, outputLanguage,
           )) {
             for (const templatedString of inputLineToTemplatedString[i2]) {
               if (!splitText[i2].includes(templatedString)) {
-                console.log("doesn't include", templatedString);
+                if (verboseLogging) {
+                  console.log("doesn't include", templatedString);
+                }
                 chats.generateTranslationChat.rollbackLastMessage();
                 return Promise.reject(
                   new Error(
@@ -19419,7 +19453,7 @@ async function generateTranslation(engine, chats, inputLanguage, outputLanguage,
           text
         );
         if (translationVerification === "NAK") {
-          chats.generateTranslationChat.rollbackLastMessage();
+          chats.generateTranslationChat.invalidTranslation();
           return Promise.reject(
             new Error(`Invalid translation. text = ${text}`)
           );
@@ -19432,7 +19466,7 @@ async function generateTranslation(engine, chats, inputLanguage, outputLanguage,
           text
         );
         if (stylingVerification === "NAK") {
-          chats.generateTranslationChat.rollbackLastMessage();
+          chats.generateTranslationChat.invalidStyling();
           return Promise.reject(
             new Error(`Invalid styling. text = ${text}`)
           );
@@ -19440,9 +19474,9 @@ async function generateTranslation(engine, chats, inputLanguage, outputLanguage,
         return text;
       },
       [],
-      50,
+      25,
       true,
-      1e3,
+      0,
       false
     );
   } catch (e2) {
@@ -19552,7 +19586,7 @@ async function translate(options) {
       `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`
     );
   }
-  const rateLimiter = new RateLimiter(options.rateLimitMs);
+  const rateLimiter = new RateLimiter(options.rateLimitMs, options.verbose ?? false);
   const chats = {
     generateTranslationChat: ChatFactory.newChat(
       options.engine,
@@ -19604,7 +19638,6 @@ async function translate(options) {
     const keys = allKeys.slice(i2, i2 + batchSize);
     const input = keys.map((x2) => `"${flatInput[x2]}"`).join("\n");
     const generatedTranslation = await generateTranslation(
-      options.engine,
       chats,
       `[${options.inputLanguage}]`,
       `[${options.outputLanguage}]`,
@@ -19631,15 +19664,6 @@ ${flatInput[keys[j2]]}
 ${output[keys[j2]]}
 `
         );
-    }
-    const batchEndTime = Date.now();
-    if (batchEndTime - batchStartTime < 3e3) {
-      if (options.verbose) {
-        console.log(
-          `Waiting for ${3e3 - (batchEndTime - batchStartTime)}ms...`
-        );
-      }
-      await delay(3e3 - (batchEndTime - batchStartTime));
     }
   }
   const sortedOutput = {};
@@ -19837,7 +19861,7 @@ program.command("translate").requiredOption(
   "gemini"
 ]).option("-m, --model <model>", "Model to use").option(
   "-r, --rate-limit-ms <rateLimitMs>",
-  "Rate limit in milliseconds (defaults to 1s for Gemini, 20s for ChatGPT)"
+  "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)"
 ).option("-f, --force-language-name <language name>", "Force language name").option("-A, --all-languages", "Translate to all supported languages").option(
   "-l, --languages [language codes...]",
   "Pass a list of languages to translate to"
@@ -19860,7 +19884,7 @@ program.command("translate").requiredOption(
 ).option("--verbose", "Print logs about progress", false).action(async (options) => {
   let model;
   let chatParams;
-  let rateLimitMs = options.rateLimitMs;
+  let rateLimitMs = Number(options.rateLimitMs);
   let apiKey;
   switch (options.engine) {
     case engine_default.Gemini:
@@ -19884,7 +19908,7 @@ program.command("translate").requiredOption(
         messages: []
       };
       if (!options.rateLimitMs) {
-        rateLimitMs = 2e4;
+        rateLimitMs = 120;
       }
       if (!process.env.OPENAI_API_KEY && !options.apiKey) {
         console.error("OPENAI_API_KEY not found in .env file");
@@ -19957,7 +19981,7 @@ program.command("translate").requiredOption(
           engine: options.engine,
           model,
           chatParams,
-          rateLimitMs: options.rateLimitMs,
+          rateLimitMs,
           apiKey,
           inputFileOrPath: options.input,
           outputFileOrPath: output,
@@ -20003,7 +20027,7 @@ program.command("translate").requiredOption(
           engine: options.engine,
           model,
           chatParams,
-          rateLimitMs: options.rateLimitMs,
+          rateLimitMs,
           apiKey,
           inputFileOrPath: options.input,
           outputFileOrPath: output,
@@ -20047,7 +20071,7 @@ program.command("diff").requiredOption(
 ).option("--verbose", "Print logs about progress", false).action(async (options) => {
   let model;
   let chatParams;
-  let rateLimitMs = options.rateLimitMs;
+  let rateLimitMs = Number(options.rateLimitMs);
   let apiKey;
   switch (options.engine) {
     case engine_default.Gemini:
@@ -20071,7 +20095,7 @@ program.command("diff").requiredOption(
         messages: []
       };
       if (!options.rateLimitMs) {
-        rateLimitMs = 2e4;
+        rateLimitMs = 120;
       }
       if (!process.env.OPENAI_API_KEY && !options.apiKey) {
         console.error("OPENAI_API_KEY not found in .env file");

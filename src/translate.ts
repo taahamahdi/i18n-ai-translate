@@ -159,7 +159,7 @@ export async function translate(options: TranslationOptions): Promise<Object> {
         );
     }
 
-    const rateLimiter = new RateLimiter(options.rateLimitMs);
+    const rateLimiter = new RateLimiter(options.rateLimitMs, options.verbose ?? false);
     const chats: Chats = {
         generateTranslationChat: ChatFactory.newChat(
             options.engine,
@@ -224,7 +224,6 @@ export async function translate(options: TranslationOptions): Promise<Object> {
 
         // eslint-disable-next-line no-await-in-loop
         const generatedTranslation = await generateTranslation(
-            options.engine,
             chats,
             `[${options.inputLanguage}]`,
             `[${options.outputLanguage}]`,
@@ -250,18 +249,6 @@ export async function translate(options: TranslationOptions): Promise<Object> {
                 console.log(
                     `${keys[j]}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
                 );
-        }
-
-        const batchEndTime = Date.now();
-        if (batchEndTime - batchStartTime < 3000) {
-            if (options.verbose) {
-                console.log(
-                    `Waiting for ${3000 - (batchEndTime - batchStartTime)}ms...`,
-                );
-            }
-
-            // eslint-disable-next-line no-await-in-loop
-            await delay(3000 - (batchEndTime - batchStartTime));
         }
     }
 
@@ -494,7 +481,7 @@ program
     .option("-m, --model <model>", "Model to use")
     .option(
         "-r, --rate-limit-ms <rateLimitMs>",
-        "Rate limit in milliseconds (defaults to 1s for Gemini, 20s for ChatGPT)",
+        "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)",
     )
     .option("-f, --force-language-name <language name>", "Force language name")
     .option("-A, --all-languages", "Translate to all supported languages")
@@ -527,7 +514,7 @@ program
     .action(async (options: any) => {
         let model: Model;
         let chatParams: ChatParams;
-        let rateLimitMs = options.rateLimitMs;
+        let rateLimitMs = Number(options.rateLimitMs);
         let apiKey: string;
         switch (options.engine) {
             case Engine.Gemini:
@@ -553,7 +540,7 @@ program
                     messages: [],
                 };
                 if (!options.rateLimitMs) {
-                    rateLimitMs = 20000;
+                    rateLimitMs = 120;
                 }
 
                 if (!process.env.OPENAI_API_KEY && !options.apiKey) {
@@ -637,7 +624,7 @@ program
                         engine: options.engine,
                         model,
                         chatParams,
-                        rateLimitMs: options.rateLimitMs,
+                        rateLimitMs,
                         apiKey,
                         inputFileOrPath: options.input,
                         outputFileOrPath: output,
@@ -690,7 +677,7 @@ program
                         engine: options.engine,
                         model,
                         chatParams,
-                        rateLimitMs: options.rateLimitMs,
+                        rateLimitMs,
                         apiKey,
                         inputFileOrPath: options.input,
                         outputFileOrPath: output,
@@ -748,7 +735,7 @@ program
     .action(async (options: any) => {
         let model: Model;
         let chatParams: ChatParams;
-        let rateLimitMs = options.rateLimitMs;
+        let rateLimitMs = Number(options.rateLimitMs);
         let apiKey: string;
         switch (options.engine) {
             case Engine.Gemini:
@@ -774,7 +761,7 @@ program
                     messages: [],
                 };
                 if (!options.rateLimitMs) {
-                    rateLimitMs = 20000;
+                    rateLimitMs = 120;
                 }
 
                 if (!process.env.OPENAI_API_KEY && !options.apiKey) {
