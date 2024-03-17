@@ -100,9 +100,9 @@ jobs:
 
     - name: Copy .env for CI
       env:
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
-        echo "GEMINI_API_KEY=$GEMINI_API_KEY" >> .env
+        echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
       shell: bash
 
     - name: Fetch original translation
@@ -124,12 +124,14 @@ Use `i18n-ai-translate translate` to convert a local i18n JSON file to any langu
 
 Use `i18n-ai-translate diff` to find translate the differences between a source language, and apply them to all language files in the same directory.
 
-Create a `.env` file with an entry `GEMINI_API_KEY=<your Gemini API key>`, or pass the `--api-key` flag.
+Create a `.env` file with an entry for your API key, or pass the `--api-key` flag.
+* `GEMINI_API_KEY=<your Gemini API key>`
+* `OPENAI_API_KEY=<your OpenAI API key>`
 
 ```
 Usage: i18n-ai-translate [options] [command]
 
-Use Google Gemini to translate your i18n JSON to any language
+Use ChatGPT or Gemini to translate your i18n JSON to any language
 
 Options:
   -V, --version        output the version number
