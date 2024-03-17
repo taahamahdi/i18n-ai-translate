@@ -1,6 +1,6 @@
 # `i18n-ai-translate`
 
-Use ChatGPT or Google Gemini to translate your i18n JSON to any language.
+Leverage ChatGPT or Google Gemini for seamless translation of application localization files across any language. Supports templated strings, and ensures consistent formatting. Requires [i18next-style](https://github.com/i18next/i18next) JSON files.
 
 Three prompts are chained to ensure each translation is well-formed.
 
