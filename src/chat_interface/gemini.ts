@@ -48,6 +48,7 @@ export default class Gemini extends ChatInterface {
         }
 
         await this.rateLimiter.wait();
+        this.rateLimiter.apiCalled();
 
         try {
             const generatedContent = await this.chat.sendMessage(message);

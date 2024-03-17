@@ -15600,6 +15600,7 @@ var ChatGPT = class extends ChatInterface {
       return "";
     }
     await this.rateLimiter.wait();
+    this.rateLimiter.apiCalled();
     try {
       const response = await this.model.chat.completions.create({
         ...this.chatParams,
@@ -15666,6 +15667,7 @@ var Gemini = class extends ChatInterface {
       return "";
     }
     await this.rateLimiter.wait();
+    this.rateLimiter.apiCalled();
     try {
       const generatedContent = await this.chat.sendMessage(message);
       const response = generatedContent.response.text();

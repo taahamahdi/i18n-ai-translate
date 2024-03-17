@@ -33,6 +33,7 @@ export default class ChatGPT extends ChatInterface {
         }
 
         await this.rateLimiter.wait();
+        this.rateLimiter.apiCalled();
 
         try {
             const response = await this.model.chat.completions.create({
