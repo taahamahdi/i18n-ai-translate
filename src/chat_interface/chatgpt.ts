@@ -48,7 +48,7 @@ export default class ChatGPT extends ChatInterface {
                 return "";
             }
 
-            this.history.push({ role: Role.System, content: responseText });
+            this.history.push({ role: Role.Assistant, content: responseText });
             return responseText;
         } catch (err) {
             console.error(err);
@@ -61,7 +61,7 @@ export default class ChatGPT extends ChatInterface {
     }
 
     rollbackLastMessage(): void {
-        if (this.history[this.history.length - 1].role === Role.System) {
+        if (this.history[this.history.length - 1].role === Role.Assistant) {
             this.history.pop();
             this.history.pop();
         } else if (this.history[this.history.length - 1].role === Role.User) {
@@ -71,7 +71,7 @@ export default class ChatGPT extends ChatInterface {
 
     invalidTranslation(): void {
         this.history.push({
-            role: Role.User,
+            role: Role.System,
             content:
                 "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt.",
         });
@@ -79,7 +79,7 @@ export default class ChatGPT extends ChatInterface {
 
     invalidStyling(): void {
         this.history.push({
-            role: Role.User,
+            role: Role.System,
             content:
                 "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt.",
         });

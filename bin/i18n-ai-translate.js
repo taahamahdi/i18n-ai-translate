@@ -10649,7 +10649,6 @@ var require_ponyfill_es2018 = __commonJS({
       typeof exports2 === "object" && typeof module2 !== "undefined" ? factory(exports2) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global2 = typeof globalThis !== "undefined" ? globalThis : global2 || self, factory(global2.WebStreamsPolyfill = {}));
     })(exports2, function(exports3) {
       "use strict";
-      const SymbolPolyfill = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? Symbol : (description) => `Symbol(${description})`;
       function noop() {
         return void 0;
       }
@@ -10663,7 +10662,7 @@ var require_ponyfill_es2018 = __commonJS({
             value: name,
             configurable: true
           });
-        } catch (_a2) {
+        } catch (_a3) {
         }
       }
       const originalPromise = Promise;
@@ -10808,11 +10807,11 @@ var require_ponyfill_es2018 = __commonJS({
           return front._elements[cursor];
         }
       }
-      const AbortSteps = SymbolPolyfill("[[AbortSteps]]");
-      const ErrorSteps = SymbolPolyfill("[[ErrorSteps]]");
-      const CancelSteps = SymbolPolyfill("[[CancelSteps]]");
-      const PullSteps = SymbolPolyfill("[[PullSteps]]");
-      const ReleaseSteps = SymbolPolyfill("[[ReleaseSteps]]");
+      const AbortSteps = Symbol("[[AbortSteps]]");
+      const ErrorSteps = Symbol("[[ErrorSteps]]");
+      const CancelSteps = Symbol("[[CancelSteps]]");
+      const PullSteps = Symbol("[[PullSteps]]");
+      const ReleaseSteps = Symbol("[[ReleaseSteps]]");
       function ReadableStreamReaderGenericInitialize(reader, stream) {
         reader._ownerReadableStream = stream;
         stream._reader = reader;
@@ -11058,8 +11057,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(ReadableStreamDefaultReader2.prototype.cancel, "cancel");
       setFunctionName(ReadableStreamDefaultReader2.prototype.read, "read");
       setFunctionName(ReadableStreamDefaultReader2.prototype.releaseLock, "releaseLock");
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(ReadableStreamDefaultReader2.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(ReadableStreamDefaultReader2.prototype, Symbol.toStringTag, {
           value: "ReadableStreamDefaultReader",
           configurable: true
         });
@@ -11178,9 +11177,7 @@ var require_ponyfill_es2018 = __commonJS({
           return this._asyncIteratorImpl.return(value);
         }
       };
-      if (AsyncIteratorPrototype !== void 0) {
-        Object.setPrototypeOf(ReadableStreamAsyncIteratorPrototype, AsyncIteratorPrototype);
-      }
+      Object.setPrototypeOf(ReadableStreamAsyncIteratorPrototype, AsyncIteratorPrototype);
       function AcquireReadableStreamAsyncIterator(stream, preventCancel) {
         const reader = AcquireReadableStreamDefaultReader(stream);
         const impl = new ReadableStreamAsyncIteratorImpl(reader, preventCancel);
@@ -11197,7 +11194,7 @@ var require_ponyfill_es2018 = __commonJS({
         }
         try {
           return x2._asyncIteratorImpl instanceof ReadableStreamAsyncIteratorImpl;
-        } catch (_a2) {
+        } catch (_a3) {
           return false;
         }
       }
@@ -11207,6 +11204,7 @@ var require_ponyfill_es2018 = __commonJS({
       const NumberIsNaN = Number.isNaN || function(x2) {
         return x2 !== x2;
       };
+      var _a2, _b, _c;
       function CreateArrayFromList(elements) {
         return elements.slice();
       }
@@ -11252,7 +11250,7 @@ var require_ponyfill_es2018 = __commonJS({
       }
       function CreateAsyncFromSyncIterator(syncIteratorRecord) {
         const syncIterable = {
-          [SymbolPolyfill.iterator]: () => syncIteratorRecord.iterator
+          [Symbol.iterator]: () => syncIteratorRecord.iterator
         };
         const asyncIterator = async function* () {
           return yield* syncIterable;
@@ -11260,17 +11258,18 @@ var require_ponyfill_es2018 = __commonJS({
         const nextMethod = asyncIterator.next;
         return { iterator: asyncIterator, nextMethod, done: false };
       }
+      const SymbolAsyncIterator = (_c = (_a2 = Symbol.asyncIterator) !== null && _a2 !== void 0 ? _a2 : (_b = Symbol.for) === null || _b === void 0 ? void 0 : _b.call(Symbol, "Symbol.asyncIterator")) !== null && _c !== void 0 ? _c : "@@asyncIterator";
       function GetIterator(obj, hint = "sync", method) {
         if (method === void 0) {
           if (hint === "async") {
-            method = GetMethod(obj, SymbolPolyfill.asyncIterator);
+            method = GetMethod(obj, SymbolAsyncIterator);
             if (method === void 0) {
-              const syncMethod = GetMethod(obj, SymbolPolyfill.iterator);
+              const syncMethod = GetMethod(obj, Symbol.iterator);
               const syncIteratorRecord = GetIterator(obj, "sync", syncMethod);
               return CreateAsyncFromSyncIterator(syncIteratorRecord);
             }
           } else {
-            method = GetMethod(obj, SymbolPolyfill.iterator);
+            method = GetMethod(obj, Symbol.iterator);
           }
         }
         if (method === void 0) {
@@ -11398,8 +11397,8 @@ var require_ponyfill_es2018 = __commonJS({
       });
       setFunctionName(ReadableStreamBYOBRequest2.prototype.respond, "respond");
       setFunctionName(ReadableStreamBYOBRequest2.prototype.respondWithNewView, "respondWithNewView");
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(ReadableStreamBYOBRequest2.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(ReadableStreamBYOBRequest2.prototype, Symbol.toStringTag, {
           value: "ReadableStreamBYOBRequest",
           configurable: true
         });
@@ -11536,8 +11535,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(ReadableByteStreamController2.prototype.close, "close");
       setFunctionName(ReadableByteStreamController2.prototype.enqueue, "enqueue");
       setFunctionName(ReadableByteStreamController2.prototype.error, "error");
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(ReadableByteStreamController2.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(ReadableByteStreamController2.prototype, Symbol.toStringTag, {
           value: "ReadableByteStreamController",
           configurable: true
         });
@@ -12036,9 +12035,9 @@ var require_ponyfill_es2018 = __commonJS({
         return mode;
       }
       function convertByobReadOptions(options, context) {
-        var _a2;
+        var _a3;
         assertDictionary(options, context);
-        const min = (_a2 = options === null || options === void 0 ? void 0 : options.min) !== null && _a2 !== void 0 ? _a2 : 1;
+        const min = (_a3 = options === null || options === void 0 ? void 0 : options.min) !== null && _a3 !== void 0 ? _a3 : 1;
         return {
           min: convertUnsignedLongLongWithEnforceRange(min, `${context} has member 'min' that`)
         };
@@ -12184,8 +12183,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(ReadableStreamBYOBReader2.prototype.cancel, "cancel");
       setFunctionName(ReadableStreamBYOBReader2.prototype.read, "read");
       setFunctionName(ReadableStreamBYOBReader2.prototype.releaseLock, "releaseLock");
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(ReadableStreamBYOBReader2.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(ReadableStreamBYOBReader2.prototype, Symbol.toStringTag, {
           value: "ReadableStreamBYOBReader",
           configurable: true
         });
@@ -12295,7 +12294,7 @@ var require_ponyfill_es2018 = __commonJS({
         }
         try {
           return typeof value.aborted === "boolean";
-        } catch (_a2) {
+        } catch (_a3) {
           return false;
         }
       }
@@ -12395,8 +12394,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(WritableStream2.prototype.abort, "abort");
       setFunctionName(WritableStream2.prototype.close, "close");
       setFunctionName(WritableStream2.prototype.getWriter, "getWriter");
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(WritableStream2.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(WritableStream2.prototype, Symbol.toStringTag, {
           value: "WritableStream",
           configurable: true
         });
@@ -12439,12 +12438,12 @@ var require_ponyfill_es2018 = __commonJS({
         return true;
       }
       function WritableStreamAbort(stream, reason) {
-        var _a2;
+        var _a3;
         if (stream._state === "closed" || stream._state === "errored") {
           return promiseResolvedWith(void 0);
         }
         stream._writableStreamController._abortReason = reason;
-        (_a2 = stream._writableStreamController._abortController) === null || _a2 === void 0 ? void 0 : _a2.abort(reason);
+        (_a3 = stream._writableStreamController._abortController) === null || _a3 === void 0 ? void 0 : _a3.abort(reason);
         const state = stream._state;
         if (state === "closed" || state === "errored") {
           return promiseResolvedWith(void 0);
@@ -12767,8 +12766,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(WritableStreamDefaultWriter2.prototype.close, "close");
       setFunctionName(WritableStreamDefaultWriter2.prototype.releaseLock, "releaseLock");
       setFunctionName(WritableStreamDefaultWriter2.prototype.write, "write");
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(WritableStreamDefaultWriter2.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(WritableStreamDefaultWriter2.prototype, Symbol.toStringTag, {
           value: "WritableStreamDefaultWriter",
           configurable: true
         });
@@ -12918,8 +12917,8 @@ var require_ponyfill_es2018 = __commonJS({
         signal: { enumerable: true },
         error: { enumerable: true }
       });
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(WritableStreamDefaultController2.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(WritableStreamDefaultController2.prototype, Symbol.toStringTag, {
           value: "WritableStreamDefaultController",
           configurable: true
         });
@@ -13207,7 +13206,7 @@ var require_ponyfill_es2018 = __commonJS({
         try {
           new ctor();
           return true;
-        } catch (_a2) {
+        } catch (_a3) {
           return false;
         }
       }
@@ -13468,8 +13467,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(ReadableStreamDefaultController2.prototype.close, "close");
       setFunctionName(ReadableStreamDefaultController2.prototype.enqueue, "enqueue");
       setFunctionName(ReadableStreamDefaultController2.prototype.error, "error");
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(ReadableStreamDefaultController2.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(ReadableStreamDefaultController2.prototype, Symbol.toStringTag, {
           value: "ReadableStreamDefaultController",
           configurable: true
         });
@@ -14241,6 +14240,9 @@ var require_ponyfill_es2018 = __commonJS({
           const options = convertIteratorOptions(rawOptions, "First parameter");
           return AcquireReadableStreamAsyncIterator(this, options.preventCancel);
         }
+        [SymbolAsyncIterator](options) {
+          return this.values(options);
+        }
         /**
          * Creates a new ReadableStream wrapping the provided iterable or async iterable.
          *
@@ -14270,19 +14272,17 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(ReadableStream5.prototype.pipeTo, "pipeTo");
       setFunctionName(ReadableStream5.prototype.tee, "tee");
       setFunctionName(ReadableStream5.prototype.values, "values");
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(ReadableStream5.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(ReadableStream5.prototype, Symbol.toStringTag, {
           value: "ReadableStream",
           configurable: true
         });
       }
-      if (typeof SymbolPolyfill.asyncIterator === "symbol") {
-        Object.defineProperty(ReadableStream5.prototype, SymbolPolyfill.asyncIterator, {
-          value: ReadableStream5.prototype.values,
-          writable: true,
-          configurable: true
-        });
-      }
+      Object.defineProperty(ReadableStream5.prototype, SymbolAsyncIterator, {
+        value: ReadableStream5.prototype.values,
+        writable: true,
+        configurable: true
+      });
       function CreateReadableStream(startAlgorithm, pullAlgorithm, cancelAlgorithm, highWaterMark = 1, sizeAlgorithm = () => 1) {
         const stream = Object.create(ReadableStream5.prototype);
         InitializeReadableStream(stream);
@@ -14411,8 +14411,8 @@ var require_ponyfill_es2018 = __commonJS({
         highWaterMark: { enumerable: true },
         size: { enumerable: true }
       });
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(ByteLengthQueuingStrategy2.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(ByteLengthQueuingStrategy2.prototype, Symbol.toStringTag, {
           value: "ByteLengthQueuingStrategy",
           configurable: true
         });
@@ -14463,8 +14463,8 @@ var require_ponyfill_es2018 = __commonJS({
         highWaterMark: { enumerable: true },
         size: { enumerable: true }
       });
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(CountQueuingStrategy2.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(CountQueuingStrategy2.prototype, Symbol.toStringTag, {
           value: "CountQueuingStrategy",
           configurable: true
         });
@@ -14567,8 +14567,8 @@ var require_ponyfill_es2018 = __commonJS({
         readable: { enumerable: true },
         writable: { enumerable: true }
       });
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(TransformStream2.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(TransformStream2.prototype, Symbol.toStringTag, {
           value: "TransformStream",
           configurable: true
         });
@@ -14682,8 +14682,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(TransformStreamDefaultController2.prototype.enqueue, "enqueue");
       setFunctionName(TransformStreamDefaultController2.prototype.error, "error");
       setFunctionName(TransformStreamDefaultController2.prototype.terminate, "terminate");
-      if (typeof SymbolPolyfill.toStringTag === "symbol") {
-        Object.defineProperty(TransformStreamDefaultController2.prototype, SymbolPolyfill.toStringTag, {
+      if (typeof Symbol.toStringTag === "symbol") {
+        Object.defineProperty(TransformStreamDefaultController2.prototype, Symbol.toStringTag, {
           value: "TransformStreamDefaultController",
           configurable: true
         });
@@ -15807,6 +15807,7 @@ var ChatInterface = class {
 // src/enums/role.ts
 var Role = /* @__PURE__ */ ((Role2) => {
   Role2["User"] = "user";
+  Role2["Assistant"] = "assistant";
   Role2["System"] = "system";
   return Role2;
 })(Role || {});
@@ -15848,7 +15849,7 @@ var ChatGPT = class extends ChatInterface {
       if (!responseText) {
         return "";
       }
-      this.history.push({ role: role_default.System, content: responseText });
+      this.history.push({ role: role_default.Assistant, content: responseText });
       return responseText;
     } catch (err) {
       console.error(err);
@@ -15859,7 +15860,7 @@ var ChatGPT = class extends ChatInterface {
     this.history = [];
   }
   rollbackLastMessage() {
-    if (this.history[this.history.length - 1].role === role_default.System) {
+    if (this.history[this.history.length - 1].role === role_default.Assistant) {
       this.history.pop();
       this.history.pop();
     } else if (this.history[this.history.length - 1].role === role_default.User) {
@@ -15868,13 +15869,13 @@ var ChatGPT = class extends ChatInterface {
   }
   invalidTranslation() {
     this.history.push({
-      role: role_default.User,
+      role: role_default.System,
       content: "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt."
     });
   }
   invalidStyling() {
     this.history.push({
-      role: role_default.User,
+      role: role_default.System,
       content: "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt."
     });
   }
@@ -15941,7 +15942,7 @@ var Gemini = class extends ChatInterface {
     this.startChat(this.params);
   }
   rollbackLastMessage() {
-    if (this.history[this.history.length - 1].role === role_default.System) {
+    if (this.history[this.history.length - 1].role === role_default.Assistant) {
       this.history.pop();
       this.history.pop();
     } else if (this.history[this.history.length - 1].role === role_default.User) {
@@ -15951,20 +15952,20 @@ var Gemini = class extends ChatInterface {
   }
   invalidTranslation() {
     this.history.push({
-      role: role_default.User,
+      role: role_default.System,
       parts: "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt."
     });
   }
   invalidStyling() {
     this.history.push({
-      role: role_default.User,
+      role: role_default.System,
       parts: "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt."
     });
   }
 };
 
 // node_modules/openai/version.mjs
-var VERSION = "4.27.1";
+var VERSION = "4.29.1";
 
 // node_modules/openai/_shims/registry.mjs
 var auto = false;
@@ -16590,6 +16591,19 @@ var Stream = class _Stream {
               throw new APIError(void 0, data.error, void 0, void 0);
             }
             yield data;
+          } else {
+            let data;
+            try {
+              data = JSON.parse(sse.data);
+            } catch (e2) {
+              console.error(`Could not parse message into JSON:`, sse.data);
+              console.error(`From chunk:`, sse.raw);
+              throw e2;
+            }
+            if (sse.event == "error") {
+              throw new APIError(void 0, data.error, data.message, void 0);
+            }
+            yield { event: sse.event, data };
           }
         }
         done = true;
@@ -16764,6 +16778,9 @@ var LineDecoder = class _LineDecoder {
     }
     const trailingNewline = _LineDecoder.NEWLINE_CHARS.has(text[text.length - 1] || "");
     let lines = text.split(_LineDecoder.NEWLINE_REGEXP);
+    if (trailingNewline) {
+      lines.pop();
+    }
     if (lines.length === 1 && !trailingNewline) {
       this.buffer.push(lines[0]);
       return [];
@@ -17600,6 +17617,9 @@ var isRunningInBrowser = () => {
     typeof navigator !== "undefined"
   );
 };
+function isObj(obj) {
+  return obj != null && typeof obj === "object" && !Array.isArray(obj);
+}
 
 // node_modules/openai/pagination.mjs
 var Page = class extends AbstractPage {
@@ -18590,7 +18610,7 @@ var ChatCompletionStream = class _ChatCompletionStream extends AbstractChatCompl
     this.on("chunk", (chunk) => {
       const reader = readQueue.shift();
       if (reader) {
-        reader(chunk);
+        reader.resolve(chunk);
       } else {
         pushQueue.push(chunk);
       }
@@ -18598,7 +18618,21 @@ var ChatCompletionStream = class _ChatCompletionStream extends AbstractChatCompl
     this.on("end", () => {
       done = true;
       for (const reader of readQueue) {
-        reader(void 0);
+        reader.resolve(void 0);
+      }
+      readQueue.length = 0;
+    });
+    this.on("abort", (err) => {
+      done = true;
+      for (const reader of readQueue) {
+        reader.reject(err);
+      }
+      readQueue.length = 0;
+    });
+    this.on("error", (err) => {
+      done = true;
+      for (const reader of readQueue) {
+        reader.reject(err);
       }
       readQueue.length = 0;
     });
@@ -18608,10 +18642,14 @@ var ChatCompletionStream = class _ChatCompletionStream extends AbstractChatCompl
           if (done) {
             return { value: void 0, done: true };
           }
-          return new Promise((resolve) => readQueue.push(resolve)).then((chunk2) => chunk2 ? { value: chunk2, done: false } : { value: void 0, done: true });
+          return new Promise((resolve, reject) => readQueue.push({ resolve, reject })).then((chunk2) => chunk2 ? { value: chunk2, done: false } : { value: void 0, done: true });
         }
         const chunk = pushQueue.shift();
         return { value: chunk, done: false };
+      },
+      return: async () => {
+        this.abort();
+        return { value: void 0, done: true };
       }
     };
   }
@@ -18755,6 +18793,746 @@ var Chat2 = class extends APIResource {
   Chat3.Completions = Completions2;
 })(Chat2 || (Chat2 = {}));
 
+// node_modules/openai/lib/AbstractAssistantStreamRunner.mjs
+var __classPrivateFieldSet8 = function(receiver, state, value, kind2, f2) {
+  if (kind2 === "m")
+    throw new TypeError("Private method is not writable");
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a setter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot write private member to an object whose class did not declare it");
+  return kind2 === "a" ? f2.call(receiver, value) : f2 ? f2.value = value : state.set(receiver, value), value;
+};
+var __classPrivateFieldGet9 = function(receiver, state, kind2, f2) {
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a getter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot read private member from an object whose class did not declare it");
+  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+};
+var _AbstractAssistantStreamRunner_connectedPromise;
+var _AbstractAssistantStreamRunner_resolveConnectedPromise;
+var _AbstractAssistantStreamRunner_rejectConnectedPromise;
+var _AbstractAssistantStreamRunner_endPromise;
+var _AbstractAssistantStreamRunner_resolveEndPromise;
+var _AbstractAssistantStreamRunner_rejectEndPromise;
+var _AbstractAssistantStreamRunner_listeners;
+var _AbstractAssistantStreamRunner_ended;
+var _AbstractAssistantStreamRunner_errored;
+var _AbstractAssistantStreamRunner_aborted;
+var _AbstractAssistantStreamRunner_catchingPromiseCreated;
+var _AbstractAssistantStreamRunner_handleError;
+var AbstractAssistantStreamRunner = class {
+  constructor() {
+    this.controller = new AbortController();
+    _AbstractAssistantStreamRunner_connectedPromise.set(this, void 0);
+    _AbstractAssistantStreamRunner_resolveConnectedPromise.set(this, () => {
+    });
+    _AbstractAssistantStreamRunner_rejectConnectedPromise.set(this, () => {
+    });
+    _AbstractAssistantStreamRunner_endPromise.set(this, void 0);
+    _AbstractAssistantStreamRunner_resolveEndPromise.set(this, () => {
+    });
+    _AbstractAssistantStreamRunner_rejectEndPromise.set(this, () => {
+    });
+    _AbstractAssistantStreamRunner_listeners.set(this, {});
+    _AbstractAssistantStreamRunner_ended.set(this, false);
+    _AbstractAssistantStreamRunner_errored.set(this, false);
+    _AbstractAssistantStreamRunner_aborted.set(this, false);
+    _AbstractAssistantStreamRunner_catchingPromiseCreated.set(this, false);
+    _AbstractAssistantStreamRunner_handleError.set(this, (error) => {
+      __classPrivateFieldSet8(this, _AbstractAssistantStreamRunner_errored, true, "f");
+      if (error instanceof Error && error.name === "AbortError") {
+        error = new APIUserAbortError();
+      }
+      if (error instanceof APIUserAbortError) {
+        __classPrivateFieldSet8(this, _AbstractAssistantStreamRunner_aborted, true, "f");
+        return this._emit("abort", error);
+      }
+      if (error instanceof OpenAIError) {
+        return this._emit("error", error);
+      }
+      if (error instanceof Error) {
+        const openAIError = new OpenAIError(error.message);
+        openAIError.cause = error;
+        return this._emit("error", openAIError);
+      }
+      return this._emit("error", new OpenAIError(String(error)));
+    });
+    __classPrivateFieldSet8(this, _AbstractAssistantStreamRunner_connectedPromise, new Promise((resolve, reject) => {
+      __classPrivateFieldSet8(this, _AbstractAssistantStreamRunner_resolveConnectedPromise, resolve, "f");
+      __classPrivateFieldSet8(this, _AbstractAssistantStreamRunner_rejectConnectedPromise, reject, "f");
+    }), "f");
+    __classPrivateFieldSet8(this, _AbstractAssistantStreamRunner_endPromise, new Promise((resolve, reject) => {
+      __classPrivateFieldSet8(this, _AbstractAssistantStreamRunner_resolveEndPromise, resolve, "f");
+      __classPrivateFieldSet8(this, _AbstractAssistantStreamRunner_rejectEndPromise, reject, "f");
+    }), "f");
+    __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_connectedPromise, "f").catch(() => {
+    });
+    __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_endPromise, "f").catch(() => {
+    });
+  }
+  _run(executor) {
+    setTimeout(() => {
+      executor().then(() => {
+        this._emit("end");
+      }, __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_handleError, "f"));
+    }, 0);
+  }
+  _addRun(run) {
+    return run;
+  }
+  _connected() {
+    if (this.ended)
+      return;
+    __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_resolveConnectedPromise, "f").call(this);
+    this._emit("connect");
+  }
+  get ended() {
+    return __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_ended, "f");
+  }
+  get errored() {
+    return __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_errored, "f");
+  }
+  get aborted() {
+    return __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_aborted, "f");
+  }
+  abort() {
+    this.controller.abort();
+  }
+  /**
+   * Adds the listener function to the end of the listeners array for the event.
+   * No checks are made to see if the listener has already been added. Multiple calls passing
+   * the same combination of event and listener will result in the listener being added, and
+   * called, multiple times.
+   * @returns this ChatCompletionStream, so that calls can be chained
+   */
+  on(event, listener) {
+    const listeners = __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_listeners, "f")[event] || (__classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_listeners, "f")[event] = []);
+    listeners.push({ listener });
+    return this;
+  }
+  /**
+   * Removes the specified listener from the listener array for the event.
+   * off() will remove, at most, one instance of a listener from the listener array. If any single
+   * listener has been added multiple times to the listener array for the specified event, then
+   * off() must be called multiple times to remove each instance.
+   * @returns this ChatCompletionStream, so that calls can be chained
+   */
+  off(event, listener) {
+    const listeners = __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_listeners, "f")[event];
+    if (!listeners)
+      return this;
+    const index = listeners.findIndex((l2) => l2.listener === listener);
+    if (index >= 0)
+      listeners.splice(index, 1);
+    return this;
+  }
+  /**
+   * Adds a one-time listener function for the event. The next time the event is triggered,
+   * this listener is removed and then invoked.
+   * @returns this ChatCompletionStream, so that calls can be chained
+   */
+  once(event, listener) {
+    const listeners = __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_listeners, "f")[event] || (__classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_listeners, "f")[event] = []);
+    listeners.push({ listener, once: true });
+    return this;
+  }
+  /**
+   * This is similar to `.once()`, but returns a Promise that resolves the next time
+   * the event is triggered, instead of calling a listener callback.
+   * @returns a Promise that resolves the next time given event is triggered,
+   * or rejects if an error is emitted.  (If you request the 'error' event,
+   * returns a promise that resolves with the error).
+   *
+   * Example:
+   *
+   *   const message = await stream.emitted('message') // rejects if the stream errors
+   */
+  emitted(event) {
+    return new Promise((resolve, reject) => {
+      __classPrivateFieldSet8(this, _AbstractAssistantStreamRunner_catchingPromiseCreated, true, "f");
+      if (event !== "error")
+        this.once("error", reject);
+      this.once(event, resolve);
+    });
+  }
+  async done() {
+    __classPrivateFieldSet8(this, _AbstractAssistantStreamRunner_catchingPromiseCreated, true, "f");
+    await __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_endPromise, "f");
+  }
+  _emit(event, ...args) {
+    if (__classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_ended, "f")) {
+      return;
+    }
+    if (event === "end") {
+      __classPrivateFieldSet8(this, _AbstractAssistantStreamRunner_ended, true, "f");
+      __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_resolveEndPromise, "f").call(this);
+    }
+    const listeners = __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_listeners, "f")[event];
+    if (listeners) {
+      __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_listeners, "f")[event] = listeners.filter((l2) => !l2.once);
+      listeners.forEach(({ listener }) => listener(...args));
+    }
+    if (event === "abort") {
+      const error = args[0];
+      if (!__classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_catchingPromiseCreated, "f") && !listeners?.length) {
+        Promise.reject(error);
+      }
+      __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_rejectConnectedPromise, "f").call(this, error);
+      __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_rejectEndPromise, "f").call(this, error);
+      this._emit("end");
+      return;
+    }
+    if (event === "error") {
+      const error = args[0];
+      if (!__classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_catchingPromiseCreated, "f") && !listeners?.length) {
+        Promise.reject(error);
+      }
+      __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_rejectConnectedPromise, "f").call(this, error);
+      __classPrivateFieldGet9(this, _AbstractAssistantStreamRunner_rejectEndPromise, "f").call(this, error);
+      this._emit("end");
+    }
+  }
+  async _threadAssistantStream(body, thread, options) {
+    return await this._createThreadAssistantStream(thread, body, options);
+  }
+  async _runAssistantStream(threadId, runs, params, options) {
+    return await this._createAssistantStream(runs, threadId, params, options);
+  }
+  async _runToolAssistantStream(threadId, runId, runs, params, options) {
+    return await this._createToolAssistantStream(runs, threadId, runId, params, options);
+  }
+  async _createThreadAssistantStream(thread, body, options) {
+    const signal = options?.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    const runResult = await thread.createAndRun({ ...body, stream: false }, { ...options, signal: this.controller.signal });
+    this._connected();
+    return this._addRun(runResult);
+  }
+  async _createToolAssistantStream(run, threadId, runId, params, options) {
+    const signal = options?.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    const runResult = await run.submitToolOutputs(threadId, runId, { ...params, stream: false }, { ...options, signal: this.controller.signal });
+    this._connected();
+    return this._addRun(runResult);
+  }
+  async _createAssistantStream(run, threadId, params, options) {
+    const signal = options?.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    const runResult = await run.create(threadId, { ...params, stream: false }, { ...options, signal: this.controller.signal });
+    this._connected();
+    return this._addRun(runResult);
+  }
+};
+_AbstractAssistantStreamRunner_connectedPromise = /* @__PURE__ */ new WeakMap(), _AbstractAssistantStreamRunner_resolveConnectedPromise = /* @__PURE__ */ new WeakMap(), _AbstractAssistantStreamRunner_rejectConnectedPromise = /* @__PURE__ */ new WeakMap(), _AbstractAssistantStreamRunner_endPromise = /* @__PURE__ */ new WeakMap(), _AbstractAssistantStreamRunner_resolveEndPromise = /* @__PURE__ */ new WeakMap(), _AbstractAssistantStreamRunner_rejectEndPromise = /* @__PURE__ */ new WeakMap(), _AbstractAssistantStreamRunner_listeners = /* @__PURE__ */ new WeakMap(), _AbstractAssistantStreamRunner_ended = /* @__PURE__ */ new WeakMap(), _AbstractAssistantStreamRunner_errored = /* @__PURE__ */ new WeakMap(), _AbstractAssistantStreamRunner_aborted = /* @__PURE__ */ new WeakMap(), _AbstractAssistantStreamRunner_catchingPromiseCreated = /* @__PURE__ */ new WeakMap(), _AbstractAssistantStreamRunner_handleError = /* @__PURE__ */ new WeakMap();
+
+// node_modules/openai/lib/AssistantStream.mjs
+var __classPrivateFieldGet10 = function(receiver, state, kind2, f2) {
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a getter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot read private member from an object whose class did not declare it");
+  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+};
+var __classPrivateFieldSet9 = function(receiver, state, value, kind2, f2) {
+  if (kind2 === "m")
+    throw new TypeError("Private method is not writable");
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a setter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot write private member to an object whose class did not declare it");
+  return kind2 === "a" ? f2.call(receiver, value) : f2 ? f2.value = value : state.set(receiver, value), value;
+};
+var _AssistantStream_instances;
+var _AssistantStream_events;
+var _AssistantStream_runStepSnapshots;
+var _AssistantStream_messageSnapshots;
+var _AssistantStream_messageSnapshot;
+var _AssistantStream_finalRun;
+var _AssistantStream_currentContentIndex;
+var _AssistantStream_currentContent;
+var _AssistantStream_currentToolCallIndex;
+var _AssistantStream_currentToolCall;
+var _AssistantStream_currentEvent;
+var _AssistantStream_currentRunSnapshot;
+var _AssistantStream_currentRunStepSnapshot;
+var _AssistantStream_addEvent;
+var _AssistantStream_endRequest;
+var _AssistantStream_handleMessage;
+var _AssistantStream_handleRunStep;
+var _AssistantStream_handleEvent;
+var _AssistantStream_accumulateRunStep;
+var _AssistantStream_accumulateMessage;
+var _AssistantStream_accumulateContent;
+var _AssistantStream_handleRun;
+var AssistantStream = class _AssistantStream extends AbstractAssistantStreamRunner {
+  constructor() {
+    super(...arguments);
+    _AssistantStream_instances.add(this);
+    _AssistantStream_events.set(this, []);
+    _AssistantStream_runStepSnapshots.set(this, {});
+    _AssistantStream_messageSnapshots.set(this, {});
+    _AssistantStream_messageSnapshot.set(this, void 0);
+    _AssistantStream_finalRun.set(this, void 0);
+    _AssistantStream_currentContentIndex.set(this, void 0);
+    _AssistantStream_currentContent.set(this, void 0);
+    _AssistantStream_currentToolCallIndex.set(this, void 0);
+    _AssistantStream_currentToolCall.set(this, void 0);
+    _AssistantStream_currentEvent.set(this, void 0);
+    _AssistantStream_currentRunSnapshot.set(this, void 0);
+    _AssistantStream_currentRunStepSnapshot.set(this, void 0);
+  }
+  [(_AssistantStream_events = /* @__PURE__ */ new WeakMap(), _AssistantStream_runStepSnapshots = /* @__PURE__ */ new WeakMap(), _AssistantStream_messageSnapshots = /* @__PURE__ */ new WeakMap(), _AssistantStream_messageSnapshot = /* @__PURE__ */ new WeakMap(), _AssistantStream_finalRun = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentContentIndex = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentContent = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentToolCallIndex = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentToolCall = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentEvent = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentRunSnapshot = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentRunStepSnapshot = /* @__PURE__ */ new WeakMap(), _AssistantStream_instances = /* @__PURE__ */ new WeakSet(), Symbol.asyncIterator)]() {
+    const pushQueue = [];
+    const readQueue = [];
+    let done = false;
+    this.on("event", (event) => {
+      const reader = readQueue.shift();
+      if (reader) {
+        reader.resolve(event);
+      } else {
+        pushQueue.push(event);
+      }
+    });
+    this.on("end", () => {
+      done = true;
+      for (const reader of readQueue) {
+        reader.resolve(void 0);
+      }
+      readQueue.length = 0;
+    });
+    this.on("abort", (err) => {
+      done = true;
+      for (const reader of readQueue) {
+        reader.reject(err);
+      }
+      readQueue.length = 0;
+    });
+    this.on("error", (err) => {
+      done = true;
+      for (const reader of readQueue) {
+        reader.reject(err);
+      }
+      readQueue.length = 0;
+    });
+    return {
+      next: async () => {
+        if (!pushQueue.length) {
+          if (done) {
+            return { value: void 0, done: true };
+          }
+          return new Promise((resolve, reject) => readQueue.push({ resolve, reject })).then((chunk2) => chunk2 ? { value: chunk2, done: false } : { value: void 0, done: true });
+        }
+        const chunk = pushQueue.shift();
+        return { value: chunk, done: false };
+      },
+      return: async () => {
+        this.abort();
+        return { value: void 0, done: true };
+      }
+    };
+  }
+  toReadableStream() {
+    const stream = new Stream(this[Symbol.asyncIterator].bind(this), this.controller);
+    return stream.toReadableStream();
+  }
+  static createToolAssistantStream(threadId, runId, runs, body, options) {
+    const runner = new _AssistantStream();
+    runner._run(() => runner._runToolAssistantStream(threadId, runId, runs, body, {
+      ...options,
+      headers: { ...options?.headers, "X-Stainless-Helper-Method": "stream" }
+    }));
+    return runner;
+  }
+  async _createToolAssistantStream(run, threadId, runId, params, options) {
+    const signal = options?.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    const body = { ...params, stream: true };
+    const stream = await run.submitToolOutputs(threadId, runId, body, {
+      ...options,
+      signal: this.controller.signal
+    });
+    this._connected();
+    for await (const event of stream) {
+      __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
+    }
+    if (stream.controller.signal?.aborted) {
+      throw new APIUserAbortError();
+    }
+    return this._addRun(__classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
+  }
+  static createThreadAssistantStream(body, thread, options) {
+    const runner = new _AssistantStream();
+    runner._run(() => runner._threadAssistantStream(body, thread, {
+      ...options,
+      headers: { ...options?.headers, "X-Stainless-Helper-Method": "stream" }
+    }));
+    return runner;
+  }
+  static createAssistantStream(threadId, runs, params, options) {
+    const runner = new _AssistantStream();
+    runner._run(() => runner._runAssistantStream(threadId, runs, params, {
+      ...options,
+      headers: { ...options?.headers, "X-Stainless-Helper-Method": "stream" }
+    }));
+    return runner;
+  }
+  currentEvent() {
+    return __classPrivateFieldGet10(this, _AssistantStream_currentEvent, "f");
+  }
+  currentRun() {
+    return __classPrivateFieldGet10(this, _AssistantStream_currentRunSnapshot, "f");
+  }
+  currentMessageSnapshot() {
+    return __classPrivateFieldGet10(this, _AssistantStream_messageSnapshot, "f");
+  }
+  currentRunStepSnapshot() {
+    return __classPrivateFieldGet10(this, _AssistantStream_currentRunStepSnapshot, "f");
+  }
+  async finalRunSteps() {
+    await this.done();
+    return Object.values(__classPrivateFieldGet10(this, _AssistantStream_runStepSnapshots, "f"));
+  }
+  async finalMessages() {
+    await this.done();
+    return Object.values(__classPrivateFieldGet10(this, _AssistantStream_messageSnapshots, "f"));
+  }
+  async finalRun() {
+    await this.done();
+    if (!__classPrivateFieldGet10(this, _AssistantStream_finalRun, "f"))
+      throw Error("Final run was not received.");
+    return __classPrivateFieldGet10(this, _AssistantStream_finalRun, "f");
+  }
+  async _createThreadAssistantStream(thread, params, options) {
+    const signal = options?.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    const body = { ...params, stream: true };
+    const stream = await thread.createAndRun(body, { ...options, signal: this.controller.signal });
+    this._connected();
+    for await (const event of stream) {
+      __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
+    }
+    if (stream.controller.signal?.aborted) {
+      throw new APIUserAbortError();
+    }
+    return this._addRun(__classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
+  }
+  async _createAssistantStream(run, threadId, params, options) {
+    const signal = options?.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    const body = { ...params, stream: true };
+    const stream = await run.create(threadId, body, { ...options, signal: this.controller.signal });
+    this._connected();
+    for await (const event of stream) {
+      __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
+    }
+    if (stream.controller.signal?.aborted) {
+      throw new APIUserAbortError();
+    }
+    return this._addRun(__classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
+  }
+  static accumulateDelta(acc, delta) {
+    for (const [key, deltaValue] of Object.entries(delta)) {
+      if (!acc.hasOwnProperty(key)) {
+        acc[key] = deltaValue;
+        continue;
+      }
+      let accValue = acc[key];
+      if (accValue === null || accValue === void 0) {
+        acc[key] = deltaValue;
+        continue;
+      }
+      if (key === "index" || key === "type") {
+        acc[key] = deltaValue;
+        continue;
+      }
+      if (typeof accValue === "string" && typeof deltaValue === "string") {
+        accValue += deltaValue;
+      } else if (typeof accValue === "number" && typeof deltaValue === "number") {
+        accValue += deltaValue;
+      } else if (isObj(accValue) && isObj(deltaValue)) {
+        accValue = this.accumulateDelta(accValue, deltaValue);
+      } else if (Array.isArray(accValue) && Array.isArray(deltaValue)) {
+        if (accValue.every((x2) => typeof x2 === "string" || typeof x2 === "number")) {
+          accValue.push(...deltaValue);
+          continue;
+        }
+      } else {
+        throw Error(`Unhandled record type: ${key}, deltaValue: ${deltaValue}, accValue: ${accValue}`);
+      }
+      acc[key] = accValue;
+    }
+    return acc;
+  }
+};
+_AssistantStream_addEvent = function _AssistantStream_addEvent2(event) {
+  if (this.ended)
+    return;
+  __classPrivateFieldSet9(this, _AssistantStream_currentEvent, event, "f");
+  __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_handleEvent).call(this, event);
+  switch (event.event) {
+    case "thread.created":
+      break;
+    case "thread.run.created":
+    case "thread.run.queued":
+    case "thread.run.in_progress":
+    case "thread.run.requires_action":
+    case "thread.run.completed":
+    case "thread.run.failed":
+    case "thread.run.cancelling":
+    case "thread.run.cancelled":
+    case "thread.run.expired":
+      __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_handleRun).call(this, event);
+      break;
+    case "thread.run.step.created":
+    case "thread.run.step.in_progress":
+    case "thread.run.step.delta":
+    case "thread.run.step.completed":
+    case "thread.run.step.failed":
+    case "thread.run.step.cancelled":
+    case "thread.run.step.expired":
+      __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_handleRunStep).call(this, event);
+      break;
+    case "thread.message.created":
+    case "thread.message.in_progress":
+    case "thread.message.delta":
+    case "thread.message.completed":
+    case "thread.message.incomplete":
+      __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_handleMessage).call(this, event);
+      break;
+    case "error":
+      throw new Error("Encountered an error event in event processing - errors should be processed earlier");
+  }
+}, _AssistantStream_endRequest = function _AssistantStream_endRequest2() {
+  if (this.ended) {
+    throw new OpenAIError(`stream has ended, this shouldn't happen`);
+  }
+  if (!__classPrivateFieldGet10(this, _AssistantStream_finalRun, "f"))
+    throw Error("Final run has been been received");
+  return __classPrivateFieldGet10(this, _AssistantStream_finalRun, "f");
+}, _AssistantStream_handleMessage = function _AssistantStream_handleMessage2(event) {
+  const [accumulatedMessage, newContent] = __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_accumulateMessage).call(this, event, __classPrivateFieldGet10(this, _AssistantStream_messageSnapshot, "f"));
+  __classPrivateFieldSet9(this, _AssistantStream_messageSnapshot, accumulatedMessage, "f");
+  __classPrivateFieldGet10(this, _AssistantStream_messageSnapshots, "f")[accumulatedMessage.id] = accumulatedMessage;
+  for (const content of newContent) {
+    const snapshotContent = accumulatedMessage.content[content.index];
+    if (snapshotContent?.type == "text") {
+      this._emit("textCreated", snapshotContent.text);
+    }
+  }
+  switch (event.event) {
+    case "thread.message.created":
+      this._emit("messageCreated", event.data);
+      break;
+    case "thread.message.in_progress":
+      break;
+    case "thread.message.delta":
+      this._emit("messageDelta", event.data.delta, accumulatedMessage);
+      if (event.data.delta.content) {
+        for (const content of event.data.delta.content) {
+          if (content.type == "text" && content.text) {
+            let textDelta = content.text;
+            let snapshot = accumulatedMessage.content[content.index];
+            if (snapshot && snapshot.type == "text") {
+              this._emit("textDelta", textDelta, snapshot.text);
+            } else {
+              throw Error("The snapshot associated with this text delta is not text or missing");
+            }
+          }
+          if (content.index != __classPrivateFieldGet10(this, _AssistantStream_currentContentIndex, "f")) {
+            if (__classPrivateFieldGet10(this, _AssistantStream_currentContent, "f")) {
+              switch (__classPrivateFieldGet10(this, _AssistantStream_currentContent, "f").type) {
+                case "text":
+                  this._emit("textDone", __classPrivateFieldGet10(this, _AssistantStream_currentContent, "f").text, __classPrivateFieldGet10(this, _AssistantStream_messageSnapshot, "f"));
+                  break;
+                case "image_file":
+                  this._emit("imageFileDone", __classPrivateFieldGet10(this, _AssistantStream_currentContent, "f").image_file, __classPrivateFieldGet10(this, _AssistantStream_messageSnapshot, "f"));
+                  break;
+              }
+            }
+            __classPrivateFieldSet9(this, _AssistantStream_currentContentIndex, content.index, "f");
+          }
+          __classPrivateFieldSet9(this, _AssistantStream_currentContent, accumulatedMessage.content[content.index], "f");
+        }
+      }
+      break;
+    case "thread.message.completed":
+    case "thread.message.incomplete":
+      if (__classPrivateFieldGet10(this, _AssistantStream_currentContentIndex, "f") !== void 0) {
+        const currentContent = event.data.content[__classPrivateFieldGet10(this, _AssistantStream_currentContentIndex, "f")];
+        if (currentContent) {
+          switch (currentContent.type) {
+            case "image_file":
+              this._emit("imageFileDone", currentContent.image_file, __classPrivateFieldGet10(this, _AssistantStream_messageSnapshot, "f"));
+              break;
+            case "text":
+              this._emit("textDone", currentContent.text, __classPrivateFieldGet10(this, _AssistantStream_messageSnapshot, "f"));
+              break;
+          }
+        }
+      }
+      if (__classPrivateFieldGet10(this, _AssistantStream_messageSnapshot, "f")) {
+        this._emit("messageDone", event.data);
+      }
+      __classPrivateFieldSet9(this, _AssistantStream_messageSnapshot, void 0, "f");
+  }
+}, _AssistantStream_handleRunStep = function _AssistantStream_handleRunStep2(event) {
+  const accumulatedRunStep = __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_accumulateRunStep).call(this, event);
+  __classPrivateFieldSet9(this, _AssistantStream_currentRunStepSnapshot, accumulatedRunStep, "f");
+  switch (event.event) {
+    case "thread.run.step.created":
+      this._emit("runStepCreated", event.data);
+      break;
+    case "thread.run.step.delta":
+      const delta = event.data.delta;
+      if (delta.step_details && delta.step_details.type == "tool_calls" && delta.step_details.tool_calls && accumulatedRunStep.step_details.type == "tool_calls") {
+        for (const toolCall of delta.step_details.tool_calls) {
+          if (toolCall.index == __classPrivateFieldGet10(this, _AssistantStream_currentToolCallIndex, "f")) {
+            this._emit("toolCallDelta", toolCall, accumulatedRunStep.step_details.tool_calls[toolCall.index]);
+          } else {
+            if (__classPrivateFieldGet10(this, _AssistantStream_currentToolCall, "f")) {
+              this._emit("toolCallDone", __classPrivateFieldGet10(this, _AssistantStream_currentToolCall, "f"));
+            }
+            __classPrivateFieldSet9(this, _AssistantStream_currentToolCallIndex, toolCall.index, "f");
+            __classPrivateFieldSet9(this, _AssistantStream_currentToolCall, accumulatedRunStep.step_details.tool_calls[toolCall.index], "f");
+            if (__classPrivateFieldGet10(this, _AssistantStream_currentToolCall, "f"))
+              this._emit("toolCallCreated", __classPrivateFieldGet10(this, _AssistantStream_currentToolCall, "f"));
+          }
+        }
+      }
+      this._emit("runStepDelta", event.data.delta, accumulatedRunStep);
+      break;
+    case "thread.run.step.completed":
+    case "thread.run.step.failed":
+    case "thread.run.step.cancelled":
+    case "thread.run.step.expired":
+      __classPrivateFieldSet9(this, _AssistantStream_currentRunStepSnapshot, void 0, "f");
+      const details = event.data.step_details;
+      if (details.type == "tool_calls") {
+        if (__classPrivateFieldGet10(this, _AssistantStream_currentToolCall, "f")) {
+          this._emit("toolCallDone", __classPrivateFieldGet10(this, _AssistantStream_currentToolCall, "f"));
+          __classPrivateFieldSet9(this, _AssistantStream_currentToolCall, void 0, "f");
+        }
+      }
+      this._emit("runStepDone", event.data, accumulatedRunStep);
+      break;
+    case "thread.run.step.in_progress":
+      break;
+  }
+}, _AssistantStream_handleEvent = function _AssistantStream_handleEvent2(event) {
+  __classPrivateFieldGet10(this, _AssistantStream_events, "f").push(event);
+  this._emit("event", event);
+}, _AssistantStream_accumulateRunStep = function _AssistantStream_accumulateRunStep2(event) {
+  switch (event.event) {
+    case "thread.run.step.created":
+      __classPrivateFieldGet10(this, _AssistantStream_runStepSnapshots, "f")[event.data.id] = event.data;
+      return event.data;
+    case "thread.run.step.delta":
+      let snapshot = __classPrivateFieldGet10(this, _AssistantStream_runStepSnapshots, "f")[event.data.id];
+      if (!snapshot) {
+        throw Error("Received a RunStepDelta before creation of a snapshot");
+      }
+      let data = event.data;
+      if (data.delta) {
+        const accumulated = AssistantStream.accumulateDelta(snapshot, data.delta);
+        __classPrivateFieldGet10(this, _AssistantStream_runStepSnapshots, "f")[event.data.id] = accumulated;
+      }
+      return __classPrivateFieldGet10(this, _AssistantStream_runStepSnapshots, "f")[event.data.id];
+    case "thread.run.step.completed":
+    case "thread.run.step.failed":
+    case "thread.run.step.cancelled":
+    case "thread.run.step.expired":
+    case "thread.run.step.in_progress":
+      __classPrivateFieldGet10(this, _AssistantStream_runStepSnapshots, "f")[event.data.id] = event.data;
+      break;
+  }
+  if (__classPrivateFieldGet10(this, _AssistantStream_runStepSnapshots, "f")[event.data.id])
+    return __classPrivateFieldGet10(this, _AssistantStream_runStepSnapshots, "f")[event.data.id];
+  throw new Error("No snapshot available");
+}, _AssistantStream_accumulateMessage = function _AssistantStream_accumulateMessage2(event, snapshot) {
+  let newContent = [];
+  switch (event.event) {
+    case "thread.message.created":
+      return [event.data, newContent];
+    case "thread.message.delta":
+      if (!snapshot) {
+        throw Error("Received a delta with no existing snapshot (there should be one from message creation)");
+      }
+      let data = event.data;
+      if (data.delta.content) {
+        for (const contentElement of data.delta.content) {
+          if (contentElement.index in snapshot.content) {
+            let currentContent = snapshot.content[contentElement.index];
+            snapshot.content[contentElement.index] = __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_accumulateContent).call(this, contentElement, currentContent);
+          } else {
+            snapshot.content[contentElement.index] = contentElement;
+            newContent.push(contentElement);
+          }
+        }
+      }
+      return [snapshot, newContent];
+    case "thread.message.in_progress":
+    case "thread.message.completed":
+    case "thread.message.incomplete":
+      if (snapshot) {
+        return [snapshot, newContent];
+      } else {
+        throw Error("Received thread message event with no existing snapshot");
+      }
+  }
+  throw Error("Tried to accumulate a non-message event");
+}, _AssistantStream_accumulateContent = function _AssistantStream_accumulateContent2(contentElement, currentContent) {
+  return AssistantStream.accumulateDelta(currentContent, contentElement);
+}, _AssistantStream_handleRun = function _AssistantStream_handleRun2(event) {
+  __classPrivateFieldSet9(this, _AssistantStream_currentRunSnapshot, event.data, "f");
+  switch (event.event) {
+    case "thread.run.created":
+      break;
+    case "thread.run.queued":
+      break;
+    case "thread.run.in_progress":
+      break;
+    case "thread.run.requires_action":
+    case "thread.run.cancelled":
+    case "thread.run.failed":
+    case "thread.run.completed":
+    case "thread.run.expired":
+      __classPrivateFieldSet9(this, _AssistantStream_finalRun, event.data, "f");
+      if (__classPrivateFieldGet10(this, _AssistantStream_currentToolCall, "f")) {
+        this._emit("toolCallDone", __classPrivateFieldGet10(this, _AssistantStream_currentToolCall, "f"));
+        __classPrivateFieldSet9(this, _AssistantStream_currentToolCall, void 0, "f");
+      }
+      break;
+    case "thread.run.cancelling":
+      break;
+  }
+};
+
 // node_modules/openai/resources/beta/threads/messages/files.mjs
 var Files2 = class extends APIResource {
   /**
@@ -18822,17 +19600,17 @@ var Messages = class extends APIResource {
     if (isRequestOptions(query)) {
       return this.list(threadId, {}, query);
     }
-    return this._client.getAPIList(`/threads/${threadId}/messages`, ThreadMessagesPage, {
+    return this._client.getAPIList(`/threads/${threadId}/messages`, MessagesPage, {
       query,
       ...options,
       headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
     });
   }
 };
-var ThreadMessagesPage = class extends CursorPage {
+var MessagesPage = class extends CursorPage {
 };
 (function(Messages2) {
-  Messages2.ThreadMessagesPage = ThreadMessagesPage;
+  Messages2.MessagesPage = MessagesPage;
   Messages2.Files = Files2;
   Messages2.MessageFilesPage = MessageFilesPage;
 })(Messages || (Messages = {}));
@@ -18871,14 +19649,12 @@ var Runs = class extends APIResource {
     super(...arguments);
     this.steps = new Steps(this._client);
   }
-  /**
-   * Create a run.
-   */
   create(threadId, body, options) {
     return this._client.post(`/threads/${threadId}/runs`, {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers },
+      stream: body.stream ?? false
     });
   }
   /**
@@ -18920,17 +19696,25 @@ var Runs = class extends APIResource {
     });
   }
   /**
-   * When a run has the `status: "requires_action"` and `required_action.type` is
-   * `submit_tool_outputs`, this endpoint can be used to submit the outputs from the
-   * tool calls once they're all completed. All outputs must be submitted in a single
-   * request.
+   * Create a Run stream
    */
+  createAndStream(threadId, body, options) {
+    return AssistantStream.createAssistantStream(threadId, this._client.beta.threads.runs, body, options);
+  }
   submitToolOutputs(threadId, runId, body, options) {
     return this._client.post(`/threads/${threadId}/runs/${runId}/submit_tool_outputs`, {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers },
+      stream: body.stream ?? false
     });
+  }
+  /**
+   * Submit the tool outputs from a previous run and stream the run to a terminal
+   * state.
+   */
+  submitToolOutputsStream(threadId, runId, body, options) {
+    return AssistantStream.createToolAssistantStream(threadId, runId, this._client.beta.threads.runs, body, options);
   }
 };
 var RunsPage = class extends CursorPage {
@@ -18986,22 +19770,26 @@ var Threads = class extends APIResource {
       headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
     });
   }
-  /**
-   * Create a thread and run it in one request.
-   */
   createAndRun(body, options) {
     return this._client.post("/threads/runs", {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers },
+      stream: body.stream ?? false
     });
+  }
+  /**
+   * Create a thread and stream the run back
+   */
+  createAndRunStream(body, options) {
+    return AssistantStream.createThreadAssistantStream(body, this._client.beta.threads, options);
   }
 };
 (function(Threads2) {
   Threads2.Runs = Runs;
   Threads2.RunsPage = RunsPage;
   Threads2.Messages = Messages;
-  Threads2.ThreadMessagesPage = ThreadMessagesPage;
+  Threads2.MessagesPage = MessagesPage;
 })(Threads || (Threads = {}));
 
 // node_modules/openai/resources/beta/beta.mjs
@@ -19242,7 +20030,7 @@ var ModelsPage = class extends Page {
 // node_modules/openai/resources/moderations.mjs
 var Moderations = class extends APIResource {
   /**
-   * Classifies if text violates OpenAI's Content Policy
+   * Classifies if text is potentially harmful.
    */
   create(body, options) {
     return this._client.post("/moderations", { body, ...options });
@@ -20449,7 +21237,7 @@ humanize-ms/index.js:
 web-streams-polyfill/dist/ponyfill.es2018.js:
   (**
    * @license
-   * web-streams-polyfill v3.3.2
+   * web-streams-polyfill v3.3.3
    * Copyright 2024 Mattias Buelens, Diwank Singh Tomer and other contributors.
    * This code is released under the MIT license.
    * SPDX-License-Identifier: MIT
