@@ -20916,7 +20916,7 @@ program.command("translate").requiredOption(
   "chatgpt"
 ).option(
   "-m, --model <model>",
-  "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)"
+  "Model to use (e.g. gpt-4, gpt-4-turbo-preview, gpt-4-0125-preview, gpt-3.5-turbo, gemini-pro)"
 ).option(
   "-r, --rate-limit-ms <rateLimitMs>",
   "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)"
@@ -20959,7 +20959,7 @@ program.command("translate").requiredOption(
       }
       break;
     case engine_default.ChatGPT:
-      model = options.model || "gpt-4";
+      model = options.model || "gpt-4-0125-preview";
       chatParams = {
         seed: 69420,
         model,
@@ -21118,7 +21118,7 @@ program.command("diff").requiredOption(
   "chatgpt"
 ).option(
   "-m, --model <model>",
-  "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)"
+  "Model to use (e.g. gpt-4, gpt-4-turbo-preview, gpt-4-0125-preview, gpt-3.5-turbo, gemini-pro)"
 ).option(
   "-r, --rate-limit-ms <rateLimitMs>",
   "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)"
@@ -21150,7 +21150,7 @@ program.command("diff").requiredOption(
       }
       break;
     case engine_default.ChatGPT:
-      model = options.model || "gpt-4";
+      model = options.model || "gpt-4-0125-preview";
       chatParams = {
         seed: 69420,
         model,

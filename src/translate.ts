@@ -15,7 +15,7 @@ import type TranslateFileOptions from "./interfaces/translation_file_options";
 import type TranslationDiffOptions from "./interfaces/translation_diff_options";
 import type TranslationOptions from "./interfaces/translation_options";
 
-const VERSION = "2.0.0";
+const VERSION = "2.0.1";
 
 const DEFAULT_BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
@@ -481,7 +481,7 @@ program
     )
     .option(
         "-m, --model <model>",
-        "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)",
+        "Model to use (e.g. gpt-4, gpt-4-turbo-preview, gpt-4-0125-preview, gpt-3.5-turbo, gemini-pro)",
     )
     .option(
         "-r, --rate-limit-ms <rateLimitMs>",
@@ -537,7 +537,7 @@ program
 
                 break;
             case Engine.ChatGPT:
-                model = options.model || "gpt-4";
+                model = options.model || "gpt-4-0125-preview";
                 chatParams = {
                     seed: 69420,
                     model,
@@ -722,7 +722,7 @@ program
     )
     .option(
         "-m, --model <model>",
-        "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)",
+        "Model to use (e.g. gpt-4, gpt-4-turbo-preview, gpt-4-0125-preview, gpt-3.5-turbo, gemini-pro)",
     )
     .option(
         "-r, --rate-limit-ms <rateLimitMs>",
@@ -762,7 +762,7 @@ program
 
                 break;
             case Engine.ChatGPT:
-                model = options.model || "gpt-4";
+                model = options.model || "gpt-4-0125-preview";
                 chatParams = {
                     seed: 69420,
                     model,
