@@ -1,53 +1,9 @@
 import { retryJob } from "./utils";
-import type { ChatSession } from "@google/generative-ai";
-
-const translationVerificationPrompt = (
-    inputLanguage: string,
-    outputLanguage: string,
-    input: string,
-    output: string,
-): string => {
-    const splitInput = input.split("\n");
-    const splitOutput = output.split("\n");
-    const mergedCsv = splitInput
-        .map((x, i) => `${x},${splitOutput[i]}`)
-        .join("\n");
-
-    return `
-Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated. Otherwise, reply with ACK. Only reply with ACK/NAK.
-
-**Be as nitpicky as possible.** If even the smallest thing seems off, you should reply NAK.
-
-\`\`\`
-${inputLanguage},${outputLanguage}
-${mergedCsv}
-\`\`\`
-`;
-};
-
-const stylingVerificationPrompt = (
-    inputLanguage: string,
-    outputLanguage: string,
-    input: string,
-    output: string,
-): string => {
-    const splitInput = input.split("\n");
-    const splitOutput = output.split("\n");
-    const mergedCsv = splitInput
-        .map((x, i) => `${x},${splitOutput[i]}`)
-        .join("\n");
-
-    return `
-Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original. Check for differing capitalization, punctuation, or whitespaces. Otherwise, reply with ACK. Only reply with ACK/NAK.
-
-**Be as nitpicky as possible.** If even the smallest thing seems off, you should reply NAK.
-
-\`\`\`
-${inputLanguage},${outputLanguage}
-${mergedCsv}
-\`\`\`
-`;
-};
+import {
+    stylingVerificationPrompt,
+    translationVerificationPrompt,
+} from "./prompts";
+import type ChatInterface from "./chat_interface/chat_interface";
 
 /**
  * Confirm whether a given translation is valid
@@ -58,7 +14,7 @@ ${mergedCsv}
  * @param outputToVerify - the output text to verify
  */
 export async function verifyTranslation(
-    chat: ChatSession,
+    chat: ChatInterface,
     inputLanguage: string,
     outputLanguage: string,
     input: string,
@@ -84,7 +40,7 @@ export async function verifyTranslation(
  * @param outputToVerify - the output text to verify
  */
 export async function verifyStyling(
-    chat: ChatSession,
+    chat: ChatInterface,
     inputLanguage: string,
     outputLanguage: string,
     input: string,
@@ -102,18 +58,15 @@ export async function verifyStyling(
 }
 
 const verify = async (
-    chat: ChatSession,
+    chat: ChatInterface,
     verificationPromptText: string,
 ): Promise<string> => {
     let verification = "";
     try {
         verification = await retryJob(
             async (): Promise<string> => {
-                const generatedContent = await chat.sendMessage(
-                    verificationPromptText,
-                );
+                const text = await chat.sendMessage(verificationPromptText);
 
-                const text = generatedContent.response.text();
                 if (text === "") {
                     return Promise.reject(
                         new Error("Failed to generate content"),
@@ -129,7 +82,7 @@ const verify = async (
             [],
             5,
             true,
-            500,
+            0,
             false,
         );
     } catch (e) {

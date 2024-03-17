@@ -1,21 +1,21 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { config } from "dotenv";
-import {
-    delay,
-    getAllLanguageCodes,
-    getLanguageCodeFromFilename,
-} from "./utils";
 import { flatten, unflatten } from "flat";
+import { getAllLanguageCodes, getLanguageCodeFromFilename } from "./utils";
 import { program } from "commander";
+import ChatFactory from "./chat_interface/chat_factory";
+import Engine from "./enums/engine";
+import RateLimiter from "./rate_limiter";
 import fs from "fs";
 import generateTranslation from "./generate";
 import path from "path";
-import type { StartChatParams } from "@google/generative-ai";
+import type { ChatParams, Model } from "./types";
 import type Chats from "./interfaces/chats";
 import type TranslateFileDiffOptions from "./interfaces/translation_file_diff_options";
 import type TranslateFileOptions from "./interfaces/translation_file_options";
 import type TranslationDiffOptions from "./interfaces/translation_diff_options";
 import type TranslationOptions from "./interfaces/translation_options";
+
+const VERSION = "2.0.0";
 
 const DEFAULT_BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
@@ -103,6 +103,10 @@ export async function translateDiff(
 
             // eslint-disable-next-line no-await-in-loop, @typescript-eslint/no-use-before-define
             const translated = await translate({
+                engine: options.engine,
+                model: options.model,
+                chatParams: options.chatParams,
+                rateLimitMs: options.rateLimitMs,
                 apiKey: options.apiKey,
                 inputJSON: addedAndModifiedTranslations,
                 inputLanguage: options.inputLanguage,
@@ -151,14 +155,30 @@ export async function translate(options: TranslationOptions): Promise<Object> {
         );
     }
 
-    const genAI = new GoogleGenerativeAI(options.apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const rateLimiter = new RateLimiter(
+        options.rateLimitMs,
+        options.verbose ?? false,
+    );
 
-    const successfulHistory: StartChatParams = { history: [] };
     const chats: Chats = {
-        generateTranslationChat: model.startChat(),
-        verifyTranslationChat: model.startChat(),
-        verifyStylingChat: model.startChat(),
+        generateTranslationChat: ChatFactory.newChat(
+            options.engine,
+            options.model,
+            options.apiKey,
+            rateLimiter,
+        ),
+        verifyTranslationChat: ChatFactory.newChat(
+            options.engine,
+            options.model,
+            options.apiKey,
+            rateLimiter,
+        ),
+        verifyStylingChat: ChatFactory.newChat(
+            options.engine,
+            options.model,
+            options.apiKey,
+            rateLimiter,
+        ),
     };
 
     const output: { [key: string]: string } = {};
@@ -186,7 +206,7 @@ export async function translate(options: TranslationOptions): Promise<Object> {
         [allKeys[i], allKeys[j]] = [allKeys[j], allKeys[i]];
     }
 
-    const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
+    const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
     const batchStartTime = Date.now();
     for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
         if (i > 0 && options.verbose) {
@@ -204,9 +224,7 @@ export async function translate(options: TranslationOptions): Promise<Object> {
 
         // eslint-disable-next-line no-await-in-loop
         const generatedTranslation = await generateTranslation(
-            model,
             chats,
-            successfulHistory,
             `[${options.inputLanguage}]`,
             `[${options.outputLanguage}]`,
             input,
@@ -231,18 +249,6 @@ export async function translate(options: TranslationOptions): Promise<Object> {
                 console.log(
                     `${keys[j]}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
                 );
-        }
-
-        const batchEndTime = Date.now();
-        if (batchEndTime - batchStartTime < 3000) {
-            if (options.verbose) {
-                console.log(
-                    `Waiting for ${3000 - (batchEndTime - batchStartTime)}ms...`,
-                );
-            }
-
-            // eslint-disable-next-line no-await-in-loop
-            await delay(3000 - (batchEndTime - batchStartTime));
         }
     }
 
@@ -313,6 +319,10 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
 
     try {
         const outputJSON = await translate({
+            engine: options.engine,
+            model: options.model,
+            chatParams: options.chatParams,
+            rateLimitMs: options.rateLimitMs,
             apiKey: options.apiKey,
             inputJSON,
             inputLanguage,
@@ -409,6 +419,10 @@ const translateFileDiff = async (
 
     try {
         const outputJSON = await translateDiff({
+            engine: options.engine,
+            model: options.model,
+            chatParams: options.chatParams,
+            rateLimitMs: options.rateLimitMs,
             apiKey: options.apiKey,
             inputLanguage: options.inputLanguage,
             inputJSONBefore: inputBeforeJSON,
@@ -446,9 +460,9 @@ const translateFileDiff = async (
 program
     .name("i18n-ai-translate")
     .description(
-        "Use Google Gemini to translate your i18n JSON to any language",
+        "Use ChatGPT or Gemini to translate your i18n JSON to any language",
     )
-    .version("1.1.0");
+    .version(VERSION);
 
 program
     .command("translate")
@@ -459,6 +473,19 @@ program
     .option(
         "-o, --output <output>",
         "Output i18n file, in the jsons/ directory if a relative path is given",
+    )
+    .requiredOption(
+        "-e, --engine <engine>",
+        "Engine to use (chatgpt or gemini)",
+        "chatgpt",
+    )
+    .option(
+        "-m, --model <model>",
+        "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)",
+    )
+    .option(
+        "-r, --rate-limit-ms <rateLimitMs>",
+        "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)",
     )
     .option("-f, --force-language-name <language name>", "Force language name")
     .option("-A, --all-languages", "Translate to all supported languages")
@@ -476,21 +503,62 @@ program
         "Suffix for templated strings",
         DEFAULT_TEMPLATED_STRING_SUFFIX,
     )
-    .option("-k, --api-key <Gemini API key>", "Gemini API key")
+    .option("-k, --api-key <API key>", "API key")
     .option(
         "--ensure-changed-translation",
         "Each generated translation key must differ from the input (for keys longer than 4)",
         false,
     )
-    .option("-n, --batch-size <batchSize>", "How many keys to process at a time", String(DEFAULT_BATCH_SIZE))
+    .option(
+        "-n, --batch-size <batchSize>",
+        "How many keys to process at a time",
+        String(DEFAULT_BATCH_SIZE),
+    )
     .option("--verbose", "Print logs about progress", false)
     .action(async (options: any) => {
-        if (!process.env.GEMINI_API_KEY && !options.apiKey) {
-            console.error("GEMINI_API_KEY not found in .env file");
-            return;
-        }
+        let model: Model;
+        let chatParams: ChatParams;
+        let rateLimitMs = Number(options.rateLimitMs);
+        let apiKey: string;
+        switch (options.engine) {
+            case Engine.Gemini:
+                model = options.model || "gemini-pro";
+                chatParams = {};
+                if (!options.rateLimitMs) {
+                    rateLimitMs = 1000;
+                }
 
-        const apiKey = options.apiKey || process.env.GEMINI_API_KEY;
+                if (!process.env.GEMINI_API_KEY && !options.apiKey) {
+                    console.error("GEMINI_API_KEY not found in .env file");
+                    return;
+                } else {
+                    apiKey = options.apiKey || process.env.GEMINI_API_KEY;
+                }
+
+                break;
+            case Engine.ChatGPT:
+                model = options.model || "gpt-4";
+                chatParams = {
+                    seed: 69420,
+                    model,
+                    messages: [],
+                };
+                if (!options.rateLimitMs) {
+                    rateLimitMs = 120;
+                }
+
+                if (!process.env.OPENAI_API_KEY && !options.apiKey) {
+                    console.error("OPENAI_API_KEY not found in .env file");
+                    return;
+                } else {
+                    apiKey = options.apiKey || process.env.OPENAI_API_KEY;
+                }
+
+                break;
+            default:
+                console.error("Invalid engine");
+                return;
+        }
 
         if (!options.allLanguages && !options.languages) {
             if (!options.output) {
@@ -499,6 +567,10 @@ program
             }
 
             await translateFile({
+                engine: options.engine,
+                model,
+                chatParams,
+                rateLimitMs,
                 apiKey,
                 inputFileOrPath: options.input,
                 outputFileOrPath: options.output,
@@ -553,13 +625,18 @@ program
                 try {
                     // eslint-disable-next-line no-await-in-loop
                     await translateFile({
+                        engine: options.engine,
+                        model,
+                        chatParams,
+                        rateLimitMs,
                         apiKey,
                         inputFileOrPath: options.input,
                         outputFileOrPath: output,
                         templatedStringPrefix: options.templatedStringPrefix,
                         templatedStringSuffix: options.templatedStringSuffix,
                         verbose: options.verbose,
-                        ensureChangedTranslation: options.ensureChangedTranslation,
+                        ensureChangedTranslation:
+                            options.ensureChangedTranslation,
                         batchSize: options.batchSize,
                     });
                 } catch (err) {
@@ -601,13 +678,18 @@ program
                 try {
                     // eslint-disable-next-line no-await-in-loop
                     await translateFile({
+                        engine: options.engine,
+                        model,
+                        chatParams,
+                        rateLimitMs,
                         apiKey,
                         inputFileOrPath: options.input,
                         outputFileOrPath: output,
                         templatedStringPrefix: options.templatedStringPrefix,
                         templatedStringSuffix: options.templatedStringSuffix,
                         verbose: options.verbose,
-                        ensureChangedTranslation: options.ensureChangedTranslation,
+                        ensureChangedTranslation:
+                            options.ensureChangedTranslation,
                         batchSize: options.batchSize,
                     });
                 } catch (err) {
@@ -633,21 +715,75 @@ program
         "-l, --input-language <inputLanguage>",
         "The full input language name",
     )
-    .option("-k, --api-key <Gemini API key>", "Gemini API key")
+    .requiredOption(
+        "-e, --engine <engine>",
+        "Engine to use (chatgpt or gemini)",
+        "chatgpt",
+    )
+    .option(
+        "-m, --model <model>",
+        "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)",
+    )
+    .option(
+        "-r, --rate-limit-ms <rateLimitMs>",
+        "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)",
+    )
+    .option("-k, --api-key <API key>", "API key")
     .option(
         "--ensure-changed-translation",
         "Each generated translation key must differ from the input (for keys longer than 4)",
         false,
     )
-    .option("-n, --batch-size <batchSize>", "How many keys to process at a time", String(DEFAULT_BATCH_SIZE))
+    .option(
+        "-n, --batch-size <batchSize>",
+        "How many keys to process at a time",
+        String(DEFAULT_BATCH_SIZE),
+    )
     .option("--verbose", "Print logs about progress", false)
     .action(async (options: any) => {
-        if (!process.env.GEMINI_API_KEY && !options.apiKey) {
-            console.error("GEMINI_API_KEY not found in .env file");
-            return;
-        }
+        let model: Model;
+        let chatParams: ChatParams;
+        let rateLimitMs = Number(options.rateLimitMs);
+        let apiKey: string;
+        switch (options.engine) {
+            case Engine.Gemini:
+                model = options.model || "gemini-pro";
+                chatParams = {};
+                if (!options.rateLimitMs) {
+                    rateLimitMs = 1000;
+                }
 
-        const apiKey = options.apiKey || process.env.GEMINI_API_KEY;
+                if (!process.env.GEMINI_API_KEY && !options.apiKey) {
+                    console.error("GEMINI_API_KEY not found in .env file");
+                    return;
+                } else {
+                    apiKey = options.apiKey || process.env.GEMINI_API_KEY;
+                }
+
+                break;
+            case Engine.ChatGPT:
+                model = options.model || "gpt-4";
+                chatParams = {
+                    seed: 69420,
+                    model,
+                    messages: [],
+                };
+                if (!options.rateLimitMs) {
+                    rateLimitMs = 120;
+                }
+
+                if (!process.env.OPENAI_API_KEY && !options.apiKey) {
+                    console.error("OPENAI_API_KEY not found in .env file");
+                    return;
+                } else {
+                    apiKey = options.apiKey || process.env.OPENAI_API_KEY;
+                }
+
+                break;
+            default:
+                console.error("Invalid engine");
+                return;
+        }
 
         const jsonFolder = path.resolve(process.cwd(), "jsons");
         let beforeInputPath: string;
@@ -688,6 +824,10 @@ program
             .map((file) => path.resolve(path.dirname(beforeInputPath), file));
 
         await translateFileDiff({
+            engine: options.engine,
+            model,
+            chatParams,
+            rateLimitMs,
             apiKey,
             inputLanguage: options.inputLanguage,
             inputBeforeFileOrPath: beforeInputPath,

@@ -50,7 +50,10 @@ export async function retryJob<Type>(
  * @returns the language code from the filename
  */
 export function getLanguageCodeFromFilename(filename: string): string {
-    return filename.split(".")[0];
+    const splitFilename = filename.split("/");
+    const lastPart = splitFilename[splitFilename.length - 1];
+    const splitLastPart = lastPart.split(".");
+    return splitLastPart[0];
 }
 
 /**
