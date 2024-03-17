@@ -15837,6 +15837,9 @@ var ChatGPT = class extends ChatInterface {
       console.trace("Chat not started");
       return "";
     }
+    if (this.history.length > 10) {
+      this.history = this.history.slice(this.history.length - 10);
+    }
     await this.rateLimiter.wait();
     this.rateLimiter.apiCalled();
     this.history.push({ role: role_default.User, content: message });

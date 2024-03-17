@@ -33,6 +33,11 @@ export default class ChatGPT extends ChatInterface {
             return "";
         }
 
+        // Limit the history to prevent wasting tokens
+        if (this.history.length > 10) {
+            this.history = this.history.slice(this.history.length - 10);
+        }
+
         await this.rateLimiter.wait();
         this.rateLimiter.apiCalled();
         this.history.push({ role: Role.User, content: message });
