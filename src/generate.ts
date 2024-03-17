@@ -108,13 +108,6 @@ export default async function generateTranslation(
                             i
                         ]) {
                             if (!splitText[i].includes(templatedString)) {
-                                if (verboseLogging) {
-                                    console.log(
-                                        "doesn't include",
-                                        templatedString,
-                                    );
-                                }
-
                                 chats.generateTranslationChat.rollbackLastMessage();
                                 return Promise.reject(
                                     new Error(

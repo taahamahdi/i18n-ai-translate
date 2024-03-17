@@ -19602,12 +19602,6 @@ async function generateTranslation(chats, inputLanguage, outputLanguage, input, 
           )) {
             for (const templatedString of inputLineToTemplatedString[i2]) {
               if (!splitText[i2].includes(templatedString)) {
-                if (verboseLogging) {
-                  console.log(
-                    "doesn't include",
-                    templatedString
-                  );
-                }
                 chats.generateTranslationChat.rollbackLastMessage();
                 return Promise.reject(
                   new Error(
