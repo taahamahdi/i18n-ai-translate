@@ -1,6 +1,9 @@
 import { retryJob } from "./utils";
+import {
+    stylingVerificationPrompt,
+    translationVerificationPrompt,
+} from "./prompts";
 import type ChatInterface from "./chat_interface/chat_interface";
-import { stylingVerificationPrompt, translationVerificationPrompt } from "./prompts";
 
 /**
  * Confirm whether a given translation is valid

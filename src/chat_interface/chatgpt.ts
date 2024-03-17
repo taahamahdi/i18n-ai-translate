@@ -71,14 +71,16 @@ export default class ChatGPT extends ChatInterface {
     invalidTranslation(): void {
         this.history.push({
             role: "user",
-            content: "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt.",
-        })
+            content:
+                "The provided translation is incorrect. Please re-attempt the translation and conform to the same rules as the original prompt.",
+        });
     }
 
     invalidStyling(): void {
         this.history.push({
             role: "user",
-            content: "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt."
-        })
+            content:
+                "Although the provided translation was correct, the styling was not maintained. Please re-attempt the translation and ensure that the output text maintains the same style as the original prompt.",
+        });
     }
 }

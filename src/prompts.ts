@@ -1,4 +1,10 @@
-
+/**
+ * Prompt an AI to convert a given input from one language to another
+ * @param inputLanguage - The language of the input
+ * @param outputLanguage - The language of the output
+ * @param input - The input to be translated
+ * @returns A prompt for the AI to translate the input
+ */
 export function generationPrompt(
     inputLanguage: string,
     outputLanguage: string,
@@ -22,6 +28,13 @@ ${input}
 `;
 }
 
+/**
+ * Prompt an AI to correct a failed translation
+ * @param inputLanguage - The language of the input
+ * @param outputLanguage - The language of the output
+ * @param input - The input to be translated
+ * @returns A prompt for the AI to correct the failed translation
+ */
 export function failedTranslationPrompt(
     inputLanguage: string,
     outputLanguage: string,
@@ -43,6 +56,14 @@ ${input}
 `;
 }
 
+/**
+ * Prompt an AI to ensure a translation is valid
+ * @param inputLanguage - The language of the input
+ * @param outputLanguage - The language of the output
+ * @param input - The input to be translated
+ * @param output - The output of the translation
+ * @returns A prompt for the AI to verify the translation
+ */
 export function translationVerificationPrompt(
     inputLanguage: string,
     outputLanguage: string,
@@ -67,8 +88,16 @@ ${inputLanguage},${outputLanguage}
 ${mergedCsv}
 \`\`\`
 `;
-};
+}
 
+/**
+ * Prompt an AI to ensure a translation is styled correctly
+ * @param inputLanguage - The language of the input
+ * @param outputLanguage - The language of the output
+ * @param input - The input to be translated
+ * @param output - The output of the translation
+ * @returns A prompt for the AI to verify the translation
+ */
 export function stylingVerificationPrompt(
     inputLanguage: string,
     outputLanguage: string,
@@ -95,4 +124,4 @@ ${inputLanguage},${outputLanguage}
 ${mergedCsv}
 \`\`\`
 `;
-};
+}

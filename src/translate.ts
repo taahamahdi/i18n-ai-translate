@@ -1,10 +1,6 @@
 import { config } from "dotenv";
-import {
-    delay,
-    getAllLanguageCodes,
-    getLanguageCodeFromFilename,
-} from "./utils";
 import { flatten, unflatten } from "flat";
+import { getAllLanguageCodes, getLanguageCodeFromFilename } from "./utils";
 import { program } from "commander";
 import ChatFactory from "./chat_interface/chat_factory";
 import Engine from "./enums/engine";
@@ -159,7 +155,11 @@ export async function translate(options: TranslationOptions): Promise<Object> {
         );
     }
 
-    const rateLimiter = new RateLimiter(options.rateLimitMs, options.verbose ?? false);
+    const rateLimiter = new RateLimiter(
+        options.rateLimitMs,
+        options.verbose ?? false,
+    );
+
     const chats: Chats = {
         generateTranslationChat: ChatFactory.newChat(
             options.engine,
@@ -474,10 +474,15 @@ program
         "-o, --output <output>",
         "Output i18n file, in the jsons/ directory if a relative path is given",
     )
-    .requiredOption("-e, --engine <engine>", "Engine to use (chatgpt or gemini)",
+    .requiredOption(
+        "-e, --engine <engine>",
+        "Engine to use (chatgpt or gemini)",
         "chatgpt",
     )
-    .option("-m, --model <model>", "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)")
+    .option(
+        "-m, --model <model>",
+        "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)",
+    )
     .option(
         "-r, --rate-limit-ms <rateLimitMs>",
         "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)",
@@ -710,10 +715,15 @@ program
         "-l, --input-language <inputLanguage>",
         "The full input language name",
     )
-    .requiredOption("-e, --engine <engine>", "Engine to use (chatgpt or gemini)",
+    .requiredOption(
+        "-e, --engine <engine>",
+        "Engine to use (chatgpt or gemini)",
         "chatgpt",
     )
-    .option("-m, --model <model>", "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)")
+    .option(
+        "-m, --model <model>",
+        "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)",
+    )
     .option(
         "-r, --rate-limit-ms <rateLimitMs>",
         "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)",

@@ -1,7 +1,7 @@
+import { failedTranslationPrompt, generationPrompt } from "./prompts";
 import { retryJob } from "./utils";
 import { verifyStyling, verifyTranslation } from "./verify";
 import type Chats from "./interfaces/chats";
-import { failedTranslationPrompt, generationPrompt } from "./prompts";
 
 /**
  * Complete the initial translation of the input text.
@@ -79,7 +79,9 @@ export default async function generateTranslation(
 
                 if (text.startsWith("```\n") && text.endsWith("\n```")) {
                     if (verboseLogging) {
-                        console.log("Response started and ended with triple backticks");
+                        console.log(
+                            "Response started and ended with triple backticks",
+                        );
                     }
 
                     text = text.slice(4, -4);
@@ -107,7 +109,10 @@ export default async function generateTranslation(
                         ]) {
                             if (!splitText[i].includes(templatedString)) {
                                 if (verboseLogging) {
-                                    console.log("doesn't include", templatedString);
+                                    console.log(
+                                        "doesn't include",
+                                        templatedString,
+                                    );
                                 }
 
                                 chats.generateTranslationChat.rollbackLastMessage();

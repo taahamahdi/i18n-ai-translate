@@ -364,6 +364,118 @@ var require_main = __commonJS({
   }
 });
 
+// node_modules/flat/index.js
+var require_flat = __commonJS({
+  "node_modules/flat/index.js"(exports2, module2) {
+    module2.exports = flatten2;
+    flatten2.flatten = flatten2;
+    flatten2.unflatten = unflatten2;
+    function isBuffer(obj) {
+      return obj && obj.constructor && typeof obj.constructor.isBuffer === "function" && obj.constructor.isBuffer(obj);
+    }
+    function keyIdentity(key) {
+      return key;
+    }
+    function flatten2(target, opts) {
+      opts = opts || {};
+      const delimiter = opts.delimiter || ".";
+      const maxDepth = opts.maxDepth;
+      const transformKey = opts.transformKey || keyIdentity;
+      const output = {};
+      function step(object, prev, currentDepth) {
+        currentDepth = currentDepth || 1;
+        Object.keys(object).forEach(function(key) {
+          const value = object[key];
+          const isarray = opts.safe && Array.isArray(value);
+          const type = Object.prototype.toString.call(value);
+          const isbuffer = isBuffer(value);
+          const isobject = type === "[object Object]" || type === "[object Array]";
+          const newKey = prev ? prev + delimiter + transformKey(key) : transformKey(key);
+          if (!isarray && !isbuffer && isobject && Object.keys(value).length && (!opts.maxDepth || currentDepth < maxDepth)) {
+            return step(value, newKey, currentDepth + 1);
+          }
+          output[newKey] = value;
+        });
+      }
+      step(target);
+      return output;
+    }
+    function unflatten2(target, opts) {
+      opts = opts || {};
+      const delimiter = opts.delimiter || ".";
+      const overwrite = opts.overwrite || false;
+      const transformKey = opts.transformKey || keyIdentity;
+      const result = {};
+      const isbuffer = isBuffer(target);
+      if (isbuffer || Object.prototype.toString.call(target) !== "[object Object]") {
+        return target;
+      }
+      function getkey(key) {
+        const parsedKey = Number(key);
+        return isNaN(parsedKey) || key.indexOf(".") !== -1 || opts.object ? key : parsedKey;
+      }
+      function addKeys(keyPrefix, recipient, target2) {
+        return Object.keys(target2).reduce(function(result2, key) {
+          result2[keyPrefix + delimiter + key] = target2[key];
+          return result2;
+        }, recipient);
+      }
+      function isEmpty(val) {
+        const type = Object.prototype.toString.call(val);
+        const isArray = type === "[object Array]";
+        const isObject = type === "[object Object]";
+        if (!val) {
+          return true;
+        } else if (isArray) {
+          return !val.length;
+        } else if (isObject) {
+          return !Object.keys(val).length;
+        }
+      }
+      target = Object.keys(target).reduce(function(result2, key) {
+        const type = Object.prototype.toString.call(target[key]);
+        const isObject = type === "[object Object]" || type === "[object Array]";
+        if (!isObject || isEmpty(target[key])) {
+          result2[key] = target[key];
+          return result2;
+        } else {
+          return addKeys(
+            key,
+            result2,
+            flatten2(target[key], opts)
+          );
+        }
+      }, {});
+      Object.keys(target).forEach(function(key) {
+        const split = key.split(delimiter).map(transformKey);
+        let key1 = getkey(split.shift());
+        let key2 = getkey(split[0]);
+        let recipient = result;
+        while (key2 !== void 0) {
+          if (key1 === "__proto__") {
+            return;
+          }
+          const type = Object.prototype.toString.call(recipient[key1]);
+          const isobject = type === "[object Object]" || type === "[object Array]";
+          if (!overwrite && !isobject && typeof recipient[key1] !== "undefined") {
+            return;
+          }
+          if (overwrite && !isobject || !overwrite && recipient[key1] == null) {
+            recipient[key1] = typeof key2 === "number" && !opts.object ? [] : {};
+          }
+          recipient = recipient[key1];
+          if (split.length > 0) {
+            key1 = getkey(split.shift());
+            key2 = getkey(split[0]);
+          }
+        }
+        recipient[key1] = unflatten2(target[key], opts);
+      });
+      return result;
+    }
+  }
+});
+
 // node_modules/iso-639-1/src/data.js
 var require_data = __commonJS({
   "node_modules/iso-639-1/src/data.js"(exports2, module2) {
@@ -1150,118 +1262,6 @@ var require_src = __commonJS({
         return LANGUAGES_LIST.hasOwnProperty(code);
       }
     };
-  }
-});
-
-// node_modules/flat/index.js
-var require_flat = __commonJS({
-  "node_modules/flat/index.js"(exports2, module2) {
-    module2.exports = flatten2;
-    flatten2.flatten = flatten2;
-    flatten2.unflatten = unflatten2;
-    function isBuffer(obj) {
-      return obj && obj.constructor && typeof obj.constructor.isBuffer === "function" && obj.constructor.isBuffer(obj);
-    }
-    function keyIdentity(key) {
-      return key;
-    }
-    function flatten2(target, opts) {
-      opts = opts || {};
-      const delimiter = opts.delimiter || ".";
-      const maxDepth = opts.maxDepth;
-      const transformKey = opts.transformKey || keyIdentity;
-      const output = {};
-      function step(object, prev, currentDepth) {
-        currentDepth = currentDepth || 1;
-        Object.keys(object).forEach(function(key) {
-          const value = object[key];
-          const isarray = opts.safe && Array.isArray(value);
-          const type = Object.prototype.toString.call(value);
-          const isbuffer = isBuffer(value);
-          const isobject = type === "[object Object]" || type === "[object Array]";
-          const newKey = prev ? prev + delimiter + transformKey(key) : transformKey(key);
-          if (!isarray && !isbuffer && isobject && Object.keys(value).length && (!opts.maxDepth || currentDepth < maxDepth)) {
-            return step(value, newKey, currentDepth + 1);
-          }
-          output[newKey] = value;
-        });
-      }
-      step(target);
-      return output;
-    }
-    function unflatten2(target, opts) {
-      opts = opts || {};
-      const delimiter = opts.delimiter || ".";
-      const overwrite = opts.overwrite || false;
-      const transformKey = opts.transformKey || keyIdentity;
-      const result = {};
-      const isbuffer = isBuffer(target);
-      if (isbuffer || Object.prototype.toString.call(target) !== "[object Object]") {
-        return target;
-      }
-      function getkey(key) {
-        const parsedKey = Number(key);
-        return isNaN(parsedKey) || key.indexOf(".") !== -1 || opts.object ? key : parsedKey;
-      }
-      function addKeys(keyPrefix, recipient, target2) {
-        return Object.keys(target2).reduce(function(result2, key) {
-          result2[keyPrefix + delimiter + key] = target2[key];
-          return result2;
-        }, recipient);
-      }
-      function isEmpty(val) {
-        const type = Object.prototype.toString.call(val);
-        const isArray = type === "[object Array]";
-        const isObject = type === "[object Object]";
-        if (!val) {
-          return true;
-        } else if (isArray) {
-          return !val.length;
-        } else if (isObject) {
-          return !Object.keys(val).length;
-        }
-      }
-      target = Object.keys(target).reduce(function(result2, key) {
-        const type = Object.prototype.toString.call(target[key]);
-        const isObject = type === "[object Object]" || type === "[object Array]";
-        if (!isObject || isEmpty(target[key])) {
-          result2[key] = target[key];
-          return result2;
-        } else {
-          return addKeys(
-            key,
-            result2,
-            flatten2(target[key], opts)
-          );
-        }
-      }, {});
-      Object.keys(target).forEach(function(key) {
-        const split = key.split(delimiter).map(transformKey);
-        let key1 = getkey(split.shift());
-        let key2 = getkey(split[0]);
-        let recipient = result;
-        while (key2 !== void 0) {
-          if (key1 === "__proto__") {
-            return;
-          }
-          const type = Object.prototype.toString.call(recipient[key1]);
-          const isobject = type === "[object Object]" || type === "[object Array]";
-          if (!overwrite && !isobject && typeof recipient[key1] !== "undefined") {
-            return;
-          }
-          if (overwrite && !isobject || !overwrite && recipient[key1] == null) {
-            recipient[key1] = typeof key2 === "number" && !opts.object ? [] : {};
-          }
-          recipient = recipient[key1];
-          if (split.length > 0) {
-            key1 = getkey(split.shift());
-            key2 = getkey(split[0]);
-          }
-        }
-        recipient[key1] = unflatten2(target[key], opts);
-      });
-      return result;
-    }
   }
 });
 
@@ -14947,6 +14947,7 @@ __export(translate_exports, {
 });
 module.exports = __toCommonJS(translate_exports);
 var import_dotenv = __toESM(require_main());
+var import_flat = __toESM(require_flat());
 
 // src/utils.ts
 var import_iso_639_1 = __toESM(require_src());
@@ -14978,9 +14979,6 @@ function getLanguageCodeFromFilename(filename) {
 function getAllLanguageCodes() {
   return import_iso_639_1.default.getAllCodes();
 }
-
-// src/translate.ts
-var import_flat = __toESM(require_flat());
 
 // node_modules/commander/esm.mjs
 var import_index = __toESM(require_commander(), 1);
@@ -19177,7 +19175,9 @@ var RateLimiter = class {
       if (timeToWait > 0) {
         await delay(timeToWait);
         if (this.verboseLogging) {
-          console.log(`RateLimiter | Waiting ${timeToWait}ms before next API call`);
+          console.log(
+            `RateLimiter | Waiting ${timeToWait}ms before next API call`
+          );
         }
       }
     }
@@ -19354,7 +19354,9 @@ async function generateTranslation(chats, inputLanguage, outputLanguage, input, 
         generationRetries = 0;
         if (text.startsWith("```\n") && text.endsWith("\n```")) {
           if (verboseLogging) {
-            console.log("Response started and ended with triple backticks");
+            console.log(
+              "Response started and ended with triple backticks"
+            );
           }
           text = text.slice(4, -4);
         }
@@ -19373,7 +19375,10 @@ async function generateTranslation(chats, inputLanguage, outputLanguage, input, 
             for (const templatedString of inputLineToTemplatedString[i2]) {
               if (!splitText[i2].includes(templatedString)) {
                 if (verboseLogging) {
-                  console.log("doesn't include", templatedString);
+                  console.log(
+                    "doesn't include",
+                    templatedString
+                  );
                 }
                 chats.generateTranslationChat.rollbackLastMessage();
                 return Promise.reject(
@@ -19613,7 +19618,10 @@ async function translate(options) {
       `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`
     );
   }
-  const rateLimiter = new RateLimiter(options.rateLimitMs, options.verbose ?? false);
+  const rateLimiter = new RateLimiter(
+    options.rateLimitMs,
+    options.verbose ?? false
+  );
   const chats = {
     generateTranslationChat: ChatFactory.newChat(
       options.engine,
@@ -19887,7 +19895,10 @@ program.command("translate").requiredOption(
   "-e, --engine <engine>",
   "Engine to use (chatgpt or gemini)",
   "chatgpt"
-).option("-m, --model <model>", "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)").option(
+).option(
+  "-m, --model <model>",
+  "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)"
+).option(
   "-r, --rate-limit-ms <rateLimitMs>",
   "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)"
 ).option("-f, --force-language-name <language name>", "Force language name").option("-A, --all-languages", "Translate to all supported languages").option(
@@ -20086,7 +20097,10 @@ program.command("diff").requiredOption(
   "-e, --engine <engine>",
   "Engine to use (chatgpt or gemini)",
   "chatgpt"
-).option("-m, --model <model>", "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)").option(
+).option(
+  "-m, --model <model>",
+  "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)"
+).option(
   "-r, --rate-limit-ms <rateLimitMs>",
   "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)"
 ).option("-k, --api-key <API key>", "API key").option(
