@@ -1,7 +1,7 @@
-import { delay, retryJob } from "./utils";
+import { retryJob } from "./utils";
 import { verifyStyling, verifyTranslation } from "./verify";
-import type { GenerativeModel, StartChatParams } from "@google/generative-ai";
 import type Chats from "./interfaces/chats";
+import type Engine from "./enums/engine";
 
 const generationPrompt = (
     inputLanguage: string,
@@ -39,9 +39,8 @@ ${input}
 
 /**
  * Complete the initial translation of the input text.
- * @param model - Gemini model
+ * @param engine - The engine to use for translation
  * @param chats - State of chats
- * @param successfulHistory - Messages that have been successfully translated in the past; used for rolling back
  * @param inputLanguage - Language of the input text
  * @param outputLanguage - Language to translate the input text to
  * @param input - Text to translate
@@ -52,9 +51,8 @@ ${input}
  * @param ensureChangedTranslation - Whether to ensure that each key has changed
  */
 export default async function generateTranslation(
-    model: GenerativeModel,
+    engine: Engine,
     chats: Chats,
-    successfulHistory: StartChatParams,
     inputLanguage: string,
     outputLanguage: string,
     input: string,
@@ -88,46 +86,27 @@ export default async function generateTranslation(
     try {
         translated = await retryJob(
             async (): Promise<string> => {
-                let lastGeminiCall = Date.now();
-                let generatedContent: any;
-                let text = "";
-                try {
-                    generatedContent =
-                        await chats.generateTranslationChat.sendMessage(
-                            generationPromptText,
-                        );
-
-                    text = generatedContent.response.text();
-                } catch (err) {
-                    generationRetries++;
-                    console.error(
-                        `Gemini exception encountered. err = ${JSON.stringify(generatedContent?.response, null, 4)}`,
+                let text =
+                    await chats.generateTranslationChat.sendMessage(
+                        generationPromptText,
                     );
 
+                if (!text) {
+                    generationRetries++;
                     if (generationRetries > 10) {
-                        successfulHistory.history = [];
-                        chats.generateTranslationChat = model.startChat();
+                        chats.generateTranslationChat.resetChatHistory();
                         return Promise.reject(
                             new Error(
-                                `Failed to generate content due to exception. Resetting history. err = ${err}`,
+                                "Failed to generate content due to exception. Resetting history.",
                             ),
                         );
                     }
 
                     console.error(`Erroring text = ${input}`);
-                    chats.generateTranslationChat =
-                        model.startChat(successfulHistory);
+                    chats.generateTranslationChat.rollbackLastMessage();
                     return Promise.reject(
                         new Error(
-                            `Failed to generate content due to exception. err = ${err}`,
-                        ),
-                    );
-                }
-
-                if (text === "") {
-                    return Promise.reject(
-                        new Error(
-                            "Failed to generate content due to empty response",
+                            "Failed to generate content due to exception.",
                         ),
                     );
                 }
@@ -137,8 +116,7 @@ export default async function generateTranslation(
                 // Response length matches
                 const splitText = text.split("\n");
                 if (splitText.length !== keys.length) {
-                    chats.generateTranslationChat =
-                        model.startChat(successfulHistory);
+                    chats.generateTranslationChat.rollbackLastMessage();
                     return Promise.reject(
                         new Error(`Invalid number of lines. text = ${text}`),
                     );
@@ -156,8 +134,8 @@ export default async function generateTranslation(
                             i
                         ]) {
                             if (!splitText[i].includes(templatedString)) {
-                                chats.generateTranslationChat =
-                                    model.startChat(successfulHistory);
+                                console.log("doesn't include", templatedString);
+                                chats.generateTranslationChat.rollbackLastMessage();
                                 return Promise.reject(
                                     new Error(
                                         `Missing templated string: ${templatedString}`,
@@ -171,11 +149,11 @@ export default async function generateTranslation(
                 // Trim extra quotes if they exist
                 for (let i = 0; i < splitText.length; i++) {
                     let line = splitText[i];
-                    while (line.startsWith('""')) {
+                    while (line.startsWith("\"\"")) {
                         line = line.slice(1);
                     }
 
-                    while (line.endsWith('""')) {
+                    while (line.endsWith("\"\"")) {
                         line = line.slice(0, -1);
                     }
 
@@ -188,12 +166,11 @@ export default async function generateTranslation(
                 for (let i = 0; i < splitText.length; i++) {
                     let line = splitText[i];
                     if (
-                        !line.startsWith('"') ||
-                        !line.endsWith('"') ||
-                        line.endsWith('\\"')
+                        !line.startsWith("\"") ||
+                        !line.endsWith("\"") ||
+                        line.endsWith("\\\"")
                     ) {
-                        chats.generateTranslationChat =
-                            model.startChat(successfulHistory);
+                        chats.generateTranslationChat.rollbackLastMessage();
                         return Promise.reject(
                             new Error(`Invalid line: ${line}`),
                         );
@@ -209,9 +186,6 @@ export default async function generateTranslation(
                             continue;
                         }
 
-                        // eslint-disable-next-line no-await-in-loop
-                        await delay(1000 - (Date.now() - lastGeminiCall));
-                        lastGeminiCall = Date.now();
                         const retryTranslationPromptText =
                             failedTranslationPrompt(
                                 inputLanguage,
@@ -219,28 +193,17 @@ export default async function generateTranslation(
                                 line,
                             );
 
-                        let fixedText = "";
-                        try {
-                            generatedContent =
-                                // eslint-disable-next-line no-await-in-loop
-                                await chats.generateTranslationChat.sendMessage(
-                                    retryTranslationPromptText,
-                                );
-                            fixedText = generatedContent.response.text();
-                        } catch (err) {
-                            console.error(
-                                JSON.stringify(
-                                    generatedContent?.response,
-                                    null,
-                                    4,
-                                ),
+                        const fixedText =
+                            // eslint-disable-next-line no-await-in-loop
+                            await chats.generateTranslationChat.sendMessage(
+                                retryTranslationPromptText,
                             );
 
-                            chats.generateTranslationChat =
-                                model.startChat(successfulHistory);
+                        if (fixedText === "") {
+                            chats.generateTranslationChat.rollbackLastMessage();
                             return Promise.reject(
                                 new Error(
-                                    `Failed to generate content due to exception. err = ${err}`,
+                                    "Failed to generate content due to exception.",
                                 ),
                             );
                         }
@@ -256,8 +219,7 @@ export default async function generateTranslation(
                                     inputLineToTemplatedString[i][j],
                                 )
                             ) {
-                                chats.generateTranslationChat =
-                                    model.startChat(successfulHistory);
+                                chats.generateTranslationChat.rollbackLastMessage();
                                 return Promise.reject(
                                     new Error(
                                         `Missing templated string: ${inputLineToTemplatedString[i][j]}`,
@@ -267,15 +229,14 @@ export default async function generateTranslation(
                         }
 
                         // TODO: Move to helper
-                        if (!line.startsWith('"') || !line.endsWith('"')) {
-                            chats.generateTranslationChat =
-                                model.startChat(successfulHistory);
+                        if (!line.startsWith("\"") || !line.endsWith("\"")) {
+                            chats.generateTranslationChat.rollbackLastMessage();
                             return Promise.reject(
                                 new Error(`Invalid line: ${line}`),
                             );
                         }
 
-                        while (line.startsWith('""') && line.endsWith('""')) {
+                        while (line.startsWith("\"\"") && line.endsWith("\"\"")) {
                             line = line.slice(1, -1);
                         }
 
@@ -293,8 +254,7 @@ export default async function generateTranslation(
 
                         translationToRetryAttempts[line]++;
                         if (translationToRetryAttempts[line] < 3) {
-                            chats.generateTranslationChat =
-                                model.startChat(successfulHistory);
+                            chats.generateTranslationChat.rollbackLastMessage();
                             return Promise.reject(
                                 new Error(`No translation: ${line}`),
                             );
@@ -302,8 +262,6 @@ export default async function generateTranslation(
                     }
                 }
 
-                await delay(1000 - (Date.now() - lastGeminiCall));
-                lastGeminiCall = Date.now();
                 const translationVerification = await verifyTranslation(
                     chats.verifyTranslationChat,
                     inputLanguage,
@@ -313,15 +271,12 @@ export default async function generateTranslation(
                 );
 
                 if (translationVerification === "NAK") {
-                    chats.generateTranslationChat =
-                        model.startChat(successfulHistory);
+                    chats.generateTranslationChat.rollbackLastMessage();
                     return Promise.reject(
                         new Error(`Invalid translation. text = ${text}`),
                     );
                 }
 
-                await delay(1000 - (Date.now() - lastGeminiCall));
-                lastGeminiCall = Date.now();
                 const stylingVerification = await verifyStyling(
                     chats.verifyStylingChat,
                     inputLanguage,
@@ -331,17 +286,11 @@ export default async function generateTranslation(
                 );
 
                 if (stylingVerification === "NAK") {
-                    chats.generateTranslationChat =
-                        model.startChat(successfulHistory);
+                    chats.generateTranslationChat.rollbackLastMessage();
                     return Promise.reject(
                         new Error(`Invalid styling. text = ${text}`),
                     );
                 }
-
-                successfulHistory.history!.push(
-                    { role: "user", parts: generationPromptText },
-                    { role: "model", parts: text },
-                );
 
                 return text;
             },

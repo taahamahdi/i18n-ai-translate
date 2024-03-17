@@ -1,5 +1,5 @@
 import { retryJob } from "./utils";
-import type { ChatSession } from "@google/generative-ai";
+import type ChatInterface from "./chat_interface/chat_interface";
 
 const translationVerificationPrompt = (
     inputLanguage: string,
@@ -58,7 +58,7 @@ ${mergedCsv}
  * @param outputToVerify - the output text to verify
  */
 export async function verifyTranslation(
-    chat: ChatSession,
+    chat: ChatInterface,
     inputLanguage: string,
     outputLanguage: string,
     input: string,
@@ -84,7 +84,7 @@ export async function verifyTranslation(
  * @param outputToVerify - the output text to verify
  */
 export async function verifyStyling(
-    chat: ChatSession,
+    chat: ChatInterface,
     inputLanguage: string,
     outputLanguage: string,
     input: string,
@@ -102,18 +102,15 @@ export async function verifyStyling(
 }
 
 const verify = async (
-    chat: ChatSession,
+    chat: ChatInterface,
     verificationPromptText: string,
 ): Promise<string> => {
     let verification = "";
     try {
         verification = await retryJob(
             async (): Promise<string> => {
-                const generatedContent = await chat.sendMessage(
-                    verificationPromptText,
-                );
+                const text = await chat.sendMessage(verificationPromptText);
 
-                const text = generatedContent.response.text();
                 if (text === "") {
                     return Promise.reject(
                         new Error("Failed to generate content"),

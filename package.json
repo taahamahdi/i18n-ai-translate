@@ -7,6 +7,7 @@
     "dotenv": "^16.4.1",
     "flat": "5.0.2",
     "iso-639-1": "^3.1.0",
+    "openai": "^4.27.1",
     "typescript": "^5.1.6"
   },
   "name": "i18n-ai-translate",
@@ -16,9 +17,9 @@
     "i18n-ai-translate": "bin/i18n-ai-translate.js"
   },
   "devDependencies": {
-    "esbuild": "^0.20.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "esbuild": "^0.20.0",
     "eslint": "^8.56.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^17.1.0",

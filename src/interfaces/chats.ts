@@ -1,7 +1,7 @@
-import type { ChatSession } from "@google/generative-ai";
+import type ChatInterface from "../chat_interface/chat_interface";
 
 export default interface Chats {
-    generateTranslationChat: ChatSession;
-    verifyTranslationChat: ChatSession;
-    verifyStylingChat: ChatSession;
+    generateTranslationChat: ChatInterface;
+    verifyTranslationChat: ChatInterface;
+    verifyStylingChat: ChatInterface;
 }
