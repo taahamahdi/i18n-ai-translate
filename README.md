@@ -10,6 +10,8 @@ Three prompts are chained to ensure each translation is well-formed.
 
 History is retained between calls to ensure consistency when translating the entire file.
 
+With ChatGPT, a seed is supplied to ensure deterministic translations.
+
 # Usage
 ## GitHub Actions
 Incorporate it into your CI with a GitHub Action to auto-translate keys for every pull request:
@@ -95,12 +97,15 @@ Usage: i18n-ai-translate translate [options]
 Options:
   -i, --input <input>                        Source i18n file, in the jsons/ directory if a relative path is given
   -o, --output <output>                      Output i18n file, in the jsons/ directory if a relative path is given
+  -e, --engine <engine>                      Engine to use (chatgpt or gemini) (default: "chatgpt")
+  -m, --model <model>                        Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)
+  -r, --rate-limit-ms <rateLimitMs>          How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)
   -f, --force-language-name <language name>  Force language name
   -A, --all-languages                        Translate to all supported languages
   -l, --languages [language codes...]        Pass a list of languages to translate to
   -p, --templated-string-prefix <prefix>     Prefix for templated strings (default: "{{")
   -s, --templated-string-suffix <suffix>     Suffix for templated strings (default: "}}")
-  -k, --api-key <Gemini API key>             Gemini API key
+  -k, --api-key <API key>                    API key
   --ensure-changed-translation               Each generated translation key must differ from the input (for keys longer than 4) (default: false)
   -n, --batch-size <batchSize>               How many keys to process at a time (default: "32")
   --verbose                                  Print logs about progress (default: false)
@@ -114,7 +119,10 @@ Options:
   -b, --before <fileBefore>             Source i18n file before changes, in the jsons/ directory if a relative path is given
   -a, --after <fileAfter>               Source i18n file after changes, in the jsons/ directory if a relative path is given
   -l, --input-language <inputLanguage>  The full input language name
-  -k, --api-key <Gemini API key>        Gemini API key
+  -e, --engine <engine>                 Engine to use (chatgpt or gemini) (default: "chatgpt")
+  -m, --model <model>                   Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)
+  -r, --rate-limit-ms <rateLimitMs>     Rate limit in milliseconds (defaults to 1s for Gemini, 120ms for ChatGPT)
+  -k, --api-key <API key>               API key
   --ensure-changed-translation          Each generated translation key must differ from the input (for keys longer than 4) (default: false)
   -n, --batch-size <batchSize>          How many keys to process at a time (default: "32")
   --verbose                             Print logs about progress (default: false)
@@ -125,11 +133,14 @@ Options:
 #### `npx i18n-ai-translate translate -i en.json -o fr.json`
 * Translate the `en.json` file in `jsons/` to French, and save the output in `fr.json`
 
-#### `npx i18n-ai-translate translate -i en.json -l es de nl`
-* Translate the `en.json` file in `jsons/` to Spanish, German, and Dutch, and save each file in `jsons/`
+#### `npx i18n-ai-translate translate -i en.json -l es de nl --engine gemini`
+* Translate the `en.json` file in `jsons/` to Spanish, German, and Dutch, and save each file in `jsons/`, using Google Gemini
 
 #### `npx i18n-ai-translate diff -b en.json -a en-after.json -l English --verbose`
 * Translate the keys that have changed between `en.json` and `en-after.json` for all files in the `en.json` directory, with logging enabled
+
+#### `npx i18n-ai-translate translate -i en.json -A --engine chatgpt --model gpt-4-turbo --api-key <my_key> --rate-limit-ms 150 -n 64`
+* Translate the `en.json` file in `jsons/` to 200+ languages, save each file in `jsons/`, using the GPT-4 model of ChatGPT, with the given key, a rate limit of 150ms between requests, and 64 keys sent in each batch
 
 ## As a library
 Alternatively, import this project and use it to convert JSONs on-the-fly with `translate()`, or use `translateDiff()` to fetch updates to modified keys when your source i18n file has changed.
@@ -140,6 +151,10 @@ import { translate, translateDiff } from "i18n-ai-translate";
 ...
 
 const translation = await translate({
+    engine, // ChatGPT or Gemini
+    model, // The model to use with the engine (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)
+    chatParams, // Additional configuration to pass to the model
+    rateLimitMs, // How many milliseconds between requests
     apiKey, // Gemini API key
     inputJSON, // JSON to translate
     inputLanguage, // Language of inputJSON
@@ -152,6 +167,10 @@ const translation = await translate({
 });
 
 const translations = await translateDiff({
+    engine, // ChatGPT or Gemini
+    model, // The model to use with the engine (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)
+    chatParams, // Additional configuration to pass to the model
+    rateLimitMs, // How many milliseconds between requests
     apiKey, // Gemini API key
     inputLanguage, // Language of inputJSONBefore/After
     inputJSONBefore, // The source translation before a change
@@ -188,9 +207,11 @@ ${input}
 ## Translation verification prompt
 The output of the translation is sent back to ensure the model is okay with the translation. If this fails, the translation is re-generated.
 ```
-Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated. Otherwise, reply with ACK. Only reply with ACK/NAK.
+Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated.
 
-**Be as nitpicky as possible.** If even the smallest thing seems off, you should reply NAK.
+Otherwise, reply with ACK.
+
+Only reply with ACK/NAK.
 
 ${inputLanguage},${outputLanguage}
 ${mergedCsv}
@@ -199,9 +220,13 @@ ${mergedCsv}
 ## Styling verification prompt
 Formatting from the input should be retained where possible. If punctuation, capitalization, or whitespaces differ between the source and the translation, the translation is re-generated.
 ```
-Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original. Check for differing capitalization, punctuation, or whitespaces. Otherwise, reply with ACK. Only reply with ACK/NAK.
+Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original.
 
-**Be as nitpicky as possible.** If even the smallest thing seems off, you should reply NAK.
+Check for differing capitalization, punctuation, or whitespaces.
+
+Otherwise, reply with ACK.
+
+Only reply with ACK/NAK.
 
 ${inputLanguage},${outputLanguage}
 ${mergedCsv}

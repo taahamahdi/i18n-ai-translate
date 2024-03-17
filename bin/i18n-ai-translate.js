@@ -14970,7 +14970,10 @@ async function retryJob(job, jobArgs, maxRetries, firstTry, delayDuration, sendE
   });
 }
 function getLanguageCodeFromFilename(filename) {
-  return filename.split(".")[0];
+  const splitFilename = filename.split("/");
+  const lastPart = splitFilename[splitFilename.length - 1];
+  const splitLastPart = lastPart.split(".");
+  return splitLastPart[0];
 }
 function getAllLanguageCodes() {
   return import_iso_639_1.default.getAllCodes();
@@ -19880,10 +19883,11 @@ program.command("translate").requiredOption(
 ).option(
   "-o, --output <output>",
   "Output i18n file, in the jsons/ directory if a relative path is given"
-).requiredOption("-e, --engine <engine>", "Engine to use", [
-  "chatgpt",
-  "gemini"
-]).option("-m, --model <model>", "Model to use").option(
+).requiredOption(
+  "-e, --engine <engine>",
+  "Engine to use (chatgpt or gemini)",
+  "chatgpt"
+).option("-m, --model <model>", "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)").option(
   "-r, --rate-limit-ms <rateLimitMs>",
   "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)"
 ).option("-f, --force-language-name <language name>", "Force language name").option("-A, --all-languages", "Translate to all supported languages").option(
@@ -20078,12 +20082,13 @@ program.command("diff").requiredOption(
 ).requiredOption(
   "-l, --input-language <inputLanguage>",
   "The full input language name"
-).requiredOption("-e, --engine <engine>", "Engine to use", [
-  "chatgpt",
-  "gemini"
-]).option("-m, --model <model>", "Model to use").option(
+).requiredOption(
+  "-e, --engine <engine>",
+  "Engine to use (chatgpt or gemini)",
+  "chatgpt"
+).option("-m, --model <model>", "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)").option(
   "-r, --rate-limit-ms <rateLimitMs>",
-  "Rate limit in milliseconds (defaults to 1s for Gemini, 20s for ChatGPT)"
+  "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)"
 ).option("-k, --api-key <API key>", "API key").option(
   "--ensure-changed-translation",
   "Each generated translation key must differ from the input (for keys longer than 4)",

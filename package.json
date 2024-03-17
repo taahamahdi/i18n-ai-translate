@@ -45,13 +45,15 @@
   "keywords": [
     "i18n",
     "gemini-pro",
+    "chatgpt",
+    "openai",
     "translate",
     "google-gemini",
     "ai"
   ],
   "author": "Taaha Mahdi",
   "license": "GPL-3.0",
-  "description": "Use Gemini Pro to translate your i18n JSON to any language.",
+  "description": "Use ChatGPT or Gemini Pro to translate your i18n JSON to any language.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/taahamahdi/i18n-ai-translate.git"

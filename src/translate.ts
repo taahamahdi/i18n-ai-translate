@@ -474,11 +474,10 @@ program
         "-o, --output <output>",
         "Output i18n file, in the jsons/ directory if a relative path is given",
     )
-    .requiredOption("-e, --engine <engine>", "Engine to use", [
+    .requiredOption("-e, --engine <engine>", "Engine to use (chatgpt or gemini)",
         "chatgpt",
-        "gemini",
-    ])
-    .option("-m, --model <model>", "Model to use")
+    )
+    .option("-m, --model <model>", "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)")
     .option(
         "-r, --rate-limit-ms <rateLimitMs>",
         "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)",
@@ -711,14 +710,13 @@ program
         "-l, --input-language <inputLanguage>",
         "The full input language name",
     )
-    .requiredOption("-e, --engine <engine>", "Engine to use", [
+    .requiredOption("-e, --engine <engine>", "Engine to use (chatgpt or gemini)",
         "chatgpt",
-        "gemini",
-    ])
-    .option("-m, --model <model>", "Model to use")
+    )
+    .option("-m, --model <model>", "Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)")
     .option(
         "-r, --rate-limit-ms <rateLimitMs>",
-        "Rate limit in milliseconds (defaults to 1s for Gemini, 20s for ChatGPT)",
+        "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)",
     )
     .option("-k, --api-key <API key>", "API key")
     .option(
