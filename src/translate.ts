@@ -477,9 +477,8 @@ program
     .requiredOption(
         "-e, --engine <engine>",
         "Engine to use (chatgpt or gemini)",
-        "chatgpt",
     )
-    .option(
+    .requiredOption(
         "-m, --model <model>",
         "Model to use (e.g. gpt-4, gpt-4-turbo-preview, gpt-4-0125-preview, gpt-3.5-turbo, gemini-pro)",
     )
@@ -718,9 +717,8 @@ program
     .requiredOption(
         "-e, --engine <engine>",
         "Engine to use (chatgpt or gemini)",
-        "chatgpt",
     )
-    .option(
+    .requiredOption(
         "-m, --model <model>",
         "Model to use (e.g. gpt-4, gpt-4-turbo-preview, gpt-4-0125-preview, gpt-3.5-turbo, gemini-pro)",
     )
@@ -840,7 +838,5 @@ program
             batchSize: options.batchSize,
         });
     });
-
-// TODO: options to adjust batch size and indentation
 
 program.parse();
