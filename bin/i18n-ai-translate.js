@@ -10649,6 +10649,7 @@ var require_ponyfill_es2018 = __commonJS({
       typeof exports2 === "object" && typeof module2 !== "undefined" ? factory(exports2) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global2 = typeof globalThis !== "undefined" ? globalThis : global2 || self, factory(global2.WebStreamsPolyfill = {}));
     })(exports2, function(exports3) {
       "use strict";
+      const SymbolPolyfill = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? Symbol : (description) => `Symbol(${description})`;
       function noop() {
         return void 0;
       }
@@ -10662,7 +10663,7 @@ var require_ponyfill_es2018 = __commonJS({
             value: name,
             configurable: true
           });
-        } catch (_a3) {
+        } catch (_a2) {
         }
       }
       const originalPromise = Promise;
@@ -10807,11 +10808,11 @@ var require_ponyfill_es2018 = __commonJS({
           return front._elements[cursor];
         }
       }
-      const AbortSteps = Symbol("[[AbortSteps]]");
-      const ErrorSteps = Symbol("[[ErrorSteps]]");
-      const CancelSteps = Symbol("[[CancelSteps]]");
-      const PullSteps = Symbol("[[PullSteps]]");
-      const ReleaseSteps = Symbol("[[ReleaseSteps]]");
+      const AbortSteps = SymbolPolyfill("[[AbortSteps]]");
+      const ErrorSteps = SymbolPolyfill("[[ErrorSteps]]");
+      const CancelSteps = SymbolPolyfill("[[CancelSteps]]");
+      const PullSteps = SymbolPolyfill("[[PullSteps]]");
+      const ReleaseSteps = SymbolPolyfill("[[ReleaseSteps]]");
       function ReadableStreamReaderGenericInitialize(reader, stream) {
         reader._ownerReadableStream = stream;
         stream._reader = reader;
@@ -11057,8 +11058,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(ReadableStreamDefaultReader2.prototype.cancel, "cancel");
       setFunctionName(ReadableStreamDefaultReader2.prototype.read, "read");
       setFunctionName(ReadableStreamDefaultReader2.prototype.releaseLock, "releaseLock");
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(ReadableStreamDefaultReader2.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(ReadableStreamDefaultReader2.prototype, SymbolPolyfill.toStringTag, {
           value: "ReadableStreamDefaultReader",
           configurable: true
         });
@@ -11177,7 +11178,9 @@ var require_ponyfill_es2018 = __commonJS({
           return this._asyncIteratorImpl.return(value);
         }
       };
-      Object.setPrototypeOf(ReadableStreamAsyncIteratorPrototype, AsyncIteratorPrototype);
+      if (AsyncIteratorPrototype !== void 0) {
+        Object.setPrototypeOf(ReadableStreamAsyncIteratorPrototype, AsyncIteratorPrototype);
+      }
       function AcquireReadableStreamAsyncIterator(stream, preventCancel) {
         const reader = AcquireReadableStreamDefaultReader(stream);
         const impl = new ReadableStreamAsyncIteratorImpl(reader, preventCancel);
@@ -11194,7 +11197,7 @@ var require_ponyfill_es2018 = __commonJS({
         }
         try {
           return x2._asyncIteratorImpl instanceof ReadableStreamAsyncIteratorImpl;
-        } catch (_a3) {
+        } catch (_a2) {
           return false;
         }
       }
@@ -11204,7 +11207,6 @@ var require_ponyfill_es2018 = __commonJS({
       const NumberIsNaN = Number.isNaN || function(x2) {
         return x2 !== x2;
       };
-      var _a2, _b, _c;
       function CreateArrayFromList(elements) {
         return elements.slice();
       }
@@ -11250,7 +11252,7 @@ var require_ponyfill_es2018 = __commonJS({
       }
       function CreateAsyncFromSyncIterator(syncIteratorRecord) {
         const syncIterable = {
-          [Symbol.iterator]: () => syncIteratorRecord.iterator
+          [SymbolPolyfill.iterator]: () => syncIteratorRecord.iterator
         };
         const asyncIterator = async function* () {
           return yield* syncIterable;
@@ -11258,18 +11260,17 @@ var require_ponyfill_es2018 = __commonJS({
         const nextMethod = asyncIterator.next;
         return { iterator: asyncIterator, nextMethod, done: false };
       }
-      const SymbolAsyncIterator = (_c = (_a2 = Symbol.asyncIterator) !== null && _a2 !== void 0 ? _a2 : (_b = Symbol.for) === null || _b === void 0 ? void 0 : _b.call(Symbol, "Symbol.asyncIterator")) !== null && _c !== void 0 ? _c : "@@asyncIterator";
       function GetIterator(obj, hint = "sync", method) {
         if (method === void 0) {
           if (hint === "async") {
-            method = GetMethod(obj, SymbolAsyncIterator);
+            method = GetMethod(obj, SymbolPolyfill.asyncIterator);
             if (method === void 0) {
-              const syncMethod = GetMethod(obj, Symbol.iterator);
+              const syncMethod = GetMethod(obj, SymbolPolyfill.iterator);
               const syncIteratorRecord = GetIterator(obj, "sync", syncMethod);
               return CreateAsyncFromSyncIterator(syncIteratorRecord);
             }
           } else {
-            method = GetMethod(obj, Symbol.iterator);
+            method = GetMethod(obj, SymbolPolyfill.iterator);
           }
         }
         if (method === void 0) {
@@ -11397,8 +11398,8 @@ var require_ponyfill_es2018 = __commonJS({
       });
       setFunctionName(ReadableStreamBYOBRequest2.prototype.respond, "respond");
       setFunctionName(ReadableStreamBYOBRequest2.prototype.respondWithNewView, "respondWithNewView");
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(ReadableStreamBYOBRequest2.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(ReadableStreamBYOBRequest2.prototype, SymbolPolyfill.toStringTag, {
           value: "ReadableStreamBYOBRequest",
           configurable: true
         });
@@ -11535,8 +11536,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(ReadableByteStreamController2.prototype.close, "close");
       setFunctionName(ReadableByteStreamController2.prototype.enqueue, "enqueue");
       setFunctionName(ReadableByteStreamController2.prototype.error, "error");
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(ReadableByteStreamController2.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(ReadableByteStreamController2.prototype, SymbolPolyfill.toStringTag, {
           value: "ReadableByteStreamController",
           configurable: true
         });
@@ -12035,9 +12036,9 @@ var require_ponyfill_es2018 = __commonJS({
         return mode;
       }
       function convertByobReadOptions(options, context) {
-        var _a3;
+        var _a2;
         assertDictionary(options, context);
-        const min = (_a3 = options === null || options === void 0 ? void 0 : options.min) !== null && _a3 !== void 0 ? _a3 : 1;
+        const min = (_a2 = options === null || options === void 0 ? void 0 : options.min) !== null && _a2 !== void 0 ? _a2 : 1;
         return {
           min: convertUnsignedLongLongWithEnforceRange(min, `${context} has member 'min' that`)
         };
@@ -12183,8 +12184,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(ReadableStreamBYOBReader2.prototype.cancel, "cancel");
       setFunctionName(ReadableStreamBYOBReader2.prototype.read, "read");
       setFunctionName(ReadableStreamBYOBReader2.prototype.releaseLock, "releaseLock");
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(ReadableStreamBYOBReader2.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(ReadableStreamBYOBReader2.prototype, SymbolPolyfill.toStringTag, {
           value: "ReadableStreamBYOBReader",
           configurable: true
         });
@@ -12294,7 +12295,7 @@ var require_ponyfill_es2018 = __commonJS({
         }
         try {
           return typeof value.aborted === "boolean";
-        } catch (_a3) {
+        } catch (_a2) {
           return false;
         }
       }
@@ -12394,8 +12395,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(WritableStream2.prototype.abort, "abort");
       setFunctionName(WritableStream2.prototype.close, "close");
       setFunctionName(WritableStream2.prototype.getWriter, "getWriter");
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(WritableStream2.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(WritableStream2.prototype, SymbolPolyfill.toStringTag, {
           value: "WritableStream",
           configurable: true
         });
@@ -12438,12 +12439,12 @@ var require_ponyfill_es2018 = __commonJS({
         return true;
       }
       function WritableStreamAbort(stream, reason) {
-        var _a3;
+        var _a2;
         if (stream._state === "closed" || stream._state === "errored") {
           return promiseResolvedWith(void 0);
         }
         stream._writableStreamController._abortReason = reason;
-        (_a3 = stream._writableStreamController._abortController) === null || _a3 === void 0 ? void 0 : _a3.abort(reason);
+        (_a2 = stream._writableStreamController._abortController) === null || _a2 === void 0 ? void 0 : _a2.abort(reason);
         const state = stream._state;
         if (state === "closed" || state === "errored") {
           return promiseResolvedWith(void 0);
@@ -12766,8 +12767,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(WritableStreamDefaultWriter2.prototype.close, "close");
       setFunctionName(WritableStreamDefaultWriter2.prototype.releaseLock, "releaseLock");
       setFunctionName(WritableStreamDefaultWriter2.prototype.write, "write");
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(WritableStreamDefaultWriter2.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(WritableStreamDefaultWriter2.prototype, SymbolPolyfill.toStringTag, {
           value: "WritableStreamDefaultWriter",
           configurable: true
         });
@@ -12917,8 +12918,8 @@ var require_ponyfill_es2018 = __commonJS({
         signal: { enumerable: true },
         error: { enumerable: true }
       });
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(WritableStreamDefaultController2.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(WritableStreamDefaultController2.prototype, SymbolPolyfill.toStringTag, {
           value: "WritableStreamDefaultController",
           configurable: true
         });
@@ -13206,7 +13207,7 @@ var require_ponyfill_es2018 = __commonJS({
         try {
           new ctor();
           return true;
-        } catch (_a3) {
+        } catch (_a2) {
           return false;
         }
       }
@@ -13467,8 +13468,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(ReadableStreamDefaultController2.prototype.close, "close");
       setFunctionName(ReadableStreamDefaultController2.prototype.enqueue, "enqueue");
       setFunctionName(ReadableStreamDefaultController2.prototype.error, "error");
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(ReadableStreamDefaultController2.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(ReadableStreamDefaultController2.prototype, SymbolPolyfill.toStringTag, {
           value: "ReadableStreamDefaultController",
           configurable: true
         });
@@ -14240,9 +14241,6 @@ var require_ponyfill_es2018 = __commonJS({
           const options = convertIteratorOptions(rawOptions, "First parameter");
           return AcquireReadableStreamAsyncIterator(this, options.preventCancel);
         }
-        [SymbolAsyncIterator](options) {
-          return this.values(options);
-        }
         /**
          * Creates a new ReadableStream wrapping the provided iterable or async iterable.
          *
@@ -14272,17 +14270,19 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(ReadableStream5.prototype.pipeTo, "pipeTo");
       setFunctionName(ReadableStream5.prototype.tee, "tee");
       setFunctionName(ReadableStream5.prototype.values, "values");
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(ReadableStream5.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(ReadableStream5.prototype, SymbolPolyfill.toStringTag, {
           value: "ReadableStream",
           configurable: true
         });
       }
-      Object.defineProperty(ReadableStream5.prototype, SymbolAsyncIterator, {
-        value: ReadableStream5.prototype.values,
-        writable: true,
-        configurable: true
-      });
+      if (typeof SymbolPolyfill.asyncIterator === "symbol") {
+        Object.defineProperty(ReadableStream5.prototype, SymbolPolyfill.asyncIterator, {
+          value: ReadableStream5.prototype.values,
+          writable: true,
+          configurable: true
+        });
+      }
       function CreateReadableStream(startAlgorithm, pullAlgorithm, cancelAlgorithm, highWaterMark = 1, sizeAlgorithm = () => 1) {
         const stream = Object.create(ReadableStream5.prototype);
         InitializeReadableStream(stream);
@@ -14411,8 +14411,8 @@ var require_ponyfill_es2018 = __commonJS({
         highWaterMark: { enumerable: true },
         size: { enumerable: true }
       });
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(ByteLengthQueuingStrategy2.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(ByteLengthQueuingStrategy2.prototype, SymbolPolyfill.toStringTag, {
           value: "ByteLengthQueuingStrategy",
           configurable: true
         });
@@ -14463,8 +14463,8 @@ var require_ponyfill_es2018 = __commonJS({
         highWaterMark: { enumerable: true },
         size: { enumerable: true }
       });
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(CountQueuingStrategy2.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(CountQueuingStrategy2.prototype, SymbolPolyfill.toStringTag, {
           value: "CountQueuingStrategy",
           configurable: true
         });
@@ -14567,8 +14567,8 @@ var require_ponyfill_es2018 = __commonJS({
         readable: { enumerable: true },
         writable: { enumerable: true }
       });
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(TransformStream2.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(TransformStream2.prototype, SymbolPolyfill.toStringTag, {
           value: "TransformStream",
           configurable: true
         });
@@ -14682,8 +14682,8 @@ var require_ponyfill_es2018 = __commonJS({
       setFunctionName(TransformStreamDefaultController2.prototype.enqueue, "enqueue");
       setFunctionName(TransformStreamDefaultController2.prototype.error, "error");
       setFunctionName(TransformStreamDefaultController2.prototype.terminate, "terminate");
-      if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(TransformStreamDefaultController2.prototype, Symbol.toStringTag, {
+      if (typeof SymbolPolyfill.toStringTag === "symbol") {
+        Object.defineProperty(TransformStreamDefaultController2.prototype, SymbolPolyfill.toStringTag, {
           value: "TransformStreamDefaultController",
           configurable: true
         });
@@ -15176,7 +15176,7 @@ var GoogleGenerativeAIResponseError = class extends GoogleGenerativeAIError {
 };
 var BASE_URL = "https://generativelanguage.googleapis.com";
 var DEFAULT_API_VERSION = "v1";
-var PACKAGE_VERSION = "0.3.0";
+var PACKAGE_VERSION = "0.3.1";
 var PACKAGE_LOG_HEADER = "genai-js";
 var Task;
 (function(Task2) {
@@ -15578,6 +15578,9 @@ function validateChatHistory(history) {
     if (!POSSIBLE_ROLES.includes(role)) {
       throw new GoogleGenerativeAIError(`Each item should include role field. Got ${role} but valid roles are: ${JSON.stringify(POSSIBLE_ROLES)}`);
     }
+    if (!Array.isArray(parts)) {
+      throw new GoogleGenerativeAIError("Content should have 'parts' property with an array of Parts");
+    }
     if (parts.length === 0) {
       throw new GoogleGenerativeAIError("Each Content should have at least one part");
     }
@@ -15603,7 +15606,7 @@ function validateChatHistory(history) {
     if (prevContent) {
       const validPreviousContentRoles = VALID_PREVIOUS_CONTENT_ROLES[role];
       if (!validPreviousContentRoles.includes(prevContent.role)) {
-        throw new GoogleGenerativeAIError(`Content with role '${role}' can't follow '${prevContent.role}'`);
+        throw new GoogleGenerativeAIError(`Content with role '${role}' can't follow '${prevContent.role}'. Valid previous roles: ${JSON.stringify(VALID_PREVIOUS_CONTENT_ROLES)}`);
       }
     }
     prevContent = currContent;
@@ -21246,7 +21249,7 @@ humanize-ms/index.js:
 web-streams-polyfill/dist/ponyfill.es2018.js:
   (**
    * @license
-   * web-streams-polyfill v3.3.3
+   * web-streams-polyfill v3.3.2
    * Copyright 2024 Mattias Buelens, Diwank Singh Tomer and other contributors.
    * This code is released under the MIT license.
    * SPDX-License-Identifier: MIT
