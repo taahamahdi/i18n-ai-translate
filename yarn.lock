@@ -164,9 +164,9 @@
   integrity sha512-Ys+3g2TaW7gADOJzPt83SJtCDhMjndcDMFVQ/Tj9iA1BfJzFKD9mAUXT3OenpuPHbI6P/myECxRJrofUsDx/5g==
 
 "@google/generative-ai@^0.3.0":
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/@google/generative-ai/-/generative-ai-0.3.0.tgz#8b62dd87dfb337113700c5d55967620c76494903"
-  integrity sha512-6xbaA/JPpwCoe+lfxE2RavVB8JI8F3P6mCse1Sbm586HhJkyuSevK7Opt4l2dbQZFej+M8ALhMMpfBiRW05Fag==
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@google/generative-ai/-/generative-ai-0.3.1.tgz#327b7f6df0d456205d44ad4237d7278e673984d5"
+  integrity sha512-Zh1EK5nCWqIhxPm3K1KOM2mOwwgBvp6lkze74yTj6+Zqibtf55Db1q87cbbzWZeET3ZbNgHMYjVf2JyMM6pI7A==
 
 "@humanwhocodes/config-array@^0.11.14":
   version "0.11.14"
