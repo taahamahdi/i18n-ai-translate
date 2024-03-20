@@ -149,7 +149,7 @@ Usage: i18n-ai-translate translate [options]
 Options:
   -i, --input <input>                        Source i18n file, in the jsons/ directory if a relative path is given
   -o, --output <output>                      Output i18n file, in the jsons/ directory if a relative path is given
-  -e, --engine <engine>                      Engine to use (chatgpt or gemini) (default: "chatgpt")
+  -e, --engine <engine>                      Engine to use (chatgpt or gemini)
   -m, --model <model>                        Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)
   -r, --rate-limit-ms <rateLimitMs>          How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)
   -f, --force-language-name <language name>  Force language name
@@ -171,7 +171,7 @@ Options:
   -b, --before <fileBefore>             Source i18n file before changes, in the jsons/ directory if a relative path is given
   -a, --after <fileAfter>               Source i18n file after changes, in the jsons/ directory if a relative path is given
   -l, --input-language <inputLanguage>  The full input language name
-  -e, --engine <engine>                 Engine to use (chatgpt or gemini) (default: "chatgpt")
+  -e, --engine <engine>                 Engine to use (chatgpt or gemini)
   -m, --model <model>                   Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)
   -r, --rate-limit-ms <rateLimitMs>     Rate limit in milliseconds (defaults to 1s for Gemini, 120ms for ChatGPT)
   -k, --api-key <API key>               API key

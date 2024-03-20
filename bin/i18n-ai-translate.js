@@ -20915,9 +20915,8 @@ program.command("translate").requiredOption(
   "Output i18n file, in the jsons/ directory if a relative path is given"
 ).requiredOption(
   "-e, --engine <engine>",
-  "Engine to use (chatgpt or gemini)",
-  "chatgpt"
-).option(
+  "Engine to use (chatgpt or gemini)"
+).requiredOption(
   "-m, --model <model>",
   "Model to use (e.g. gpt-4, gpt-4-turbo-preview, gpt-4-0125-preview, gpt-3.5-turbo, gemini-pro)"
 ).option(
@@ -21117,9 +21116,8 @@ program.command("diff").requiredOption(
   "The full input language name"
 ).requiredOption(
   "-e, --engine <engine>",
-  "Engine to use (chatgpt or gemini)",
-  "chatgpt"
-).option(
+  "Engine to use (chatgpt or gemini)"
+).requiredOption(
   "-m, --model <model>",
   "Model to use (e.g. gpt-4, gpt-4-turbo-preview, gpt-4-0125-preview, gpt-3.5-turbo, gemini-pro)"
 ).option(
