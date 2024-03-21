@@ -15977,7 +15977,7 @@ var Gemini = class extends ChatInterface {
 };
 
 // node_modules/openai/version.mjs
-var VERSION = "4.29.1";
+var VERSION = "4.29.2";
 
 // node_modules/openai/_shims/registry.mjs
 var auto = false;
@@ -20541,7 +20541,7 @@ async function generateTranslation(chats, inputLanguage, outputLanguage, input, 
 
 // src/translate.ts
 var import_path2 = __toESM(require("path"));
-var VERSION2 = "2.0.1";
+var VERSION2 = "2.0.2";
 var DEFAULT_BATCH_SIZE = 32;
 var DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 var DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
