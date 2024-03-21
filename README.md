@@ -33,11 +33,11 @@ npx i18n-ai-translate translate -i en.json -o fr.json
 import { translate } from "i18n-ai-translate";
 ...
 const englishJSON = {
-  "welcomeMessage": "Welcome, ${name}!",
+  "welcomeMessage": "Welcome, {{name}}!",
   "messages": {
     "notifications_one": "You have one notification",
-    "notifications_other": "You have ${count} notifications",
-    "delete": "Would you like to delete the \"${name}\" category?"
+    "notifications_other": "You have {{count}} notifications",
+    "delete": "Would you like to delete the \"{{name}}\" category?"
   }
 };
 
@@ -53,11 +53,11 @@ console.log(frenchTranslation);
 
 ```
 {
-  "welcomeMessage": "Bienvenue, ${name} !",
+  "welcomeMessage": "Bienvenue, {{name}} !",
   "messages": {
     "notifications_one": "Vous avez une notification",
-    "notifications_other": "Vous avez ${count} notifications",
-    "delete": "Voulez-vous supprimer la catégorie « ${name} » ?"
+    "notifications_other": "Vous avez {{count}} notifications",
+    "delete": "Voulez-vous supprimer la catégorie « {{name}} » ?"
   }
 }
 ```
