@@ -17,15 +17,16 @@ With ChatGPT, a seed is supplied to ensure deterministic translations.
 ### [Running directly](#script)
 ```bash
 git clone git@github.com:taahamahdi/i18n-ai-translate.git
+cd i18n-ai-translate
 yarn
 cp /home/en.json jsons/
-npm run i18n-ai-translate -- translate -i jsons/en.json -o jsons/fr.json
+npm run i18n-ai-translate -- translate -i en.json -o fr.json --engine chatgpt --model gpt-4-turbo-preview --api-key <openai_key>
 ```
 
 ### [Running as a script in your own project](#script)
 ```bash
 yarn add i18n-ai-translate
-npx i18n-ai-translate translate -i en.json -o fr.json
+npx i18n-ai-translate translate -i en.json -o fr.json --engine gemini --model gemini-pro --api-key <gemini_key>
 ```
 
 ### [Running as a library](#as-a-library)
