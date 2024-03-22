@@ -24,127 +24,6 @@ const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 config({ path: path.resolve(process.cwd(), ".env") });
 
 /**
- * Translate the difference of an input JSON to the given languages
- * @param options - The options for the translation
- */
-export async function translateDiff(
-    options: TranslationDiffOptions,
-): Promise<{ [language: string]: Object }> {
-    const flatInputBefore = flatten(options.inputJSONBefore) as {
-        [key: string]: string;
-    };
-
-    const flatInputAfter = flatten(options.inputJSONAfter) as {
-        [key: string]: string;
-    };
-
-    const flatToUpdateJSONs: { [language: string]: { [key: string]: string } } =
-        {};
-
-    for (const lang in options.toUpdateJSONs) {
-        if (Object.prototype.hasOwnProperty.call(options.toUpdateJSONs, lang)) {
-            const flatToUpdateJSON = flatten(options.toUpdateJSONs[lang]) as {
-                [key: string]: string;
-            };
-
-            flatToUpdateJSONs[lang] = flatToUpdateJSON;
-        }
-    }
-
-    const addedKeys = [];
-    const modifiedKeys = [];
-    const deletedKeys = [];
-
-    for (const key in flatInputBefore) {
-        if (flatInputBefore[key] !== flatInputAfter[key]) {
-            if (flatInputAfter[key] === undefined) {
-                deletedKeys.push(key);
-            } else {
-                modifiedKeys.push(key);
-            }
-        }
-    }
-
-    for (const key in flatInputAfter) {
-        if (flatInputBefore[key] === undefined) {
-            addedKeys.push(key);
-        }
-    }
-
-    if (options.verbose) {
-        console.log(`Added keys: ${addedKeys.join("\n")}\n`);
-        console.log(`Modified keys: ${modifiedKeys.join("\n")}\n`);
-        console.log(`Deleted keys: ${deletedKeys.join("\n")}\n`);
-    }
-
-    for (const key of deletedKeys) {
-        for (const lang in flatToUpdateJSONs) {
-            if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
-                delete flatToUpdateJSONs[lang][key];
-            }
-        }
-    }
-
-    for (const languageCode in flatToUpdateJSONs) {
-        if (
-            Object.prototype.hasOwnProperty.call(
-                flatToUpdateJSONs,
-                languageCode,
-            )
-        ) {
-            const addedAndModifiedTranslations: { [key: string]: string } = {};
-            for (const key of addedKeys) {
-                addedAndModifiedTranslations[key] = flatInputAfter[key];
-            }
-
-            for (const key of modifiedKeys) {
-                addedAndModifiedTranslations[key] = flatInputAfter[key];
-            }
-
-            // eslint-disable-next-line no-await-in-loop, @typescript-eslint/no-use-before-define
-            const translated = await translate({
-                engine: options.engine,
-                model: options.model,
-                chatParams: options.chatParams,
-                rateLimitMs: options.rateLimitMs,
-                apiKey: options.apiKey,
-                inputJSON: addedAndModifiedTranslations,
-                inputLanguage: options.inputLanguage,
-                outputLanguage: languageCode,
-                templatedStringPrefix: options.templatedStringPrefix,
-                templatedStringSuffix: options.templatedStringSuffix,
-                verbose: options.verbose,
-                batchSize: options.batchSize,
-            });
-
-            const flatTranslated = flatten(translated) as {
-                [key: string]: string;
-            };
-
-            for (const key in flatTranslated) {
-                if (Object.prototype.hasOwnProperty.call(flatTranslated, key)) {
-                    flatToUpdateJSONs[languageCode][key] = flatTranslated[key];
-                }
-            }
-        }
-    }
-
-    const unflatToUpdateJSONs: { [language: string]: Object } = {};
-    for (const lang in flatToUpdateJSONs) {
-        if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
-            unflatToUpdateJSONs[lang] = unflatten(flatToUpdateJSONs[lang]);
-        }
-    }
-
-    if (options.verbose) {
-        console.log("Updated JSONs:");
-        console.log(unflatToUpdateJSONs);
-    }
-
-    return unflatToUpdateJSONs;
-}
-
-/**
  * Translate the input JSON to the given language
  * @param options - The options for the translation
  */
@@ -276,6 +155,140 @@ export async function translate(options: TranslationOptions): Promise<Object> {
     }
 
     return unflattenedOutput as Object;
+}
+
+/**
+ * Translate the difference of an input JSON to the given languages
+ * @param options - The options for the translation
+ */
+export async function translateDiff(
+    options: TranslationDiffOptions,
+): Promise<{ [language: string]: Object }> {
+    const flatInputBefore = flatten(options.inputJSONBefore) as {
+        [key: string]: string;
+    };
+
+    const flatInputAfter = flatten(options.inputJSONAfter) as {
+        [key: string]: string;
+    };
+
+    const flatToUpdateJSONs: { [language: string]: { [key: string]: string } } =
+        {};
+
+    for (const lang in options.toUpdateJSONs) {
+        if (Object.prototype.hasOwnProperty.call(options.toUpdateJSONs, lang)) {
+            const flatToUpdateJSON = flatten(options.toUpdateJSONs[lang]) as {
+                [key: string]: string;
+            };
+
+            flatToUpdateJSONs[lang] = flatToUpdateJSON;
+        }
+    }
+
+    const addedKeys = [];
+    const modifiedKeys = [];
+    const deletedKeys = [];
+
+    for (const key in flatInputBefore) {
+        if (flatInputBefore[key] !== flatInputAfter[key]) {
+            if (flatInputAfter[key] === undefined) {
+                deletedKeys.push(key);
+            } else {
+                modifiedKeys.push(key);
+            }
+        }
+    }
+
+    for (const key in flatInputAfter) {
+        if (flatInputBefore[key] === undefined) {
+            addedKeys.push(key);
+        }
+    }
+
+    if (options.verbose) {
+        console.log(`Added keys: ${addedKeys.join("\n")}\n`);
+        console.log(`Modified keys: ${modifiedKeys.join("\n")}\n`);
+        console.log(`Deleted keys: ${deletedKeys.join("\n")}\n`);
+    }
+
+    for (const key of deletedKeys) {
+        for (const lang in flatToUpdateJSONs) {
+            if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
+                delete flatToUpdateJSONs[lang][key];
+            }
+        }
+    }
+
+    for (const languageCode in flatToUpdateJSONs) {
+        if (
+            Object.prototype.hasOwnProperty.call(
+                flatToUpdateJSONs,
+                languageCode,
+            )
+        ) {
+            const addedAndModifiedTranslations: { [key: string]: string } = {};
+            for (const key of addedKeys) {
+                addedAndModifiedTranslations[key] = flatInputAfter[key];
+            }
+
+            for (const key of modifiedKeys) {
+                addedAndModifiedTranslations[key] = flatInputAfter[key];
+            }
+
+            // eslint-disable-next-line no-await-in-loop
+            const translated = await translate({
+                engine: options.engine,
+                model: options.model,
+                chatParams: options.chatParams,
+                rateLimitMs: options.rateLimitMs,
+                apiKey: options.apiKey,
+                inputJSON: addedAndModifiedTranslations,
+                inputLanguage: options.inputLanguage,
+                outputLanguage: languageCode,
+                templatedStringPrefix: options.templatedStringPrefix,
+                templatedStringSuffix: options.templatedStringSuffix,
+                verbose: options.verbose,
+                batchSize: options.batchSize,
+            });
+
+            const flatTranslated = flatten(translated) as {
+                [key: string]: string;
+            };
+
+            for (const key in flatTranslated) {
+                if (Object.prototype.hasOwnProperty.call(flatTranslated, key)) {
+                    flatToUpdateJSONs[languageCode][key] = flatTranslated[key];
+                }
+            }
+
+            // Sort the keys
+            flatToUpdateJSONs[languageCode] = Object.keys(
+                flatToUpdateJSONs[languageCode],
+            )
+                .sort()
+                .reduce(
+                    (obj, key) => {
+                        obj[key] = flatToUpdateJSONs[languageCode][key];
+                        return obj;
+                    },
+                    {} as { [key: string]: string },
+                );
+        }
+    }
+
+    const unflatToUpdateJSONs: { [language: string]: Object } = {};
+    for (const lang in flatToUpdateJSONs) {
+        if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
+            unflatToUpdateJSONs[lang] = unflatten(flatToUpdateJSONs[lang]);
+        }
+    }
+
+    if (options.verbose) {
+        console.log("Updated JSONs:");
+        console.log(unflatToUpdateJSONs);
+    }
+
+    return unflatToUpdateJSONs;
 }
 
 const translateFile = async (options: TranslateFileOptions): Promise<void> => {

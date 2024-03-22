@@ -20546,94 +20546,6 @@ var DEFAULT_BATCH_SIZE = 32;
 var DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 var DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 (0, import_dotenv.config)({ path: import_path2.default.resolve(process.cwd(), ".env") });
-async function translateDiff(options) {
-  const flatInputBefore = (0, import_flat.flatten)(options.inputJSONBefore);
-  const flatInputAfter = (0, import_flat.flatten)(options.inputJSONAfter);
-  const flatToUpdateJSONs = {};
-  for (const lang in options.toUpdateJSONs) {
-    if (Object.prototype.hasOwnProperty.call(options.toUpdateJSONs, lang)) {
-      const flatToUpdateJSON = (0, import_flat.flatten)(options.toUpdateJSONs[lang]);
-      flatToUpdateJSONs[lang] = flatToUpdateJSON;
-    }
-  }
-  const addedKeys = [];
-  const modifiedKeys = [];
-  const deletedKeys = [];
-  for (const key in flatInputBefore) {
-    if (flatInputBefore[key] !== flatInputAfter[key]) {
-      if (flatInputAfter[key] === void 0) {
-        deletedKeys.push(key);
-      } else {
-        modifiedKeys.push(key);
-      }
-    }
-  }
-  for (const key in flatInputAfter) {
-    if (flatInputBefore[key] === void 0) {
-      addedKeys.push(key);
-    }
-  }
-  if (options.verbose) {
-    console.log(`Added keys: ${addedKeys.join("\n")}
-`);
-    console.log(`Modified keys: ${modifiedKeys.join("\n")}
-`);
-    console.log(`Deleted keys: ${deletedKeys.join("\n")}
-`);
-  }
-  for (const key of deletedKeys) {
-    for (const lang in flatToUpdateJSONs) {
-      if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
-        delete flatToUpdateJSONs[lang][key];
-      }
-    }
-  }
-  for (const languageCode in flatToUpdateJSONs) {
-    if (Object.prototype.hasOwnProperty.call(
-      flatToUpdateJSONs,
-      languageCode
-    )) {
-      const addedAndModifiedTranslations = {};
-      for (const key of addedKeys) {
-        addedAndModifiedTranslations[key] = flatInputAfter[key];
-      }
-      for (const key of modifiedKeys) {
-        addedAndModifiedTranslations[key] = flatInputAfter[key];
-      }
-      const translated = await translate({
-        engine: options.engine,
-        model: options.model,
-        chatParams: options.chatParams,
-        rateLimitMs: options.rateLimitMs,
-        apiKey: options.apiKey,
-        inputJSON: addedAndModifiedTranslations,
-        inputLanguage: options.inputLanguage,
-        outputLanguage: languageCode,
-        templatedStringPrefix: options.templatedStringPrefix,
-        templatedStringSuffix: options.templatedStringSuffix,
-        verbose: options.verbose,
-        batchSize: options.batchSize
-      });
-      const flatTranslated = (0, import_flat.flatten)(translated);
-      for (const key in flatTranslated) {
-        if (Object.prototype.hasOwnProperty.call(flatTranslated, key)) {
-          flatToUpdateJSONs[languageCode][key] = flatTranslated[key];
-        }
-      }
-    }
-  }
-  const unflatToUpdateJSONs = {};
-  for (const lang in flatToUpdateJSONs) {
-    if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
-      unflatToUpdateJSONs[lang] = (0, import_flat.unflatten)(flatToUpdateJSONs[lang]);
-    }
-  }
-  if (options.verbose) {
-    console.log("Updated JSONs:");
-    console.log(unflatToUpdateJSONs);
-  }
-  return unflatToUpdateJSONs;
-}
 async function translate(options) {
   if (options.verbose) {
     console.log(
@@ -20743,6 +20655,103 @@ ${output[keys[j2]]}
     );
   }
   return unflattenedOutput;
+}
+async function translateDiff(options) {
+  const flatInputBefore = (0, import_flat.flatten)(options.inputJSONBefore);
+  const flatInputAfter = (0, import_flat.flatten)(options.inputJSONAfter);
+  const flatToUpdateJSONs = {};
+  for (const lang in options.toUpdateJSONs) {
+    if (Object.prototype.hasOwnProperty.call(options.toUpdateJSONs, lang)) {
+      const flatToUpdateJSON = (0, import_flat.flatten)(options.toUpdateJSONs[lang]);
+      flatToUpdateJSONs[lang] = flatToUpdateJSON;
+    }
+  }
+  const addedKeys = [];
+  const modifiedKeys = [];
+  const deletedKeys = [];
+  for (const key in flatInputBefore) {
+    if (flatInputBefore[key] !== flatInputAfter[key]) {
+      if (flatInputAfter[key] === void 0) {
+        deletedKeys.push(key);
+      } else {
+        modifiedKeys.push(key);
+      }
+    }
+  }
+  for (const key in flatInputAfter) {
+    if (flatInputBefore[key] === void 0) {
+      addedKeys.push(key);
+    }
+  }
+  if (options.verbose) {
+    console.log(`Added keys: ${addedKeys.join("\n")}
+`);
+    console.log(`Modified keys: ${modifiedKeys.join("\n")}
+`);
+    console.log(`Deleted keys: ${deletedKeys.join("\n")}
+`);
+  }
+  for (const key of deletedKeys) {
+    for (const lang in flatToUpdateJSONs) {
+      if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
+        delete flatToUpdateJSONs[lang][key];
+      }
+    }
+  }
+  for (const languageCode in flatToUpdateJSONs) {
+    if (Object.prototype.hasOwnProperty.call(
+      flatToUpdateJSONs,
+      languageCode
+    )) {
+      const addedAndModifiedTranslations = {};
+      for (const key of addedKeys) {
+        addedAndModifiedTranslations[key] = flatInputAfter[key];
+      }
+      for (const key of modifiedKeys) {
+        addedAndModifiedTranslations[key] = flatInputAfter[key];
+      }
+      const translated = await translate({
+        engine: options.engine,
+        model: options.model,
+        chatParams: options.chatParams,
+        rateLimitMs: options.rateLimitMs,
+        apiKey: options.apiKey,
+        inputJSON: addedAndModifiedTranslations,
+        inputLanguage: options.inputLanguage,
+        outputLanguage: languageCode,
+        templatedStringPrefix: options.templatedStringPrefix,
+        templatedStringSuffix: options.templatedStringSuffix,
+        verbose: options.verbose,
+        batchSize: options.batchSize
+      });
+      const flatTranslated = (0, import_flat.flatten)(translated);
+      for (const key in flatTranslated) {
+        if (Object.prototype.hasOwnProperty.call(flatTranslated, key)) {
+          flatToUpdateJSONs[languageCode][key] = flatTranslated[key];
+        }
+      }
+      flatToUpdateJSONs[languageCode] = Object.keys(
+        flatToUpdateJSONs[languageCode]
+      ).sort().reduce(
+        (obj, key) => {
+          obj[key] = flatToUpdateJSONs[languageCode][key];
+          return obj;
+        },
+        {}
+      );
+    }
+  }
+  const unflatToUpdateJSONs = {};
+  for (const lang in flatToUpdateJSONs) {
+    if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
+      unflatToUpdateJSONs[lang] = (0, import_flat.unflatten)(flatToUpdateJSONs[lang]);
+    }
+  }
+  if (options.verbose) {
+    console.log("Updated JSONs:");
+    console.log(unflatToUpdateJSONs);
+  }
+  return unflatToUpdateJSONs;
 }
 var translateFile = async (options) => {
   const jsonFolder = import_path2.default.resolve(process.cwd(), "jsons");
