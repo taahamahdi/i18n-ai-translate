@@ -113,7 +113,7 @@ jobs:
 
     - name: Translate the diff
       run: |
-        npx i18n-ai-translate diff -b i18n/en.json -a i18n/en-latest.json -l "English" --verbose
+        npx i18n-ai-translate diff -b i18n/en.json -a i18n/en-latest.json -l "English" --verbose --engine chatgpt --model gpt-4-turbo-preview
         mv i18n/en-latest.json i18n/en.json
         git add .
         git commit -m "Update translations" || echo "No changes to commit"
