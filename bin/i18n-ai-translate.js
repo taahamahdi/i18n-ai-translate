@@ -15977,7 +15977,7 @@ var Gemini = class extends ChatInterface {
 };
 
 // node_modules/openai/version.mjs
-var VERSION = "4.29.2";
+var VERSION = "4.30.0";
 
 // node_modules/openai/_shims/registry.mjs
 var auto = false;
@@ -16883,8 +16883,9 @@ var isBlobLike = (value) => value != null && typeof value === "object" && typeof
 var isUploadable = (value) => {
   return isFileLike2(value) || isResponseLike(value) || isFsReadStream(value);
 };
-async function toFile(value, name, options = {}) {
+async function toFile(value, name, options) {
   value = await value;
+  options ?? (options = isFileLike2(value) ? { lastModified: value.lastModified, type: value.type } : {});
   if (isResponseLike(value)) {
     const blob = await value.blob();
     name || (name = new URL(value.url).pathname.split(/[\\/]/).pop() ?? "unknown_file");
@@ -17446,7 +17447,7 @@ var getPlatformProperties = () => {
       "X-Stainless-OS": normalizePlatform(Deno.build.os),
       "X-Stainless-Arch": normalizeArch(Deno.build.arch),
       "X-Stainless-Runtime": "deno",
-      "X-Stainless-Runtime-Version": Deno.version
+      "X-Stainless-Runtime-Version": typeof Deno.version === "string" ? Deno.version : Deno.version?.deno ?? "unknown"
     };
   }
   if (typeof EdgeRuntime !== "undefined") {
@@ -17610,7 +17611,7 @@ function applyHeadersMut(targetHeaders, newHeaders) {
   }
 }
 function debug(action, ...args) {
-  if (typeof process !== "undefined" && process.env["DEBUG"] === "true") {
+  if (typeof process !== "undefined" && process?.env?.["DEBUG"] === "true") {
     console.log(`OpenAI:DEBUG:${action}`, ...args);
   }
 }
@@ -19157,6 +19158,28 @@ var AssistantStream = class _AssistantStream extends AbstractAssistantStreamRunn
       }
     };
   }
+  static fromReadableStream(stream) {
+    const runner = new _AssistantStream();
+    runner._run(() => runner._fromReadableStream(stream));
+    return runner;
+  }
+  async _fromReadableStream(readableStream, options) {
+    const signal = options?.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    this._connected();
+    const stream = Stream.fromReadableStream(readableStream, this.controller);
+    for await (const event of stream) {
+      __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_handleEvent).call(this, event);
+    }
+    if (stream.controller.signal?.aborted) {
+      throw new APIUserAbortError();
+    }
+    return this._addRun(__classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
+  }
   toReadableStream() {
     const stream = new Stream(this[Symbol.asyncIterator].bind(this), this.controller);
     return stream.toReadableStream();
@@ -19345,7 +19368,7 @@ _AssistantStream_addEvent = function _AssistantStream_addEvent2(event) {
     throw new OpenAIError(`stream has ended, this shouldn't happen`);
   }
   if (!__classPrivateFieldGet10(this, _AssistantStream_finalRun, "f"))
-    throw Error("Final run has been been received");
+    throw Error("Final run has not been received");
   return __classPrivateFieldGet10(this, _AssistantStream_finalRun, "f");
 }, _AssistantStream_handleMessage = function _AssistantStream_handleMessage2(event) {
   const [accumulatedMessage, newContent] = __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_accumulateMessage).call(this, event, __classPrivateFieldGet10(this, _AssistantStream_messageSnapshot, "f"));
