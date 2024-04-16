@@ -6402,7 +6402,7 @@ var require_lib2 = __commonJS({
       return void 0;
     }
     var MAP = Symbol("map");
-    var Headers3 = class _Headers {
+    var Headers4 = class _Headers {
       /**
        * Headers class
        *
@@ -6477,13 +6477,13 @@ var require_lib2 = __commonJS({
        */
       forEach(callback) {
         let thisArg = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : void 0;
-        let pairs = getHeaders(this);
+        let pairs = getHeaders2(this);
         let i2 = 0;
         while (i2 < pairs.length) {
           var _pairs$i = pairs[i2];
           const name = _pairs$i[0], value = _pairs$i[1];
           callback.call(thisArg, value, name, this);
-          pairs = getHeaders(this);
+          pairs = getHeaders2(this);
           i2++;
         }
       }
@@ -6581,14 +6581,14 @@ var require_lib2 = __commonJS({
         return createHeadersIterator(this, "key+value");
       }
     };
-    Headers3.prototype.entries = Headers3.prototype[Symbol.iterator];
-    Object.defineProperty(Headers3.prototype, Symbol.toStringTag, {
+    Headers4.prototype.entries = Headers4.prototype[Symbol.iterator];
+    Object.defineProperty(Headers4.prototype, Symbol.toStringTag, {
       value: "Headers",
       writable: false,
       enumerable: false,
       configurable: true
     });
-    Object.defineProperties(Headers3.prototype, {
+    Object.defineProperties(Headers4.prototype, {
       get: { enumerable: true },
       forEach: { enumerable: true },
       set: { enumerable: true },
@@ -6599,7 +6599,7 @@ var require_lib2 = __commonJS({
       values: { enumerable: true },
       entries: { enumerable: true }
     });
-    function getHeaders(headers) {
+    function getHeaders2(headers) {
       let kind2 = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : "key+value";
       const keys = Object.keys(headers[MAP]).sort();
       return keys.map(kind2 === "key" ? function(k2) {
@@ -6627,7 +6627,7 @@ var require_lib2 = __commonJS({
         }
         var _INTERNAL = this[INTERNAL];
         const target = _INTERNAL.target, kind2 = _INTERNAL.kind, index = _INTERNAL.index;
-        const values = getHeaders(target, kind2);
+        const values = getHeaders2(target, kind2);
         const len = values.length;
         if (index >= len) {
           return {
@@ -6657,7 +6657,7 @@ var require_lib2 = __commonJS({
       return obj;
     }
     function createHeadersLenient(obj) {
-      const headers = new Headers3();
+      const headers = new Headers4();
       for (const name of Object.keys(obj)) {
         if (invalidTokenRegex.test(name)) {
           continue;
@@ -6687,7 +6687,7 @@ var require_lib2 = __commonJS({
         let opts = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {};
         Body.call(this, body, opts);
         const status = opts.status || 200;
-        const headers = new Headers3(opts.headers);
+        const headers = new Headers4(opts.headers);
         if (body != null && !headers.has("Content-Type")) {
           const contentType = extractContentType(body);
           if (contentType) {
@@ -6797,7 +6797,7 @@ var require_lib2 = __commonJS({
           timeout: init.timeout || input.timeout || 0,
           size: init.size || input.size || 0
         });
-        const headers = new Headers3(init.headers || input.headers || {});
+        const headers = new Headers4(init.headers || input.headers || {});
         if (inputBody != null && !headers.has("Content-Type")) {
           const contentType = extractContentType(inputBody);
           if (contentType) {
@@ -6863,7 +6863,7 @@ var require_lib2 = __commonJS({
     });
     function getNodeRequestOptions(request) {
       const parsedURL = request[INTERNALS$2].parsedURL;
-      const headers = new Headers3(request[INTERNALS$2].headers);
+      const headers = new Headers4(request[INTERNALS$2].headers);
       if (!headers.has("Accept")) {
         headers.set("Accept", "*/*");
       }
@@ -7040,7 +7040,7 @@ var require_lib2 = __commonJS({
                   return;
                 }
                 const requestOpts = {
-                  headers: new Headers3(request.headers),
+                  headers: new Headers4(request.headers),
                   follow: request.follow,
                   counter: request.counter + 1,
                   agent: request.agent,
@@ -7166,7 +7166,7 @@ var require_lib2 = __commonJS({
     module2.exports = exports2 = fetch3;
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.default = exports2;
-    exports2.Headers = Headers3;
+    exports2.Headers = Headers4;
     exports2.Request = Request3;
     exports2.Response = Response3;
     exports2.FetchError = FetchError;
@@ -15105,7 +15105,7 @@ var {
 } = import_index.default;
 
 // node_modules/@google/generative-ai/dist/index.mjs
-var POSSIBLE_ROLES = ["user", "model", "function"];
+var POSSIBLE_ROLES = ["user", "model", "function", "system"];
 var HarmCategory;
 (function(HarmCategory2) {
   HarmCategory2["HARM_CATEGORY_UNSPECIFIED"] = "HARM_CATEGORY_UNSPECIFIED";
@@ -15154,6 +15154,13 @@ var TaskType;
   TaskType2["CLASSIFICATION"] = "CLASSIFICATION";
   TaskType2["CLUSTERING"] = "CLUSTERING";
 })(TaskType || (TaskType = {}));
+var FunctionCallingMode;
+(function(FunctionCallingMode2) {
+  FunctionCallingMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
+  FunctionCallingMode2["AUTO"] = "AUTO";
+  FunctionCallingMode2["ANY"] = "ANY";
+  FunctionCallingMode2["NONE"] = "NONE";
+})(FunctionCallingMode || (FunctionCallingMode = {}));
 var FunctionDeclarationSchemaType;
 (function(FunctionDeclarationSchemaType2) {
   FunctionDeclarationSchemaType2["STRING"] = "STRING";
@@ -15174,9 +15181,9 @@ var GoogleGenerativeAIResponseError = class extends GoogleGenerativeAIError {
     this.response = response;
   }
 };
-var BASE_URL = "https://generativelanguage.googleapis.com";
-var DEFAULT_API_VERSION = "v1";
-var PACKAGE_VERSION = "0.3.1";
+var DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
+var DEFAULT_API_VERSION = "v1beta";
+var PACKAGE_VERSION = "0.7.0";
 var PACKAGE_LOG_HEADER = "genai-js";
 var Task;
 (function(Task2) {
@@ -15195,26 +15202,47 @@ var RequestUrl = class {
     this.requestOptions = requestOptions;
   }
   toString() {
-    var _a2;
+    var _a2, _b;
     const apiVersion = ((_a2 = this.requestOptions) === null || _a2 === void 0 ? void 0 : _a2.apiVersion) || DEFAULT_API_VERSION;
-    let url = `${BASE_URL}/${apiVersion}/${this.model}:${this.task}`;
+    const baseUrl = ((_b = this.requestOptions) === null || _b === void 0 ? void 0 : _b.baseUrl) || DEFAULT_BASE_URL;
+    let url = `${baseUrl}/${apiVersion}/${this.model}:${this.task}`;
     if (this.stream) {
       url += "?alt=sse";
     }
     return url;
   }
 };
-function getClientHeaders() {
-  return `${PACKAGE_LOG_HEADER}/${PACKAGE_VERSION}`;
+function getClientHeaders(requestOptions) {
+  const clientHeaders = [];
+  if (requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.apiClient) {
+    clientHeaders.push(requestOptions.apiClient);
+  }
+  clientHeaders.push(`${PACKAGE_LOG_HEADER}/${PACKAGE_VERSION}`);
+  return clientHeaders.join(" ");
 }
-async function makeRequest(url, body, requestOptions) {
+async function getHeaders(url) {
+  const headers = new Headers();
+  headers.append("Content-Type", "application/json");
+  headers.append("x-goog-api-client", getClientHeaders(url.requestOptions));
+  headers.append("x-goog-api-key", url.apiKey);
+  return headers;
+}
+async function constructRequest(model, task, apiKey, stream, body, requestOptions) {
+  const url = new RequestUrl(model, task, apiKey, stream, requestOptions);
+  return {
+    url: url.toString(),
+    fetchOptions: Object.assign(Object.assign({}, buildFetchOptions(requestOptions)), { method: "POST", headers: await getHeaders(url), body })
+  };
+}
+async function makeRequest(model, task, apiKey, stream, body, requestOptions) {
+  return _makeRequestInternal(model, task, apiKey, stream, body, requestOptions, fetch);
+}
+async function _makeRequestInternal(model, task, apiKey, stream, body, requestOptions, fetchFn = fetch) {
+  const url = new RequestUrl(model, task, apiKey, stream, requestOptions);
   let response;
   try {
-    response = await fetch(url.toString(), Object.assign(Object.assign({}, buildFetchOptions(requestOptions)), { method: "POST", headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-client": getClientHeaders(),
-      "x-goog-api-key": url.apiKey
-    }, body }));
+    const request = await constructRequest(model, task, apiKey, stream, body, requestOptions);
+    response = await fetchFn(request.url, request.fetchOptions);
     if (!response.ok) {
       let message = "";
       try {
@@ -15262,12 +15290,27 @@ function addHelpers(response) {
   response.functionCall = () => {
     if (response.candidates && response.candidates.length > 0) {
       if (response.candidates.length > 1) {
-        console.warn(`This response had ${response.candidates.length} candidates. Returning function call from the first candidate only. Access response.candidates directly to use the other candidates.`);
+        console.warn(`This response had ${response.candidates.length} candidates. Returning function calls from the first candidate only. Access response.candidates directly to use the other candidates.`);
       }
       if (hadBadFinishReason(response.candidates[0])) {
         throw new GoogleGenerativeAIResponseError(`${formatBlockErrorMessage(response)}`, response);
       }
-      return getFunctionCall(response);
+      console.warn(`response.functionCall() is deprecated. Use response.functionCalls() instead.`);
+      return getFunctionCalls(response)[0];
+    } else if (response.promptFeedback) {
+      throw new GoogleGenerativeAIResponseError(`Function call not available. ${formatBlockErrorMessage(response)}`, response);
+    }
+    return void 0;
+  };
+  response.functionCalls = () => {
+    if (response.candidates && response.candidates.length > 0) {
+      if (response.candidates.length > 1) {
+        console.warn(`This response had ${response.candidates.length} candidates. Returning function calls from the first candidate only. Access response.candidates directly to use the other candidates.`);
+      }
+      if (hadBadFinishReason(response.candidates[0])) {
+        throw new GoogleGenerativeAIResponseError(`${formatBlockErrorMessage(response)}`, response);
+      }
+      return getFunctionCalls(response);
     } else if (response.promptFeedback) {
       throw new GoogleGenerativeAIResponseError(`Function call not available. ${formatBlockErrorMessage(response)}`, response);
     }
@@ -15283,9 +15326,21 @@ function getText(response) {
     return "";
   }
 }
-function getFunctionCall(response) {
+function getFunctionCalls(response) {
   var _a2, _b, _c, _d;
-  return (_d = (_c = (_b = (_a2 = response.candidates) === null || _a2 === void 0 ? void 0 : _a2[0].content) === null || _b === void 0 ? void 0 : _b.parts) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.functionCall;
+  const functionCalls = [];
+  if ((_b = (_a2 = response.candidates) === null || _a2 === void 0 ? void 0 : _a2[0].content) === null || _b === void 0 ? void 0 : _b.parts) {
+    for (const part of (_d = (_c = response.candidates) === null || _c === void 0 ? void 0 : _c[0].content) === null || _d === void 0 ? void 0 : _d.parts) {
+      if (part.functionCall) {
+        functionCalls.push(part.functionCall);
+      }
+    }
+  }
+  if (functionCalls.length > 0) {
+    return functionCalls;
+  } else {
+    return void 0;
+  }
 }
 var badFinishReasons = [FinishReason.RECITATION, FinishReason.SAFETY];
 function hadBadFinishReason(candidate) {
@@ -15470,27 +15525,27 @@ function aggregateResponses(responses) {
   return aggregatedResponse;
 }
 async function generateContentStream(apiKey, model, params, requestOptions) {
-  const url = new RequestUrl(
+  const response = await makeRequest(
     model,
     Task.STREAM_GENERATE_CONTENT,
     apiKey,
     /* stream */
     true,
+    JSON.stringify(params),
     requestOptions
   );
-  const response = await makeRequest(url, JSON.stringify(params), requestOptions);
   return processStream(response);
 }
 async function generateContent(apiKey, model, params, requestOptions) {
-  const url = new RequestUrl(
+  const response = await makeRequest(
     model,
     Task.GENERATE_CONTENT,
     apiKey,
     /* stream */
     false,
+    JSON.stringify(params),
     requestOptions
   );
-  const response = await makeRequest(url, JSON.stringify(params), requestOptions);
   const responseJson = await response.json();
   const enhancedResponse = addHelpers(responseJson);
   return {
@@ -15561,12 +15616,16 @@ var VALID_PART_FIELDS = [
 var VALID_PARTS_PER_ROLE = {
   user: ["text", "inlineData"],
   function: ["functionResponse"],
-  model: ["text", "functionCall"]
+  model: ["text", "functionCall"],
+  // System instructions shouldn't be in history anyway.
+  system: ["text"]
 };
 var VALID_PREVIOUS_CONTENT_ROLES = {
   user: ["model"],
   function: ["model"],
-  model: ["user", "function"]
+  model: ["user", "function"],
+  // System instructions shouldn't be in history.
+  system: []
 };
 function validateChatHistory(history) {
   let prevContent;
@@ -15640,13 +15699,15 @@ var ChatSession = class {
    * {@link GenerateContentResult}
    */
   async sendMessage(request) {
-    var _a2, _b, _c;
+    var _a2, _b, _c, _d, _e2;
     await this._sendPromise;
     const newContent = formatNewContent(request);
     const generateContentRequest = {
       safetySettings: (_a2 = this.params) === null || _a2 === void 0 ? void 0 : _a2.safetySettings,
       generationConfig: (_b = this.params) === null || _b === void 0 ? void 0 : _b.generationConfig,
       tools: (_c = this.params) === null || _c === void 0 ? void 0 : _c.tools,
+      toolConfig: (_d = this.params) === null || _d === void 0 ? void 0 : _d.toolConfig,
+      systemInstruction: (_e2 = this.params) === null || _e2 === void 0 ? void 0 : _e2.systemInstruction,
       contents: [...this._history, newContent]
     };
     let finalResult;
@@ -15677,13 +15738,15 @@ var ChatSession = class {
    * and a response promise.
    */
   async sendMessageStream(request) {
-    var _a2, _b, _c;
+    var _a2, _b, _c, _d, _e2;
     await this._sendPromise;
     const newContent = formatNewContent(request);
     const generateContentRequest = {
       safetySettings: (_a2 = this.params) === null || _a2 === void 0 ? void 0 : _a2.safetySettings,
       generationConfig: (_b = this.params) === null || _b === void 0 ? void 0 : _b.generationConfig,
       tools: (_c = this.params) === null || _c === void 0 ? void 0 : _c.tools,
+      toolConfig: (_d = this.params) === null || _d === void 0 ? void 0 : _d.toolConfig,
+      systemInstruction: (_e2 = this.params) === null || _e2 === void 0 ? void 0 : _e2.systemInstruction,
       contents: [...this._history, newContent]
     };
     const streamPromise = generateContentStream(this._apiKey, this.model, generateContentRequest, this.requestOptions);
@@ -15712,21 +15775,18 @@ var ChatSession = class {
   }
 };
 async function countTokens(apiKey, model, params, requestOptions) {
-  const url = new RequestUrl(model, Task.COUNT_TOKENS, apiKey, false, {});
-  const response = await makeRequest(url, JSON.stringify(Object.assign(Object.assign({}, params), { model })), requestOptions);
+  const response = await makeRequest(model, Task.COUNT_TOKENS, apiKey, false, JSON.stringify(Object.assign(Object.assign({}, params), { model })), requestOptions);
   return response.json();
 }
 async function embedContent(apiKey, model, params, requestOptions) {
-  const url = new RequestUrl(model, Task.EMBED_CONTENT, apiKey, false, {});
-  const response = await makeRequest(url, JSON.stringify(params), requestOptions);
+  const response = await makeRequest(model, Task.EMBED_CONTENT, apiKey, false, JSON.stringify(params), requestOptions);
   return response.json();
 }
 async function batchEmbedContents(apiKey, model, params, requestOptions) {
-  const url = new RequestUrl(model, Task.BATCH_EMBED_CONTENTS, apiKey, false, {});
   const requestsWithModel = params.requests.map((request) => {
     return Object.assign(Object.assign({}, request), { model });
   });
-  const response = await makeRequest(url, JSON.stringify({ requests: requestsWithModel }), requestOptions);
+  const response = await makeRequest(model, Task.BATCH_EMBED_CONTENTS, apiKey, false, JSON.stringify({ requests: requestsWithModel }), requestOptions);
   return response.json();
 }
 var GenerativeModel = class {
@@ -15740,6 +15800,8 @@ var GenerativeModel = class {
     this.generationConfig = modelParams.generationConfig || {};
     this.safetySettings = modelParams.safetySettings || [];
     this.tools = modelParams.tools;
+    this.toolConfig = modelParams.toolConfig;
+    this.systemInstruction = modelParams.systemInstruction;
     this.requestOptions = requestOptions || {};
   }
   /**
@@ -15748,7 +15810,7 @@ var GenerativeModel = class {
    */
   async generateContent(request) {
     const formattedParams = formatGenerateContentInput(request);
-    return generateContent(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools }, formattedParams), this.requestOptions);
+    return generateContent(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction }, formattedParams), this.requestOptions);
   }
   /**
    * Makes a single streaming call to the model
@@ -15758,14 +15820,14 @@ var GenerativeModel = class {
    */
   async generateContentStream(request) {
     const formattedParams = formatGenerateContentInput(request);
-    return generateContentStream(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools }, formattedParams), this.requestOptions);
+    return generateContentStream(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction }, formattedParams), this.requestOptions);
   }
   /**
    * Gets a new {@link ChatSession} instance which can be used for
    * multi-turn chats.
    */
   startChat(startChatParams) {
-    return new ChatSession(this.apiKey, this.model, Object.assign({ tools: this.tools }, startChatParams), this.requestOptions);
+    return new ChatSession(this.apiKey, this.model, Object.assign({ tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction }, startChatParams), this.requestOptions);
   }
   /**
    * Counts the tokens in the provided request.
@@ -15985,7 +16047,7 @@ var kind = void 0;
 var fetch2 = void 0;
 var Request = void 0;
 var Response = void 0;
-var Headers = void 0;
+var Headers2 = void 0;
 var FormData = void 0;
 var Blob = void 0;
 var File = void 0;
@@ -16006,7 +16068,7 @@ function setShims(shims, options = { auto: false }) {
   fetch2 = shims.fetch;
   Request = shims.Request;
   Response = shims.Response;
-  Headers = shims.Headers;
+  Headers2 = shims.Headers;
   FormData = shims.FormData;
   Blob = shims.Blob;
   File = shims.File;
