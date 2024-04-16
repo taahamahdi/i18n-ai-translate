@@ -16039,7 +16039,7 @@ var Gemini = class extends ChatInterface {
 };
 
 // node_modules/openai/version.mjs
-var VERSION = "4.30.0";
+var VERSION = "4.35.0";
 
 // node_modules/openai/_shims/registry.mjs
 var auto = false;
@@ -16494,6 +16494,7 @@ var APIError = class _APIError extends OpenAIError {
     super(`${_APIError.makeMessage(status, error, message)}`);
     this.status = status;
     this.headers = headers;
+    this.request_id = headers?.["x-request-id"];
     const data = error;
     this.error = data;
     this.code = data?.["code"];
@@ -16617,27 +16618,6 @@ var Stream = class _Stream {
   }
   static fromSSEResponse(response, controller) {
     let consumed = false;
-    const decoder = new SSEDecoder();
-    async function* iterMessages() {
-      if (!response.body) {
-        controller.abort();
-        throw new OpenAIError(`Attempted to iterate over a response with no body`);
-      }
-      const lineDecoder = new LineDecoder();
-      const iter = readableStreamAsyncIterable(response.body);
-      for await (const chunk of iter) {
-        for (const line of lineDecoder.decode(chunk)) {
-          const sse = decoder.decode(line);
-          if (sse)
-            yield sse;
-        }
-      }
-      for (const line of lineDecoder.flush()) {
-        const sse = decoder.decode(line);
-        if (sse)
-          yield sse;
-      }
-    }
     async function* iterator() {
       if (consumed) {
         throw new Error("Cannot iterate over a consumed stream, use `.tee()` to split the stream.");
@@ -16645,7 +16625,7 @@ var Stream = class _Stream {
       consumed = true;
       let done = false;
       try {
-        for await (const sse of iterMessages()) {
+        for await (const sse of _iterSSEMessages(response, controller)) {
           if (done)
             continue;
           if (sse.data.startsWith("[DONE]")) {
@@ -16793,6 +16773,64 @@ var Stream = class _Stream {
     });
   }
 };
+async function* _iterSSEMessages(response, controller) {
+  if (!response.body) {
+    controller.abort();
+    throw new OpenAIError(`Attempted to iterate over a response with no body`);
+  }
+  const sseDecoder = new SSEDecoder();
+  const lineDecoder = new LineDecoder();
+  const iter = readableStreamAsyncIterable(response.body);
+  for await (const sseChunk of iterSSEChunks(iter)) {
+    for (const line of lineDecoder.decode(sseChunk)) {
+      const sse = sseDecoder.decode(line);
+      if (sse)
+        yield sse;
+    }
+  }
+  for (const line of lineDecoder.flush()) {
+    const sse = sseDecoder.decode(line);
+    if (sse)
+      yield sse;
+  }
+}
+async function* iterSSEChunks(iterator) {
+  let data = new Uint8Array();
+  for await (const chunk of iterator) {
+    if (chunk == null) {
+      continue;
+    }
+    const binaryChunk = chunk instanceof ArrayBuffer ? new Uint8Array(chunk) : typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk;
+    let newData = new Uint8Array(data.length + binaryChunk.length);
+    newData.set(data);
+    newData.set(binaryChunk, data.length);
+    data = newData;
+    let patternIndex;
+    while ((patternIndex = findDoubleNewlineIndex(data)) !== -1) {
+      yield data.slice(0, patternIndex);
+      data = data.slice(patternIndex);
+    }
+  }
+  if (data.length > 0) {
+    yield data;
+  }
+}
+function findDoubleNewlineIndex(buffer) {
+  const newline = 10;
+  const carriage = 13;
+  for (let i2 = 0; i2 < buffer.length - 2; i2++) {
+    if (buffer[i2] === newline && buffer[i2 + 1] === newline) {
+      return i2 + 2;
+    }
+    if (buffer[i2] === carriage && buffer[i2 + 1] === carriage) {
+      return i2 + 2;
+    }
+    if (buffer[i2] === carriage && buffer[i2 + 1] === newline && i2 + 3 < buffer.length && buffer[i2 + 2] === carriage && buffer[i2 + 3] === newline) {
+      return i2 + 4;
+    }
+  }
+  return -1;
+}
 var SSEDecoder = class {
   constructor() {
     this.event = null;
@@ -16901,8 +16939,8 @@ var LineDecoder = class _LineDecoder {
     return lines;
   }
 };
-LineDecoder.NEWLINE_CHARS = /* @__PURE__ */ new Set(["\n", "\r", "\v", "\f", "", "", "", "\x85", "\u2028", "\u2029"]);
-LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r\x0b\x0c\x1c\x1d\x1e\x85\u2028\u2029]/g;
+LineDecoder.NEWLINE_CHARS = /* @__PURE__ */ new Set(["\n", "\r"]);
+LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r]/g;
 function partition(str2, delimiter) {
   const index = str2.indexOf(delimiter);
   if (index !== -1) {
@@ -17828,6 +17866,30 @@ var Audio = class extends APIResource {
   Audio2.Translations = Translations;
   Audio2.Speech = Speech;
 })(Audio || (Audio = {}));
+
+// node_modules/openai/resources/batches.mjs
+var Batches = class extends APIResource {
+  /**
+   * Creates and executes a batch from an uploaded file of requests
+   */
+  create(body, options) {
+    return this._client.post("/batches", { body, ...options });
+  }
+  /**
+   * Retrieves a batch.
+   */
+  retrieve(batchId, options) {
+    return this._client.get(`/batches/${batchId}`, options);
+  }
+  /**
+   * Cancels an in-progress batch.
+   */
+  cancel(batchId, options) {
+    return this._client.post(`/batches/${batchId}/cancel`, options);
+  }
+};
+/* @__PURE__ */ (function(Batches2) {
+})(Batches || (Batches = {}));
 
 // node_modules/openai/resources/beta/assistants/files.mjs
 var Files = class extends APIResource {
@@ -19235,7 +19297,7 @@ var AssistantStream = class _AssistantStream extends AbstractAssistantStreamRunn
     this._connected();
     const stream = Stream.fromReadableStream(readableStream, this.controller);
     for await (const event of stream) {
-      __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_handleEvent).call(this, event);
+      __classPrivateFieldGet10(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
     }
     if (stream.controller.signal?.aborted) {
       throw new APIUserAbortError();
@@ -19793,9 +19855,68 @@ var Runs = class extends APIResource {
     });
   }
   /**
+   * A helper to create a run an poll for a terminal state. More information on Run
+   * lifecycles can be found here:
+   * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+   */
+  async createAndPoll(threadId, body, options) {
+    const run = await this.create(threadId, body, options);
+    return await this.poll(threadId, run.id, options);
+  }
+  /**
    * Create a Run stream
+   *
+   * @deprecated use `stream` instead
    */
   createAndStream(threadId, body, options) {
+    return AssistantStream.createAssistantStream(threadId, this._client.beta.threads.runs, body, options);
+  }
+  /**
+   * A helper to poll a run status until it reaches a terminal state. More
+   * information on Run lifecycles can be found here:
+   * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+   */
+  async poll(threadId, runId, options) {
+    const headers = { ...options?.headers, "X-Stainless-Poll-Helper": "true" };
+    if (options?.pollIntervalMs) {
+      headers["X-Stainless-Custom-Poll-Interval"] = options.pollIntervalMs.toString();
+    }
+    while (true) {
+      const { data: run, response } = await this.retrieve(threadId, runId, {
+        ...options,
+        headers: { ...options?.headers, ...headers }
+      }).withResponse();
+      switch (run.status) {
+        case "queued":
+        case "in_progress":
+        case "cancelling":
+          let sleepInterval = 5e3;
+          if (options?.pollIntervalMs) {
+            sleepInterval = options.pollIntervalMs;
+          } else {
+            const headerInterval = response.headers.get("openai-poll-after-ms");
+            if (headerInterval) {
+              const headerIntervalMs = parseInt(headerInterval);
+              if (!isNaN(headerIntervalMs)) {
+                sleepInterval = headerIntervalMs;
+              }
+            }
+          }
+          await sleep(sleepInterval);
+          break;
+        case "requires_action":
+        case "cancelled":
+        case "completed":
+        case "failed":
+        case "expired":
+          return run;
+      }
+    }
+  }
+  /**
+   * Create a Run stream
+   */
+  stream(threadId, body, options) {
     return AssistantStream.createAssistantStream(threadId, this._client.beta.threads.runs, body, options);
   }
   submitToolOutputs(threadId, runId, body, options) {
@@ -19807,8 +19928,18 @@ var Runs = class extends APIResource {
     });
   }
   /**
+   * A helper to submit a tool output to a run and poll for a terminal run state.
+   * More information on Run lifecycles can be found here:
+   * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+   */
+  async submitToolOutputsAndPoll(threadId, runId, body, options) {
+    const run = await this.submitToolOutputs(threadId, runId, body, options);
+    return await this.poll(threadId, run.id, options);
+  }
+  /**
    * Submit the tool outputs from a previous run and stream the run to a terminal
-   * state.
+   * state. More information on Run lifecycles can be found here:
+   * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
    */
   submitToolOutputsStream(threadId, runId, body, options) {
     return AssistantStream.createToolAssistantStream(threadId, runId, this._client.beta.threads.runs, body, options);
@@ -19874,6 +20005,15 @@ var Threads = class extends APIResource {
       headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers },
       stream: body.stream ?? false
     });
+  }
+  /**
+   * A helper to create a thread, start a run and then poll for a terminal state.
+   * More information on Run lifecycles can be found here:
+   * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+   */
+  async createAndRunPoll(body, options) {
+    const run = await this.createAndRun(body, options);
+    return await this.runs.poll(run.thread_id, run.id, options);
   }
   /**
    * Create a thread and stream the run back
@@ -20004,8 +20144,27 @@ var FileObjectsPage = class extends Page {
   Files4.FileObjectsPage = FileObjectsPage;
 })(Files3 || (Files3 = {}));
 
-// node_modules/openai/resources/fine-tuning/jobs.mjs
+// node_modules/openai/resources/fine-tuning/jobs/checkpoints.mjs
+var Checkpoints = class extends APIResource {
+  list(fineTuningJobId, query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list(fineTuningJobId, {}, query);
+    }
+    return this._client.getAPIList(`/fine_tuning/jobs/${fineTuningJobId}/checkpoints`, FineTuningJobCheckpointsPage, { query, ...options });
+  }
+};
+var FineTuningJobCheckpointsPage = class extends CursorPage {
+};
+(function(Checkpoints2) {
+  Checkpoints2.FineTuningJobCheckpointsPage = FineTuningJobCheckpointsPage;
+})(Checkpoints || (Checkpoints = {}));
+
+// node_modules/openai/resources/fine-tuning/jobs/jobs.mjs
 var Jobs = class extends APIResource {
+  constructor() {
+    super(...arguments);
+    this.checkpoints = new Checkpoints(this._client);
+  }
   /**
    * Creates a fine-tuning job which begins the process of creating a new model from
    * a given dataset.
@@ -20055,6 +20214,8 @@ var FineTuningJobEventsPage = class extends CursorPage {
 (function(Jobs2) {
   Jobs2.FineTuningJobsPage = FineTuningJobsPage;
   Jobs2.FineTuningJobEventsPage = FineTuningJobEventsPage;
+  Jobs2.Checkpoints = Checkpoints;
+  Jobs2.FineTuningJobCheckpointsPage = FineTuningJobCheckpointsPage;
 })(Jobs || (Jobs = {}));
 
 // node_modules/openai/resources/fine-tuning/fine-tuning.mjs
@@ -20183,6 +20344,7 @@ var OpenAI = class extends APIClient {
     this.models = new Models(this);
     this.fineTuning = new FineTuning(this);
     this.beta = new Beta(this);
+    this.batches = new Batches(this);
     this._options = options;
     this.apiKey = apiKey;
     this.organization = organization;
@@ -20234,6 +20396,7 @@ var { OpenAIError: OpenAIError2, APIError: APIError2, APIConnectionError: APICon
   OpenAI2.ModelsPage = ModelsPage;
   OpenAI2.FineTuning = FineTuning;
   OpenAI2.Beta = Beta;
+  OpenAI2.Batches = Batches;
 })(OpenAI || (OpenAI = {}));
 var openai_default = OpenAI;
 
