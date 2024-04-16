@@ -21245,7 +21245,7 @@ program.command("diff").requiredOption(
       }
       break;
     case engine_default.ChatGPT:
-      model = options.model || "gpt-4-0125-preview";
+      model = options.model || "gpt-4-turbo-preview";
       chatParams = {
         seed: 69420,
         model,

@@ -163,10 +163,10 @@
   resolved "https://registry.yarnpkg.com/@eslint/js/-/js-8.57.0.tgz#a5417ae8427873f1dd08b70b3574b453e67b5f7f"
   integrity sha512-Ys+3g2TaW7gADOJzPt83SJtCDhMjndcDMFVQ/Tj9iA1BfJzFKD9mAUXT3OenpuPHbI6P/myECxRJrofUsDx/5g==
 
-"@google/generative-ai@^0.3.0":
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/@google/generative-ai/-/generative-ai-0.3.1.tgz#327b7f6df0d456205d44ad4237d7278e673984d5"
-  integrity sha512-Zh1EK5nCWqIhxPm3K1KOM2mOwwgBvp6lkze74yTj6+Zqibtf55Db1q87cbbzWZeET3ZbNgHMYjVf2JyMM6pI7A==
+"@google/generative-ai@^0.7.0":
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/@google/generative-ai/-/generative-ai-0.7.0.tgz#f90026c4887a41f9216a5ec8364f312eb024403b"
+  integrity sha512-+1kNkKbkDJftrvwfULQphkyC2ZQ42exlyR+TFARMuykuu6y8XyevbX0dDarqt1GVpZDm55yg0TBq6I1J65X6OA==
 
 "@humanwhocodes/config-array@^0.11.14":
   version "0.11.14"
@@ -896,9 +896,9 @@ eslint-plugin-jsdoc@^48.0.6:
     spdx-expression-parse "^4.0.0"
 
 eslint-plugin-n@^17.2.0:
-  version "17.2.0"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-n/-/eslint-plugin-n-17.2.0.tgz#a47baac8e9581c8aeafe2555f6014f2904709de4"
-  integrity sha512-XBkFQxjTFKy9oc925ezHcDoZ8VLdGfxRkdZf0poR4TjC+zvm28pG2Tc7ZZpD1/UxSAzbw6Zz0WpnpUX3KruAAA==
+  version "17.2.1"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-n/-/eslint-plugin-n-17.2.1.tgz#20aa5008dce05af9041b70abb659a2308416d977"
+  integrity sha512-uW1+df2bo06kR7ix6nB614RUlvjRPrYxlaX832O6e1MCJp4V7YozEdvMgCYuvn4ltnjPu1FVYhQ2KRrmTNoJfg==
   dependencies:
     "@eslint-community/eslint-utils" "^4.4.0"
     enhanced-resolve "^5.15.0"
@@ -2107,9 +2107,9 @@ typed-array-length@^1.0.4:
     is-typed-array "^1.1.9"
 
 typescript@^5.1.6:
-  version "5.4.4"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.4.4.tgz#eb2471e7b0a5f1377523700a21669dce30c2d952"
-  integrity sha512-dGE2Vv8cpVvw28v8HCPqyb08EzbBURxDpuhJvTrusShUfGnhHBafDsLdS1EhhxyL6BJQE+2cT3dDPAv+MQ6oLw==
+  version "5.4.5"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.4.5.tgz#42ccef2c571fdbd0f6718b1d1f5e6e5ef006f611"
+  integrity sha512-vcI4UpRgg81oIRUFwR0WSIHKt11nJ7SAVlYNIu+QpqeyXP+gpQJy/Z4+F0aGxSE4MqwjyXvW/TzgkLAx2AGHwQ==
 
 unbox-primitive@^1.0.2:
   version "1.0.2"
