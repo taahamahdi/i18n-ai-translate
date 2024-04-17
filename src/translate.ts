@@ -288,11 +288,6 @@ export async function translateDiff(
         }
     }
 
-    if (options.verbose) {
-        console.log("Updated JSONs:");
-        console.log(unflatToUpdateJSONs);
-    }
-
     return unflatToUpdateJSONs;
 }
 
@@ -459,10 +454,6 @@ const translateFileDiff = async (
                     null,
                     4,
                 );
-
-                if (options.verbose) {
-                    console.log(outputText);
-                }
 
                 fs.writeFileSync(
                     languageCodeToOutputPath[language],

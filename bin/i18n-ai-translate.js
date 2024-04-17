@@ -20997,10 +20997,6 @@ async function translateDiff(options) {
       unflatToUpdateJSONs[lang] = (0, import_flat.unflatten)(flatToUpdateJSONs[lang]);
     }
   }
-  if (options.verbose) {
-    console.log("Updated JSONs:");
-    console.log(unflatToUpdateJSONs);
-  }
   return unflatToUpdateJSONs;
 }
 var translateFile = async (options) => {
@@ -21149,9 +21145,6 @@ var translateFileDiff = async (options) => {
           null,
           4
         );
-        if (options.verbose) {
-          console.log(outputText);
-        }
         import_fs2.default.writeFileSync(
           languageCodeToOutputPath[language],
           `${outputText}
