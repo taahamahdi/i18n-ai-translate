@@ -93,8 +93,14 @@ export async function translate(options: TranslationOptions): Promise<Object> {
                 `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
             );
 
+            const roundedEstimatedTimeLeftSeconds = Math.round(
+                (((Date.now() - batchStartTime) / (i + 1)) *
+                    (Object.keys(flatInput).length - i)) /
+                    1000,
+            );
+
             console.log(
-                `Estimated time left: ${((((Date.now() - batchStartTime) / (i + 1)) * (Object.keys(flatInput).length - i)) / 60000).toFixed(0)} minutes`,
+                `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`,
             );
         }
 
@@ -149,9 +155,8 @@ export async function translate(options: TranslationOptions): Promise<Object> {
     const unflattenedOutput = unflatten(sortedOutput);
     if (options.verbose) {
         const endTime = Date.now();
-        console.log(
-            `Actual execution time: ${(endTime - batchStartTime) / 60000} minutes`,
-        );
+        const roundedSeconds = Math.round((endTime - batchStartTime) / 1000);
+        console.log(`Actual execution time: ${roundedSeconds} seconds`);
     }
 
     return unflattenedOutput as Object;

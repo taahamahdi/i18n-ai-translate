@@ -20848,8 +20848,11 @@ async function translate(options) {
       console.log(
         `Completed ${(i2 / Object.keys(flatInput).length * 100).toFixed(0)}%`
       );
+      const roundedEstimatedTimeLeftSeconds = Math.round(
+        (Date.now() - batchStartTime) / (i2 + 1) * (Object.keys(flatInput).length - i2) / 1e3
+      );
       console.log(
-        `Estimated time left: ${((Date.now() - batchStartTime) / (i2 + 1) * (Object.keys(flatInput).length - i2) / 6e4).toFixed(0)} minutes`
+        `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`
       );
     }
     const keys = allKeys.slice(i2, i2 + batchSize);
@@ -20898,9 +20901,8 @@ ${output[keys[j2]]}
   const unflattenedOutput = (0, import_flat.unflatten)(sortedOutput);
   if (options.verbose) {
     const endTime = Date.now();
-    console.log(
-      `Actual execution time: ${(endTime - batchStartTime) / 6e4} minutes`
-    );
+    const roundedSeconds = Math.round((endTime - batchStartTime) / 1e3);
+    console.log(`Actual execution time: ${roundedSeconds} seconds`);
   }
   return unflattenedOutput;
 }
