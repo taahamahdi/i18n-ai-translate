@@ -6,11 +6,9 @@ Three prompts are chained to ensure each translation is well-formed.
 
 1. The [translation prompt](#translation-prompt) attempts a translation
 2. The [translation verification prompt](#translation-verification-prompt) uses a separate context to verify the translation
-3. The [styling verification prompt](#styling-verification-prompt) uses a separate context to verify the translation's formatting is consistent with the source
+3. The [styling verification prompt](#styling-verification-prompt) uses a yet another separate context to verify the translation's formatting is consistent with the source
 
 History is retained between calls to ensure consistency when translating the entire file.
-
-With ChatGPT, a seed is supplied to ensure deterministic translations.
 
 # Usage
 ## Quick-start
@@ -20,13 +18,20 @@ git clone git@github.com:taahamahdi/i18n-ai-translate.git
 cd i18n-ai-translate
 yarn
 cp /home/en.json jsons/
+
+# Generate French translations
 npm run i18n-ai-translate -- translate -i en.json -o fr.json --engine chatgpt --model gpt-4-turbo-preview --api-key <openai_key>
 ```
 
 ### [Running as a script in your own project](#script)
 ```bash
 yarn add i18n-ai-translate
+
+# Generate French translations
 npx i18n-ai-translate translate -i en.json -o fr.json --engine gemini --model gemini-pro --api-key <gemini_key>
+
+# Or, assuming you already have other translations in the current directory
+npx i18n-ai-translate diff --before en-before.json --after en.json --input-language English --engine chatgpt --model gpt-4-turbo-preview --api-key <openai_key>
 ```
 
 ### [Running as a library](#as-a-library)
@@ -52,7 +57,7 @@ const frenchTranslation = await translate({
 console.log(frenchTranslation);
 ```
 
-```
+```json
 {
   "welcomeMessage": "Bienvenue, {{name}} !",
   "messages": {
@@ -123,7 +128,7 @@ jobs:
 ## Script
 Use `i18n-ai-translate translate` to convert a local i18n JSON file to any language. Relative paths begin from the `jsons/` directory.
 
-Use `i18n-ai-translate diff` to find translate the differences between a source language, and apply them to all language files in the same directory.
+Use `i18n-ai-translate diff` to find the differences between two versions of a source language file, and apply them to all language files in the same directory.
 
 Create a `.env` file with an entry for your API key, or pass the `--api-key` flag.
 * `GEMINI_API_KEY=<your Gemini API key>`
@@ -265,9 +270,6 @@ Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, repl
 Otherwise, reply with ACK.
 
 Only reply with ACK/NAK.
-
-${inputLanguage},${outputLanguage}
-${mergedCsv}
 ```
 
 ## Styling verification prompt
@@ -280,7 +282,4 @@ Check for differing capitalization, punctuation, or whitespaces.
 Otherwise, reply with ACK.
 
 Only reply with ACK/NAK.
-
-${inputLanguage},${outputLanguage}
-${mergedCsv}
 ```
