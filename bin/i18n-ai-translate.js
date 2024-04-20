@@ -15183,7 +15183,7 @@ var GoogleGenerativeAIResponseError = class extends GoogleGenerativeAIError {
 };
 var DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
 var DEFAULT_API_VERSION = "v1beta";
-var PACKAGE_VERSION = "0.7.0";
+var PACKAGE_VERSION = "0.7.1";
 var PACKAGE_LOG_HEADER = "genai-js";
 var Task;
 (function(Task2) {
@@ -15827,21 +15827,21 @@ var GenerativeModel = class {
    * multi-turn chats.
    */
   startChat(startChatParams) {
-    return new ChatSession(this.apiKey, this.model, Object.assign({ tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction }, startChatParams), this.requestOptions);
+    return new ChatSession(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction }, startChatParams), this.requestOptions);
   }
   /**
    * Counts the tokens in the provided request.
    */
   async countTokens(request) {
     const formattedParams = formatGenerateContentInput(request);
-    return countTokens(this.apiKey, this.model, formattedParams);
+    return countTokens(this.apiKey, this.model, formattedParams, this.requestOptions);
   }
   /**
    * Embeds the provided content.
    */
   async embedContent(request) {
     const formattedParams = formatEmbedContentInput(request);
-    return embedContent(this.apiKey, this.model, formattedParams);
+    return embedContent(this.apiKey, this.model, formattedParams, this.requestOptions);
   }
   /**
    * Embeds an array of {@link EmbedContentRequest}s.
