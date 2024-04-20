@@ -20457,7 +20457,6 @@ var RateLimiter = class {
         }
       }
     }
-    return Promise.resolve();
   }
 };
 
@@ -20584,198 +20583,40 @@ var verify = async (chat, verificationPromptText) => {
 };
 
 // src/generate.ts
-async function generateTranslation(chats, inputLanguage, outputLanguage, input, keys, templatedStringPrefix, templatedStringSuffix, verboseLogging, ensureChangedTranslation) {
+async function generateTranslation(options) {
+  const {
+    input,
+    inputLanguage,
+    outputLanguage,
+    templatedStringPrefix,
+    templatedStringSuffix
+  } = options;
   const generationPromptText = generationPrompt(
     inputLanguage,
     outputLanguage,
     input
   );
   const templatedStringRegex = `/${templatedStringPrefix}[^{}]+${templatedStringSuffix}/g`;
-  const inputLineToTemplatedString = {};
   const splitInput = input.split("\n");
+  const generateState = {
+    fixedTranslationMappings: {},
+    translationToRetryAttempts: {},
+    inputLineToTemplatedString: {},
+    splitInput,
+    generationRetries: 0
+  };
   for (let i2 = 0; i2 < splitInput.length; i2++) {
     const match = splitInput[i2].match(templatedStringRegex);
     if (match) {
-      inputLineToTemplatedString[i2] = match;
+      generateState.inputLineToTemplatedString[i2] = match;
     }
   }
-  const fixedTranslationMappings = {};
-  const translationToRetryAttempts = {};
-  let generationRetries = 0;
   let translated = "";
   try {
     translated = await retryJob(
-      async () => {
-        let text = await chats.generateTranslationChat.sendMessage(
-          generationPromptText
-        );
-        if (!text) {
-          generationRetries++;
-          if (generationRetries > 10) {
-            chats.generateTranslationChat.resetChatHistory();
-            return Promise.reject(
-              new Error(
-                "Failed to generate content due to exception. Resetting history."
-              )
-            );
-          }
-          console.error(`Erroring text = ${input}`);
-          chats.generateTranslationChat.rollbackLastMessage();
-          return Promise.reject(
-            new Error(
-              "Failed to generate content due to exception."
-            )
-          );
-        }
-        generationRetries = 0;
-        if (text.startsWith("```\n") && text.endsWith("\n```")) {
-          if (verboseLogging) {
-            console.log(
-              "Response started and ended with triple backticks"
-            );
-          }
-          text = text.slice(4, -4);
-        }
-        const splitText = text.split("\n");
-        if (splitText.length !== keys.length) {
-          chats.generateTranslationChat.rollbackLastMessage();
-          return Promise.reject(
-            new Error(`Invalid number of lines. text = ${text}`)
-          );
-        }
-        for (const i2 in inputLineToTemplatedString) {
-          if (Object.prototype.hasOwnProperty.call(
-            inputLineToTemplatedString,
-            i2
-          )) {
-            for (const templatedString of inputLineToTemplatedString[i2]) {
-              if (!splitText[i2].includes(templatedString)) {
-                chats.generateTranslationChat.rollbackLastMessage();
-                return Promise.reject(
-                  new Error(
-                    `Missing templated string: ${templatedString}`
-                  )
-                );
-              }
-            }
-          }
-        }
-        for (let i2 = 0; i2 < splitText.length; i2++) {
-          let line = splitText[i2];
-          while (line.startsWith('""')) {
-            line = line.slice(1);
-          }
-          while (line.endsWith('""')) {
-            line = line.slice(0, -1);
-          }
-          splitText[i2] = line;
-        }
-        text = splitText.join("\n");
-        for (let i2 = 0; i2 < splitText.length; i2++) {
-          let line = splitText[i2];
-          if (!line.startsWith('"') || !line.endsWith('"') || line.endsWith('\\"')) {
-            chats.generateTranslationChat.rollbackLastMessage();
-            return Promise.reject(
-              new Error(`Invalid line: ${line}`)
-            );
-          } else if (ensureChangedTranslation && line === splitInput[i2] && line.length > 4) {
-            if (translationToRetryAttempts[line] === void 0) {
-              translationToRetryAttempts[line] = 0;
-            } else if (fixedTranslationMappings[line]) {
-              splitText[i2] = fixedTranslationMappings[line];
-              continue;
-            }
-            const retryTranslationPromptText = failedTranslationPrompt(
-              inputLanguage,
-              outputLanguage,
-              line
-            );
-            const fixedText = (
-              // eslint-disable-next-line no-await-in-loop
-              await chats.generateTranslationChat.sendMessage(
-                retryTranslationPromptText
-              )
-            );
-            if (fixedText === "") {
-              chats.generateTranslationChat.rollbackLastMessage();
-              return Promise.reject(
-                new Error(
-                  "Failed to generate content due to exception."
-                )
-              );
-            }
-            const oldText = line;
-            splitText[i2] = fixedText;
-            line = fixedText;
-            for (const j2 in inputLineToTemplatedString[i2]) {
-              if (!splitText[i2].includes(
-                inputLineToTemplatedString[i2][j2]
-              )) {
-                chats.generateTranslationChat.rollbackLastMessage();
-                return Promise.reject(
-                  new Error(
-                    `Missing templated string: ${inputLineToTemplatedString[i2][j2]}`
-                  )
-                );
-              }
-            }
-            if (!line.startsWith('"') || !line.endsWith('"')) {
-              chats.generateTranslationChat.rollbackLastMessage();
-              return Promise.reject(
-                new Error(`Invalid line: ${line}`)
-              );
-            }
-            while (line.startsWith('""') && line.endsWith('""')) {
-              line = line.slice(1, -1);
-            }
-            if (line !== splitInput[i2]) {
-              if (verboseLogging) {
-                console.log(
-                  `Successfully translated: ${oldText} => ${line}`
-                );
-              }
-              text = splitText.join("\n");
-              fixedTranslationMappings[oldText] = line;
-              continue;
-            }
-            translationToRetryAttempts[line]++;
-            if (translationToRetryAttempts[line] < 3) {
-              chats.generateTranslationChat.rollbackLastMessage();
-              return Promise.reject(
-                new Error(`No translation: ${line}`)
-              );
-            }
-          }
-        }
-        const translationVerification = await verifyTranslation(
-          chats.verifyTranslationChat,
-          inputLanguage,
-          outputLanguage,
-          input,
-          text
-        );
-        if (translationVerification === "NAK") {
-          chats.generateTranslationChat.invalidTranslation();
-          return Promise.reject(
-            new Error(`Invalid translation. text = ${text}`)
-          );
-        }
-        const stylingVerification = await verifyStyling(
-          chats.verifyStylingChat,
-          inputLanguage,
-          outputLanguage,
-          input,
-          text
-        );
-        if (stylingVerification === "NAK") {
-          chats.generateTranslationChat.invalidStyling();
-          return Promise.reject(
-            new Error(`Invalid styling. text = ${text}`)
-          );
-        }
-        return text;
-      },
-      [],
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      generate,
+      [options, generationPromptText, generateState],
       25,
       true,
       0,
@@ -20785,6 +20626,169 @@ async function generateTranslation(chats, inputLanguage, outputLanguage, input, 
     console.error(`Failed to translate: ${e2}`);
   }
   return translated;
+}
+async function generate(options, generationPromptText, generateState) {
+  const {
+    chats,
+    inputLanguage,
+    outputLanguage,
+    input,
+    keys,
+    verboseLogging,
+    ensureChangedTranslation
+  } = options;
+  const {
+    inputLineToTemplatedString,
+    translationToRetryAttempts,
+    fixedTranslationMappings,
+    splitInput
+    // Fine to destructure here -- we never modify the original
+  } = generateState;
+  let text = await chats.generateTranslationChat.sendMessage(generationPromptText);
+  if (!text) {
+    generateState.generationRetries++;
+    if (generateState.generationRetries > 10) {
+      chats.generateTranslationChat.resetChatHistory();
+      return Promise.reject(
+        new Error(
+          "Failed to generate content due to exception. Resetting history."
+        )
+      );
+    }
+    console.error(`Erroring text = ${input}`);
+    chats.generateTranslationChat.rollbackLastMessage();
+    return Promise.reject(
+      new Error("Failed to generate content due to exception.")
+    );
+  }
+  generateState.generationRetries = 0;
+  if (text.startsWith("```\n") && text.endsWith("\n```")) {
+    if (verboseLogging) {
+      console.log("Response started and ended with triple backticks");
+    }
+    text = text.slice(4, -4);
+  }
+  const splitText = text.split("\n");
+  if (splitText.length !== keys.length) {
+    chats.generateTranslationChat.rollbackLastMessage();
+    return Promise.reject(
+      new Error(`Invalid number of lines. text = ${text}`)
+    );
+  }
+  for (const i2 in inputLineToTemplatedString) {
+    if (Object.prototype.hasOwnProperty.call(inputLineToTemplatedString, i2)) {
+      for (const templatedString of inputLineToTemplatedString[i2]) {
+        if (!splitText[i2].includes(templatedString)) {
+          chats.generateTranslationChat.rollbackLastMessage();
+          return Promise.reject(
+            new Error(
+              `Missing templated string: ${templatedString}`
+            )
+          );
+        }
+      }
+    }
+  }
+  for (let i2 = 0; i2 < splitText.length; i2++) {
+    let line = splitText[i2];
+    while (line.startsWith('""')) {
+      line = line.slice(1);
+    }
+    while (line.endsWith('""')) {
+      line = line.slice(0, -1);
+    }
+    splitText[i2] = line;
+  }
+  text = splitText.join("\n");
+  for (let i2 = 0; i2 < splitText.length; i2++) {
+    let line = splitText[i2];
+    if (!line.startsWith('"') || !line.endsWith('"') || line.endsWith('\\"')) {
+      chats.generateTranslationChat.rollbackLastMessage();
+      return Promise.reject(new Error(`Invalid line: ${line}`));
+    } else if (ensureChangedTranslation && line === splitInput[i2] && line.length > 4) {
+      if (translationToRetryAttempts[line] === void 0) {
+        translationToRetryAttempts[line] = 0;
+      } else if (fixedTranslationMappings[line]) {
+        splitText[i2] = fixedTranslationMappings[line];
+        continue;
+      }
+      const retryTranslationPromptText = failedTranslationPrompt(
+        inputLanguage,
+        outputLanguage,
+        line
+      );
+      const fixedText = (
+        // eslint-disable-next-line no-await-in-loop
+        await chats.generateTranslationChat.sendMessage(
+          retryTranslationPromptText
+        )
+      );
+      if (fixedText === "") {
+        chats.generateTranslationChat.rollbackLastMessage();
+        return Promise.reject(
+          new Error("Failed to generate content due to exception.")
+        );
+      }
+      const oldText = line;
+      splitText[i2] = fixedText;
+      line = fixedText;
+      for (const j2 in inputLineToTemplatedString[i2]) {
+        if (!splitText[i2].includes(inputLineToTemplatedString[i2][j2])) {
+          chats.generateTranslationChat.rollbackLastMessage();
+          return Promise.reject(
+            new Error(
+              `Missing templated string: ${inputLineToTemplatedString[i2][j2]}`
+            )
+          );
+        }
+      }
+      if (!line.startsWith('"') || !line.endsWith('"')) {
+        chats.generateTranslationChat.rollbackLastMessage();
+        return Promise.reject(new Error(`Invalid line: ${line}`));
+      }
+      while (line.startsWith('""') && line.endsWith('""')) {
+        line = line.slice(1, -1);
+      }
+      if (line !== splitInput[i2]) {
+        if (verboseLogging) {
+          console.log(
+            `Successfully translated: ${oldText} => ${line}`
+          );
+        }
+        text = splitText.join("\n");
+        fixedTranslationMappings[oldText] = line;
+        continue;
+      }
+      translationToRetryAttempts[line]++;
+      if (translationToRetryAttempts[line] < 3) {
+        chats.generateTranslationChat.rollbackLastMessage();
+        return Promise.reject(new Error(`No translation: ${line}`));
+      }
+    }
+  }
+  const translationVerification = await verifyTranslation(
+    chats.verifyTranslationChat,
+    inputLanguage,
+    outputLanguage,
+    input,
+    text
+  );
+  if (translationVerification === "NAK") {
+    chats.generateTranslationChat.invalidTranslation();
+    return Promise.reject(new Error(`Invalid translation. text = ${text}`));
+  }
+  const stylingVerification = await verifyStyling(
+    chats.verifyStylingChat,
+    inputLanguage,
+    outputLanguage,
+    input,
+    text
+  );
+  if (stylingVerification === "NAK") {
+    chats.generateTranslationChat.invalidStyling();
+    return Promise.reject(new Error(`Invalid styling. text = ${text}`));
+  }
+  return text;
 }
 
 // src/translate.ts
@@ -20857,17 +20861,17 @@ async function translate(options) {
     }
     const keys = allKeys.slice(i2, i2 + batchSize);
     const input = keys.map((x2) => `"${flatInput[x2]}"`).join("\n");
-    const generatedTranslation = await generateTranslation(
+    const generatedTranslation = await generateTranslation({
       chats,
-      `[${options.inputLanguage}]`,
-      `[${options.outputLanguage}]`,
+      inputLanguage: `[${options.inputLanguage}]`,
+      outputLanguage: `[${options.outputLanguage}]`,
       input,
       keys,
       templatedStringPrefix,
       templatedStringSuffix,
-      options.verbose ?? false,
-      options.ensureChangedTranslation ?? false
-    );
+      verboseLogging: options.verbose ?? false,
+      ensureChangedTranslation: options.ensureChangedTranslation ?? false
+    });
     if (generatedTranslation === "") {
       console.error(
         `Failed to generate translation for ${options.outputLanguage}`

@@ -108,17 +108,17 @@ export async function translate(options: TranslationOptions): Promise<Object> {
         const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
 
         // eslint-disable-next-line no-await-in-loop
-        const generatedTranslation = await generateTranslation(
+        const generatedTranslation = await generateTranslation({
             chats,
-            `[${options.inputLanguage}]`,
-            `[${options.outputLanguage}]`,
+            inputLanguage: `[${options.inputLanguage}]`,
+            outputLanguage: `[${options.outputLanguage}]`,
             input,
             keys,
             templatedStringPrefix,
             templatedStringSuffix,
-            options.verbose ?? false,
-            options.ensureChangedTranslation ?? false,
-        );
+            verboseLogging: options.verbose ?? false,
+            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
+        });
 
         if (generatedTranslation === "") {
             console.error(

@@ -31,7 +31,5 @@ export default class RateLimiter {
                 }
             }
         }
-
-        return Promise.resolve();
     }
 }
