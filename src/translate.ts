@@ -15,7 +15,7 @@ import type TranslateFileOptions from "./interfaces/translation_file_options";
 import type TranslationDiffOptions from "./interfaces/translation_diff_options";
 import type TranslationOptions from "./interfaces/translation_options";
 
-const VERSION = "2.0.2";
+const VERSION = "2.0.3";
 
 const DEFAULT_BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
