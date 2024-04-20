@@ -16039,7 +16039,7 @@ var Gemini = class extends ChatInterface {
 };
 
 // node_modules/openai/version.mjs
-var VERSION = "4.35.0";
+var VERSION = "4.38.1";
 
 // node_modules/openai/_shims/registry.mjs
 var auto = false;
@@ -17881,6 +17881,12 @@ var Batches = class extends APIResource {
   retrieve(batchId, options) {
     return this._client.get(`/batches/${batchId}`, options);
   }
+  list(query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list({}, query);
+    }
+    return this._client.getAPIList("/batches", BatchesPage, { query, ...options });
+  }
   /**
    * Cancels an in-progress batch.
    */
@@ -17888,64 +17894,14 @@ var Batches = class extends APIResource {
     return this._client.post(`/batches/${batchId}/cancel`, options);
   }
 };
-/* @__PURE__ */ (function(Batches2) {
+var BatchesPage = class extends CursorPage {
+};
+(function(Batches2) {
+  Batches2.BatchesPage = BatchesPage;
 })(Batches || (Batches = {}));
 
-// node_modules/openai/resources/beta/assistants/files.mjs
-var Files = class extends APIResource {
-  /**
-   * Create an assistant file by attaching a
-   * [File](https://platform.openai.com/docs/api-reference/files) to an
-   * [assistant](https://platform.openai.com/docs/api-reference/assistants).
-   */
-  create(assistantId, body, options) {
-    return this._client.post(`/assistants/${assistantId}/files`, {
-      body,
-      ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
-    });
-  }
-  /**
-   * Retrieves an AssistantFile.
-   */
-  retrieve(assistantId, fileId, options) {
-    return this._client.get(`/assistants/${assistantId}/files/${fileId}`, {
-      ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
-    });
-  }
-  list(assistantId, query = {}, options) {
-    if (isRequestOptions(query)) {
-      return this.list(assistantId, {}, query);
-    }
-    return this._client.getAPIList(`/assistants/${assistantId}/files`, AssistantFilesPage, {
-      query,
-      ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
-    });
-  }
-  /**
-   * Delete an assistant file.
-   */
-  del(assistantId, fileId, options) {
-    return this._client.delete(`/assistants/${assistantId}/files/${fileId}`, {
-      ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
-    });
-  }
-};
-var AssistantFilesPage = class extends CursorPage {
-};
-(function(Files4) {
-  Files4.AssistantFilesPage = AssistantFilesPage;
-})(Files || (Files = {}));
-
-// node_modules/openai/resources/beta/assistants/assistants.mjs
+// node_modules/openai/resources/beta/assistants.mjs
 var Assistants = class extends APIResource {
-  constructor() {
-    super(...arguments);
-    this.files = new Files(this._client);
-  }
   /**
    * Create an assistant with a model and instructions.
    */
@@ -17953,7 +17909,7 @@ var Assistants = class extends APIResource {
     return this._client.post("/assistants", {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   /**
@@ -17962,7 +17918,7 @@ var Assistants = class extends APIResource {
   retrieve(assistantId, options) {
     return this._client.get(`/assistants/${assistantId}`, {
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   /**
@@ -17972,7 +17928,7 @@ var Assistants = class extends APIResource {
     return this._client.post(`/assistants/${assistantId}`, {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   list(query = {}, options) {
@@ -17982,7 +17938,7 @@ var Assistants = class extends APIResource {
     return this._client.getAPIList("/assistants", AssistantsPage, {
       query,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   /**
@@ -17991,7 +17947,7 @@ var Assistants = class extends APIResource {
   del(assistantId, options) {
     return this._client.delete(`/assistants/${assistantId}`, {
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
 };
@@ -17999,8 +17955,6 @@ var AssistantsPage = class extends CursorPage {
 };
 (function(Assistants2) {
   Assistants2.AssistantsPage = AssistantsPage;
-  Assistants2.Files = Files;
-  Assistants2.AssistantFilesPage = AssistantFilesPage;
 })(Assistants || (Assistants = {}));
 
 // node_modules/openai/lib/RunnableFunction.mjs
@@ -19692,40 +19646,8 @@ _AssistantStream_addEvent = function _AssistantStream_addEvent2(event) {
   }
 };
 
-// node_modules/openai/resources/beta/threads/messages/files.mjs
-var Files2 = class extends APIResource {
-  /**
-   * Retrieves a message file.
-   */
-  retrieve(threadId, messageId, fileId, options) {
-    return this._client.get(`/threads/${threadId}/messages/${messageId}/files/${fileId}`, {
-      ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
-    });
-  }
-  list(threadId, messageId, query = {}, options) {
-    if (isRequestOptions(query)) {
-      return this.list(threadId, messageId, {}, query);
-    }
-    return this._client.getAPIList(`/threads/${threadId}/messages/${messageId}/files`, MessageFilesPage, {
-      query,
-      ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
-    });
-  }
-};
-var MessageFilesPage = class extends CursorPage {
-};
-(function(Files4) {
-  Files4.MessageFilesPage = MessageFilesPage;
-})(Files2 || (Files2 = {}));
-
-// node_modules/openai/resources/beta/threads/messages/messages.mjs
+// node_modules/openai/resources/beta/threads/messages.mjs
 var Messages = class extends APIResource {
-  constructor() {
-    super(...arguments);
-    this.files = new Files2(this._client);
-  }
   /**
    * Create a message.
    */
@@ -19733,7 +19655,7 @@ var Messages = class extends APIResource {
     return this._client.post(`/threads/${threadId}/messages`, {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   /**
@@ -19742,7 +19664,7 @@ var Messages = class extends APIResource {
   retrieve(threadId, messageId, options) {
     return this._client.get(`/threads/${threadId}/messages/${messageId}`, {
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   /**
@@ -19752,7 +19674,7 @@ var Messages = class extends APIResource {
     return this._client.post(`/threads/${threadId}/messages/${messageId}`, {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   list(threadId, query = {}, options) {
@@ -19762,7 +19684,7 @@ var Messages = class extends APIResource {
     return this._client.getAPIList(`/threads/${threadId}/messages`, MessagesPage, {
       query,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
 };
@@ -19770,8 +19692,6 @@ var MessagesPage = class extends CursorPage {
 };
 (function(Messages2) {
   Messages2.MessagesPage = MessagesPage;
-  Messages2.Files = Files2;
-  Messages2.MessageFilesPage = MessageFilesPage;
 })(Messages || (Messages = {}));
 
 // node_modules/openai/resources/beta/threads/runs/steps.mjs
@@ -19782,7 +19702,7 @@ var Steps = class extends APIResource {
   retrieve(threadId, runId, stepId, options) {
     return this._client.get(`/threads/${threadId}/runs/${runId}/steps/${stepId}`, {
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   list(threadId, runId, query = {}, options) {
@@ -19792,7 +19712,7 @@ var Steps = class extends APIResource {
     return this._client.getAPIList(`/threads/${threadId}/runs/${runId}/steps`, RunStepsPage, {
       query,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
 };
@@ -19812,7 +19732,7 @@ var Runs = class extends APIResource {
     return this._client.post(`/threads/${threadId}/runs`, {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers },
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers },
       stream: body.stream ?? false
     });
   }
@@ -19822,7 +19742,7 @@ var Runs = class extends APIResource {
   retrieve(threadId, runId, options) {
     return this._client.get(`/threads/${threadId}/runs/${runId}`, {
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   /**
@@ -19832,7 +19752,7 @@ var Runs = class extends APIResource {
     return this._client.post(`/threads/${threadId}/runs/${runId}`, {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   list(threadId, query = {}, options) {
@@ -19842,7 +19762,7 @@ var Runs = class extends APIResource {
     return this._client.getAPIList(`/threads/${threadId}/runs`, RunsPage, {
       query,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   /**
@@ -19851,7 +19771,7 @@ var Runs = class extends APIResource {
   cancel(threadId, runId, options) {
     return this._client.post(`/threads/${threadId}/runs/${runId}/cancel`, {
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   /**
@@ -19923,7 +19843,7 @@ var Runs = class extends APIResource {
     return this._client.post(`/threads/${threadId}/runs/${runId}/submit_tool_outputs`, {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers },
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers },
       stream: body.stream ?? false
     });
   }
@@ -19967,7 +19887,7 @@ var Threads = class extends APIResource {
     return this._client.post("/threads", {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   /**
@@ -19976,7 +19896,7 @@ var Threads = class extends APIResource {
   retrieve(threadId, options) {
     return this._client.get(`/threads/${threadId}`, {
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   /**
@@ -19986,7 +19906,7 @@ var Threads = class extends APIResource {
     return this._client.post(`/threads/${threadId}`, {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   /**
@@ -19995,14 +19915,14 @@ var Threads = class extends APIResource {
   del(threadId, options) {
     return this._client.delete(`/threads/${threadId}`, {
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers }
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
     });
   }
   createAndRun(body, options) {
     return this._client.post("/threads/runs", {
       body,
       ...options,
-      headers: { "OpenAI-Beta": "assistants=v1", ...options?.headers },
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers },
       stream: body.stream ?? false
     });
   }
@@ -20029,16 +19949,329 @@ var Threads = class extends APIResource {
   Threads2.MessagesPage = MessagesPage;
 })(Threads || (Threads = {}));
 
+// node_modules/openai/lib/Util.mjs
+var allSettledWithThrow = async (promises) => {
+  const results = await Promise.allSettled(promises);
+  const rejected = results.filter((result) => result.status === "rejected");
+  if (rejected.length) {
+    for (const result of rejected) {
+      console.error(result.reason);
+    }
+    throw new Error(`${rejected.length} promise(s) failed - see the above errors`);
+  }
+  const values = [];
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      values.push(result.value);
+    }
+  }
+  return values;
+};
+
+// node_modules/openai/resources/beta/vector-stores/files.mjs
+var Files = class extends APIResource {
+  /**
+   * Create a vector store file by attaching a
+   * [File](https://platform.openai.com/docs/api-reference/files) to a
+   * [vector store](https://platform.openai.com/docs/api-reference/vector-stores/object).
+   */
+  create(vectorStoreId, body, options) {
+    return this._client.post(`/vector_stores/${vectorStoreId}/files`, {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
+    });
+  }
+  /**
+   * Retrieves a vector store file.
+   */
+  retrieve(vectorStoreId, fileId, options) {
+    return this._client.get(`/vector_stores/${vectorStoreId}/files/${fileId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
+    });
+  }
+  list(vectorStoreId, query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list(vectorStoreId, {}, query);
+    }
+    return this._client.getAPIList(`/vector_stores/${vectorStoreId}/files`, VectorStoreFilesPage, {
+      query,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
+    });
+  }
+  /**
+   * Delete a vector store file. This will remove the file from the vector store but
+   * the file itself will not be deleted. To delete the file, use the
+   * [delete file](https://platform.openai.com/docs/api-reference/files/delete)
+   * endpoint.
+   */
+  del(vectorStoreId, fileId, options) {
+    return this._client.delete(`/vector_stores/${vectorStoreId}/files/${fileId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
+    });
+  }
+  /**
+   * Attach a file to the given vector store and wait for it to be processed.
+   */
+  async createAndPoll(vectorStoreId, body, options) {
+    const file = await this.create(vectorStoreId, body, options);
+    return await this.poll(vectorStoreId, file.id, options);
+  }
+  /**
+   * Wait for the vector store file to finish processing.
+   *
+   * Note: this will return even if the file failed to process, you need to check
+   * file.last_error and file.status to handle these cases
+   */
+  async poll(vectorStoreId, fileId, options) {
+    const headers = { ...options?.headers, "X-Stainless-Poll-Helper": "true" };
+    if (options?.pollIntervalMs) {
+      headers["X-Stainless-Custom-Poll-Interval"] = options.pollIntervalMs.toString();
+    }
+    while (true) {
+      const fileResponse = await this.retrieve(vectorStoreId, fileId, {
+        ...options,
+        headers
+      }).withResponse();
+      const file = fileResponse.data;
+      switch (file.status) {
+        case "in_progress":
+          let sleepInterval = 5e3;
+          if (options?.pollIntervalMs) {
+            sleepInterval = options.pollIntervalMs;
+          } else {
+            const headerInterval = fileResponse.response.headers.get("openai-poll-after-ms");
+            if (headerInterval) {
+              const headerIntervalMs = parseInt(headerInterval);
+              if (!isNaN(headerIntervalMs)) {
+                sleepInterval = headerIntervalMs;
+              }
+            }
+          }
+          await sleep(sleepInterval);
+          break;
+        case "failed":
+        case "completed":
+          return file;
+      }
+    }
+  }
+  /**
+   * Upload a file to the `files` API and then attach it to the given vector store.
+   * Note the file will be asynchronously processed (you can use the alternative
+   * polling helper method to wait for processing to complete).
+   */
+  async upload(vectorStoreId, file, options) {
+    const fileInfo = await this._client.files.create({ file, purpose: "assistants" }, options);
+    return this.create(vectorStoreId, { file_id: fileInfo.id }, options);
+  }
+  /**
+   * Add a file to a vector store and poll until processing is complete.
+   */
+  async uploadAndPoll(vectorStoreId, file, options) {
+    const fileInfo = await this._client.files.create({ file, purpose: "assistants" }, options);
+    return await this.poll(vectorStoreId, fileInfo.id, options);
+  }
+};
+var VectorStoreFilesPage = class extends CursorPage {
+};
+(function(Files3) {
+  Files3.VectorStoreFilesPage = VectorStoreFilesPage;
+})(Files || (Files = {}));
+
+// node_modules/openai/resources/beta/vector-stores/file-batches.mjs
+var FileBatches = class extends APIResource {
+  /**
+   * Create a vector store file batch.
+   */
+  create(vectorStoreId, body, options) {
+    return this._client.post(`/vector_stores/${vectorStoreId}/file_batches`, {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
+    });
+  }
+  /**
+   * Retrieves a vector store file batch.
+   */
+  retrieve(vectorStoreId, batchId, options) {
+    return this._client.get(`/vector_stores/${vectorStoreId}/file_batches/${batchId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
+    });
+  }
+  /**
+   * Cancel a vector store file batch. This attempts to cancel the processing of
+   * files in this batch as soon as possible.
+   */
+  cancel(vectorStoreId, batchId, options) {
+    return this._client.post(`/vector_stores/${vectorStoreId}/file_batches/${batchId}/cancel`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
+    });
+  }
+  /**
+   * Create a vector store batch and poll until all files have been processed.
+   */
+  async createAndPoll(vectorStoreId, body, options) {
+    const batch = await this.create(vectorStoreId, body);
+    return await this.poll(vectorStoreId, batch.id, options);
+  }
+  listFiles(vectorStoreId, batchId, query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.listFiles(vectorStoreId, batchId, {}, query);
+    }
+    return this._client.getAPIList(`/vector_stores/${vectorStoreId}/file_batches/${batchId}/files`, VectorStoreFilesPage, { query, ...options, headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers } });
+  }
+  /**
+   * Wait for the given file batch to be processed.
+   *
+   * Note: this will return even if one of the files failed to process, you need to
+   * check batch.file_counts.failed_count to handle this case.
+   */
+  async poll(vectorStoreId, batchId, options) {
+    const headers = { ...options?.headers, "X-Stainless-Poll-Helper": "true" };
+    if (options?.pollIntervalMs) {
+      headers["X-Stainless-Custom-Poll-Interval"] = options.pollIntervalMs.toString();
+    }
+    while (true) {
+      const { data: batch, response } = await this.retrieve(vectorStoreId, batchId, {
+        ...options,
+        headers
+      }).withResponse();
+      switch (batch.status) {
+        case "in_progress":
+          let sleepInterval = 5e3;
+          if (options?.pollIntervalMs) {
+            sleepInterval = options.pollIntervalMs;
+          } else {
+            const headerInterval = response.headers.get("openai-poll-after-ms");
+            if (headerInterval) {
+              const headerIntervalMs = parseInt(headerInterval);
+              if (!isNaN(headerIntervalMs)) {
+                sleepInterval = headerIntervalMs;
+              }
+            }
+          }
+          await sleep(sleepInterval);
+          break;
+        case "failed":
+        case "completed":
+          return batch;
+      }
+    }
+  }
+  /**
+   * Uploads the given files concurrently and then creates a vector store file batch.
+   *
+   * The concurrency limit is configurable using the `maxConcurrency` parameter.
+   */
+  async uploadAndPoll(vectorStoreId, { files, fileIds = [] }, options) {
+    if (files === null || files.length == 0) {
+      throw new Error("No files provided to process.");
+    }
+    const configuredConcurrency = options?.maxConcurrency ?? 5;
+    const concurrencyLimit = Math.min(configuredConcurrency, files.length);
+    const client = this._client;
+    const fileIterator = files.values();
+    const allFileIds = [...fileIds];
+    async function processFiles(iterator) {
+      for (let item of iterator) {
+        const fileObj = await client.files.create({ file: item, purpose: "assistants" }, options);
+        allFileIds.push(fileObj.id);
+      }
+    }
+    const workers = Array(concurrencyLimit).fill(fileIterator).map(processFiles);
+    await allSettledWithThrow(workers);
+    return await this.createAndPoll(vectorStoreId, {
+      file_ids: allFileIds
+    });
+  }
+};
+/* @__PURE__ */ (function(FileBatches2) {
+})(FileBatches || (FileBatches = {}));
+
+// node_modules/openai/resources/beta/vector-stores/vector-stores.mjs
+var VectorStores = class extends APIResource {
+  constructor() {
+    super(...arguments);
+    this.files = new Files(this._client);
+    this.fileBatches = new FileBatches(this._client);
+  }
+  /**
+   * Create a vector store.
+   */
+  create(body, options) {
+    return this._client.post("/vector_stores", {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
+    });
+  }
+  /**
+   * Retrieves a vector store.
+   */
+  retrieve(vectorStoreId, options) {
+    return this._client.get(`/vector_stores/${vectorStoreId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
+    });
+  }
+  /**
+   * Modifies a vector store.
+   */
+  update(vectorStoreId, body, options) {
+    return this._client.post(`/vector_stores/${vectorStoreId}`, {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
+    });
+  }
+  list(query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list({}, query);
+    }
+    return this._client.getAPIList("/vector_stores", VectorStoresPage, {
+      query,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
+    });
+  }
+  /**
+   * Delete a vector store.
+   */
+  del(vectorStoreId, options) {
+    return this._client.delete(`/vector_stores/${vectorStoreId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options?.headers }
+    });
+  }
+};
+var VectorStoresPage = class extends CursorPage {
+};
+(function(VectorStores2) {
+  VectorStores2.VectorStoresPage = VectorStoresPage;
+  VectorStores2.Files = Files;
+  VectorStores2.VectorStoreFilesPage = VectorStoreFilesPage;
+  VectorStores2.FileBatches = FileBatches;
+})(VectorStores || (VectorStores = {}));
+
 // node_modules/openai/resources/beta/beta.mjs
 var Beta = class extends APIResource {
   constructor() {
     super(...arguments);
+    this.vectorStores = new VectorStores(this._client);
     this.chat = new Chat2(this._client);
     this.assistants = new Assistants(this._client);
     this.threads = new Threads(this._client);
   }
 };
 (function(Beta2) {
+  Beta2.VectorStores = VectorStores;
+  Beta2.VectorStoresPage = VectorStoresPage;
   Beta2.Chat = Chat2;
   Beta2.Assistants = Assistants;
   Beta2.AssistantsPage = AssistantsPage;
@@ -20067,7 +20300,7 @@ var Embeddings = class extends APIResource {
 })(Embeddings || (Embeddings = {}));
 
 // node_modules/openai/resources/files.mjs
-var Files3 = class extends APIResource {
+var Files2 = class extends APIResource {
   /**
    * Upload a file that can be used across various endpoints. The size of all the
    * files uploaded by one organization can be up to 100 GB.
@@ -20140,9 +20373,9 @@ var Files3 = class extends APIResource {
 };
 var FileObjectsPage = class extends Page {
 };
-(function(Files4) {
-  Files4.FileObjectsPage = FileObjectsPage;
-})(Files3 || (Files3 = {}));
+(function(Files3) {
+  Files3.FileObjectsPage = FileObjectsPage;
+})(Files2 || (Files2 = {}));
 
 // node_modules/openai/resources/fine-tuning/jobs/checkpoints.mjs
 var Checkpoints = class extends APIResource {
@@ -20305,6 +20538,7 @@ var OpenAI = class extends APIClient {
    *
    * @param {string | undefined} [opts.apiKey=process.env['OPENAI_API_KEY'] ?? undefined]
    * @param {string | null | undefined} [opts.organization=process.env['OPENAI_ORG_ID'] ?? null]
+   * @param {string | null | undefined} [opts.project=process.env['OPENAI_PROJECT_ID'] ?? null]
    * @param {string} [opts.baseURL=process.env['OPENAI_BASE_URL'] ?? https://api.openai.com/v1] - Override the default base URL for the API.
    * @param {number} [opts.timeout=10 minutes] - The maximum amount of time (in milliseconds) the client will wait for a response before timing out.
    * @param {number} [opts.httpAgent] - An HTTP agent used to manage HTTP(s) connections.
@@ -20314,13 +20548,14 @@ var OpenAI = class extends APIClient {
    * @param {Core.DefaultQuery} opts.defaultQuery - Default query parameters to include with every request to the API.
    * @param {boolean} [opts.dangerouslyAllowBrowser=false] - By default, client-side use of this library is not allowed, as it risks exposing your secret API credentials to attackers.
    */
-  constructor({ baseURL = readEnv("OPENAI_BASE_URL"), apiKey = readEnv("OPENAI_API_KEY"), organization = readEnv("OPENAI_ORG_ID") ?? null, ...opts } = {}) {
+  constructor({ baseURL = readEnv("OPENAI_BASE_URL"), apiKey = readEnv("OPENAI_API_KEY"), organization = readEnv("OPENAI_ORG_ID") ?? null, project = readEnv("OPENAI_PROJECT_ID") ?? null, ...opts } = {}) {
     if (apiKey === void 0) {
       throw new OpenAIError("The OPENAI_API_KEY environment variable is missing or empty; either provide it, or instantiate the OpenAI client with an apiKey option, like new OpenAI({ apiKey: 'My API Key' }).");
     }
     const options = {
       apiKey,
       organization,
+      project,
       ...opts,
       baseURL: baseURL || `https://api.openai.com/v1`
     };
@@ -20337,7 +20572,7 @@ var OpenAI = class extends APIClient {
     this.completions = new Completions3(this);
     this.chat = new Chat(this);
     this.embeddings = new Embeddings(this);
-    this.files = new Files3(this);
+    this.files = new Files2(this);
     this.images = new Images(this);
     this.audio = new Audio(this);
     this.moderations = new Moderations(this);
@@ -20348,6 +20583,7 @@ var OpenAI = class extends APIClient {
     this._options = options;
     this.apiKey = apiKey;
     this.organization = organization;
+    this.project = project;
   }
   defaultQuery() {
     return this._options.defaultQuery;
@@ -20356,6 +20592,7 @@ var OpenAI = class extends APIClient {
     return {
       ...super.defaultHeaders(opts),
       "OpenAI-Organization": this.organization,
+      "OpenAI-Project": this.project,
       ...this._options.defaultHeaders
     };
   }
@@ -20387,7 +20624,7 @@ var { OpenAIError: OpenAIError2, APIError: APIError2, APIConnectionError: APICon
   OpenAI2.Completions = Completions3;
   OpenAI2.Chat = Chat;
   OpenAI2.Embeddings = Embeddings;
-  OpenAI2.Files = Files3;
+  OpenAI2.Files = Files2;
   OpenAI2.FileObjectsPage = FileObjectsPage;
   OpenAI2.Images = Images;
   OpenAI2.Audio = Audio;
@@ -20397,6 +20634,7 @@ var { OpenAIError: OpenAIError2, APIError: APIError2, APIConnectionError: APICon
   OpenAI2.FineTuning = FineTuning;
   OpenAI2.Beta = Beta;
   OpenAI2.Batches = Batches;
+  OpenAI2.BatchesPage = BatchesPage;
 })(OpenAI || (OpenAI = {}));
 var openai_default = OpenAI;
 
