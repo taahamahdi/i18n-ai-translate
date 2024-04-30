@@ -16039,7 +16039,7 @@ var Gemini = class extends ChatInterface {
 };
 
 // node_modules/openai/version.mjs
-var VERSION = "4.38.1";
+var VERSION = "4.39.0";
 
 // node_modules/openai/_shims/registry.mjs
 var auto = false;
@@ -20615,10 +20615,10 @@ OpenAI.AuthenticationError = AuthenticationError;
 OpenAI.InternalServerError = InternalServerError;
 OpenAI.PermissionDeniedError = PermissionDeniedError;
 OpenAI.UnprocessableEntityError = UnprocessableEntityError;
+OpenAI.toFile = toFile;
+OpenAI.fileFromPath = fileFromPath;
 var { OpenAIError: OpenAIError2, APIError: APIError2, APIConnectionError: APIConnectionError2, APIConnectionTimeoutError: APIConnectionTimeoutError2, APIUserAbortError: APIUserAbortError2, NotFoundError: NotFoundError2, ConflictError: ConflictError2, RateLimitError: RateLimitError2, BadRequestError: BadRequestError2, AuthenticationError: AuthenticationError2, InternalServerError: InternalServerError2, PermissionDeniedError: PermissionDeniedError2, UnprocessableEntityError: UnprocessableEntityError2 } = error_exports;
 (function(OpenAI2) {
-  OpenAI2.toFile = toFile;
-  OpenAI2.fileFromPath = fileFromPath;
   OpenAI2.Page = Page;
   OpenAI2.CursorPage = CursorPage;
   OpenAI2.Completions = Completions3;
