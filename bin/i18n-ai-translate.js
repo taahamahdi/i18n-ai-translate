@@ -15181,9 +15181,17 @@ var GoogleGenerativeAIResponseError = class extends GoogleGenerativeAIError {
     this.response = response;
   }
 };
+var GoogleGenerativeAIFetchError = class extends GoogleGenerativeAIError {
+  constructor(message, status, statusText, errorDetails) {
+    super(message);
+    this.status = status;
+    this.statusText = statusText;
+    this.errorDetails = errorDetails;
+  }
+};
 var DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
 var DEFAULT_API_VERSION = "v1beta";
-var PACKAGE_VERSION = "0.7.1";
+var PACKAGE_VERSION = "0.9.0";
 var PACKAGE_LOG_HEADER = "genai-js";
 var Task;
 (function(Task2) {
@@ -15245,19 +15253,24 @@ async function _makeRequestInternal(model, task, apiKey, stream, body, requestOp
     response = await fetchFn(request.url, request.fetchOptions);
     if (!response.ok) {
       let message = "";
+      let errorDetails;
       try {
         const json = await response.json();
         message = json.error.message;
         if (json.error.details) {
           message += ` ${JSON.stringify(json.error.details)}`;
+          errorDetails = json.error.details;
         }
       } catch (e2) {
       }
-      throw new Error(`[${response.status} ${response.statusText}] ${message}`);
+      throw new GoogleGenerativeAIFetchError(`Error fetching from ${url.toString()}: [${response.status} ${response.statusText}] ${message}`, response.status, response.statusText, errorDetails);
     }
   } catch (e2) {
-    const err = new GoogleGenerativeAIError(`Error fetching from ${url.toString()}: ${e2.message}`);
-    err.stack = e2.stack;
+    let err = e2;
+    if (!(e2 instanceof GoogleGenerativeAIFetchError)) {
+      err = new GoogleGenerativeAIError(`Error fetching from ${url.toString()}: ${e2.message}`);
+      err.stack = e2.stack;
+    }
     throw err;
   }
   return response;
@@ -15552,6 +15565,21 @@ async function generateContent(apiKey, model, params, requestOptions) {
     response: enhancedResponse
   };
 }
+function formatSystemInstruction(input) {
+  if (input == null) {
+    return void 0;
+  } else if (typeof input === "string") {
+    return { role: "system", parts: [{ text: input }] };
+  } else if (input.text) {
+    return { role: "system", parts: [input] };
+  } else if (input.parts) {
+    if (!input.role) {
+      return { role: "system", parts: input.parts };
+    } else {
+      return input;
+    }
+  }
+}
 function formatNewContent(request) {
   let newParts = [];
   if (typeof request === "string") {
@@ -15593,12 +15621,17 @@ function assignRoleToPartsAndValidateSendMessageRequest(parts) {
   return functionContent;
 }
 function formatGenerateContentInput(params) {
+  let formattedRequest;
   if (params.contents) {
-    return params;
+    formattedRequest = params;
   } else {
     const content = formatNewContent(params);
-    return { contents: [content] };
+    formattedRequest = { contents: [content] };
   }
+  if (params.systemInstruction) {
+    formattedRequest.systemInstruction = formatSystemInstruction(params.systemInstruction);
+  }
+  return formattedRequest;
 }
 function formatEmbedContentInput(params) {
   if (typeof params === "string" || Array.isArray(params)) {
@@ -15647,7 +15680,8 @@ function validateChatHistory(history) {
       text: 0,
       inlineData: 0,
       functionCall: 0,
-      functionResponse: 0
+      functionResponse: 0,
+      fileData: 0
     };
     for (const part of parts) {
       for (const key of VALID_PART_FIELDS) {
@@ -15801,7 +15835,7 @@ var GenerativeModel = class {
     this.safetySettings = modelParams.safetySettings || [];
     this.tools = modelParams.tools;
     this.toolConfig = modelParams.toolConfig;
-    this.systemInstruction = modelParams.systemInstruction;
+    this.systemInstruction = formatSystemInstruction(modelParams.systemInstruction);
     this.requestOptions = requestOptions || {};
   }
   /**
