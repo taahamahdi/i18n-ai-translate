@@ -6,7 +6,7 @@ Three prompts are chained to ensure each translation is well-formed.
 
 1. The [translation prompt](#translation-prompt) attempts a translation
 2. The [translation verification prompt](#translation-verification-prompt) uses a separate context to verify the translation
-3. The [styling verification prompt](#styling-verification-prompt) uses a yet another separate context to verify the translation's formatting is consistent with the source
+3. The [styling verification prompt](#styling-verification-prompt) uses yet another context to verify the translation's formatting is consistent with the source
 
 History is retained between calls to ensure consistency when translating the entire file.
 
