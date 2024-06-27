@@ -14997,6 +14997,27 @@ var {
 } = import_index.default;
 
 // node_modules/@google/generative-ai/dist/index.mjs
+var FunctionDeclarationSchemaType;
+(function(FunctionDeclarationSchemaType2) {
+  FunctionDeclarationSchemaType2["STRING"] = "STRING";
+  FunctionDeclarationSchemaType2["NUMBER"] = "NUMBER";
+  FunctionDeclarationSchemaType2["INTEGER"] = "INTEGER";
+  FunctionDeclarationSchemaType2["BOOLEAN"] = "BOOLEAN";
+  FunctionDeclarationSchemaType2["ARRAY"] = "ARRAY";
+  FunctionDeclarationSchemaType2["OBJECT"] = "OBJECT";
+})(FunctionDeclarationSchemaType || (FunctionDeclarationSchemaType = {}));
+var ExecutableCodeLanguage;
+(function(ExecutableCodeLanguage2) {
+  ExecutableCodeLanguage2["LANGUAGE_UNSPECIFIED"] = "language_unspecified";
+  ExecutableCodeLanguage2["PYTHON"] = "python";
+})(ExecutableCodeLanguage || (ExecutableCodeLanguage = {}));
+var Outcome;
+(function(Outcome2) {
+  Outcome2["OUTCOME_UNSPECIFIED"] = "outcome_unspecified";
+  Outcome2["OUTCOME_OK"] = "outcome_ok";
+  Outcome2["OUTCOME_FAILED"] = "outcome_failed";
+  Outcome2["OUTCOME_DEADLINE_EXCEEDED"] = "outcome_deadline_exceeded";
+})(Outcome || (Outcome = {}));
 var POSSIBLE_ROLES = ["user", "model", "function", "system"];
 var HarmCategory;
 (function(HarmCategory2) {
@@ -15053,15 +15074,6 @@ var FunctionCallingMode;
   FunctionCallingMode2["ANY"] = "ANY";
   FunctionCallingMode2["NONE"] = "NONE";
 })(FunctionCallingMode || (FunctionCallingMode = {}));
-var FunctionDeclarationSchemaType;
-(function(FunctionDeclarationSchemaType2) {
-  FunctionDeclarationSchemaType2["STRING"] = "STRING";
-  FunctionDeclarationSchemaType2["NUMBER"] = "NUMBER";
-  FunctionDeclarationSchemaType2["INTEGER"] = "INTEGER";
-  FunctionDeclarationSchemaType2["BOOLEAN"] = "BOOLEAN";
-  FunctionDeclarationSchemaType2["ARRAY"] = "ARRAY";
-  FunctionDeclarationSchemaType2["OBJECT"] = "OBJECT";
-})(FunctionDeclarationSchemaType || (FunctionDeclarationSchemaType = {}));
 var GoogleGenerativeAIError = class extends Error {
   constructor(message) {
     super(`[GoogleGenerativeAI Error]: ${message}`);
@@ -15081,9 +15093,11 @@ var GoogleGenerativeAIFetchError = class extends GoogleGenerativeAIError {
     this.errorDetails = errorDetails;
   }
 };
+var GoogleGenerativeAIRequestInputError = class extends GoogleGenerativeAIError {
+};
 var DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
 var DEFAULT_API_VERSION = "v1beta";
-var PACKAGE_VERSION = "0.9.0";
+var PACKAGE_VERSION = "0.14.0";
 var PACKAGE_LOG_HEADER = "genai-js";
 var Task;
 (function(Task2) {
@@ -15121,51 +15135,75 @@ function getClientHeaders(requestOptions) {
   return clientHeaders.join(" ");
 }
 async function getHeaders(url) {
+  var _a2;
   const headers = new Headers();
   headers.append("Content-Type", "application/json");
   headers.append("x-goog-api-client", getClientHeaders(url.requestOptions));
   headers.append("x-goog-api-key", url.apiKey);
+  let customHeaders = (_a2 = url.requestOptions) === null || _a2 === void 0 ? void 0 : _a2.customHeaders;
+  if (customHeaders) {
+    if (!(customHeaders instanceof Headers)) {
+      try {
+        customHeaders = new Headers(customHeaders);
+      } catch (e2) {
+        throw new GoogleGenerativeAIRequestInputError(`unable to convert customHeaders value ${JSON.stringify(customHeaders)} to Headers: ${e2.message}`);
+      }
+    }
+    for (const [headerName, headerValue] of customHeaders.entries()) {
+      if (headerName === "x-goog-api-key") {
+        throw new GoogleGenerativeAIRequestInputError(`Cannot set reserved header name ${headerName}`);
+      } else if (headerName === "x-goog-api-client") {
+        throw new GoogleGenerativeAIRequestInputError(`Header name ${headerName} can only be set using the apiClient field`);
+      }
+      headers.append(headerName, headerValue);
+    }
+  }
   return headers;
 }
-async function constructRequest(model, task, apiKey, stream, body, requestOptions) {
+async function constructModelRequest(model, task, apiKey, stream, body, requestOptions) {
   const url = new RequestUrl(model, task, apiKey, stream, requestOptions);
   return {
     url: url.toString(),
     fetchOptions: Object.assign(Object.assign({}, buildFetchOptions(requestOptions)), { method: "POST", headers: await getHeaders(url), body })
   };
 }
-async function makeRequest(model, task, apiKey, stream, body, requestOptions) {
-  return _makeRequestInternal(model, task, apiKey, stream, body, requestOptions, fetch);
+async function makeModelRequest(model, task, apiKey, stream, body, requestOptions, fetchFn = fetch) {
+  const { url, fetchOptions } = await constructModelRequest(model, task, apiKey, stream, body, requestOptions);
+  return makeRequest(url, fetchOptions, fetchFn);
 }
-async function _makeRequestInternal(model, task, apiKey, stream, body, requestOptions, fetchFn = fetch) {
-  const url = new RequestUrl(model, task, apiKey, stream, requestOptions);
+async function makeRequest(url, fetchOptions, fetchFn = fetch) {
   let response;
   try {
-    const request = await constructRequest(model, task, apiKey, stream, body, requestOptions);
-    response = await fetchFn(request.url, request.fetchOptions);
-    if (!response.ok) {
-      let message = "";
-      let errorDetails;
-      try {
-        const json = await response.json();
-        message = json.error.message;
-        if (json.error.details) {
-          message += ` ${JSON.stringify(json.error.details)}`;
-          errorDetails = json.error.details;
-        }
-      } catch (e2) {
-      }
-      throw new GoogleGenerativeAIFetchError(`Error fetching from ${url.toString()}: [${response.status} ${response.statusText}] ${message}`, response.status, response.statusText, errorDetails);
-    }
+    response = await fetchFn(url, fetchOptions);
   } catch (e2) {
-    let err = e2;
-    if (!(e2 instanceof GoogleGenerativeAIFetchError)) {
-      err = new GoogleGenerativeAIError(`Error fetching from ${url.toString()}: ${e2.message}`);
-      err.stack = e2.stack;
-    }
-    throw err;
+    handleResponseError(e2, url);
+  }
+  if (!response.ok) {
+    await handleResponseNotOk(response, url);
   }
   return response;
+}
+function handleResponseError(e2, url) {
+  let err = e2;
+  if (!(e2 instanceof GoogleGenerativeAIFetchError || e2 instanceof GoogleGenerativeAIRequestInputError)) {
+    err = new GoogleGenerativeAIError(`Error fetching from ${url.toString()}: ${e2.message}`);
+    err.stack = e2.stack;
+  }
+  throw err;
+}
+async function handleResponseNotOk(response, url) {
+  let message = "";
+  let errorDetails;
+  try {
+    const json = await response.json();
+    message = json.error.message;
+    if (json.error.details) {
+      message += ` ${JSON.stringify(json.error.details)}`;
+      errorDetails = json.error.details;
+    }
+  } catch (e2) {
+  }
+  throw new GoogleGenerativeAIFetchError(`Error fetching from ${url.toString()}: [${response.status} ${response.statusText}] ${message}`, response.status, response.statusText, errorDetails);
 }
 function buildFetchOptions(requestOptions) {
   const fetchOptions = {};
@@ -15225,8 +15263,22 @@ function addHelpers(response) {
 }
 function getText(response) {
   var _a2, _b, _c, _d;
-  if ((_d = (_c = (_b = (_a2 = response.candidates) === null || _a2 === void 0 ? void 0 : _a2[0].content) === null || _b === void 0 ? void 0 : _b.parts) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.text) {
-    return response.candidates[0].content.parts.map(({ text }) => text).join("");
+  const textStrings = [];
+  if ((_b = (_a2 = response.candidates) === null || _a2 === void 0 ? void 0 : _a2[0].content) === null || _b === void 0 ? void 0 : _b.parts) {
+    for (const part of (_d = (_c = response.candidates) === null || _c === void 0 ? void 0 : _c[0].content) === null || _d === void 0 ? void 0 : _d.parts) {
+      if (part.text) {
+        textStrings.push(part.text);
+      }
+      if (part.executableCode) {
+        textStrings.push("\n```python\n" + part.executableCode.code + "\n```\n");
+      }
+      if (part.codeExecutionResult) {
+        textStrings.push("\n```\n" + part.codeExecutionResult.output + "\n```\n");
+      }
+    }
+  }
+  if (textStrings.length > 0) {
+    return textStrings.join("");
   } else {
     return "";
   }
@@ -15415,6 +15467,12 @@ function aggregateResponses(responses) {
             if (part.functionCall) {
               newPart.functionCall = part.functionCall;
             }
+            if (part.executableCode) {
+              newPart.executableCode = part.executableCode;
+            }
+            if (part.codeExecutionResult) {
+              newPart.codeExecutionResult = part.codeExecutionResult;
+            }
             if (Object.keys(newPart).length === 0) {
               newPart.text = "";
             }
@@ -15423,11 +15481,14 @@ function aggregateResponses(responses) {
         }
       }
     }
+    if (response.usageMetadata) {
+      aggregatedResponse.usageMetadata = response.usageMetadata;
+    }
   }
   return aggregatedResponse;
 }
 async function generateContentStream(apiKey, model, params, requestOptions) {
-  const response = await makeRequest(
+  const response = await makeModelRequest(
     model,
     Task.STREAM_GENERATE_CONTENT,
     apiKey,
@@ -15439,7 +15500,7 @@ async function generateContentStream(apiKey, model, params, requestOptions) {
   return processStream(response);
 }
 async function generateContent(apiKey, model, params, requestOptions) {
-  const response = await makeRequest(
+  const response = await makeModelRequest(
     model,
     Task.GENERATE_CONTENT,
     apiKey,
@@ -15509,6 +15570,23 @@ function assignRoleToPartsAndValidateSendMessageRequest(parts) {
   }
   return functionContent;
 }
+function formatCountTokensInput(params, model) {
+  let formattedRequest = {};
+  const containsGenerateContentRequest = params.generateContentRequest != null;
+  if (params.contents) {
+    if (containsGenerateContentRequest) {
+      throw new GoogleGenerativeAIRequestInputError("CountTokensRequest must have one of contents or generateContentRequest, not both.");
+    }
+    formattedRequest = Object.assign({}, params);
+  } else if (containsGenerateContentRequest) {
+    formattedRequest = Object.assign({}, params);
+    formattedRequest.generateContentRequest.model = model;
+  } else {
+    const content = formatNewContent(params);
+    formattedRequest.contents = [content];
+  }
+  return formattedRequest;
+}
 function formatGenerateContentInput(params) {
   let formattedRequest;
   if (params.contents) {
@@ -15533,24 +15611,19 @@ var VALID_PART_FIELDS = [
   "text",
   "inlineData",
   "functionCall",
-  "functionResponse"
+  "functionResponse",
+  "executableCode",
+  "codeExecutionResult"
 ];
 var VALID_PARTS_PER_ROLE = {
   user: ["text", "inlineData"],
   function: ["functionResponse"],
-  model: ["text", "functionCall"],
+  model: ["text", "functionCall", "executableCode", "codeExecutionResult"],
   // System instructions shouldn't be in history anyway.
   system: ["text"]
 };
-var VALID_PREVIOUS_CONTENT_ROLES = {
-  user: ["model"],
-  function: ["model"],
-  model: ["user", "function"],
-  // System instructions shouldn't be in history.
-  system: []
-};
 function validateChatHistory(history) {
-  let prevContent;
+  let prevContent = false;
   for (const currContent of history) {
     const { role, parts } = currContent;
     if (!prevContent && role !== "user") {
@@ -15570,7 +15643,9 @@ function validateChatHistory(history) {
       inlineData: 0,
       functionCall: 0,
       functionResponse: 0,
-      fileData: 0
+      fileData: 0,
+      executableCode: 0,
+      codeExecutionResult: 0
     };
     for (const part of parts) {
       for (const key of VALID_PART_FIELDS) {
@@ -15585,13 +15660,7 @@ function validateChatHistory(history) {
         throw new GoogleGenerativeAIError(`Content with role '${role}' can't contain '${key}' part`);
       }
     }
-    if (prevContent) {
-      const validPreviousContentRoles = VALID_PREVIOUS_CONTENT_ROLES[role];
-      if (!validPreviousContentRoles.includes(prevContent.role)) {
-        throw new GoogleGenerativeAIError(`Content with role '${role}' can't follow '${prevContent.role}'. Valid previous roles: ${JSON.stringify(VALID_PREVIOUS_CONTENT_ROLES)}`);
-      }
-    }
-    prevContent = currContent;
+    prevContent = true;
   }
 }
 var SILENT_ERROR = "SILENT_ERROR";
@@ -15622,7 +15691,7 @@ var ChatSession = class {
    * {@link GenerateContentResult}
    */
   async sendMessage(request) {
-    var _a2, _b, _c, _d, _e2;
+    var _a2, _b, _c, _d, _e2, _f;
     await this._sendPromise;
     const newContent = formatNewContent(request);
     const generateContentRequest = {
@@ -15631,6 +15700,7 @@ var ChatSession = class {
       tools: (_c = this.params) === null || _c === void 0 ? void 0 : _c.tools,
       toolConfig: (_d = this.params) === null || _d === void 0 ? void 0 : _d.toolConfig,
       systemInstruction: (_e2 = this.params) === null || _e2 === void 0 ? void 0 : _e2.systemInstruction,
+      cachedContent: (_f = this.params) === null || _f === void 0 ? void 0 : _f.cachedContent,
       contents: [...this._history, newContent]
     };
     let finalResult;
@@ -15661,7 +15731,7 @@ var ChatSession = class {
    * and a response promise.
    */
   async sendMessageStream(request) {
-    var _a2, _b, _c, _d, _e2;
+    var _a2, _b, _c, _d, _e2, _f;
     await this._sendPromise;
     const newContent = formatNewContent(request);
     const generateContentRequest = {
@@ -15670,6 +15740,7 @@ var ChatSession = class {
       tools: (_c = this.params) === null || _c === void 0 ? void 0 : _c.tools,
       toolConfig: (_d = this.params) === null || _d === void 0 ? void 0 : _d.toolConfig,
       systemInstruction: (_e2 = this.params) === null || _e2 === void 0 ? void 0 : _e2.systemInstruction,
+      cachedContent: (_f = this.params) === null || _f === void 0 ? void 0 : _f.cachedContent,
       contents: [...this._history, newContent]
     };
     const streamPromise = generateContentStream(this._apiKey, this.model, generateContentRequest, this.requestOptions);
@@ -15698,18 +15769,18 @@ var ChatSession = class {
   }
 };
 async function countTokens(apiKey, model, params, requestOptions) {
-  const response = await makeRequest(model, Task.COUNT_TOKENS, apiKey, false, JSON.stringify(Object.assign(Object.assign({}, params), { model })), requestOptions);
+  const response = await makeModelRequest(model, Task.COUNT_TOKENS, apiKey, false, JSON.stringify(params), requestOptions);
   return response.json();
 }
 async function embedContent(apiKey, model, params, requestOptions) {
-  const response = await makeRequest(model, Task.EMBED_CONTENT, apiKey, false, JSON.stringify(params), requestOptions);
+  const response = await makeModelRequest(model, Task.EMBED_CONTENT, apiKey, false, JSON.stringify(params), requestOptions);
   return response.json();
 }
 async function batchEmbedContents(apiKey, model, params, requestOptions) {
   const requestsWithModel = params.requests.map((request) => {
     return Object.assign(Object.assign({}, request), { model });
   });
-  const response = await makeRequest(model, Task.BATCH_EMBED_CONTENTS, apiKey, false, JSON.stringify({ requests: requestsWithModel }), requestOptions);
+  const response = await makeModelRequest(model, Task.BATCH_EMBED_CONTENTS, apiKey, false, JSON.stringify({ requests: requestsWithModel }), requestOptions);
   return response.json();
 }
 var GenerativeModel = class {
@@ -15725,6 +15796,7 @@ var GenerativeModel = class {
     this.tools = modelParams.tools;
     this.toolConfig = modelParams.toolConfig;
     this.systemInstruction = formatSystemInstruction(modelParams.systemInstruction);
+    this.cachedContent = modelParams.cachedContent;
     this.requestOptions = requestOptions || {};
   }
   /**
@@ -15732,8 +15804,9 @@ var GenerativeModel = class {
    * and returns an object containing a single {@link GenerateContentResponse}.
    */
   async generateContent(request) {
+    var _a2;
     const formattedParams = formatGenerateContentInput(request);
-    return generateContent(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction }, formattedParams), this.requestOptions);
+    return generateContent(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, formattedParams), this.requestOptions);
   }
   /**
    * Makes a single streaming call to the model
@@ -15742,21 +15815,23 @@ var GenerativeModel = class {
    * a promise that returns the final aggregated response.
    */
   async generateContentStream(request) {
+    var _a2;
     const formattedParams = formatGenerateContentInput(request);
-    return generateContentStream(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction }, formattedParams), this.requestOptions);
+    return generateContentStream(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, formattedParams), this.requestOptions);
   }
   /**
    * Gets a new {@link ChatSession} instance which can be used for
    * multi-turn chats.
    */
   startChat(startChatParams) {
-    return new ChatSession(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction }, startChatParams), this.requestOptions);
+    var _a2;
+    return new ChatSession(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, startChatParams), this.requestOptions);
   }
   /**
    * Counts the tokens in the provided request.
    */
   async countTokens(request) {
-    const formattedParams = formatGenerateContentInput(request);
+    const formattedParams = formatCountTokensInput(request, this.model);
     return countTokens(this.apiKey, this.model, formattedParams, this.requestOptions);
   }
   /**
@@ -15785,6 +15860,25 @@ var GoogleGenerativeAI = class {
       throw new GoogleGenerativeAIError(`Must provide a model name. Example: genai.getGenerativeModel({ model: 'my-model-name' })`);
     }
     return new GenerativeModel(this.apiKey, modelParams, requestOptions);
+  }
+  /**
+   * Creates a {@link GenerativeModel} instance from provided content cache.
+   */
+  getGenerativeModelFromCachedContent(cachedContent, requestOptions) {
+    if (!cachedContent.name) {
+      throw new GoogleGenerativeAIRequestInputError("Cached content must contain a `name` field.");
+    }
+    if (!cachedContent.model) {
+      throw new GoogleGenerativeAIRequestInputError("Cached content must contain a `model` field.");
+    }
+    const modelParamsFromCache = {
+      model: cachedContent.model,
+      tools: cachedContent.tools,
+      toolConfig: cachedContent.toolConfig,
+      systemInstruction: cachedContent.systemInstruction,
+      cachedContent
+    };
+    return new GenerativeModel(this.apiKey, modelParamsFromCache, requestOptions);
   }
 };
 
