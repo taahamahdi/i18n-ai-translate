@@ -20855,7 +20855,7 @@ async function generateTranslation(options) {
     outputLanguage,
     input
   );
-  const templatedStringRegex = `/${templatedStringPrefix}[^{}]+${templatedStringSuffix}/g`;
+  const templatedStringRegex = new RegExp(`${templatedStringPrefix}[^{}]+${templatedStringSuffix}`, "g");
   const splitInput = input.split("\n");
   const generateState = {
     fixedTranslationMappings: {},
