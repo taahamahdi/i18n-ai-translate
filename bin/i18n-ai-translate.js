@@ -20855,7 +20855,7 @@ async function generateTranslation(options) {
     outputLanguage,
     input
   );
-  const templatedStringRegex = `/${templatedStringPrefix}[^{}]+${templatedStringSuffix}/g`;
+  const templatedStringRegex = new RegExp(`${templatedStringPrefix}[^{}]+${templatedStringSuffix}`, "g");
   const splitInput = input.split("\n");
   const generateState = {
     fixedTranslationMappings: {},
@@ -21052,7 +21052,7 @@ async function generate(options, generationPromptText, generateState) {
 
 // src/translate.ts
 var import_path2 = __toESM(require("path"));
-var VERSION2 = "2.0.4";
+var VERSION2 = "2.0.5";
 var DEFAULT_BATCH_SIZE = 32;
 var DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 var DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
