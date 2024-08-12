@@ -40,7 +40,7 @@ jobs:
           git config --global user.name "Taaha Mahdi"
 
       - name: Test i18n-ai-translate action
-        uses: taahamahdi/i18n-ai-translate@0b3d6e235c852533dd751d06467d72af8572c5d9
+        uses: taahamahdi/i18n-ai-translate@4df9defd1b36871e30ef7c21e8ed52154b5f538a
         with:
           old-json-file-path: test/en.json
           new-json-file-path: test/en-latest.json
