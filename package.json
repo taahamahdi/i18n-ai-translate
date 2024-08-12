@@ -26,7 +26,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-deprecation": "^3.0.0",
     "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-jsdoc": "^48.0.6",
+    "eslint-plugin-jsdoc": "^50.0.1",
     "eslint-plugin-n": "^17.2.0",
     "eslint-plugin-only-warn": "^1.1.0",
     "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
