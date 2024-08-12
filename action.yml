@@ -63,6 +63,7 @@ runs:
       echo "OPENAI_API_KEY=${{ inputs.api-key }}" >> .env
 
   - name: Fetch original translation
+    shell: bash
     run: |
       cp "${{ inputs.json-file-path }}" "${{ inputs.json-file-path }}-latest"
       git checkout origin/${{ github.base_ref }} -- "${{ inputs.json-file-path }}"
@@ -82,11 +83,13 @@ runs:
         -n "${{ inputs.batch-size }}"
 
   - name: Setup Git Config
+    shell: bash
     run: |
       git config --global user.email "tmahdi+i18n-ai-translate@proton.me"
       git config --global user.name "Taaha Mahdi"
 
   - name: Commit the difference
+    shell: bash
     run: |
       mv "${{ inputs.json-file-path }}-latest" "${{ inputs.json-file-path }}"
       git add .
