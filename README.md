@@ -101,7 +101,7 @@ jobs:
 
     - name: Setup Git Config
       run: |
-        git config --global user.email "mahditaaha11@gmail.com"
+        git config --global user.email "tmahdi+i18n-ai-translate@proton.me"
         git config --global user.name "Taaha Mahdi"
 
     - name: Copy .env for CI
