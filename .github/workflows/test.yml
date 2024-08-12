@@ -11,6 +11,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v1
@@ -28,8 +31,8 @@ jobs:
 
       - name: Fetch original translation
         run: |
-          cp "i18n/en.json" "i18n/en-latest.json"
-          git checkout origin/master -- i18n/en.json
+          cp "test/en.json" "test/en-latest.json"
+          git checkout origin/add-e2e-test -- test/en.json
 
       - name: Setup Git Config
         run: |
@@ -37,15 +40,15 @@ jobs:
           git config --global user.name "Taaha Mahdi"
 
       - name: Test i18n-ai-translate action
-        uses: taahamahdi/i18n-ai-translate@1e2bf3e399220d086cc09b1b0f773858321be9a4
+        uses: taahamahdi/i18n-ai-translate@0b3d6e235c852533dd751d06467d72af8572c5d9
         with:
           old-json-file-path: test/en.json
           new-json-file-path: test/en-latest.json
           api-key: ${{ secrets.TRANSLATION_API_KEY }}
 
-      - name: Setup Git Config
+      - name: Commit the difference
         run: |
-          mv "i18n/en-latest.json" "i18n/en.json"
+          mv "test/en-latest.json" "test/en.json"
           git add .
           git commit -m "Update translations" || echo "No changes to commit"
           git push
