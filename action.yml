@@ -1,5 +1,5 @@
 name: i18n-ai-translate
-description: Use ChatGPT or Google Gemini to translate your i18n JSON to any language in CI
+description: Use ChatGPT or Google Gemini to automatically translate your i18n JSON on every PR
 author: Taaha Mahdi
 
 old-json-file-path:
@@ -58,21 +58,30 @@ runs:
 
   - name: Copy .env for CI
     shell: bash
-    env:
-      OPENAI_API_KEY: "${{ inputs['api-key'] }}"
     run: |
       echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
+    env:
+      OPENAI_API_KEY: "${{ inputs.api-key }}"
 
   - name: Translate the diff
     shell: bash
     run: |
       npx i18n-ai-translate diff \
-        -b "${{ inputs['old-json-file-path'] }}" \
-        -a "${{ inputs['new-json-file-path'] }}" \
-        -l "${{ inputs['language'] }}" \
+        -b "${OLD_JSON_FILE_PATH}" \
+        -a "${NEW_JSON_FILE_PATH}" \
+        -l "${INPUT_LANGUAGE}" \
         --verbose \
-        --engine ${{ inputs['engine'] }} \
-        --model ${{ inputs['model'] }} \
-        -p "${{ inputs['templated-string-prefix'] }}" \
-        -s "${{ inputs['templated-string-suffix'] }}" \
-        -n "${{ inputs['batch-size'] }}"
+        --engine ${ENGINE} \
+        --model ${MODEL} \
+        -p "${TEMPLATED_STRING_PREFIX}" \
+        -s "${TEMPLATED_STRING_SUFFIX}" \
+        -n "${BATCH_SIZE}"
+    env:
+      OLD_JSON_FILE_PATH: ${{ inputs.old-json-file-path }}
+      NEW_JSON_FILE_PATH: ${{ inputs.new-json-file-path }}
+      INPUT_LANGUAGE: ${{ inputs.language }}
+      ENGINE: ${{ inputs.engine }}
+      MODEL: ${{ inputs.model }}
+      TEMPLATED_STRING_PREFIX: ${{ inputs.templated-string-prefix }}
+      TEMPLATED_STRING_SUFFIX: ${{ inputs.templated-string-suffix }}
+      BATCH_SIZE: ${{ inputs.batch-size }}}
