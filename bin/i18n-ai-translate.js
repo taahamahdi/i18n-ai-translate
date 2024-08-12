@@ -20855,7 +20855,10 @@ async function generateTranslation(options) {
     outputLanguage,
     input
   );
-  const templatedStringRegex = new RegExp(`${templatedStringPrefix}[^{}]+${templatedStringSuffix}`, "g");
+  const templatedStringRegex = new RegExp(
+    `${templatedStringPrefix}[^{}]+${templatedStringSuffix}`,
+    "g"
+  );
   const splitInput = input.split("\n");
   const generateState = {
     fixedTranslationMappings: {},
@@ -21433,7 +21436,7 @@ program.command("translate").requiredOption(
   "Engine to use (chatgpt or gemini)"
 ).option(
   "-m, --model <model>",
-  "Model to use (e.g. gpt-4, gpt-4-turbo-preview, gpt-4-0125-preview, gpt-3.5-turbo, gemini-pro)"
+  "Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro)"
 ).option(
   "-r, --rate-limit-ms <rateLimitMs>",
   "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)"
@@ -21476,7 +21479,7 @@ program.command("translate").requiredOption(
       }
       break;
     case engine_default.ChatGPT:
-      model = options.model || "gpt-4-turbo-preview";
+      model = options.model || "gpt-4o";
       chatParams = {
         seed: 69420,
         model,
@@ -21634,7 +21637,7 @@ program.command("diff").requiredOption(
   "Engine to use (chatgpt or gemini)"
 ).option(
   "-m, --model <model>",
-  "Model to use (e.g. gpt-4, gpt-4-turbo-preview, gpt-4-0125-preview, gpt-3.5-turbo, gemini-pro)"
+  "Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro)"
 ).option(
   "-r, --rate-limit-ms <rateLimitMs>",
   "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)"
@@ -21642,6 +21645,14 @@ program.command("diff").requiredOption(
   "--ensure-changed-translation",
   "Each generated translation key must differ from the input (for keys longer than 4)",
   false
+).option(
+  "-p, --templated-string-prefix <prefix>",
+  "Prefix for templated strings",
+  DEFAULT_TEMPLATED_STRING_PREFIX
+).option(
+  "-s, --templated-string-suffix <suffix>",
+  "Suffix for templated strings",
+  DEFAULT_TEMPLATED_STRING_SUFFIX
 ).option(
   "-n, --batch-size <batchSize>",
   "How many keys to process at a time",
@@ -21666,7 +21677,7 @@ program.command("diff").requiredOption(
       }
       break;
     case engine_default.ChatGPT:
-      model = options.model || "gpt-4-turbo-preview";
+      model = options.model || "gpt-4o";
       chatParams = {
         seed: 69420,
         model,
