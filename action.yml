@@ -68,8 +68,8 @@ runs:
     shell: bash
     run: |
       npx i18n-ai-translate diff \
-        -b "${{ inputs.old-json-file-path }}" \
-        -a "${{ inputs.new-json-file-path }}" \
+        -b "${{ inputs.json-file-path }}" \
+        -a "${{ inputs.json-file-path }}-latest" \
         -l "${{ inputs.language }}" \
         --verbose \
         --engine "${{ inputs.engine }}" \
