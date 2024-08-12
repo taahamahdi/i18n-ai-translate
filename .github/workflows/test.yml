@@ -25,3 +25,26 @@ jobs:
 
       - name: Build and ensure latest build is up to date
         run: npm run build && git diff --exit-code
+
+      - name: Fetch original translation
+        run: |
+          cp "i18n/en.json" "i18n/en-latest.json"
+          git checkout origin/master -- i18n/en.json
+
+      - name: Setup Git Config
+        run: |
+          git config --global user.email "tmahdi+i18n-ai-translate@proton.me"
+          git config --global user.name "Taaha Mahdi"
+
+      - name: Test i18n-ai-translate action
+        uses: i18n-ai-translate
+        with:
+          old-json-file-path: test/en.json
+          new-json-file-path: test/en-latest.json
+
+      - name: Setup Git Config
+        run: |
+          mv "i18n/en-latest.json" "i18n/en.json"
+          git add .
+          git commit -m "Update translations" || echo "No changes to commit"
+          git push
