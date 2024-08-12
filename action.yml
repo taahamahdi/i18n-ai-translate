@@ -71,7 +71,7 @@ runs:
     shell: bash
     run: |
       cp "${{ inputs.json-file-path }}" "${{ inputs.json-file-path }}-latest"
-      git checkout origin/add-e2e-test -- "${{ inputs.json-file-path }}"
+      git checkout origin/${{ github.base_ref }} -- "${{ inputs.json-file-path }}"
 
   - name: Translate the diff
     shell: bash
