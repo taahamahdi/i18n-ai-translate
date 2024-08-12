@@ -9,6 +9,15 @@ inputs:
   api-key:
     description: 'The API key for ChatGPT or Gemini'
     required: true
+
+  author-email:
+    description: 'The email of the person to attribute the i18n change to'
+    required: false
+    default: 'tmahdi+i18n-ai-translate@proton.me'
+  author-name:
+    description: 'The name of the person to attribute the i18n change to'
+    required: false
+    default: 'Taaha Mahdi'
   language:
     description: 'Language to translate from'
     required: false
@@ -81,13 +90,13 @@ runs:
   - name: Setup Git Config
     shell: bash
     run: |
-      git config --global user.email "tmahdi+i18n-ai-translate@proton.me"
-      git config --global user.name "Taaha Mahdi"
+      git config --global user.email "${{ inputs.author-email }}}"
+      git config --global user.name "${{ inputs.author-name }}}"
 
   - name: Commit the difference
     shell: bash
     run: |
       mv "${{ inputs.json-file-path }}-latest" "${{ inputs.json-file-path }}"
-      git add .
+      git add **/*json
       git commit -m "Update translations" || echo "No changes to commit"
       git push
