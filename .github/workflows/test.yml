@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - name: Test i18n-ai-translate action
-        uses: taahamahdi/i18n-ai-translate@2cc2c951e455a369ec3e7fa85704cf8aae105f78
+        uses: taahamahdi/i18n-ai-translate@8d0c85335f2880f9f5fd1e223eff4b9d5f0ade6e
         with:
           json-file-path: test/en.json
           api-key: ${{ secrets.OPENAI_API_KEY }}
