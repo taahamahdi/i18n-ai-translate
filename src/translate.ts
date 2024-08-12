@@ -15,7 +15,7 @@ import type TranslateFileOptions from "./interfaces/translation_file_options";
 import type TranslationDiffOptions from "./interfaces/translation_diff_options";
 import type TranslationOptions from "./interfaces/translation_options";
 
-const VERSION = "2.0.6";
+const VERSION = "2.0.7";
 
 const DEFAULT_BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
@@ -489,7 +489,7 @@ program
     )
     .option(
         "-m, --model <model>",
-        "Model to use (e.g. gpt-4, gpt-4-turbo-preview, gpt-4-0125-preview, gpt-3.5-turbo, gemini-pro)",
+        "Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro)",
     )
     .option(
         "-r, --rate-limit-ms <rateLimitMs>",
@@ -545,7 +545,7 @@ program
 
                 break;
             case Engine.ChatGPT:
-                model = options.model || "gpt-4-turbo-preview";
+                model = options.model || "gpt-4o";
                 chatParams = {
                     seed: 69420,
                     model,
@@ -729,7 +729,7 @@ program
     )
     .option(
         "-m, --model <model>",
-        "Model to use (e.g. gpt-4, gpt-4-turbo-preview, gpt-4-0125-preview, gpt-3.5-turbo, gemini-pro)",
+        "Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro)",
     )
     .option(
         "-r, --rate-limit-ms <rateLimitMs>",
@@ -740,6 +740,16 @@ program
         "--ensure-changed-translation",
         "Each generated translation key must differ from the input (for keys longer than 4)",
         false,
+    )
+    .option(
+        "-p, --templated-string-prefix <prefix>",
+        "Prefix for templated strings",
+        DEFAULT_TEMPLATED_STRING_PREFIX,
+    )
+    .option(
+        "-s, --templated-string-suffix <suffix>",
+        "Suffix for templated strings",
+        DEFAULT_TEMPLATED_STRING_SUFFIX,
     )
     .option(
         "-n, --batch-size <batchSize>",
@@ -769,7 +779,7 @@ program
 
                 break;
             case Engine.ChatGPT:
-                model = options.model || "gpt-4-turbo-preview";
+                model = options.model || "gpt-4o";
                 chatParams = {
                     seed: 69420,
                     model,

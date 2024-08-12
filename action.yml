@@ -1,0 +1,92 @@
+name: i18n-ai-translate
+description: Use ChatGPT or Google Gemini to translate your i18n JSON to any language
+author: Taaha Mahdi
+
+git-user-name:
+  description: 'The name to use for Git commits'
+  required: false
+  default: 'Taaha Mahdi'
+git-user-email:
+  description: 'The email to use for Git commits'
+  required: false
+  default: 'tmahdi+i18n-ai-translate@proton.me'
+json-file-path:
+  description: 'Path to the i18n JSON file'
+  required: false
+  default: 'i18n/en.json'
+language:
+  description: 'Language to translate to'
+  required: false
+  default: 'English'
+engine:
+  description: 'Engine to use for translation ("chatgpt" or "gemini")'
+  required: false
+  default: 'chatgpt'
+model:
+  description: 'Model to use for the translation (e.g., gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro)'
+  required: false
+  default: 'gpt-4o'
+templated-string-prefix:
+  description: 'Prefix for templated strings'
+  required: false
+  default: "{{"
+templated-string-suffix:
+  description: 'Suffix for templated strings'
+  required: false
+  default: "}}"
+batch-size:
+  description: 'How many keys to process at a time'
+  required: false
+  default: 32
+
+runs:
+  using: 'composite'
+  steps:
+  - name: Checkout Repo
+    uses: actions/checkout@v3
+    with:
+      ref: ${{ github.head_ref }}
+      fetch-depth: 0
+
+  - name: Setup Node.js
+    uses: actions/setup-node@v3
+    with:
+      node-version: '18'
+
+  - name: Install Dependencies
+    run: yarn add i18n-ai-translate
+
+  - name: Setup Git Config
+    run: |
+      git config --global user.email "${{ inputs['git-user-email'] }}"
+      git config --global user.name "${{ inputs['git-user-name'] }}"
+
+  - name: Copy .env for CI
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    run: |
+      echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
+    shell: bash
+
+  - name: Fetch original translation
+    run: |
+      cp "${{ inputs['json-file-path'] }}" "${{ inputs['json-file-path'] }}-latest"
+      git checkout origin/master -- ${{ inputs['json-file-path'] }}
+
+  - name: Translate the diff
+    run: |
+      npx i18n-ai-translate diff \
+        -b "${{ inputs['json-file-path'] }}" \
+        -a "${{ inputs['json-file-path'] }}-latest" \
+        -l "${{ inputs['language'] }}" \
+        --verbose \
+        --engine ${{ inputs['engine'] }} \
+        --model ${{ inputs['model'] }} \
+        -p "${{ inputs['templated-string-prefix'] }}" \
+        -s "${{ inputs['templated-string-suffix'] }}" \
+        -n "${{ inputs['batch-size'] }}"
+
+      mv "${{ inputs['json-file-path'] }}-latest" "${{ inputs['json-file-path'] }}"
+      git add .
+      git commit -m "Update translations" || echo "No changes to commit"
+      git push

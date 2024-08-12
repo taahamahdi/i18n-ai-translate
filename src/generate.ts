@@ -32,7 +32,11 @@ export default async function generateTranslation(
         input,
     );
 
-    const templatedStringRegex = new RegExp(`${templatedStringPrefix}[^{}]+${templatedStringSuffix}`, "g");
+    const templatedStringRegex = new RegExp(
+        `${templatedStringPrefix}[^{}]+${templatedStringSuffix}`,
+        "g",
+    );
+
     const splitInput = input.split("\n");
 
     const generateState: GenerateState = {
