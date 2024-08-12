@@ -8,6 +8,10 @@ old-json-file-path:
 new-json-file-path:
   description: 'Path to the new version of the source i18n JSON file'
   required: true
+api-key:
+  description: 'The API key for ChatGPT or Gemini'
+  required: true
+
 language:
   description: 'Language to translate from'
   required: false
@@ -54,7 +58,7 @@ runs:
   - name: Copy .env for CI
     shell: bash
     env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_API_KEY: "${{ inputs['api-key'] }}"
     run: |
       echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
     shell: bash
