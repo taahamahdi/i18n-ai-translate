@@ -3,15 +3,16 @@ description: Use ChatGPT or Google Gemini to automatically translate your i18n J
 author: Taaha Mahdi
 
 inputs:
-  old-json-file-path:
-    description: 'Path to the old version of the source i18n JSON file'
-    required: true
-  new-json-file-path:
-    description: 'Path to the new version of the source i18n JSON file'
+  json-file-path:
+    description: 'Path to the source i18n JSON file'
     required: true
   api-key:
     description: 'The API key for ChatGPT or Gemini'
     required: true
+  source-branch-name:
+    description: 'The name of the source branch'
+    required: false
+    default: 'main'
   language:
     description: 'Language to translate from'
     required: false
@@ -61,6 +62,11 @@ runs:
     run: |
       echo "OPENAI_API_KEY=${{ inputs.api-key }}" >> .env
 
+  - name: Fetch original translation
+    run: |
+      cp "${{ inputs.json-file-path }}" "${{ inputs.json-file-path }}-latest"
+      git checkout origin/${{ github.base_ref }} -- "${{ inputs.json-file-path }}"
+
   - name: Translate the diff
     shell: bash
     run: |
@@ -75,3 +81,14 @@ runs:
         -s "${{ inputs.templated-string-suffix }}" \
         -n "${{ inputs.batch-size }}"
 
+  - name: Setup Git Config
+    run: |
+      git config --global user.email "tmahdi+i18n-ai-translate@proton.me"
+      git config --global user.name "Taaha Mahdi"
+
+  - name: Commit the difference
+    run: |
+      mv "${{ inputs.json-file-path }}-latest" "${{ inputs.json-file-path }}"
+      git add .
+      git commit -m "Update translations" || echo "No changes to commit"
+      git push

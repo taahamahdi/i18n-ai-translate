@@ -1,8 +1,6 @@
 name: test
 
 on:
-  push:
-    branches: [master]
   pull_request:
 
 jobs:
@@ -10,46 +8,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-
-      - name: Use Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Run lint
-        run: npm run lint
-
-      - name: Build and ensure latest build is up to date
-        run: npm run build && git diff --exit-code
-
-      - name: Fetch original translation
-        run: |
-          cp "test/en.json" "test/en-latest.json"
-          git checkout origin/add-e2e-test -- test/en.json
-
-      - name: Setup Git Config
-        run: |
-          git config --global user.email "tmahdi+i18n-ai-translate@proton.me"
-          git config --global user.name "Taaha Mahdi"
-
       - name: Test i18n-ai-translate action
         uses: taahamahdi/i18n-ai-translate@3dd793aca15ce3effd000e6e7a313d6d180f0be1
         with:
-          old-json-file-path: test/en.json
-          new-json-file-path: test/en-latest.json
+          json-file-path: test/en.json
           api-key: ${{ secrets.OPENAI_API_KEY }}
-
-      - name: Commit the difference
-        run: |
-          mv "test/en-latest.json" "test/en.json"
-          git add .
-          git commit -m "Update translations" || echo "No changes to commit"
-          git push
+          source-branch-name: master
