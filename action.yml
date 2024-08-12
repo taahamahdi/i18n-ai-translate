@@ -93,6 +93,11 @@ runs:
       git config --global user.email "${{ inputs.author-email }}}"
       git config --global user.name "${{ inputs.author-name }}}"
 
+  - name: Remove dependencies to prevent being merged
+    shell: bash
+    run: |
+      yarn remove i18n-ai-translate
+
   - name: Commit the difference
     shell: bash
     run: |
