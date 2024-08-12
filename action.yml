@@ -84,4 +84,4 @@ runs:
       MODEL: ${{ inputs.model }}
       TEMPLATED_STRING_PREFIX: ${{ inputs.templated-string-prefix }}
       TEMPLATED_STRING_SUFFIX: ${{ inputs.templated-string-suffix }}
-      BATCH_SIZE: ${{ inputs.batch-size }}}
+      BATCH_SIZE: ${{ inputs.batch-size }}
