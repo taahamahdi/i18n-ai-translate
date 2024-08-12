@@ -2,40 +2,40 @@ name: i18n-ai-translate
 description: Use ChatGPT or Google Gemini to automatically translate your i18n JSON on every PR
 author: Taaha Mahdi
 
-old-json-file-path:
-  description: 'Path to the old version of the source i18n JSON file'
-  required: true
-new-json-file-path:
-  description: 'Path to the new version of the source i18n JSON file'
-  required: true
-api-key:
-  description: 'The API key for ChatGPT or Gemini'
-  required: true
-
-language:
-  description: 'Language to translate from'
-  required: false
-  default: 'English'
-engine:
-  description: 'Engine to use for translation ("chatgpt" or "gemini")'
-  required: false
-  default: 'chatgpt'
-model:
-  description: 'Model to use for the translation (e.g., gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro)'
-  required: false
-  default: 'gpt-4o'
-templated-string-prefix:
-  description: 'Prefix for templated strings'
-  required: false
-  default: "{{"
-templated-string-suffix:
-  description: 'Suffix for templated strings'
-  required: false
-  default: "}}"
-batch-size:
-  description: 'How many keys to process at a time'
-  required: false
-  default: 32
+inputs:
+  old-json-file-path:
+    description: 'Path to the old version of the source i18n JSON file'
+    required: true
+  new-json-file-path:
+    description: 'Path to the new version of the source i18n JSON file'
+    required: true
+  api-key:
+    description: 'The API key for ChatGPT or Gemini'
+    required: true
+  language:
+    description: 'Language to translate from'
+    required: false
+    default: 'English'
+  engine:
+    description: 'Engine to use for translation ("chatgpt" or "gemini")'
+    required: false
+    default: 'chatgpt'
+  model:
+    description: 'Model to use for the translation (e.g., gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro)'
+    required: false
+    default: 'gpt-4o'
+  templated-string-prefix:
+    description: 'Prefix for templated strings'
+    required: false
+    default: "{{"
+  templated-string-suffix:
+    description: 'Suffix for templated strings'
+    required: false
+    default: "}}"
+  batch-size:
+    description: 'How many keys to process at a time'
+    required: false
+    default: 32
 
 runs:
   using: 'composite'
@@ -59,29 +59,19 @@ runs:
   - name: Copy .env for CI
     shell: bash
     run: |
-      echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
-    env:
-      OPENAI_API_KEY: "${{ inputs.api-key }}"
+      echo "OPENAI_API_KEY=${{ inputs.api-key }}" >> .env
 
   - name: Translate the diff
     shell: bash
     run: |
       npx i18n-ai-translate diff \
-        -b "${OLD_JSON_FILE_PATH}" \
-        -a "${NEW_JSON_FILE_PATH}" \
-        -l "${INPUT_LANGUAGE}" \
+        -b "${{ inputs.old-json-file-path }}" \
+        -a "${{ inputs.new-json-file-path }}" \
+        -l "${{ inputs.language }}" \
         --verbose \
-        --engine ${ENGINE} \
-        --model ${MODEL} \
-        -p "${TEMPLATED_STRING_PREFIX}" \
-        -s "${TEMPLATED_STRING_SUFFIX}" \
-        -n "${BATCH_SIZE}"
-    env:
-      OLD_JSON_FILE_PATH: ${{ inputs.old-json-file-path }}
-      NEW_JSON_FILE_PATH: ${{ inputs.new-json-file-path }}
-      INPUT_LANGUAGE: ${{ inputs.language }}
-      ENGINE: ${{ inputs.engine }}
-      MODEL: ${{ inputs.model }}
-      TEMPLATED_STRING_PREFIX: ${{ inputs.templated-string-prefix }}
-      TEMPLATED_STRING_SUFFIX: ${{ inputs.templated-string-suffix }}
-      BATCH_SIZE: ${{ inputs.batch-size }}
+        --engine "${{ inputs.engine }}" \
+        --model "${{ inputs.model }}" \
+        -p "${{ inputs.templated-string-prefix }}" \
+        -s "${{ inputs.templated-string-suffix }}" \
+        -n "${{ inputs.batch-size }}"
+
