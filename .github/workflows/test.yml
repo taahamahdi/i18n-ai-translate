@@ -44,7 +44,7 @@ jobs:
         with:
           old-json-file-path: test/en.json
           new-json-file-path: test/en-latest.json
-          api-key: ${{ secrets.TRANSLATION_API_KEY }}
+          api-key: ${{ secrets.OPENAI_API_KEY }}
 
       - name: Commit the difference
         run: |
