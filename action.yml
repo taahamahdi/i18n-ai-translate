@@ -48,9 +48,11 @@ runs:
       node-version: '18'
 
   - name: Install Dependencies
+    shell: bash
     run: yarn add i18n-ai-translate
 
   - name: Copy .env for CI
+    shell: bash
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     run: |
@@ -58,6 +60,7 @@ runs:
     shell: bash
 
   - name: Translate the diff
+    shell: bash
     run: |
       npx i18n-ai-translate diff \
         -b "${{ inputs['old-json-file-path'] }}" \
