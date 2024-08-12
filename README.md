@@ -20,7 +20,7 @@ yarn
 cp /home/en.json jsons/
 
 # Generate French translations
-npm run i18n-ai-translate -- translate -i en.json -o fr.json --engine chatgpt --model gpt-4-turbo-preview --api-key <openai_key>
+npm run i18n-ai-translate -- translate -i en.json -o fr.json --engine chatgpt --model gpt-4o --api-key <openai_key>
 ```
 
 ### [Running as a script in your own project](#script)
@@ -31,7 +31,7 @@ yarn add i18n-ai-translate
 npx i18n-ai-translate translate -i en.json -o fr.json --engine gemini --model gemini-pro --api-key <gemini_key>
 
 # Or, assuming you already have other translations in the current directory
-npx i18n-ai-translate diff --before en-before.json --after en.json --input-language English --engine chatgpt --model gpt-4-turbo-preview --api-key <openai_key>
+npx i18n-ai-translate diff --before en-before.json --after en.json --input-language English --engine chatgpt --model gpt-4 --api-key <openai_key>
 ```
 
 ### [Running as a library](#as-a-library)
@@ -70,60 +70,7 @@ console.log(frenchTranslation);
 
 
 ## GitHub Actions
-Incorporate it into your CI with a GitHub Action to auto-translate keys for every pull request:
-```yaml
-name: i18n-ai-translate
-
-on:
-  pull_request:
-    branches:
-      - master
-    paths:
-      - 'i18n/en.json'
-
-jobs:
-  diff:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Repo
-      uses: actions/checkout@v3
-      with:
-        ref: ${{ github.head_ref }}
-        fetch-depth: 0
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-
-    - name: Install Dependencies
-      run: yarn add i18n-ai-translate
-
-    - name: Setup Git Config
-      run: |
-        git config --global user.email "tmahdi+i18n-ai-translate@proton.me"
-        git config --global user.name "Taaha Mahdi"
-
-    - name: Copy .env for CI
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      run: |
-        echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
-      shell: bash
-
-    - name: Fetch original translation
-      run: |
-        cp i18n/en.json i18n/en-latest.json
-        git checkout origin/master -- i18n/en.json
-
-    - name: Translate the diff
-      run: |
-        npx i18n-ai-translate diff -b i18n/en.json -a i18n/en-latest.json -l "English" --verbose --engine chatgpt --model gpt-4-turbo-preview
-        mv i18n/en-latest.json i18n/en.json
-        git add .
-        git commit -m "Update translations" || echo "No changes to commit"
-        git push
-```
+Incorporate it into your CI with a [GitHub Action](https://github.com/marketplace/actions/i18n-ai-translate) to auto-translate keys for every pull request: [action.yml](https://github.com/taahamahdi/i18n-ai-translate/blob/master/action.yml)
 
 ## Script
 Use `i18n-ai-translate translate` to convert a local i18n JSON file to any language. Relative paths begin from the `jsons/` directory.
@@ -156,7 +103,7 @@ Options:
   -i, --input <input>                        Source i18n file, in the jsons/ directory if a relative path is given
   -o, --output <output>                      Output i18n file, in the jsons/ directory if a relative path is given
   -e, --engine <engine>                      Engine to use (chatgpt or gemini)
-  -m, --model <model>                        Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)
+  -m, --model <model>                        Model to use (e.g. gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro)
   -r, --rate-limit-ms <rateLimitMs>          How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)
   -f, --force-language-name <language name>  Force language name
   -A, --all-languages                        Translate to all supported languages
@@ -174,17 +121,21 @@ Options:
 Usage: i18n-ai-translate diff [options]
 
 Options:
-  -b, --before <fileBefore>             Source i18n file before changes, in the jsons/ directory if a relative path is given
-  -a, --after <fileAfter>               Source i18n file after changes, in the jsons/ directory if a relative path is given
-  -l, --input-language <inputLanguage>  The full input language name
-  -e, --engine <engine>                 Engine to use (chatgpt or gemini)
-  -m, --model <model>                   Model to use (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)
-  -r, --rate-limit-ms <rateLimitMs>     Rate limit in milliseconds (defaults to 1s for Gemini, 120ms for ChatGPT)
-  -k, --api-key <API key>               API key
-  --ensure-changed-translation          Each generated translation key must differ from the input (for keys longer than 4) (default: false)
-  -n, --batch-size <batchSize>          How many keys to process at a time (default: "32")
-  --verbose                             Print logs about progress (default: false)
-  -h, --help                            display help for command
+  -b, --before <fileBefore>               Source i18n file before changes, in the jsons/ directory if a relative path is given
+  -a, --after <fileAfter>                 Source i18n file after changes, in the jsons/ directory if a relative path is given
+  -l, --input-language <inputLanguage>    The full input language name
+  -e, --engine <engine>                   Engine to use (chatgpt or gemini)
+  -m, --model <model>                     Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro)
+  -r, --rate-limit-ms <rateLimitMs>       How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for
+                                          ChatGPT)
+  -k, --api-key <API key>                 API key
+  --ensure-changed-translation            Each generated translation key must differ from the input (for keys longer than 4)
+                                          (default: false)
+  -p, --templated-string-prefix <prefix>  Prefix for templated strings (default: "{{")
+  -s, --templated-string-suffix <suffix>  Suffix for templated strings (default: "}}")
+  -n, --batch-size <batchSize>            How many keys to process at a time (default: "32")
+  --verbose                               Print logs about progress (default: false)
+  -h, --help                              display help for command
 ```
 
 ### Example usage
@@ -198,7 +149,7 @@ Options:
 * Translate the keys that have changed between `en.json` and `en-after.json` for all files in the `en.json` directory, with logging enabled
 
 #### `npx i18n-ai-translate translate -i en.json -A --engine chatgpt --model gpt-4-turbo --api-key <my_key> --rate-limit-ms 150 -n 64`
-* Translate the `en.json` file in `jsons/` to 200+ languages, save each file in `jsons/`, using the GPT-4 model of ChatGPT, with the given key, a rate limit of 150ms between requests, and 64 keys sent in each batch
+* Translate the `en.json` file in `jsons/` to 200+ languages, save each file in `jsons/`, using the GPT-4 Turbo model of ChatGPT, with the given key, a rate limit of 150ms between requests, and 64 keys sent in each batch
 
 ## As a library
 Alternatively, import this project and use it to convert JSONs on-the-fly with [`translate()`](https://github.com/taahamahdi/i18n-ai-translate/blob/master/src/interfaces/translation_options.ts), or use [`translateDiff()`](https://github.com/taahamahdi/i18n-ai-translate/blob/master/src/interfaces/translation_diff_options.ts) to fetch updates to modified keys when your source i18n file has changed.
@@ -210,7 +161,7 @@ import { translate, translateDiff } from "i18n-ai-translate";
 
 const translation = await translate({
     engine, // ChatGPT or Gemini
-    model, // The model to use with the engine (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)
+    model, // The model to use with the engine (e.g. gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro)
     chatParams, // Additional configuration to pass to the model
     rateLimitMs, // How many milliseconds between requests
     apiKey, // Gemini API key
@@ -226,7 +177,7 @@ const translation = await translate({
 
 const translations = await translateDiff({
     engine, // ChatGPT or Gemini
-    model, // The model to use with the engine (e.g. gpt-4, gpt-3.5-turbo, gemini-pro)
+    model, // The model to use with the engine (e.g. gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro)
     chatParams, // Additional configuration to pass to the model
     rateLimitMs, // How many milliseconds between requests
     apiKey, // Gemini API key
