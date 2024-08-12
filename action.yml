@@ -9,10 +9,6 @@ inputs:
   api-key:
     description: 'The API key for ChatGPT or Gemini'
     required: true
-  source-branch-name:
-    description: 'The name of the source branch'
-    required: false
-    default: 'main'
   language:
     description: 'Language to translate from'
     required: false
@@ -66,7 +62,7 @@ runs:
     shell: bash
     run: |
       cp "${{ inputs.json-file-path }}" "${{ inputs.json-file-path }}-latest"
-      git checkout origin/${{ github.base_ref }} -- "${{ inputs.json-file-path }}"
+      git checkout origin/add-e2e-test -- "${{ inputs.json-file-path }}"
 
   - name: Translate the diff
     shell: bash
