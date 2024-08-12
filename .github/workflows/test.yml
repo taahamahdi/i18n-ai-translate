@@ -13,4 +13,4 @@ jobs:
         with:
           json-file-path: test/en.json
           api-key: ${{ secrets.OPENAI_API_KEY }}
-          source-branch-name: master
+          source-branch-name: add-e2e-test
