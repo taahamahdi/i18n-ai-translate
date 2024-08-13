@@ -11864,7 +11864,7 @@ __export(error_exports, {
 });
 
 // node_modules/openai/version.mjs
-var VERSION = "4.55.3";
+var VERSION = "4.55.4";
 
 // node_modules/openai/_shims/registry.mjs
 var auto = false;
