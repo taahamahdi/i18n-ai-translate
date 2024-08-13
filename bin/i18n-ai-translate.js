@@ -11864,7 +11864,7 @@ __export(error_exports, {
 });
 
 // node_modules/openai/version.mjs
-var VERSION = "4.55.3";
+var VERSION = "4.55.4";
 
 // node_modules/openai/_shims/registry.mjs
 var auto = false;
@@ -17251,7 +17251,7 @@ async function generate2(options, generationPromptText, generateState) {
 
 // src/translate.ts
 var import_path2 = __toESM(require("path"));
-var VERSION2 = "2.0.7";
+var VERSION2 = "2.0.8";
 var DEFAULT_BATCH_SIZE = 32;
 var DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 var DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
