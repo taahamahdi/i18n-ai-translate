@@ -10781,6 +10781,7 @@ var FinishReason;
   FinishReason2["MAX_TOKENS"] = "MAX_TOKENS";
   FinishReason2["SAFETY"] = "SAFETY";
   FinishReason2["RECITATION"] = "RECITATION";
+  FinishReason2["LANGUAGE"] = "LANGUAGE";
   FinishReason2["OTHER"] = "OTHER";
 })(FinishReason || (FinishReason = {}));
 var TaskType;
@@ -10822,7 +10823,7 @@ var GoogleGenerativeAIRequestInputError = class extends GoogleGenerativeAIError 
 };
 var DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
 var DEFAULT_API_VERSION = "v1beta";
-var PACKAGE_VERSION = "0.14.1";
+var PACKAGE_VERSION = "0.16.0";
 var PACKAGE_LOG_HEADER = "genai-js";
 var Task;
 (function(Task2) {
@@ -10892,7 +10893,7 @@ async function constructModelRequest(model, task, apiKey, stream, body, requestO
     fetchOptions: Object.assign(Object.assign({}, buildFetchOptions(requestOptions)), { method: "POST", headers: await getHeaders(url), body })
   };
 }
-async function makeModelRequest(model, task, apiKey, stream, body, requestOptions, fetchFn = fetch) {
+async function makeModelRequest(model, task, apiKey, stream, body, requestOptions = {}, fetchFn = fetch) {
   const { url, fetchOptions } = await constructModelRequest(model, task, apiKey, stream, body, requestOptions);
   return makeRequest(url, fetchOptions, fetchFn);
 }
@@ -10932,11 +10933,17 @@ async function handleResponseNotOk(response, url) {
 }
 function buildFetchOptions(requestOptions) {
   const fetchOptions = {};
-  if ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.timeout) >= 0) {
-    const abortController = new AbortController();
-    const signal = abortController.signal;
-    setTimeout(() => abortController.abort(), requestOptions.timeout);
-    fetchOptions.signal = signal;
+  if ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.signal) !== void 0 || (requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.timeout) >= 0) {
+    const controller = new AbortController();
+    if ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.timeout) >= 0) {
+      setTimeout(() => controller.abort(), requestOptions.timeout);
+    }
+    if (requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.signal) {
+      requestOptions.signal.addEventListener("abort", () => {
+        controller.abort();
+      });
+    }
+    fetchOptions.signal = controller.signal;
   }
   return fetchOptions;
 }
@@ -11024,7 +11031,11 @@ function getFunctionCalls(response) {
     return void 0;
   }
 }
-var badFinishReasons = [FinishReason.RECITATION, FinishReason.SAFETY];
+var badFinishReasons = [
+  FinishReason.RECITATION,
+  FinishReason.SAFETY,
+  FinishReason.LANGUAGE
+];
 function hadBadFinishReason(candidate) {
   return !!candidate.finishReason && badFinishReasons.includes(candidate.finishReason);
 }
@@ -11295,22 +11306,31 @@ function assignRoleToPartsAndValidateSendMessageRequest(parts) {
   }
   return functionContent;
 }
-function formatCountTokensInput(params, model) {
-  let formattedRequest = {};
+function formatCountTokensInput(params, modelParams) {
+  var _a2;
+  let formattedGenerateContentRequest = {
+    model: modelParams === null || modelParams === void 0 ? void 0 : modelParams.model,
+    generationConfig: modelParams === null || modelParams === void 0 ? void 0 : modelParams.generationConfig,
+    safetySettings: modelParams === null || modelParams === void 0 ? void 0 : modelParams.safetySettings,
+    tools: modelParams === null || modelParams === void 0 ? void 0 : modelParams.tools,
+    toolConfig: modelParams === null || modelParams === void 0 ? void 0 : modelParams.toolConfig,
+    systemInstruction: modelParams === null || modelParams === void 0 ? void 0 : modelParams.systemInstruction,
+    cachedContent: (_a2 = modelParams === null || modelParams === void 0 ? void 0 : modelParams.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name,
+    contents: []
+  };
   const containsGenerateContentRequest = params.generateContentRequest != null;
   if (params.contents) {
     if (containsGenerateContentRequest) {
       throw new GoogleGenerativeAIRequestInputError("CountTokensRequest must have one of contents or generateContentRequest, not both.");
     }
-    formattedRequest = Object.assign({}, params);
+    formattedGenerateContentRequest.contents = params.contents;
   } else if (containsGenerateContentRequest) {
-    formattedRequest = Object.assign({}, params);
-    formattedRequest.generateContentRequest.model = model;
+    formattedGenerateContentRequest = Object.assign(Object.assign({}, formattedGenerateContentRequest), params.generateContentRequest);
   } else {
     const content = formatNewContent(params);
-    formattedRequest.contents = [content];
+    formattedGenerateContentRequest.contents = [content];
   }
-  return formattedRequest;
+  return { generateContentRequest: formattedGenerateContentRequest };
 }
 function formatGenerateContentInput(params) {
   let formattedRequest;
@@ -11390,10 +11410,10 @@ function validateChatHistory(history) {
 }
 var SILENT_ERROR = "SILENT_ERROR";
 var ChatSession = class {
-  constructor(apiKey, model, params, requestOptions) {
+  constructor(apiKey, model, params, _requestOptions = {}) {
     this.model = model;
     this.params = params;
-    this.requestOptions = requestOptions;
+    this._requestOptions = _requestOptions;
     this._history = [];
     this._sendPromise = Promise.resolve();
     this._apiKey = apiKey;
@@ -11413,9 +11433,13 @@ var ChatSession = class {
   }
   /**
    * Sends a chat message and receives a non-streaming
-   * {@link GenerateContentResult}
+   * {@link GenerateContentResult}.
+   *
+   * Fields set in the optional {@link SingleRequestOptions} parameter will
+   * take precedence over the {@link RequestOptions} values provided at the
+   * time of the {@link GoogleAIFileManager} initialization.
    */
-  async sendMessage(request) {
+  async sendMessage(request, requestOptions = {}) {
     var _a2, _b, _c, _d, _e2, _f;
     await this._sendPromise;
     const newContent = formatNewContent(request);
@@ -11428,8 +11452,9 @@ var ChatSession = class {
       cachedContent: (_f = this.params) === null || _f === void 0 ? void 0 : _f.cachedContent,
       contents: [...this._history, newContent]
     };
+    const chatSessionRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
     let finalResult;
-    this._sendPromise = this._sendPromise.then(() => generateContent(this._apiKey, this.model, generateContentRequest, this.requestOptions)).then((result) => {
+    this._sendPromise = this._sendPromise.then(() => generateContent(this._apiKey, this.model, generateContentRequest, chatSessionRequestOptions)).then((result) => {
       var _a3;
       if (result.response.candidates && result.response.candidates.length > 0) {
         this._history.push(newContent);
@@ -11454,8 +11479,12 @@ var ChatSession = class {
    * Sends a chat message and receives the response as a
    * {@link GenerateContentStreamResult} containing an iterable stream
    * and a response promise.
+   *
+   * Fields set in the optional {@link SingleRequestOptions} parameter will
+   * take precedence over the {@link RequestOptions} values provided at the
+   * time of the {@link GoogleAIFileManager} initialization.
    */
-  async sendMessageStream(request) {
+  async sendMessageStream(request, requestOptions = {}) {
     var _a2, _b, _c, _d, _e2, _f;
     await this._sendPromise;
     const newContent = formatNewContent(request);
@@ -11468,7 +11497,8 @@ var ChatSession = class {
       cachedContent: (_f = this.params) === null || _f === void 0 ? void 0 : _f.cachedContent,
       contents: [...this._history, newContent]
     };
-    const streamPromise = generateContentStream(this._apiKey, this.model, generateContentRequest, this.requestOptions);
+    const chatSessionRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+    const streamPromise = generateContentStream(this._apiKey, this.model, generateContentRequest, chatSessionRequestOptions);
     this._sendPromise = this._sendPromise.then(() => streamPromise).catch((_ignored) => {
       throw new Error(SILENT_ERROR);
     }).then((streamResult) => streamResult.response).then((response) => {
@@ -11493,8 +11523,8 @@ var ChatSession = class {
     return streamPromise;
   }
 };
-async function countTokens(apiKey, model, params, requestOptions) {
-  const response = await makeModelRequest(model, Task.COUNT_TOKENS, apiKey, false, JSON.stringify(params), requestOptions);
+async function countTokens(apiKey, model, params, singleRequestOptions) {
+  const response = await makeModelRequest(model, Task.COUNT_TOKENS, apiKey, false, JSON.stringify(params), singleRequestOptions);
   return response.json();
 }
 async function embedContent(apiKey, model, params, requestOptions) {
@@ -11509,8 +11539,9 @@ async function batchEmbedContents(apiKey, model, params, requestOptions) {
   return response.json();
 }
 var GenerativeModel = class {
-  constructor(apiKey, modelParams, requestOptions) {
+  constructor(apiKey, modelParams, _requestOptions = {}) {
     this.apiKey = apiKey;
+    this._requestOptions = _requestOptions;
     if (modelParams.model.includes("/")) {
       this.model = modelParams.model;
     } else {
@@ -11522,27 +11553,36 @@ var GenerativeModel = class {
     this.toolConfig = modelParams.toolConfig;
     this.systemInstruction = formatSystemInstruction(modelParams.systemInstruction);
     this.cachedContent = modelParams.cachedContent;
-    this.requestOptions = requestOptions || {};
   }
   /**
    * Makes a single non-streaming call to the model
    * and returns an object containing a single {@link GenerateContentResponse}.
+   *
+   * Fields set in the optional {@link SingleRequestOptions} parameter will
+   * take precedence over the {@link RequestOptions} values provided at the
+   * time of the {@link GoogleAIFileManager} initialization.
    */
-  async generateContent(request) {
+  async generateContent(request, requestOptions = {}) {
     var _a2;
     const formattedParams = formatGenerateContentInput(request);
-    return generateContent(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, formattedParams), this.requestOptions);
+    const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+    return generateContent(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, formattedParams), generativeModelRequestOptions);
   }
   /**
-   * Makes a single streaming call to the model
-   * and returns an object containing an iterable stream that iterates
-   * over all chunks in the streaming response as well as
-   * a promise that returns the final aggregated response.
+   * Makes a single streaming call to the model and returns an object
+   * containing an iterable stream that iterates over all chunks in the
+   * streaming response as well as a promise that returns the final
+   * aggregated response.
+   *
+   * Fields set in the optional {@link SingleRequestOptions} parameter will
+   * take precedence over the {@link RequestOptions} values provided at the
+   * time of the {@link GoogleAIFileManager} initialization.
    */
-  async generateContentStream(request) {
+  async generateContentStream(request, requestOptions = {}) {
     var _a2;
     const formattedParams = formatGenerateContentInput(request);
-    return generateContentStream(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, formattedParams), this.requestOptions);
+    const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+    return generateContentStream(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, formattedParams), generativeModelRequestOptions);
   }
   /**
    * Gets a new {@link ChatSession} instance which can be used for
@@ -11554,23 +11594,46 @@ var GenerativeModel = class {
   }
   /**
    * Counts the tokens in the provided request.
+   *
+   * Fields set in the optional {@link SingleRequestOptions} parameter will
+   * take precedence over the {@link RequestOptions} values provided at the
+   * time of the {@link GoogleAIFileManager} initialization.
    */
-  async countTokens(request) {
-    const formattedParams = formatCountTokensInput(request, this.model);
-    return countTokens(this.apiKey, this.model, formattedParams, this.requestOptions);
+  async countTokens(request, requestOptions = {}) {
+    const formattedParams = formatCountTokensInput(request, {
+      model: this.model,
+      generationConfig: this.generationConfig,
+      safetySettings: this.safetySettings,
+      tools: this.tools,
+      toolConfig: this.toolConfig,
+      systemInstruction: this.systemInstruction,
+      cachedContent: this.cachedContent
+    });
+    const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+    return countTokens(this.apiKey, this.model, formattedParams, generativeModelRequestOptions);
   }
   /**
    * Embeds the provided content.
+   *
+   * Fields set in the optional {@link SingleRequestOptions} parameter will
+   * take precedence over the {@link RequestOptions} values provided at the
+   * time of the {@link GoogleAIFileManager} initialization.
    */
-  async embedContent(request) {
+  async embedContent(request, requestOptions = {}) {
     const formattedParams = formatEmbedContentInput(request);
-    return embedContent(this.apiKey, this.model, formattedParams, this.requestOptions);
+    const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+    return embedContent(this.apiKey, this.model, formattedParams, generativeModelRequestOptions);
   }
   /**
    * Embeds an array of {@link EmbedContentRequest}s.
+   *
+   * Fields set in the optional {@link SingleRequestOptions} parameter will
+   * take precedence over the {@link RequestOptions} values provided at the
+   * time of the {@link GoogleAIFileManager} initialization.
    */
-  async batchEmbedContents(batchEmbedContentRequest) {
-    return batchEmbedContents(this.apiKey, this.model, batchEmbedContentRequest, this.requestOptions);
+  async batchEmbedContents(batchEmbedContentRequest, requestOptions = {}) {
+    const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+    return batchEmbedContents(this.apiKey, this.model, batchEmbedContentRequest, generativeModelRequestOptions);
   }
 };
 var GoogleGenerativeAI = class {
@@ -11801,7 +11864,7 @@ __export(error_exports, {
 });
 
 // node_modules/openai/version.mjs
-var VERSION = "4.55.3";
+var VERSION = "4.55.4";
 
 // node_modules/openai/_shims/registry.mjs
 var auto = false;
