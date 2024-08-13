@@ -90,8 +90,8 @@ runs:
   - name: Setup Git Config
     shell: bash
     run: |
-      git config --global user.email "${{ inputs.author-email }}}"
-      git config --global user.name "${{ inputs.author-name }}}"
+      git config --global user.email "${{ inputs.author-email }}"
+      git config --global user.name "${{ inputs.author-name }}"
 
   - name: Remove dependencies to prevent being merged
     shell: bash
