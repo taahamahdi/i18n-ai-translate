@@ -6,7 +6,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Test i18n-ai-translate action
         uses: taahamahdi/i18n-ai-translate@master
