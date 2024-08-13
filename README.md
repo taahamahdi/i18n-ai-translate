@@ -12,6 +12,53 @@ History is retained between calls to ensure consistency when translating the ent
 
 # Usage
 ## Quick-start
+### GitHub Actions
+Incorporate it into your CI with a [GitHub Action](https://github.com/marketplace/actions/i18n-ai-translate) to auto-translate keys for every pull request as a new commit. All configurable options available in [action.yml](https://github.com/taahamahdi/i18n-ai-translate/blob/master/action.yml).
+
+The following translates every PR where `i18n/en.json` has been modified:
+```yml
+name: i18n-ai-translate
+
+on:
+  pull_request:
+    # Only trigger when en.json has been modified
+    paths:
+      - "i18n/en.json"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test i18n-ai-translate action
+        uses: taahamahdi/i18n-ai-translate@master
+        with:
+          json-file-path: i18n/en.json
+          api-key: ${{ secrets.OPENAI_API_KEY }}
+```
+
+The following requires a comment containing `/translate` to be sent in the PR before it is translated.
+
+Note: the workflow must be merged into the main branch before this action can be triggered.
+```yml
+name: i18n-ai-translate
+
+on:
+  issue_comment:
+    types: [created, edited, deleted]
+
+jobs:
+  build:
+    if: ${{ github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test i18n-ai-translate action
+        if: contains(github.event.comment.body, '/translate')
+        uses: taahamahdi/i18n-ai-translate@master
+        with:
+          json-file-path: i18n/en.json
+          api-key: ${{ secrets.OPENAI_API_KEY }}
+```
+
 ### [Running directly](#script)
 ```bash
 git clone git@github.com:taahamahdi/i18n-ai-translate.git
@@ -67,10 +114,6 @@ console.log(frenchTranslation);
   }
 }
 ```
-
-
-## GitHub Actions
-Incorporate it into your CI with a [GitHub Action](https://github.com/marketplace/actions/i18n-ai-translate) to auto-translate keys for every pull request: [action.yml](https://github.com/taahamahdi/i18n-ai-translate/blob/master/action.yml)
 
 ## Script
 Use `i18n-ai-translate translate` to convert a local i18n JSON file to any language. Relative paths begin from the `jsons/` directory.
