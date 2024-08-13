@@ -29,7 +29,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Test i18n-ai-translate action
+      - name: i18n-ai-translate
         uses: taahamahdi/i18n-ai-translate@master
         with:
           json-file-path: i18n/en.json
@@ -51,7 +51,7 @@ jobs:
     if: ${{ github.event.issue.pull_request }}
     runs-on: ubuntu-latest
     steps:
-      - name: Test i18n-ai-translate action
+      - name: i18n-ai-translate
         if: contains(github.event.comment.body, '/translate')
         uses: taahamahdi/i18n-ai-translate@master
         with:
