@@ -11,7 +11,7 @@
     "typescript": "^5.1.6"
   },
   "name": "i18n-ai-translate",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "main": "src/translate.js",
   "bin": {
     "i18n-ai-translate": "bin/i18n-ai-translate.js"
