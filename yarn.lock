@@ -1743,9 +1743,9 @@ once@^1.3.0:
     wrappy "1"
 
 openai@^4.27.1:
-  version "4.55.4"
-  resolved "https://registry.yarnpkg.com/openai/-/openai-4.55.4.tgz#2f188e718e668f478f40c03012d92394e0c3d1b1"
-  integrity sha512-TEC75Y6U/OKIJp9fHao3zkTYfKLYGqXdD2TI+xN2Zd5W8KNKvv6E4/OBTOW7jg7fySfrBrhy5fYzBbyBcdHEtQ==
+  version "4.55.9"
+  resolved "https://registry.yarnpkg.com/openai/-/openai-4.55.9.tgz#ed11cbaacdc96a645e7740e0bdb8a1a28f8f6887"
+  integrity sha512-gO2BVMuGirwoftSXw6OnC6YvLK+1ZuUrAlDfWAyDbWUuXsJ+RGDAjA7ZCTocgAwSzDZNUYUr3SJ7siFaF5zquQ==
   dependencies:
     "@types/node" "^18.11.18"
     "@types/node-fetch" "^2.6.4"
