@@ -10722,15 +10722,15 @@ var {
 } = import_index.default;
 
 // node_modules/@google/generative-ai/dist/index.mjs
-var FunctionDeclarationSchemaType;
-(function(FunctionDeclarationSchemaType2) {
-  FunctionDeclarationSchemaType2["STRING"] = "STRING";
-  FunctionDeclarationSchemaType2["NUMBER"] = "NUMBER";
-  FunctionDeclarationSchemaType2["INTEGER"] = "INTEGER";
-  FunctionDeclarationSchemaType2["BOOLEAN"] = "BOOLEAN";
-  FunctionDeclarationSchemaType2["ARRAY"] = "ARRAY";
-  FunctionDeclarationSchemaType2["OBJECT"] = "OBJECT";
-})(FunctionDeclarationSchemaType || (FunctionDeclarationSchemaType = {}));
+var SchemaType;
+(function(SchemaType2) {
+  SchemaType2["STRING"] = "STRING";
+  SchemaType2["NUMBER"] = "NUMBER";
+  SchemaType2["INTEGER"] = "INTEGER";
+  SchemaType2["BOOLEAN"] = "BOOLEAN";
+  SchemaType2["ARRAY"] = "ARRAY";
+  SchemaType2["OBJECT"] = "OBJECT";
+})(SchemaType || (SchemaType = {}));
 var ExecutableCodeLanguage;
 (function(ExecutableCodeLanguage2) {
   ExecutableCodeLanguage2["LANGUAGE_UNSPECIFIED"] = "language_unspecified";
@@ -10823,7 +10823,7 @@ var GoogleGenerativeAIRequestInputError = class extends GoogleGenerativeAIError 
 };
 var DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
 var DEFAULT_API_VERSION = "v1beta";
-var PACKAGE_VERSION = "0.16.0";
+var PACKAGE_VERSION = "0.17.0";
 var PACKAGE_LOG_HEADER = "genai-js";
 var Task;
 (function(Task2) {
@@ -11436,8 +11436,8 @@ var ChatSession = class {
    * {@link GenerateContentResult}.
    *
    * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided at the
-   * time of the {@link GoogleAIFileManager} initialization.
+   * take precedence over the {@link RequestOptions} values provided to
+   * {@link GoogleGenerativeAI.getGenerativeModel }.
    */
   async sendMessage(request, requestOptions = {}) {
     var _a2, _b, _c, _d, _e2, _f;
@@ -11481,8 +11481,8 @@ var ChatSession = class {
    * and a response promise.
    *
    * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided at the
-   * time of the {@link GoogleAIFileManager} initialization.
+   * take precedence over the {@link RequestOptions} values provided to
+   * {@link GoogleGenerativeAI.getGenerativeModel }.
    */
   async sendMessageStream(request, requestOptions = {}) {
     var _a2, _b, _c, _d, _e2, _f;
@@ -11559,8 +11559,8 @@ var GenerativeModel = class {
    * and returns an object containing a single {@link GenerateContentResponse}.
    *
    * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided at the
-   * time of the {@link GoogleAIFileManager} initialization.
+   * take precedence over the {@link RequestOptions} values provided to
+   * {@link GoogleGenerativeAI.getGenerativeModel }.
    */
   async generateContent(request, requestOptions = {}) {
     var _a2;
@@ -11575,8 +11575,8 @@ var GenerativeModel = class {
    * aggregated response.
    *
    * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided at the
-   * time of the {@link GoogleAIFileManager} initialization.
+   * take precedence over the {@link RequestOptions} values provided to
+   * {@link GoogleGenerativeAI.getGenerativeModel }.
    */
   async generateContentStream(request, requestOptions = {}) {
     var _a2;
@@ -11596,8 +11596,8 @@ var GenerativeModel = class {
    * Counts the tokens in the provided request.
    *
    * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided at the
-   * time of the {@link GoogleAIFileManager} initialization.
+   * take precedence over the {@link RequestOptions} values provided to
+   * {@link GoogleGenerativeAI.getGenerativeModel }.
    */
   async countTokens(request, requestOptions = {}) {
     const formattedParams = formatCountTokensInput(request, {
@@ -11616,8 +11616,8 @@ var GenerativeModel = class {
    * Embeds the provided content.
    *
    * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided at the
-   * time of the {@link GoogleAIFileManager} initialization.
+   * take precedence over the {@link RequestOptions} values provided to
+   * {@link GoogleGenerativeAI.getGenerativeModel }.
    */
   async embedContent(request, requestOptions = {}) {
     const formattedParams = formatEmbedContentInput(request);
@@ -11628,8 +11628,8 @@ var GenerativeModel = class {
    * Embeds an array of {@link EmbedContentRequest}s.
    *
    * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided at the
-   * time of the {@link GoogleAIFileManager} initialization.
+   * take precedence over the {@link RequestOptions} values provided to
+   * {@link GoogleGenerativeAI.getGenerativeModel }.
    */
   async batchEmbedContents(batchEmbedContentRequest, requestOptions = {}) {
     const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
