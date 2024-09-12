@@ -517,7 +517,7 @@ var require_data = __commonJS({
       },
       ar: {
         name: "Arabic",
-        nativeName: "\u0627\u064E\u0644\u0652\u0639\u064E\u0631\u064E\u0628\u0650\u064A\u064E\u0651\u0629\u064F"
+        nativeName: "\u0627\u0644\u0639\u0631\u0628\u064A\u0629"
       },
       as: {
         name: "Assamese",
@@ -15926,6 +15926,7 @@ var Runs = class extends APIResource {
         headers: { ...options?.headers, ...headers }
       }).withResponse();
       switch (run.status) {
+        //If we are in any sort of intermediate state we poll
         case "queued":
         case "in_progress":
         case "cancelling":
@@ -15943,6 +15944,7 @@ var Runs = class extends APIResource {
           }
           await sleep(sleepInterval);
           break;
+        //We return the run in any terminal state.
         case "requires_action":
         case "incomplete":
         case "cancelled":
