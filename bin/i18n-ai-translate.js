@@ -15926,6 +15926,7 @@ var Runs = class extends APIResource {
         headers: { ...options?.headers, ...headers }
       }).withResponse();
       switch (run.status) {
+        //If we are in any sort of intermediate state we poll
         case "queued":
         case "in_progress":
         case "cancelling":
@@ -15943,6 +15944,7 @@ var Runs = class extends APIResource {
           }
           await sleep(sleepInterval);
           break;
+        //We return the run in any terminal state.
         case "requires_action":
         case "incomplete":
         case "cancelled":
