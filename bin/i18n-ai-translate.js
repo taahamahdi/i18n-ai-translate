@@ -12979,7 +12979,7 @@ var GoogleGenerativeAIRequestInputError = class extends GoogleGenerativeAIError 
 };
 var DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
 var DEFAULT_API_VERSION = "v1beta";
-var PACKAGE_VERSION = "0.17.0";
+var PACKAGE_VERSION = "0.17.2";
 var PACKAGE_LOG_HEADER = "genai-js";
 var Task;
 (function(Task2) {
@@ -13158,7 +13158,7 @@ function getText(response) {
         textStrings.push(part.text);
       }
       if (part.executableCode) {
-        textStrings.push("\n```python\n" + part.executableCode.code + "\n```\n");
+        textStrings.push("\n```" + part.executableCode.language + "\n" + part.executableCode.code + "\n```\n");
       }
       if (part.codeExecutionResult) {
         textStrings.push("\n```\n" + part.codeExecutionResult.output + "\n```\n");
@@ -13746,7 +13746,7 @@ var GenerativeModel = class {
    */
   startChat(startChatParams) {
     var _a2;
-    return new ChatSession(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, startChatParams), this.requestOptions);
+    return new ChatSession(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, startChatParams), this._requestOptions);
   }
   /**
    * Counts the tokens in the provided request.
