@@ -163,10 +163,10 @@
   resolved "https://registry.yarnpkg.com/@eslint/js/-/js-8.57.0.tgz#a5417ae8427873f1dd08b70b3574b453e67b5f7f"
   integrity sha512-Ys+3g2TaW7gADOJzPt83SJtCDhMjndcDMFVQ/Tj9iA1BfJzFKD9mAUXT3OenpuPHbI6P/myECxRJrofUsDx/5g==
 
-"@google/generative-ai@^0.18.0":
-  version "0.18.0"
-  resolved "https://registry.yarnpkg.com/@google/generative-ai/-/generative-ai-0.18.0.tgz#3e05d972273bab18bbd822b31937a297a6fbf410"
-  integrity sha512-AhaIWSpk2tuhYHrBhUqC0xrWWznmYEja1/TRDIb+5kruBU5kUzMlFsXCQNO9PzyTZ4clUJ3CX/Rvy+Xm9x+w3g==
+"@google/generative-ai@^0.20.0":
+  version "0.20.0"
+  resolved "https://registry.yarnpkg.com/@google/generative-ai/-/generative-ai-0.20.0.tgz#c270f60bf50255f15d489eb2acab169fbbd50e12"
+  integrity sha512-uJQNDr1sihvBJ9w8B0ESpNdX9aEueAMXgwnTuhTo+LnI7DD0M1KHnOWzxb2l6cM1rRHzvkdgJNNfeybcqg7uVg==
 
 "@humanwhocodes/config-array@^0.11.14":
   version "0.11.14"
