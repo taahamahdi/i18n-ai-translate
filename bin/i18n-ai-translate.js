@@ -12880,12 +12880,12 @@ var {
 // node_modules/@google/generative-ai/dist/index.mjs
 var SchemaType;
 (function(SchemaType2) {
-  SchemaType2["STRING"] = "STRING";
-  SchemaType2["NUMBER"] = "NUMBER";
-  SchemaType2["INTEGER"] = "INTEGER";
-  SchemaType2["BOOLEAN"] = "BOOLEAN";
-  SchemaType2["ARRAY"] = "ARRAY";
-  SchemaType2["OBJECT"] = "OBJECT";
+  SchemaType2["STRING"] = "string";
+  SchemaType2["NUMBER"] = "number";
+  SchemaType2["INTEGER"] = "integer";
+  SchemaType2["BOOLEAN"] = "boolean";
+  SchemaType2["ARRAY"] = "array";
+  SchemaType2["OBJECT"] = "object";
 })(SchemaType || (SchemaType = {}));
 var ExecutableCodeLanguage;
 (function(ExecutableCodeLanguage2) {
@@ -12956,6 +12956,11 @@ var FunctionCallingMode;
   FunctionCallingMode2["ANY"] = "ANY";
   FunctionCallingMode2["NONE"] = "NONE";
 })(FunctionCallingMode || (FunctionCallingMode = {}));
+var DynamicRetrievalMode;
+(function(DynamicRetrievalMode2) {
+  DynamicRetrievalMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
+  DynamicRetrievalMode2["MODE_DYNAMIC"] = "MODE_DYNAMIC";
+})(DynamicRetrievalMode || (DynamicRetrievalMode = {}));
 var GoogleGenerativeAIError = class extends Error {
   constructor(message) {
     super(`[GoogleGenerativeAI Error]: ${message}`);
@@ -12979,7 +12984,7 @@ var GoogleGenerativeAIRequestInputError = class extends GoogleGenerativeAIError 
 };
 var DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
 var DEFAULT_API_VERSION = "v1beta";
-var PACKAGE_VERSION = "0.18.0";
+var PACKAGE_VERSION = "0.21.0";
 var PACKAGE_LOG_HEADER = "genai-js";
 var Task;
 (function(Task2) {
@@ -13341,6 +13346,7 @@ function aggregateResponses(responses) {
           };
         }
         aggregatedResponse.candidates[i2].citationMetadata = candidate.citationMetadata;
+        aggregatedResponse.candidates[i2].groundingMetadata = candidate.groundingMetadata;
         aggregatedResponse.candidates[i2].finishReason = candidate.finishReason;
         aggregatedResponse.candidates[i2].finishMessage = candidate.finishMessage;
         aggregatedResponse.candidates[i2].safetyRatings = candidate.safetyRatings;
