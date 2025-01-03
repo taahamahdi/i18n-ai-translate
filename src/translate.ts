@@ -570,8 +570,8 @@ program
         "Source i18n file, in the jsons/ directory if a relative path is given",
     )
     .option(
-        "-o, --output <output>",
-        "Output i18n file, in the jsons/ directory if a relative path is given",
+        "-o, --output-languages [language codes...]",
+        "Pass a list of languages to translate to",
     )
     .requiredOption(
         "-e, --engine <engine>",
@@ -579,7 +579,7 @@ program
     )
     .option(
         "-m, --model <model>",
-        "Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro)",
+        "Model to use (e.g. gpt-o1, gpt-4o, gpt-4-turbo, gpt-3.5-turbo, gemini-pro)",
     )
     .option(
         "-r, --rate-limit-ms <rateLimitMs>",
@@ -587,10 +587,6 @@ program
     )
     .option("-f, --force-language-name <language name>", "Force language name")
     .option("-A, --all-languages", "Translate to all supported languages")
-    .option(
-        "-l, --languages [language codes...]",
-        "Pass a list of languages to translate to",
-    )
     .option(
         "-p, --templated-string-prefix <prefix>",
         "Prefix for templated strings",
@@ -658,58 +654,37 @@ program
                 return;
         }
 
-        if (!options.allLanguages && !options.languages) {
-            if (!options.output) {
-                console.error("Output file not specified");
-                return;
-            }
-
-            await translateFile({
-                engine: options.engine,
-                model,
-                chatParams,
-                rateLimitMs,
-                apiKey,
-                inputFileOrPath: options.input,
-                outputFileOrPath: options.output,
-                forceLanguageName: options.forceLanguageName,
-                templatedStringPrefix: options.templatedStringPrefix,
-                templatedStringSuffix: options.templatedStringSuffix,
-                verbose: options.verbose,
-                ensureChangedTranslation: options.ensureChangedTranslation,
-                batchSize: options.batchSize,
-            });
-        } else if (options.languages) {
+        if (options.outputLanguages) {
             if (options.forceLanguageName) {
                 console.error(
-                    "Cannot use both --languages and --force-language",
+                    "Cannot use both --output-languages and --force-language",
                 );
                 return;
             }
 
             if (options.allLanguages) {
                 console.error(
-                    "Cannot use both --all-languages and --languages",
+                    "Cannot use both --all-languages and --output-languages",
                 );
                 return;
             }
 
-            if (options.languages.length === 0) {
+            if (options.outputLanguages.length === 0) {
                 console.error("No languages specified");
                 return;
             }
 
             if (options.verbose) {
                 console.log(
-                    `Translating to ${options.languages.join(", ")}...`,
+                    `Translating to ${options.outputLanguages.join(", ")}...`,
                 );
             }
 
             let i = 0;
-            for (const languageCode of options.languages) {
+            for (const languageCode of options.outputLanguages) {
                 i++;
                 console.log(
-                    `Translating ${i}/${options.languages.length} languages...`,
+                    `Translating ${i}/${options.outputLanguages.length} languages...`,
                 );
                 const output = options.input.replace(
                     getLanguageCodeFromFilename(options.input),
