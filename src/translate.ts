@@ -1,19 +1,21 @@
 import { config } from "dotenv";
 import { flatten, unflatten } from "flat";
-import { getAllLanguageCodes, getLanguageCodeFromFilename } from "./utils";
+import { getAllFilesInPath, getAllLanguageCodes, getLanguageCodeFromFilename, getTranslationDirectoryKey } from "./utils";
 import { program } from "commander";
 import ChatFactory from "./chat_interface/chat_factory";
 import Engine from "./enums/engine";
 import RateLimiter from "./rate_limiter";
 import fs from "fs";
 import generateTranslation from "./generate";
-import path from "path";
+import path, { dirname } from "path";
 import type { ChatParams, Model } from "./types";
 import type Chats from "./interfaces/chats";
 import type TranslateFileDiffOptions from "./interfaces/translation_file_diff_options";
 import type TranslateFileOptions from "./interfaces/translation_file_options";
 import type TranslationDiffOptions from "./interfaces/translation_diff_options";
 import type TranslationOptions from "./interfaces/translation_options";
+import type TranslateDirectoryOptions from "./interfaces/translation_directory_options";
+import type TranslateDirectoryDiffOptions from "./interfaces/translation_directory_diff_options";
 
 const VERSION = "2.0.9";
 
@@ -27,7 +29,7 @@ config({ path: path.resolve(process.cwd(), ".env") });
  * Translate the input JSON to the given language
  * @param options - The options for the translation
  */
-export async function translate(options: TranslationOptions): Promise<Object> {
+export async function translate(options: TranslationOptions): Promise<{ [key: string]: string }> {
     if (options.verbose) {
         console.log(
             `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
@@ -159,7 +161,7 @@ export async function translate(options: TranslationOptions): Promise<Object> {
         console.log(`Actual execution time: ${roundedSeconds} seconds`);
     }
 
-    return unflattenedOutput as Object;
+    return unflattenedOutput as { [key: string]: string };
 }
 
 /**
@@ -464,6 +466,94 @@ const translateFileDiff = async (
     } catch (err) {
         console.error(`Failed to translate file diff: ${err}`);
     }
+};
+
+const translateDirectory = async (options: TranslateDirectoryOptions): Promise<void> => {
+    // collect all the keys in the format path/to/file/keyName
+    // pass it into translate()
+    //
+    // Some assumptions: in the given path there will be a folder called {inputLanguageInISO-639-1}/
+    // and we want to output each translation to new directories in this path
+    const jsonFolder = path.resolve(process.cwd(), "jsons");
+    let inputPath: string;
+    if (path.isAbsolute(options.baseDirectory)) {
+        inputPath = path.resolve(options.baseDirectory);
+    } else {
+        inputPath = path.resolve(jsonFolder, options.baseDirectory);
+        if (!fs.existsSync(inputPath)) {
+            inputPath = path.resolve(process.cwd(), options.baseDirectory);
+        }
+    }
+
+    const sourceLanguagePath = path.resolve(inputPath, options.inputLanguageCode);
+    if (!fs.existsSync(sourceLanguagePath)) {
+        throw new Error(`Source language path does not exist. sourceLanguagePath = ${sourceLanguagePath}`);
+    }
+
+    const sourceFilePaths = getAllFilesInPath(sourceLanguagePath);
+    const inputJSON: { [key: string]: string } = {};
+    for (const sourceFilePath of sourceFilePaths) {
+        const fileContents = fs.readFileSync(sourceFilePath, "utf-8");
+        const fileJSON = JSON.parse(fileContents);
+        const flatJSON = flatten(fileJSON) as { [key: string]: string };
+        for (const key in flatJSON) {
+            if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+                inputJSON[getTranslationDirectoryKey(sourceFilePath, key, options.inputLanguageCode, options.outputLanguageCode)] = flatJSON[key];
+            }
+        }
+    }
+
+    const inputLanguage = getLanguageCodeFromFilename(options.inputLanguageCode);
+    let outputLanguage = "";
+    if (options.forceLanguageName) {
+        outputLanguage = options.forceLanguageName;
+    } else {
+        outputLanguage = getLanguageCodeFromFilename(options.outputLanguageCode);
+    }
+
+    try {
+        const outputJSON = await translate({
+            engine: options.engine,
+            model: options.model,
+            chatParams: options.chatParams,
+            rateLimitMs: options.rateLimitMs,
+            apiKey: options.apiKey,
+            inputJSON,
+            inputLanguage,
+            outputLanguage,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+            verbose: options.verbose,
+            batchSize: options.batchSize,
+        });
+
+        const filesToJSON: { [filePath: string]: { [key: string]: string } } = {};
+        for (const pathWithKey in outputJSON) {
+            if (Object.prototype.hasOwnProperty.call(outputJSON, pathWithKey)) {
+                const filePath = pathWithKey.split("/").slice(0, -1).join("/");
+                const key = pathWithKey.split("/").pop()!;
+                filesToJSON[filePath][key] = outputJSON[pathWithKey];
+            }
+        }
+
+        for (const perFileJSON in filesToJSON) {
+            if (Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)) {
+                const unflattenedOutput = unflatten(filesToJSON[perFileJSON]);
+                const outputText = JSON.stringify(unflattenedOutput, null, 4);
+                fs.mkdirSync(dirname(perFileJSON), { recursive: true });
+                fs.writeFileSync(perFileJSON, `${outputText}\n`);
+            }
+        }
+    } catch (err) {
+        console.error(`Failed to translate file to ${outputLanguage}: ${err}`);
+    }
+};
+
+const translateDirectoryDiff = async (options: TranslateDirectoryDiffOptions): Promise<void> => {
+    // collect all the keys in the format path|to|file_keyName
+    // remove all keys that have unchanged values in pathAfter
+    // pass it into translateDiff()
+    // split by | and output into keyName
 };
 
 program

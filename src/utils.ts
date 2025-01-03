@@ -1,4 +1,5 @@
 import ISO6391 from "iso-639-1";
+import fs from "fs";
 
 /**
  * @param delayDuration - time (in ms) to delay
@@ -61,4 +62,34 @@ export function getLanguageCodeFromFilename(filename: string): string {
  */
 export function getAllLanguageCodes(): string[] {
     return ISO6391.getAllCodes();
+}
+
+/**
+ * @param directory - the directory to list all files for
+ * @returns all files with their absolute path that exist within the directory, recursively
+ */
+export function getAllFilesInPath(directory: string): Array<string> {
+    const files: Array<string> = [];
+    for (const fileOrDir of fs.readdirSync(directory)) {
+        if (fs.lstatSync(fileOrDir).isDirectory()) {
+            files.push(...getAllFilesInPath(fileOrDir));
+        } else {
+            files.push(fileOrDir);
+        }
+    }
+
+    return files;
+}
+
+/**
+ * @param sourceFilePath - the source file's path
+ * @param key - the key associated with the translation
+ * @param inputLanguageCode - the language code of the source language
+ * @param outputLanguageCode - the language code of the output language
+ * @returns a key to use when translating a key from a directory;
+ * swaps the input language code with the output language code
+ */
+export function getTranslationDirectoryKey(sourceFilePath: string, key: string, inputLanguageCode: string, outputLanguageCode: string): string {
+    const outputPath = sourceFilePath.replace(`/${inputLanguageCode}/`, `/${outputLanguageCode}/`);
+    return `${outputPath}/${key}`;
 }
