@@ -28,6 +28,8 @@ const DEFAULT_BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 
+const FLATTEN_DELIMITER = "_";
+
 config({ path: path.resolve(process.cwd(), ".env") });
 
 /**
@@ -77,7 +79,9 @@ export async function translate(
     const templatedStringSuffix =
         options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
 
-    const flatInput = flatten(options.inputJSON, { delimiter: "_" }) as {
+    const flatInput = flatten(options.inputJSON, {
+        delimiter: FLATTEN_DELIMITER,
+    }) as {
         [key: string]: string;
     };
 
@@ -164,7 +168,10 @@ export async function translate(
         }
     }
 
-    const unflattenedOutput = unflatten(sortedOutput, { delimiter: "_" });
+    const unflattenedOutput = unflatten(sortedOutput, {
+        delimiter: FLATTEN_DELIMITER,
+    });
+
     if (options.verbose) {
         const endTime = Date.now();
         const roundedSeconds = Math.round((endTime - batchStartTime) / 1000);
@@ -182,13 +189,13 @@ export async function translateDiff(
     options: TranslateDiffOptions,
 ): Promise<{ [language: string]: Object }> {
     const flatInputBefore = flatten(options.inputJSONBefore, {
-        delimiter: "_",
+        delimiter: FLATTEN_DELIMITER,
     }) as {
         [key: string]: string;
     };
 
     const flatInputAfter = flatten(options.inputJSONAfter, {
-        delimiter: "_",
+        delimiter: FLATTEN_DELIMITER,
     }) as {
         [key: string]: string;
     };
@@ -199,7 +206,7 @@ export async function translateDiff(
     for (const lang in options.toUpdateJSONs) {
         if (Object.prototype.hasOwnProperty.call(options.toUpdateJSONs, lang)) {
             const flatToUpdateJSON = flatten(options.toUpdateJSONs[lang], {
-                delimiter: "_",
+                delimiter: FLATTEN_DELIMITER,
             }) as {
                 [key: string]: string;
             };
@@ -274,7 +281,9 @@ export async function translateDiff(
                 batchSize: options.batchSize,
             });
 
-            const flatTranslated = flatten(translated, { delimiter: "_" }) as {
+            const flatTranslated = flatten(translated, {
+                delimiter: FLATTEN_DELIMITER,
+            }) as {
                 [key: string]: string;
             };
 
@@ -303,7 +312,7 @@ export async function translateDiff(
     for (const lang in flatToUpdateJSONs) {
         if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
             unflatToUpdateJSONs[lang] = unflatten(flatToUpdateJSONs[lang], {
-                delimiter: "_",
+                delimiter: FLATTEN_DELIMITER,
             });
         }
     }
@@ -500,7 +509,9 @@ const translateDirectory = async (
     for (const sourceFilePath of sourceFilePaths) {
         const fileContents = fs.readFileSync(sourceFilePath, "utf-8");
         const fileJSON = JSON.parse(fileContents);
-        const flatJSON = flatten(fileJSON, { delimiter: "_" }) as {
+        const flatJSON = flatten(fileJSON, {
+            delimiter: FLATTEN_DELIMITER,
+        }) as {
             [key: string]: string;
         };
 
@@ -567,7 +578,7 @@ const translateDirectory = async (
                 Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)
             ) {
                 const unflattenedOutput = unflatten(filesToJSON[perFileJSON], {
-                    delimiter: "_",
+                    delimiter: FLATTEN_DELIMITER,
                 });
 
                 const outputText = JSON.stringify(unflattenedOutput, null, 4);

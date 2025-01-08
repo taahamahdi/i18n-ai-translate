@@ -17644,6 +17644,7 @@ var VERSION2 = "2.0.9";
 var DEFAULT_BATCH_SIZE = 32;
 var DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 var DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
+var FLATTEN_DELIMITER = "_";
 (0, import_dotenv.config)({ path: import_path3.default.resolve(process.cwd(), ".env") });
 async function translate(options) {
   if (options.verbose) {
@@ -17678,7 +17679,9 @@ async function translate(options) {
   const output = {};
   const templatedStringPrefix = options.templatedStringPrefix || DEFAULT_TEMPLATED_STRING_PREFIX;
   const templatedStringSuffix = options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
-  const flatInput = (0, import_flat.flatten)(options.inputJSON, { delimiter: "_" });
+  const flatInput = (0, import_flat.flatten)(options.inputJSON, {
+    delimiter: FLATTEN_DELIMITER
+  });
   for (const key in flatInput) {
     if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
       flatInput[key] = flatInput[key].replaceAll(
@@ -17749,7 +17752,9 @@ ${output[keys[j2]]}
       );
     }
   }
-  const unflattenedOutput = (0, import_flat.unflatten)(sortedOutput, { delimiter: "_" });
+  const unflattenedOutput = (0, import_flat.unflatten)(sortedOutput, {
+    delimiter: FLATTEN_DELIMITER
+  });
   if (options.verbose) {
     const endTime = Date.now();
     const roundedSeconds = Math.round((endTime - batchStartTime) / 1e3);
@@ -17759,16 +17764,16 @@ ${output[keys[j2]]}
 }
 async function translateDiff(options) {
   const flatInputBefore = (0, import_flat.flatten)(options.inputJSONBefore, {
-    delimiter: "_"
+    delimiter: FLATTEN_DELIMITER
   });
   const flatInputAfter = (0, import_flat.flatten)(options.inputJSONAfter, {
-    delimiter: "_"
+    delimiter: FLATTEN_DELIMITER
   });
   const flatToUpdateJSONs = {};
   for (const lang in options.toUpdateJSONs) {
     if (Object.prototype.hasOwnProperty.call(options.toUpdateJSONs, lang)) {
       const flatToUpdateJSON = (0, import_flat.flatten)(options.toUpdateJSONs[lang], {
-        delimiter: "_"
+        delimiter: FLATTEN_DELIMITER
       });
       flatToUpdateJSONs[lang] = flatToUpdateJSON;
     }
@@ -17831,7 +17836,9 @@ async function translateDiff(options) {
         verbose: options.verbose,
         batchSize: options.batchSize
       });
-      const flatTranslated = (0, import_flat.flatten)(translated, { delimiter: "_" });
+      const flatTranslated = (0, import_flat.flatten)(translated, {
+        delimiter: FLATTEN_DELIMITER
+      });
       for (const key in flatTranslated) {
         if (Object.prototype.hasOwnProperty.call(flatTranslated, key)) {
           flatToUpdateJSONs[languageCode][key] = flatTranslated[key];
@@ -17852,7 +17859,7 @@ async function translateDiff(options) {
   for (const lang in flatToUpdateJSONs) {
     if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
       unflatToUpdateJSONs[lang] = (0, import_flat.unflatten)(flatToUpdateJSONs[lang], {
-        delimiter: "_"
+        delimiter: FLATTEN_DELIMITER
       });
     }
   }
@@ -18021,7 +18028,9 @@ var translateDirectory = async (options) => {
   for (const sourceFilePath of sourceFilePaths) {
     const fileContents = import_fs3.default.readFileSync(sourceFilePath, "utf-8");
     const fileJSON = JSON.parse(fileContents);
-    const flatJSON = (0, import_flat.flatten)(fileJSON, { delimiter: "_" });
+    const flatJSON = (0, import_flat.flatten)(fileJSON, {
+      delimiter: FLATTEN_DELIMITER
+    });
     for (const key in flatJSON) {
       if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
         inputJSON[getTranslationDirectoryKey(
@@ -18073,7 +18082,7 @@ var translateDirectory = async (options) => {
     for (const perFileJSON in filesToJSON) {
       if (Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)) {
         const unflattenedOutput = (0, import_flat.unflatten)(filesToJSON[perFileJSON], {
-          delimiter: "_"
+          delimiter: FLATTEN_DELIMITER
         });
         const outputText = JSON.stringify(unflattenedOutput, null, 4);
         import_fs3.default.mkdirSync((0, import_path3.dirname)(perFileJSON), { recursive: true });
