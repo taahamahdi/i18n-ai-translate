@@ -91,7 +91,16 @@ export function getAllFilesInPath(directory: string): Array<string> {
  * @returns a key to use when translating a key from a directory;
  * swaps the input language code with the output language code
  */
-export function getTranslationDirectoryKey(sourceFilePath: string, key: string, inputLanguageCode: string, outputLanguageCode: string): string {
-    const outputPath = sourceFilePath.replace(`/${inputLanguageCode}/`, `/${outputLanguageCode}/`);
+export function getTranslationDirectoryKey(
+    sourceFilePath: string,
+    key: string,
+    inputLanguageCode: string,
+    outputLanguageCode: string,
+): string {
+    const outputPath = sourceFilePath.replace(
+        `/${inputLanguageCode}/`,
+        `/${outputLanguageCode}/`,
+    );
+
     return `${outputPath}:${key}`;
 }

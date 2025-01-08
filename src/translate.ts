@@ -1,6 +1,11 @@
 import { config } from "dotenv";
 import { flatten, unflatten } from "flat";
-import { getAllFilesInPath, getAllLanguageCodes, getLanguageCodeFromFilename, getTranslationDirectoryKey } from "./utils";
+import {
+    getAllFilesInPath,
+    getAllLanguageCodes,
+    getLanguageCodeFromFilename,
+    getTranslationDirectoryKey,
+} from "./utils";
 import { program } from "commander";
 import ChatFactory from "./chat_interface/chat_factory";
 import Engine from "./enums/engine";
@@ -10,12 +15,12 @@ import generateTranslation from "./generate";
 import path, { dirname } from "path";
 import type { ChatParams, Model } from "./types";
 import type Chats from "./interfaces/chats";
+import type TranslateDirectoryDiffOptions from "./interfaces/translation_directory_diff_options";
+import type TranslateDirectoryOptions from "./interfaces/translation_directory_options";
 import type TranslateFileDiffOptions from "./interfaces/translation_file_diff_options";
 import type TranslateFileOptions from "./interfaces/translation_file_options";
 import type TranslationDiffOptions from "./interfaces/translation_diff_options";
 import type TranslationOptions from "./interfaces/translation_options";
-import type TranslateDirectoryOptions from "./interfaces/translation_directory_options";
-import type TranslateDirectoryDiffOptions from "./interfaces/translation_directory_diff_options";
 
 const VERSION = "2.0.9";
 
@@ -29,7 +34,9 @@ config({ path: path.resolve(process.cwd(), ".env") });
  * Translate the input JSON to the given language
  * @param options - The options for the translation
  */
-export async function translate(options: TranslationOptions): Promise<{ [key: string]: string }> {
+export async function translate(
+    options: TranslationOptions,
+): Promise<{ [key: string]: string }> {
     if (options.verbose) {
         console.log(
             `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
@@ -70,7 +77,10 @@ export async function translate(options: TranslationOptions): Promise<{ [key: st
     const templatedStringSuffix =
         options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
 
-    const flatInput = flatten(options.inputJSON, { delimiter: "_" }) as { [key: string]: string };
+    const flatInput = flatten(options.inputJSON, { delimiter: "_" }) as {
+        [key: string]: string;
+    };
+
     for (const key in flatInput) {
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
             flatInput[key] = flatInput[key].replaceAll(
@@ -171,11 +181,15 @@ export async function translate(options: TranslationOptions): Promise<{ [key: st
 export async function translateDiff(
     options: TranslationDiffOptions,
 ): Promise<{ [language: string]: Object }> {
-    const flatInputBefore = flatten(options.inputJSONBefore, { delimiter: "_" }) as {
+    const flatInputBefore = flatten(options.inputJSONBefore, {
+        delimiter: "_",
+    }) as {
         [key: string]: string;
     };
 
-    const flatInputAfter = flatten(options.inputJSONAfter, { delimiter: "_" }) as {
+    const flatInputAfter = flatten(options.inputJSONAfter, {
+        delimiter: "_",
+    }) as {
         [key: string]: string;
     };
 
@@ -184,7 +198,9 @@ export async function translateDiff(
 
     for (const lang in options.toUpdateJSONs) {
         if (Object.prototype.hasOwnProperty.call(options.toUpdateJSONs, lang)) {
-            const flatToUpdateJSON = flatten(options.toUpdateJSONs[lang], { delimiter: "_" }) as {
+            const flatToUpdateJSON = flatten(options.toUpdateJSONs[lang], {
+                delimiter: "_",
+            }) as {
                 [key: string]: string;
             };
 
@@ -286,7 +302,9 @@ export async function translateDiff(
     const unflatToUpdateJSONs: { [language: string]: Object } = {};
     for (const lang in flatToUpdateJSONs) {
         if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
-            unflatToUpdateJSONs[lang] = unflatten(flatToUpdateJSONs[lang], { delimiter: "_" });
+            unflatToUpdateJSONs[lang] = unflatten(flatToUpdateJSONs[lang], {
+                delimiter: "_",
+            });
         }
     }
 
@@ -447,7 +465,9 @@ const translateFileDiff = async (
     }
 };
 
-const translateDirectory = async (options: TranslateDirectoryOptions): Promise<void> => {
+const translateDirectory = async (
+    options: TranslateDirectoryOptions,
+): Promise<void> => {
     // collect all the keys in the format path/to/file/keyName
     // pass it into translate()
     //
@@ -464,9 +484,15 @@ const translateDirectory = async (options: TranslateDirectoryOptions): Promise<v
         }
     }
 
-    const sourceLanguagePath = path.resolve(inputPath, options.inputLanguageCode);
+    const sourceLanguagePath = path.resolve(
+        inputPath,
+        options.inputLanguageCode,
+    );
+
     if (!fs.existsSync(sourceLanguagePath)) {
-        throw new Error(`Source language path does not exist. sourceLanguagePath = ${sourceLanguagePath}`);
+        throw new Error(
+            `Source language path does not exist. sourceLanguagePath = ${sourceLanguagePath}`,
+        );
     }
 
     const sourceFilePaths = getAllFilesInPath(sourceLanguagePath);
@@ -474,20 +500,35 @@ const translateDirectory = async (options: TranslateDirectoryOptions): Promise<v
     for (const sourceFilePath of sourceFilePaths) {
         const fileContents = fs.readFileSync(sourceFilePath, "utf-8");
         const fileJSON = JSON.parse(fileContents);
-        const flatJSON = flatten(fileJSON, { delimiter: "_" }) as { [key: string]: string };
+        const flatJSON = flatten(fileJSON, { delimiter: "_" }) as {
+            [key: string]: string;
+        };
+
         for (const key in flatJSON) {
             if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
-                inputJSON[getTranslationDirectoryKey(sourceFilePath, key, options.inputLanguageCode, options.outputLanguageCode)] = flatJSON[key];
+                inputJSON[
+                    getTranslationDirectoryKey(
+                        sourceFilePath,
+                        key,
+                        options.inputLanguageCode,
+                        options.outputLanguageCode,
+                    )
+                ] = flatJSON[key];
             }
         }
     }
 
-    const inputLanguage = getLanguageCodeFromFilename(options.inputLanguageCode);
+    const inputLanguage = getLanguageCodeFromFilename(
+        options.inputLanguageCode,
+    );
+
     let outputLanguage = "";
     if (options.forceLanguageName) {
         outputLanguage = options.forceLanguageName;
     } else {
-        outputLanguage = getLanguageCodeFromFilename(options.outputLanguageCode);
+        outputLanguage = getLanguageCodeFromFilename(
+            options.outputLanguageCode,
+        );
     }
 
     try {
@@ -506,7 +547,9 @@ const translateDirectory = async (options: TranslateDirectoryOptions): Promise<v
             batchSize: options.batchSize,
         });
 
-        const filesToJSON: { [filePath: string]: { [key: string]: string } } = {};
+        const filesToJSON: { [filePath: string]: { [key: string]: string } } =
+            {};
+
         for (const pathWithKey in outputJSON) {
             if (Object.prototype.hasOwnProperty.call(outputJSON, pathWithKey)) {
                 const filePath = pathWithKey.split(":").slice(0, -1).join(":");
@@ -520,19 +563,28 @@ const translateDirectory = async (options: TranslateDirectoryOptions): Promise<v
         }
 
         for (const perFileJSON in filesToJSON) {
-            if (Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)) {
-                const unflattenedOutput = unflatten(filesToJSON[perFileJSON], { delimiter: "_" });
+            if (
+                Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)
+            ) {
+                const unflattenedOutput = unflatten(filesToJSON[perFileJSON], {
+                    delimiter: "_",
+                });
+
                 const outputText = JSON.stringify(unflattenedOutput, null, 4);
                 fs.mkdirSync(dirname(perFileJSON), { recursive: true });
                 fs.writeFileSync(perFileJSON, `${outputText}\n`);
             }
         }
     } catch (err) {
-        console.error(`Failed to translate directory to ${outputLanguage}: ${err}`);
+        console.error(
+            `Failed to translate directory to ${outputLanguage}: ${err}`,
+        );
     }
 };
 
-const translateDirectoryDiff = async (options: TranslateDirectoryDiffOptions): Promise<void> => {
+const translateDirectoryDiff = async (
+    options: TranslateDirectoryDiffOptions,
+): Promise<void> => {
     // collect all the keys in the format path|to|file_keyName
     // remove all keys that have unchanged values in pathAfter
     // pass it into translateDiff()
@@ -710,8 +762,10 @@ program
                             apiKey,
                             inputFilePath: inputPath,
                             outputFilePath: outputPath,
-                            templatedStringPrefix: options.templatedStringPrefix,
-                            templatedStringSuffix: options.templatedStringSuffix,
+                            templatedStringPrefix:
+                                options.templatedStringPrefix,
+                            templatedStringSuffix:
+                                options.templatedStringSuffix,
                             verbose: options.verbose,
                             ensureChangedTranslation:
                                 options.ensureChangedTranslation,
@@ -750,8 +804,10 @@ program
                             baseDirectory: path.resolve(inputPath, ".."),
                             inputLanguageCode: path.basename(inputPath),
                             outputLanguageCode: languageCode,
-                            templatedStringPrefix: options.templatedStringPrefix,
-                            templatedStringSuffix: options.templatedStringSuffix,
+                            templatedStringPrefix:
+                                options.templatedStringPrefix,
+                            templatedStringSuffix:
+                                options.templatedStringSuffix,
                             verbose: options.verbose,
                             ensureChangedTranslation:
                                 options.ensureChangedTranslation,
