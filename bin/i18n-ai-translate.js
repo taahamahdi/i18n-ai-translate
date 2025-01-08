@@ -107,8 +107,8 @@ var require_package = __commonJS({
 // node_modules/dotenv/lib/main.js
 var require_main = __commonJS({
   "node_modules/dotenv/lib/main.js"(exports2, module2) {
-    var fs3 = require("fs");
-    var path2 = require("path");
+    var fs4 = require("fs");
+    var path3 = require("path");
     var os = require("os");
     var crypto = require("crypto");
     var packageJson = require_package();
@@ -214,7 +214,7 @@ var require_main = __commonJS({
       if (options && options.path && options.path.length > 0) {
         if (Array.isArray(options.path)) {
           for (const filepath of options.path) {
-            if (fs3.existsSync(filepath)) {
+            if (fs4.existsSync(filepath)) {
               possibleVaultPath = filepath.endsWith(".vault") ? filepath : `${filepath}.vault`;
             }
           }
@@ -222,15 +222,15 @@ var require_main = __commonJS({
           possibleVaultPath = options.path.endsWith(".vault") ? options.path : `${options.path}.vault`;
         }
       } else {
-        possibleVaultPath = path2.resolve(process.cwd(), ".env.vault");
+        possibleVaultPath = path3.resolve(process.cwd(), ".env.vault");
       }
-      if (fs3.existsSync(possibleVaultPath)) {
+      if (fs4.existsSync(possibleVaultPath)) {
         return possibleVaultPath;
       }
       return null;
     }
     function _resolveHome(envPath) {
-      return envPath[0] === "~" ? path2.join(os.homedir(), envPath.slice(1)) : envPath;
+      return envPath[0] === "~" ? path3.join(os.homedir(), envPath.slice(1)) : envPath;
     }
     function _configVault(options) {
       _log("Loading env from encrypted .env.vault");
@@ -243,7 +243,7 @@ var require_main = __commonJS({
       return { parsed };
     }
     function configDotenv(options) {
-      const dotenvPath = path2.resolve(process.cwd(), ".env");
+      const dotenvPath = path3.resolve(process.cwd(), ".env");
       let encoding = "utf8";
       const debug2 = Boolean(options && options.debug);
       if (options && options.encoding) {
@@ -266,13 +266,13 @@ var require_main = __commonJS({
       }
       let lastError;
       const parsedAll = {};
-      for (const path3 of optionPaths) {
+      for (const path4 of optionPaths) {
         try {
-          const parsed = DotenvModule.parse(fs3.readFileSync(path3, { encoding }));
+          const parsed = DotenvModule.parse(fs4.readFileSync(path4, { encoding }));
           DotenvModule.populate(parsedAll, parsed, options);
         } catch (e2) {
           if (debug2) {
-            _debug(`Failed to load ${path3} ${e2.message}`);
+            _debug(`Failed to load ${path4} ${e2.message}`);
           }
           lastError = e2;
         }
@@ -2205,8 +2205,8 @@ var require_command = __commonJS({
   "node_modules/commander/lib/command.js"(exports2) {
     var EventEmitter = require("node:events").EventEmitter;
     var childProcess = require("node:child_process");
-    var path2 = require("node:path");
-    var fs3 = require("node:fs");
+    var path3 = require("node:path");
+    var fs4 = require("node:fs");
     var process2 = require("node:process");
     var { Argument: Argument2, humanReadableArgName } = require_argument();
     var { CommanderError: CommanderError2 } = require_error();
@@ -3138,11 +3138,11 @@ Expecting one of '${allowedValues.join("', '")}'`);
         let launchWithNode = false;
         const sourceExt = [".js", ".ts", ".tsx", ".mjs", ".cjs"];
         function findFile(baseDir, baseName) {
-          const localBin = path2.resolve(baseDir, baseName);
-          if (fs3.existsSync(localBin)) return localBin;
-          if (sourceExt.includes(path2.extname(baseName))) return void 0;
+          const localBin = path3.resolve(baseDir, baseName);
+          if (fs4.existsSync(localBin)) return localBin;
+          if (sourceExt.includes(path3.extname(baseName))) return void 0;
           const foundExt = sourceExt.find(
-            (ext) => fs3.existsSync(`${localBin}${ext}`)
+            (ext) => fs4.existsSync(`${localBin}${ext}`)
           );
           if (foundExt) return `${localBin}${foundExt}`;
           return void 0;
@@ -3154,21 +3154,21 @@ Expecting one of '${allowedValues.join("', '")}'`);
         if (this._scriptPath) {
           let resolvedScriptPath;
           try {
-            resolvedScriptPath = fs3.realpathSync(this._scriptPath);
+            resolvedScriptPath = fs4.realpathSync(this._scriptPath);
           } catch (err) {
             resolvedScriptPath = this._scriptPath;
           }
-          executableDir = path2.resolve(
-            path2.dirname(resolvedScriptPath),
+          executableDir = path3.resolve(
+            path3.dirname(resolvedScriptPath),
             executableDir
           );
         }
         if (executableDir) {
           let localFile = findFile(executableDir, executableFile);
           if (!localFile && !subcommand._executableFile && this._scriptPath) {
-            const legacyName = path2.basename(
+            const legacyName = path3.basename(
               this._scriptPath,
-              path2.extname(this._scriptPath)
+              path3.extname(this._scriptPath)
             );
             if (legacyName !== this._name) {
               localFile = findFile(
@@ -3179,7 +3179,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
           }
           executableFile = localFile || executableFile;
         }
-        launchWithNode = sourceExt.includes(path2.extname(executableFile));
+        launchWithNode = sourceExt.includes(path3.extname(executableFile));
         let proc;
         if (process2.platform !== "win32") {
           if (launchWithNode) {
@@ -4019,7 +4019,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @return {Command}
        */
       nameFromFilename(filename) {
-        this._name = path2.basename(filename, path2.extname(filename));
+        this._name = path3.basename(filename, path3.extname(filename));
         return this;
       }
       /**
@@ -4033,9 +4033,9 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @param {string} [path]
        * @return {(string|null|Command)}
        */
-      executableDir(path3) {
-        if (path3 === void 0) return this._executableDir;
-        this._executableDir = path3;
+      executableDir(path4) {
+        if (path4 === void 0) return this._executableDir;
+        this._executableDir = path4;
         return this;
       }
       /**
@@ -4997,14 +4997,14 @@ var require_url_state_machine = __commonJS({
       return url.replace(/\u0009|\u000A|\u000D/g, "");
     }
     function shortenPath(url) {
-      const path2 = url.path;
-      if (path2.length === 0) {
+      const path3 = url.path;
+      if (path3.length === 0) {
         return;
       }
-      if (url.scheme === "file" && path2.length === 1 && isNormalizedWindowsDriveLetter(path2[0])) {
+      if (url.scheme === "file" && path3.length === 1 && isNormalizedWindowsDriveLetter(path3[0])) {
         return;
       }
-      path2.pop();
+      path3.pop();
     }
     function includesCredentials(url) {
       return url.username !== "" || url.password !== "";
@@ -10581,14 +10581,14 @@ __export(fileFromPath_exports, {
   fileFromPathSync: () => fileFromPathSync,
   isFile: () => isFile
 });
-function createFileFromPath(path2, { mtimeMs, size }, filenameOrOptions, options = {}) {
+function createFileFromPath(path3, { mtimeMs, size }, filenameOrOptions, options = {}) {
   let filename;
   if (isPlainObject_default2(filenameOrOptions)) {
     [options, filename] = [filenameOrOptions, void 0];
   } else {
     filename = filenameOrOptions;
   }
-  const file = new FileFromPath({ path: path2, size, lastModified: mtimeMs });
+  const file = new FileFromPath({ path: path3, size, lastModified: mtimeMs });
   if (!filename) {
     filename = file.name;
   }
@@ -10597,19 +10597,19 @@ function createFileFromPath(path2, { mtimeMs, size }, filenameOrOptions, options
     lastModified: file.lastModified
   });
 }
-function fileFromPathSync(path2, filenameOrOptions, options = {}) {
-  const stats = (0, import_fs.statSync)(path2);
-  return createFileFromPath(path2, stats, filenameOrOptions, options);
+function fileFromPathSync(path3, filenameOrOptions, options = {}) {
+  const stats = (0, import_fs2.statSync)(path3);
+  return createFileFromPath(path3, stats, filenameOrOptions, options);
 }
-async function fileFromPath2(path2, filenameOrOptions, options) {
-  const stats = await import_fs.promises.stat(path2);
-  return createFileFromPath(path2, stats, filenameOrOptions, options);
+async function fileFromPath2(path3, filenameOrOptions, options) {
+  const stats = await import_fs2.promises.stat(path3);
+  return createFileFromPath(path3, stats, filenameOrOptions, options);
 }
-var import_fs, import_path, import_node_domexception, __classPrivateFieldSet4, __classPrivateFieldGet5, _FileFromPath_path, _FileFromPath_start, MESSAGE, FileFromPath;
+var import_fs2, import_path2, import_node_domexception, __classPrivateFieldSet4, __classPrivateFieldGet5, _FileFromPath_path, _FileFromPath_start, MESSAGE, FileFromPath;
 var init_fileFromPath = __esm({
   "node_modules/formdata-node/lib/esm/fileFromPath.js"() {
-    import_fs = require("fs");
-    import_path = require("path");
+    import_fs2 = require("fs");
+    import_path2 = require("path");
     import_node_domexception = __toESM(require_node_domexception(), 1);
     init_File();
     init_isPlainObject();
@@ -10632,7 +10632,7 @@ var init_fileFromPath = __esm({
         _FileFromPath_start.set(this, void 0);
         __classPrivateFieldSet4(this, _FileFromPath_path, input.path, "f");
         __classPrivateFieldSet4(this, _FileFromPath_start, input.start || 0, "f");
-        this.name = (0, import_path.basename)(__classPrivateFieldGet5(this, _FileFromPath_path, "f"));
+        this.name = (0, import_path2.basename)(__classPrivateFieldGet5(this, _FileFromPath_path, "f"));
         this.size = input.size;
         this.lastModified = input.lastModified;
       }
@@ -10645,12 +10645,12 @@ var init_fileFromPath = __esm({
         });
       }
       async *stream() {
-        const { mtimeMs } = await import_fs.promises.stat(__classPrivateFieldGet5(this, _FileFromPath_path, "f"));
+        const { mtimeMs } = await import_fs2.promises.stat(__classPrivateFieldGet5(this, _FileFromPath_path, "f"));
         if (mtimeMs > this.lastModified) {
           throw new import_node_domexception.default(MESSAGE, "NotReadableError");
         }
         if (this.size) {
-          yield* (0, import_fs.createReadStream)(__classPrivateFieldGet5(this, _FileFromPath_path, "f"), {
+          yield* (0, import_fs2.createReadStream)(__classPrivateFieldGet5(this, _FileFromPath_path, "f"), {
             start: __classPrivateFieldGet5(this, _FileFromPath_start, "f"),
             end: __classPrivateFieldGet5(this, _FileFromPath_start, "f") + this.size - 1
           });
@@ -10675,6 +10675,8 @@ var import_flat = __toESM(require_flat());
 
 // src/utils.ts
 var import_iso_639_1 = __toESM(require_src());
+var import_fs = __toESM(require("fs"));
+var import_path = __toESM(require("path"));
 function delay(delayDuration) {
   return new Promise((resolve) => setTimeout(resolve, delayDuration));
 }
@@ -10702,6 +10704,22 @@ function getLanguageCodeFromFilename(filename) {
 }
 function getAllLanguageCodes() {
   return import_iso_639_1.default.getAllCodes();
+}
+function getAllFilesInPath(directory) {
+  const files = [];
+  for (const fileOrDir of import_fs.default.readdirSync(directory)) {
+    const fullPath = import_path.default.join(directory, fileOrDir);
+    if (import_fs.default.lstatSync(fullPath).isDirectory()) {
+      files.push(...getAllFilesInPath(fullPath));
+    } else {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+function getTranslationDirectoryKey(sourceFilePath, key, inputLanguageCode, outputLanguageCode) {
+  const outputPath = sourceFilePath.replace(`/${inputLanguageCode}/`, `/${outputLanguageCode}/`);
+  return `${outputPath}:${key}`;
 }
 
 // node_modules/commander/esm.mjs
@@ -12603,13 +12621,13 @@ var MultipartBody = class {
 // node_modules/openai/_shims/node-runtime.mjs
 var import_web = require("node:stream/web");
 var fileFromPathWarned = false;
-async function fileFromPath3(path2, ...args) {
+async function fileFromPath3(path3, ...args) {
   const { fileFromPath: _fileFromPath } = await Promise.resolve().then(() => (init_fileFromPath(), fileFromPath_exports));
   if (!fileFromPathWarned) {
-    console.warn(`fileFromPath is deprecated; use fs.createReadStream(${JSON.stringify(path2)}) instead`);
+    console.warn(`fileFromPath is deprecated; use fs.createReadStream(${JSON.stringify(path3)}) instead`);
     fileFromPathWarned = true;
   }
-  return await _fileFromPath(path2, ...args);
+  return await _fileFromPath(path3, ...args);
 }
 var defaultHttpAgent = new import_agentkeepalive.default({ keepAlive: true, timeout: 5 * 60 * 1e3 });
 var defaultHttpsAgent = new import_agentkeepalive.default.HttpsAgent({ keepAlive: true, timeout: 5 * 60 * 1e3 });
@@ -13393,29 +13411,29 @@ var APIClient = class {
   defaultIdempotencyKey() {
     return `stainless-node-retry-${uuid4()}`;
   }
-  get(path2, opts) {
-    return this.methodRequest("get", path2, opts);
+  get(path3, opts) {
+    return this.methodRequest("get", path3, opts);
   }
-  post(path2, opts) {
-    return this.methodRequest("post", path2, opts);
+  post(path3, opts) {
+    return this.methodRequest("post", path3, opts);
   }
-  patch(path2, opts) {
-    return this.methodRequest("patch", path2, opts);
+  patch(path3, opts) {
+    return this.methodRequest("patch", path3, opts);
   }
-  put(path2, opts) {
-    return this.methodRequest("put", path2, opts);
+  put(path3, opts) {
+    return this.methodRequest("put", path3, opts);
   }
-  delete(path2, opts) {
-    return this.methodRequest("delete", path2, opts);
+  delete(path3, opts) {
+    return this.methodRequest("delete", path3, opts);
   }
-  methodRequest(method, path2, opts) {
+  methodRequest(method, path3, opts) {
     return this.request(Promise.resolve(opts).then(async (opts2) => {
       const body = opts2 && isBlobLike(opts2?.body) ? new DataView(await opts2.body.arrayBuffer()) : opts2?.body instanceof DataView ? opts2.body : opts2?.body instanceof ArrayBuffer ? new DataView(opts2.body) : opts2 && ArrayBuffer.isView(opts2?.body) ? new DataView(opts2.body.buffer) : opts2?.body;
-      return { method, path: path2, ...opts2, body };
+      return { method, path: path3, ...opts2, body };
     }));
   }
-  getAPIList(path2, Page2, opts) {
-    return this.requestAPIList(Page2, { method: "get", path: path2, ...opts });
+  getAPIList(path3, Page2, opts) {
+    return this.requestAPIList(Page2, { method: "get", path: path3, ...opts });
   }
   calculateContentLength(body) {
     if (typeof body === "string") {
@@ -13433,10 +13451,10 @@ var APIClient = class {
     return null;
   }
   buildRequest(options, { retryCount = 0 } = {}) {
-    const { method, path: path2, query, headers = {} } = options;
+    const { method, path: path3, query, headers = {} } = options;
     const body = ArrayBuffer.isView(options.body) || options.__binaryRequest && typeof options.body === "string" ? options.body : isMultipartBody(options.body) ? options.body.body : options.body ? JSON.stringify(options.body, null, 2) : null;
     const contentLength = this.calculateContentLength(body);
-    const url = this.buildURL(path2, query);
+    const url = this.buildURL(path3, query);
     if ("timeout" in options)
       validatePositiveInteger("timeout", options.timeout);
     const timeout = options.timeout ?? this.timeout;
@@ -13549,8 +13567,8 @@ var APIClient = class {
     const request = this.makeRequest(options, null);
     return new PagePromise(this, request, Page2);
   }
-  buildURL(path2, query) {
-    const url = isAbsoluteURL(path2) ? new URL(path2) : new URL(this.baseURL + (this.baseURL.endsWith("/") && path2.startsWith("/") ? path2.slice(1) : path2));
+  buildURL(path3, query) {
+    const url = isAbsoluteURL(path3) ? new URL(path3) : new URL(this.baseURL + (this.baseURL.endsWith("/") && path3.startsWith("/") ? path3.slice(1) : path3));
     const defaultQuery = this.defaultQuery();
     if (!isEmptyObj(defaultQuery)) {
       query = { ...defaultQuery, ...query };
@@ -17284,7 +17302,7 @@ var RateLimiter = class {
 };
 
 // src/translate.ts
-var import_fs2 = __toESM(require("fs"));
+var import_fs3 = __toESM(require("fs"));
 
 // src/prompts.ts
 function generationPrompt(inputLanguage, outputLanguage, input) {
@@ -17618,12 +17636,12 @@ async function generate(options, generationPromptText, generateState) {
 }
 
 // src/translate.ts
-var import_path2 = __toESM(require("path"));
+var import_path3 = __toESM(require("path"));
 var VERSION2 = "2.0.9";
 var DEFAULT_BATCH_SIZE = 32;
 var DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 var DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
-(0, import_dotenv.config)({ path: import_path2.default.resolve(process.cwd(), ".env") });
+(0, import_dotenv.config)({ path: import_path3.default.resolve(process.cwd(), ".env") });
 async function translate(options) {
   if (options.verbose) {
     console.log(
@@ -17657,7 +17675,7 @@ async function translate(options) {
   const output = {};
   const templatedStringPrefix = options.templatedStringPrefix || DEFAULT_TEMPLATED_STRING_PREFIX;
   const templatedStringSuffix = options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
-  const flatInput = (0, import_flat.flatten)(options.inputJSON);
+  const flatInput = (0, import_flat.flatten)(options.inputJSON, { delimiter: "_" });
   for (const key in flatInput) {
     if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
       flatInput[key] = flatInput[key].replaceAll(
@@ -17728,7 +17746,7 @@ ${output[keys[j2]]}
       );
     }
   }
-  const unflattenedOutput = (0, import_flat.unflatten)(sortedOutput);
+  const unflattenedOutput = (0, import_flat.unflatten)(sortedOutput, { delimiter: "_" });
   if (options.verbose) {
     const endTime = Date.now();
     const roundedSeconds = Math.round((endTime - batchStartTime) / 1e3);
@@ -17737,12 +17755,12 @@ ${output[keys[j2]]}
   return unflattenedOutput;
 }
 async function translateDiff(options) {
-  const flatInputBefore = (0, import_flat.flatten)(options.inputJSONBefore);
-  const flatInputAfter = (0, import_flat.flatten)(options.inputJSONAfter);
+  const flatInputBefore = (0, import_flat.flatten)(options.inputJSONBefore, { delimiter: "_" });
+  const flatInputAfter = (0, import_flat.flatten)(options.inputJSONAfter, { delimiter: "_" });
   const flatToUpdateJSONs = {};
   for (const lang in options.toUpdateJSONs) {
     if (Object.prototype.hasOwnProperty.call(options.toUpdateJSONs, lang)) {
-      const flatToUpdateJSON = (0, import_flat.flatten)(options.toUpdateJSONs[lang]);
+      const flatToUpdateJSON = (0, import_flat.flatten)(options.toUpdateJSONs[lang], { delimiter: "_" });
       flatToUpdateJSONs[lang] = flatToUpdateJSON;
     }
   }
@@ -17804,7 +17822,7 @@ async function translateDiff(options) {
         verbose: options.verbose,
         batchSize: options.batchSize
       });
-      const flatTranslated = (0, import_flat.flatten)(translated);
+      const flatTranslated = (0, import_flat.flatten)(translated, { delimiter: "_" });
       for (const key in flatTranslated) {
         if (Object.prototype.hasOwnProperty.call(flatTranslated, key)) {
           flatToUpdateJSONs[languageCode][key] = flatTranslated[key];
@@ -17824,45 +17842,26 @@ async function translateDiff(options) {
   const unflatToUpdateJSONs = {};
   for (const lang in flatToUpdateJSONs) {
     if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
-      unflatToUpdateJSONs[lang] = (0, import_flat.unflatten)(flatToUpdateJSONs[lang]);
+      unflatToUpdateJSONs[lang] = (0, import_flat.unflatten)(flatToUpdateJSONs[lang], { delimiter: "_" });
     }
   }
   return unflatToUpdateJSONs;
 }
 var translateFile = async (options) => {
-  const jsonFolder = import_path2.default.resolve(process.cwd(), "jsons");
-  let inputPath;
-  if (import_path2.default.isAbsolute(options.inputFileOrPath)) {
-    inputPath = import_path2.default.resolve(options.inputFileOrPath);
-  } else {
-    inputPath = import_path2.default.resolve(jsonFolder, options.inputFileOrPath);
-    if (!import_fs2.default.existsSync(inputPath)) {
-      inputPath = import_path2.default.resolve(process.cwd(), options.inputFileOrPath);
-    }
-  }
-  let outputPath;
-  if (import_path2.default.isAbsolute(options.outputFileOrPath)) {
-    outputPath = import_path2.default.resolve(options.outputFileOrPath);
-  } else {
-    outputPath = import_path2.default.resolve(jsonFolder, options.outputFileOrPath);
-    if (!import_fs2.default.existsSync(jsonFolder)) {
-      outputPath = import_path2.default.resolve(process.cwd(), options.outputFileOrPath);
-    }
-  }
   let inputJSON = {};
   try {
-    const inputFile = import_fs2.default.readFileSync(inputPath, "utf-8");
+    const inputFile = import_fs3.default.readFileSync(options.inputFilePath, "utf-8");
     inputJSON = JSON.parse(inputFile);
   } catch (e2) {
     console.error(`Invalid input JSON: ${e2}`);
     return;
   }
-  const inputLanguage = getLanguageCodeFromFilename(options.inputFileOrPath);
+  const inputLanguage = getLanguageCodeFromFilename(options.inputFilePath);
   let outputLanguage = "";
   if (options.forceLanguageName) {
     outputLanguage = options.forceLanguageName;
   } else {
-    outputLanguage = getLanguageCodeFromFilename(options.outputFileOrPath);
+    outputLanguage = getLanguageCodeFromFilename(options.inputFilePath);
   }
   try {
     const outputJSON = await translate({
@@ -17880,44 +17879,44 @@ var translateFile = async (options) => {
       batchSize: options.batchSize
     });
     const outputText = JSON.stringify(outputJSON, null, 4);
-    import_fs2.default.writeFileSync(outputPath, `${outputText}
+    import_fs3.default.writeFileSync(options.outputFilePath, `${outputText}
 `);
   } catch (err) {
     console.error(`Failed to translate file to ${outputLanguage}: ${err}`);
   }
 };
 var translateFileDiff = async (options) => {
-  const jsonFolder = import_path2.default.resolve(process.cwd(), "jsons");
+  const jsonFolder = import_path3.default.resolve(process.cwd(), "jsons");
   let inputBeforePath;
   let inputAfterPath;
-  if (import_path2.default.isAbsolute(options.inputBeforeFileOrPath)) {
-    inputBeforePath = import_path2.default.resolve(options.inputBeforeFileOrPath);
+  if (import_path3.default.isAbsolute(options.inputBeforeFileOrPath)) {
+    inputBeforePath = import_path3.default.resolve(options.inputBeforeFileOrPath);
   } else {
-    inputBeforePath = import_path2.default.resolve(
+    inputBeforePath = import_path3.default.resolve(
       jsonFolder,
       options.inputBeforeFileOrPath
     );
-    if (!import_fs2.default.existsSync(inputBeforePath)) {
-      inputBeforePath = import_path2.default.resolve(
+    if (!import_fs3.default.existsSync(inputBeforePath)) {
+      inputBeforePath = import_path3.default.resolve(
         process.cwd(),
         options.inputBeforeFileOrPath
       );
     }
   }
-  if (import_path2.default.isAbsolute(options.inputAfterFileOrPath)) {
-    inputAfterPath = import_path2.default.resolve(options.inputAfterFileOrPath);
+  if (import_path3.default.isAbsolute(options.inputAfterFileOrPath)) {
+    inputAfterPath = import_path3.default.resolve(options.inputAfterFileOrPath);
   } else {
-    inputAfterPath = import_path2.default.resolve(jsonFolder, options.inputAfterFileOrPath);
+    inputAfterPath = import_path3.default.resolve(jsonFolder, options.inputAfterFileOrPath);
   }
   const outputPaths = [];
   for (const outputFileOrPath of options.outputFilesOrPaths) {
     let outputPath;
-    if (import_path2.default.isAbsolute(outputFileOrPath)) {
-      outputPath = import_path2.default.resolve(outputFileOrPath);
+    if (import_path3.default.isAbsolute(outputFileOrPath)) {
+      outputPath = import_path3.default.resolve(outputFileOrPath);
     } else {
-      outputPath = import_path2.default.resolve(jsonFolder, outputFileOrPath);
-      if (!import_fs2.default.existsSync(jsonFolder)) {
-        outputPath = import_path2.default.resolve(process.cwd(), outputFileOrPath);
+      outputPath = import_path3.default.resolve(jsonFolder, outputFileOrPath);
+      if (!import_fs3.default.existsSync(jsonFolder)) {
+        outputPath = import_path3.default.resolve(process.cwd(), outputFileOrPath);
       }
     }
     outputPaths.push(outputPath);
@@ -17925,9 +17924,9 @@ var translateFileDiff = async (options) => {
   let inputBeforeJSON = {};
   let inputAfterJSON = {};
   try {
-    let inputFile = import_fs2.default.readFileSync(inputBeforePath, "utf-8");
+    let inputFile = import_fs3.default.readFileSync(inputBeforePath, "utf-8");
     inputBeforeJSON = JSON.parse(inputFile);
-    inputFile = import_fs2.default.readFileSync(inputAfterPath, "utf-8");
+    inputFile = import_fs3.default.readFileSync(inputAfterPath, "utf-8");
     inputAfterJSON = JSON.parse(inputFile);
   } catch (e2) {
     console.error(`Invalid input JSON: ${e2}`);
@@ -17937,7 +17936,7 @@ var translateFileDiff = async (options) => {
   const languageCodeToOutputPath = {};
   for (const outputPath of outputPaths) {
     const languageCode = getLanguageCodeFromFilename(
-      import_path2.default.basename(outputPath)
+      import_path3.default.basename(outputPath)
     );
     if (!languageCode) {
       throw new Error(
@@ -17945,7 +17944,7 @@ var translateFileDiff = async (options) => {
       );
     }
     try {
-      const outputFile = import_fs2.default.readFileSync(outputPath, "utf-8");
+      const outputFile = import_fs3.default.readFileSync(outputPath, "utf-8");
       toUpdateJSONs[languageCode] = JSON.parse(outputFile);
       languageCodeToOutputPath[languageCode] = outputPath;
     } catch (e2) {
@@ -17975,7 +17974,7 @@ var translateFileDiff = async (options) => {
           null,
           4
         );
-        import_fs2.default.writeFileSync(
+        import_fs3.default.writeFileSync(
           languageCodeToOutputPath[language],
           `${outputText}
 `
@@ -17986,28 +17985,98 @@ var translateFileDiff = async (options) => {
     console.error(`Failed to translate file diff: ${err}`);
   }
 };
+var translateDirectory = async (options) => {
+  const jsonFolder = import_path3.default.resolve(process.cwd(), "jsons");
+  let inputPath;
+  if (import_path3.default.isAbsolute(options.baseDirectory)) {
+    inputPath = import_path3.default.resolve(options.baseDirectory);
+  } else {
+    inputPath = import_path3.default.resolve(jsonFolder, options.baseDirectory);
+    if (!import_fs3.default.existsSync(inputPath)) {
+      inputPath = import_path3.default.resolve(process.cwd(), options.baseDirectory);
+    }
+  }
+  const sourceLanguagePath = import_path3.default.resolve(inputPath, options.inputLanguageCode);
+  if (!import_fs3.default.existsSync(sourceLanguagePath)) {
+    throw new Error(`Source language path does not exist. sourceLanguagePath = ${sourceLanguagePath}`);
+  }
+  const sourceFilePaths = getAllFilesInPath(sourceLanguagePath);
+  const inputJSON = {};
+  for (const sourceFilePath of sourceFilePaths) {
+    const fileContents = import_fs3.default.readFileSync(sourceFilePath, "utf-8");
+    const fileJSON = JSON.parse(fileContents);
+    const flatJSON = (0, import_flat.flatten)(fileJSON, { delimiter: "_" });
+    for (const key in flatJSON) {
+      if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+        inputJSON[getTranslationDirectoryKey(sourceFilePath, key, options.inputLanguageCode, options.outputLanguageCode)] = flatJSON[key];
+      }
+    }
+  }
+  const inputLanguage = getLanguageCodeFromFilename(options.inputLanguageCode);
+  let outputLanguage = "";
+  if (options.forceLanguageName) {
+    outputLanguage = options.forceLanguageName;
+  } else {
+    outputLanguage = getLanguageCodeFromFilename(options.outputLanguageCode);
+  }
+  try {
+    const outputJSON = await translate({
+      engine: options.engine,
+      model: options.model,
+      chatParams: options.chatParams,
+      rateLimitMs: options.rateLimitMs,
+      apiKey: options.apiKey,
+      inputJSON,
+      inputLanguage,
+      outputLanguage,
+      templatedStringPrefix: options.templatedStringPrefix,
+      templatedStringSuffix: options.templatedStringSuffix,
+      verbose: options.verbose,
+      batchSize: options.batchSize
+    });
+    const filesToJSON = {};
+    for (const pathWithKey in outputJSON) {
+      if (Object.prototype.hasOwnProperty.call(outputJSON, pathWithKey)) {
+        const filePath = pathWithKey.split(":").slice(0, -1).join(":");
+        if (!filesToJSON[filePath]) {
+          filesToJSON[filePath] = {};
+        }
+        const key = pathWithKey.split(":").pop();
+        filesToJSON[filePath][key] = outputJSON[pathWithKey];
+      }
+    }
+    for (const perFileJSON in filesToJSON) {
+      if (Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)) {
+        const unflattenedOutput = (0, import_flat.unflatten)(filesToJSON[perFileJSON], { delimiter: "_" });
+        const outputText = JSON.stringify(unflattenedOutput, null, 4);
+        import_fs3.default.mkdirSync((0, import_path3.dirname)(perFileJSON), { recursive: true });
+        import_fs3.default.writeFileSync(perFileJSON, `${outputText}
+`);
+      }
+    }
+  } catch (err) {
+    console.error(`Failed to translate directory to ${outputLanguage}: ${err}`);
+  }
+};
 program.name("i18n-ai-translate").description(
   "Use ChatGPT or Gemini to translate your i18n JSON to any language"
 ).version(VERSION2);
 program.command("translate").requiredOption(
   "-i, --input <input>",
-  "Source i18n file, in the jsons/ directory if a relative path is given"
+  "Source i18n file or path of source language, in the jsons/ directory if a relative path is given"
 ).option(
-  "-o, --output <output>",
-  "Output i18n file, in the jsons/ directory if a relative path is given"
+  "-o, --output-languages [language codes...]",
+  "A list of languages to translate to"
 ).requiredOption(
   "-e, --engine <engine>",
   "Engine to use (chatgpt or gemini)"
 ).option(
   "-m, --model <model>",
-  "Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro)"
+  "Model to use (e.g. gpt-o1, gpt-4o, gpt-4-turbo, gpt-3.5-turbo, gemini-pro)"
 ).option(
   "-r, --rate-limit-ms <rateLimitMs>",
   "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)"
 ).option("-f, --force-language-name <language name>", "Force language name").option("-A, --all-languages", "Translate to all supported languages").option(
-  "-l, --languages [language codes...]",
-  "Pass a list of languages to translate to"
-).option(
   "-p, --templated-string-prefix <prefix>",
   "Prefix for templated strings",
   DEFAULT_TEMPLATED_STRING_PREFIX
@@ -18063,80 +18132,117 @@ program.command("translate").requiredOption(
       console.error("Invalid engine");
       return;
   }
-  if (!options.allLanguages && !options.languages) {
-    if (!options.output) {
-      console.error("Output file not specified");
-      return;
-    }
-    await translateFile({
-      engine: options.engine,
-      model,
-      chatParams,
-      rateLimitMs,
-      apiKey,
-      inputFileOrPath: options.input,
-      outputFileOrPath: options.output,
-      forceLanguageName: options.forceLanguageName,
-      templatedStringPrefix: options.templatedStringPrefix,
-      templatedStringSuffix: options.templatedStringSuffix,
-      verbose: options.verbose,
-      ensureChangedTranslation: options.ensureChangedTranslation,
-      batchSize: options.batchSize
-    });
-  } else if (options.languages) {
+  if (options.outputLanguages) {
     if (options.forceLanguageName) {
       console.error(
-        "Cannot use both --languages and --force-language"
+        "Cannot use both --output-languages and --force-language"
       );
       return;
     }
     if (options.allLanguages) {
       console.error(
-        "Cannot use both --all-languages and --languages"
+        "Cannot use both --all-languages and --output-languages"
       );
       return;
     }
-    if (options.languages.length === 0) {
+    if (options.outputLanguages.length === 0) {
       console.error("No languages specified");
       return;
     }
     if (options.verbose) {
       console.log(
-        `Translating to ${options.languages.join(", ")}...`
+        `Translating to ${options.outputLanguages.join(", ")}...`
       );
     }
-    let i2 = 0;
-    for (const languageCode of options.languages) {
-      i2++;
-      console.log(
-        `Translating ${i2}/${options.languages.length} languages...`
-      );
-      const output = options.input.replace(
-        getLanguageCodeFromFilename(options.input),
-        languageCode
-      );
-      if (options.input === output) {
-        continue;
+    const jsonFolder = import_path3.default.resolve(process.cwd(), "jsons");
+    let inputPath;
+    if (import_path3.default.isAbsolute(options.input)) {
+      inputPath = import_path3.default.resolve(options.input);
+    } else {
+      inputPath = import_path3.default.resolve(jsonFolder, options.input);
+      if (!import_fs3.default.existsSync(inputPath)) {
+        inputPath = import_path3.default.resolve(process.cwd(), options.input);
       }
-      try {
-        await translateFile({
-          engine: options.engine,
-          model,
-          chatParams,
-          rateLimitMs,
-          apiKey,
-          inputFileOrPath: options.input,
-          outputFileOrPath: output,
-          templatedStringPrefix: options.templatedStringPrefix,
-          templatedStringSuffix: options.templatedStringSuffix,
-          verbose: options.verbose,
-          ensureChangedTranslation: options.ensureChangedTranslation,
-          batchSize: options.batchSize
-        });
-      } catch (err) {
-        console.error(
-          `Failed to translate to ${languageCode}: ${err}`
+    }
+    if (import_fs3.default.statSync(inputPath).isFile()) {
+      let i2 = 0;
+      for (const languageCode of options.outputLanguages) {
+        i2++;
+        console.log(
+          `Translating ${i2}/${options.outputLanguages.length} languages...`
         );
+        const output = options.input.replace(
+          getLanguageCodeFromFilename(options.input),
+          languageCode
+        );
+        if (options.input === output) {
+          continue;
+        }
+        let outputPath;
+        if (import_path3.default.isAbsolute(output)) {
+          outputPath = import_path3.default.resolve(output);
+        } else {
+          outputPath = import_path3.default.resolve(jsonFolder, output);
+          if (!import_fs3.default.existsSync(jsonFolder)) {
+            outputPath = import_path3.default.resolve(process.cwd(), output);
+          }
+        }
+        try {
+          await translateFile({
+            engine: options.engine,
+            model,
+            chatParams,
+            rateLimitMs,
+            apiKey,
+            inputFilePath: inputPath,
+            outputFilePath: outputPath,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+            verbose: options.verbose,
+            ensureChangedTranslation: options.ensureChangedTranslation,
+            batchSize: options.batchSize
+          });
+        } catch (err) {
+          console.error(
+            `Failed to translate file to ${languageCode}: ${err}`
+          );
+        }
+      }
+    } else {
+      let i2 = 0;
+      for (const languageCode of options.outputLanguages) {
+        i2++;
+        console.log(
+          `Translating ${i2}/${options.outputLanguages.length} languages...`
+        );
+        const output = options.input.replace(
+          getLanguageCodeFromFilename(options.input),
+          languageCode
+        );
+        if (options.input === output) {
+          continue;
+        }
+        try {
+          await translateDirectory({
+            engine: options.engine,
+            model,
+            chatParams,
+            rateLimitMs,
+            apiKey,
+            baseDirectory: import_path3.default.resolve(inputPath, ".."),
+            inputLanguageCode: import_path3.default.basename(inputPath),
+            outputLanguageCode: languageCode,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+            verbose: options.verbose,
+            ensureChangedTranslation: options.ensureChangedTranslation,
+            batchSize: options.batchSize
+          });
+        } catch (err) {
+          console.error(
+            `Failed to translate directory to ${languageCode}: ${err}`
+          );
+        }
       }
     }
   } else {
@@ -18171,8 +18277,8 @@ program.command("translate").requiredOption(
           chatParams,
           rateLimitMs,
           apiKey,
-          inputFileOrPath: options.input,
-          outputFileOrPath: output,
+          inputFilePath: options.input,
+          outputFilePath: output,
           templatedStringPrefix: options.templatedStringPrefix,
           templatedStringSuffix: options.templatedStringSuffix,
           verbose: options.verbose,
@@ -18261,32 +18367,32 @@ program.command("diff").requiredOption(
       console.error("Invalid engine");
       return;
   }
-  const jsonFolder = import_path2.default.resolve(process.cwd(), "jsons");
+  const jsonFolder = import_path3.default.resolve(process.cwd(), "jsons");
   let beforeInputPath;
-  if (import_path2.default.isAbsolute(options.before)) {
-    beforeInputPath = import_path2.default.resolve(options.before);
+  if (import_path3.default.isAbsolute(options.before)) {
+    beforeInputPath = import_path3.default.resolve(options.before);
   } else {
-    beforeInputPath = import_path2.default.resolve(jsonFolder, options.before);
-    if (!import_fs2.default.existsSync(beforeInputPath)) {
-      beforeInputPath = import_path2.default.resolve(process.cwd(), options.before);
+    beforeInputPath = import_path3.default.resolve(jsonFolder, options.before);
+    if (!import_fs3.default.existsSync(beforeInputPath)) {
+      beforeInputPath = import_path3.default.resolve(process.cwd(), options.before);
     }
   }
   let afterInputPath;
-  if (import_path2.default.isAbsolute(options.after)) {
-    afterInputPath = import_path2.default.resolve(options.after);
+  if (import_path3.default.isAbsolute(options.after)) {
+    afterInputPath = import_path3.default.resolve(options.after);
   } else {
-    afterInputPath = import_path2.default.resolve(jsonFolder, options.after);
-    if (!import_fs2.default.existsSync(afterInputPath)) {
-      afterInputPath = import_path2.default.resolve(process.cwd(), options.after);
+    afterInputPath = import_path3.default.resolve(jsonFolder, options.after);
+    if (!import_fs3.default.existsSync(afterInputPath)) {
+      afterInputPath = import_path3.default.resolve(process.cwd(), options.after);
     }
   }
-  if (import_path2.default.dirname(beforeInputPath) !== import_path2.default.dirname(afterInputPath)) {
+  if (import_path3.default.dirname(beforeInputPath) !== import_path3.default.dirname(afterInputPath)) {
     console.error("Input files are not in the same directory");
     return;
   }
-  const outputFilesOrPaths = import_fs2.default.readdirSync(import_path2.default.dirname(beforeInputPath)).filter((file) => file.endsWith(".json")).filter(
-    (file) => file !== import_path2.default.basename(beforeInputPath) && file !== import_path2.default.basename(afterInputPath)
-  ).map((file) => import_path2.default.resolve(import_path2.default.dirname(beforeInputPath), file));
+  const outputFilesOrPaths = import_fs3.default.readdirSync(import_path3.default.dirname(beforeInputPath)).filter((file) => file.endsWith(".json")).filter(
+    (file) => file !== import_path3.default.basename(beforeInputPath) && file !== import_path3.default.basename(afterInputPath)
+  ).map((file) => import_path3.default.resolve(import_path3.default.dirname(beforeInputPath), file));
   await translateFileDiff({
     engine: options.engine,
     model,

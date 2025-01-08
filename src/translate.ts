@@ -70,7 +70,7 @@ export async function translate(options: TranslationOptions): Promise<{ [key: st
     const templatedStringSuffix =
         options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
 
-    const flatInput = flatten(options.inputJSON) as { [key: string]: string };
+    const flatInput = flatten(options.inputJSON, { delimiter: "_" }) as { [key: string]: string };
     for (const key in flatInput) {
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
             flatInput[key] = flatInput[key].replaceAll(
@@ -154,7 +154,7 @@ export async function translate(options: TranslationOptions): Promise<{ [key: st
         }
     }
 
-    const unflattenedOutput = unflatten(sortedOutput);
+    const unflattenedOutput = unflatten(sortedOutput, { delimiter: "_" });
     if (options.verbose) {
         const endTime = Date.now();
         const roundedSeconds = Math.round((endTime - batchStartTime) / 1000);
@@ -171,11 +171,11 @@ export async function translate(options: TranslationOptions): Promise<{ [key: st
 export async function translateDiff(
     options: TranslationDiffOptions,
 ): Promise<{ [language: string]: Object }> {
-    const flatInputBefore = flatten(options.inputJSONBefore) as {
+    const flatInputBefore = flatten(options.inputJSONBefore, { delimiter: "_" }) as {
         [key: string]: string;
     };
 
-    const flatInputAfter = flatten(options.inputJSONAfter) as {
+    const flatInputAfter = flatten(options.inputJSONAfter, { delimiter: "_" }) as {
         [key: string]: string;
     };
 
@@ -184,7 +184,7 @@ export async function translateDiff(
 
     for (const lang in options.toUpdateJSONs) {
         if (Object.prototype.hasOwnProperty.call(options.toUpdateJSONs, lang)) {
-            const flatToUpdateJSON = flatten(options.toUpdateJSONs[lang]) as {
+            const flatToUpdateJSON = flatten(options.toUpdateJSONs[lang], { delimiter: "_" }) as {
                 [key: string]: string;
             };
 
@@ -258,7 +258,7 @@ export async function translateDiff(
                 batchSize: options.batchSize,
             });
 
-            const flatTranslated = flatten(translated) as {
+            const flatTranslated = flatten(translated, { delimiter: "_" }) as {
                 [key: string]: string;
             };
 
@@ -286,7 +286,7 @@ export async function translateDiff(
     const unflatToUpdateJSONs: { [language: string]: Object } = {};
     for (const lang in flatToUpdateJSONs) {
         if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
-            unflatToUpdateJSONs[lang] = unflatten(flatToUpdateJSONs[lang]);
+            unflatToUpdateJSONs[lang] = unflatten(flatToUpdateJSONs[lang], { delimiter: "_" });
         }
     }
 
@@ -294,42 +294,21 @@ export async function translateDiff(
 }
 
 const translateFile = async (options: TranslateFileOptions): Promise<void> => {
-    const jsonFolder = path.resolve(process.cwd(), "jsons");
-    let inputPath: string;
-    if (path.isAbsolute(options.inputFileOrPath)) {
-        inputPath = path.resolve(options.inputFileOrPath);
-    } else {
-        inputPath = path.resolve(jsonFolder, options.inputFileOrPath);
-        if (!fs.existsSync(inputPath)) {
-            inputPath = path.resolve(process.cwd(), options.inputFileOrPath);
-        }
-    }
-
-    let outputPath: string;
-    if (path.isAbsolute(options.outputFileOrPath)) {
-        outputPath = path.resolve(options.outputFileOrPath);
-    } else {
-        outputPath = path.resolve(jsonFolder, options.outputFileOrPath);
-        if (!fs.existsSync(jsonFolder)) {
-            outputPath = path.resolve(process.cwd(), options.outputFileOrPath);
-        }
-    }
-
     let inputJSON = {};
     try {
-        const inputFile = fs.readFileSync(inputPath, "utf-8");
+        const inputFile = fs.readFileSync(options.inputFilePath, "utf-8");
         inputJSON = JSON.parse(inputFile);
     } catch (e) {
         console.error(`Invalid input JSON: ${e}`);
         return;
     }
 
-    const inputLanguage = getLanguageCodeFromFilename(options.inputFileOrPath);
+    const inputLanguage = getLanguageCodeFromFilename(options.inputFilePath);
     let outputLanguage = "";
     if (options.forceLanguageName) {
         outputLanguage = options.forceLanguageName;
     } else {
-        outputLanguage = getLanguageCodeFromFilename(options.outputFileOrPath);
+        outputLanguage = getLanguageCodeFromFilename(options.inputFilePath);
     }
 
     try {
@@ -349,7 +328,7 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
         });
 
         const outputText = JSON.stringify(outputJSON, null, 4);
-        fs.writeFileSync(outputPath, `${outputText}\n`);
+        fs.writeFileSync(options.outputFilePath, `${outputText}\n`);
     } catch (err) {
         console.error(`Failed to translate file to ${outputLanguage}: ${err}`);
     }
@@ -495,7 +474,7 @@ const translateDirectory = async (options: TranslateDirectoryOptions): Promise<v
     for (const sourceFilePath of sourceFilePaths) {
         const fileContents = fs.readFileSync(sourceFilePath, "utf-8");
         const fileJSON = JSON.parse(fileContents);
-        const flatJSON = flatten(fileJSON) as { [key: string]: string };
+        const flatJSON = flatten(fileJSON, { delimiter: "_" }) as { [key: string]: string };
         for (const key in flatJSON) {
             if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
                 inputJSON[getTranslationDirectoryKey(sourceFilePath, key, options.inputLanguageCode, options.outputLanguageCode)] = flatJSON[key];
@@ -530,22 +509,26 @@ const translateDirectory = async (options: TranslateDirectoryOptions): Promise<v
         const filesToJSON: { [filePath: string]: { [key: string]: string } } = {};
         for (const pathWithKey in outputJSON) {
             if (Object.prototype.hasOwnProperty.call(outputJSON, pathWithKey)) {
-                const filePath = pathWithKey.split("/").slice(0, -1).join("/");
-                const key = pathWithKey.split("/").pop()!;
+                const filePath = pathWithKey.split(":").slice(0, -1).join(":");
+                if (!filesToJSON[filePath]) {
+                    filesToJSON[filePath] = {};
+                }
+
+                const key = pathWithKey.split(":").pop()!;
                 filesToJSON[filePath][key] = outputJSON[pathWithKey];
             }
         }
 
         for (const perFileJSON in filesToJSON) {
             if (Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)) {
-                const unflattenedOutput = unflatten(filesToJSON[perFileJSON]);
+                const unflattenedOutput = unflatten(filesToJSON[perFileJSON], { delimiter: "_" });
                 const outputText = JSON.stringify(unflattenedOutput, null, 4);
                 fs.mkdirSync(dirname(perFileJSON), { recursive: true });
                 fs.writeFileSync(perFileJSON, `${outputText}\n`);
             }
         }
     } catch (err) {
-        console.error(`Failed to translate file to ${outputLanguage}: ${err}`);
+        console.error(`Failed to translate directory to ${outputLanguage}: ${err}`);
     }
 };
 
@@ -567,11 +550,11 @@ program
     .command("translate")
     .requiredOption(
         "-i, --input <input>",
-        "Source i18n file, in the jsons/ directory if a relative path is given",
+        "Source i18n file or path of source language, in the jsons/ directory if a relative path is given",
     )
     .option(
         "-o, --output-languages [language codes...]",
-        "Pass a list of languages to translate to",
+        "A list of languages to translate to",
     )
     .requiredOption(
         "-e, --engine <engine>",
@@ -680,42 +663,105 @@ program
                 );
             }
 
-            let i = 0;
-            for (const languageCode of options.outputLanguages) {
-                i++;
-                console.log(
-                    `Translating ${i}/${options.outputLanguages.length} languages...`,
-                );
-                const output = options.input.replace(
-                    getLanguageCodeFromFilename(options.input),
-                    languageCode,
-                );
-
-                if (options.input === output) {
-                    continue;
+            const jsonFolder = path.resolve(process.cwd(), "jsons");
+            let inputPath: string;
+            if (path.isAbsolute(options.input)) {
+                inputPath = path.resolve(options.input);
+            } else {
+                inputPath = path.resolve(jsonFolder, options.input);
+                if (!fs.existsSync(inputPath)) {
+                    inputPath = path.resolve(process.cwd(), options.input);
                 }
+            }
 
-                try {
-                    // eslint-disable-next-line no-await-in-loop
-                    await translateFile({
-                        engine: options.engine,
-                        model,
-                        chatParams,
-                        rateLimitMs,
-                        apiKey,
-                        inputFileOrPath: options.input,
-                        outputFileOrPath: output,
-                        templatedStringPrefix: options.templatedStringPrefix,
-                        templatedStringSuffix: options.templatedStringSuffix,
-                        verbose: options.verbose,
-                        ensureChangedTranslation:
-                            options.ensureChangedTranslation,
-                        batchSize: options.batchSize,
-                    });
-                } catch (err) {
-                    console.error(
-                        `Failed to translate to ${languageCode}: ${err}`,
+            if (fs.statSync(inputPath).isFile()) {
+                let i = 0;
+                for (const languageCode of options.outputLanguages) {
+                    i++;
+                    console.log(
+                        `Translating ${i}/${options.outputLanguages.length} languages...`,
                     );
+                    const output = options.input.replace(
+                        getLanguageCodeFromFilename(options.input),
+                        languageCode,
+                    );
+
+                    if (options.input === output) {
+                        continue;
+                    }
+
+                    let outputPath: string;
+                    if (path.isAbsolute(output)) {
+                        outputPath = path.resolve(output);
+                    } else {
+                        outputPath = path.resolve(jsonFolder, output);
+                        if (!fs.existsSync(jsonFolder)) {
+                            outputPath = path.resolve(process.cwd(), output);
+                        }
+                    }
+
+                    try {
+                        // eslint-disable-next-line no-await-in-loop
+                        await translateFile({
+                            engine: options.engine,
+                            model,
+                            chatParams,
+                            rateLimitMs,
+                            apiKey,
+                            inputFilePath: inputPath,
+                            outputFilePath: outputPath,
+                            templatedStringPrefix: options.templatedStringPrefix,
+                            templatedStringSuffix: options.templatedStringSuffix,
+                            verbose: options.verbose,
+                            ensureChangedTranslation:
+                                options.ensureChangedTranslation,
+                            batchSize: options.batchSize,
+                        });
+                    } catch (err) {
+                        console.error(
+                            `Failed to translate file to ${languageCode}: ${err}`,
+                        );
+                    }
+                }
+            } else {
+                let i = 0;
+                for (const languageCode of options.outputLanguages) {
+                    i++;
+                    console.log(
+                        `Translating ${i}/${options.outputLanguages.length} languages...`,
+                    );
+                    const output = options.input.replace(
+                        getLanguageCodeFromFilename(options.input),
+                        languageCode,
+                    );
+
+                    if (options.input === output) {
+                        continue;
+                    }
+
+                    try {
+                        // eslint-disable-next-line no-await-in-loop
+                        await translateDirectory({
+                            engine: options.engine,
+                            model,
+                            chatParams,
+                            rateLimitMs,
+                            apiKey,
+                            baseDirectory: path.resolve(inputPath, ".."),
+                            inputLanguageCode: path.basename(inputPath),
+                            outputLanguageCode: languageCode,
+                            templatedStringPrefix: options.templatedStringPrefix,
+                            templatedStringSuffix: options.templatedStringSuffix,
+                            verbose: options.verbose,
+                            ensureChangedTranslation:
+                                options.ensureChangedTranslation,
+                            batchSize: options.batchSize,
+                        });
+                    } catch (err) {
+                        console.error(
+                            `Failed to translate directory to ${languageCode}: ${err}`,
+                        );
+                    }
                 }
             }
         } else {
@@ -756,8 +802,8 @@ program
                         chatParams,
                         rateLimitMs,
                         apiKey,
-                        inputFileOrPath: options.input,
-                        outputFileOrPath: output,
+                        inputFilePath: options.input,
+                        outputFilePath: output,
                         templatedStringPrefix: options.templatedStringPrefix,
                         templatedStringSuffix: options.templatedStringSuffix,
                         verbose: options.verbose,

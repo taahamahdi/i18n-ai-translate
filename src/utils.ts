@@ -1,5 +1,6 @@
 import ISO6391 from "iso-639-1";
 import fs from "fs";
+import path from "path";
 
 /**
  * @param delayDuration - time (in ms) to delay
@@ -71,10 +72,11 @@ export function getAllLanguageCodes(): string[] {
 export function getAllFilesInPath(directory: string): Array<string> {
     const files: Array<string> = [];
     for (const fileOrDir of fs.readdirSync(directory)) {
-        if (fs.lstatSync(fileOrDir).isDirectory()) {
-            files.push(...getAllFilesInPath(fileOrDir));
+        const fullPath = path.join(directory, fileOrDir);
+        if (fs.lstatSync(fullPath).isDirectory()) {
+            files.push(...getAllFilesInPath(fullPath));
         } else {
-            files.push(fileOrDir);
+            files.push(fullPath);
         }
     }
 
@@ -91,5 +93,5 @@ export function getAllFilesInPath(directory: string): Array<string> {
  */
 export function getTranslationDirectoryKey(sourceFilePath: string, key: string, inputLanguageCode: string, outputLanguageCode: string): string {
     const outputPath = sourceFilePath.replace(`/${inputLanguageCode}/`, `/${outputLanguageCode}/`);
-    return `${outputPath}/${key}`;
+    return `${outputPath}:${key}`;
 }
