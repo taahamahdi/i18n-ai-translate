@@ -15,12 +15,12 @@ import generateTranslation from "./generate";
 import path, { dirname } from "path";
 import type { ChatParams, Model } from "./types";
 import type Chats from "./interfaces/chats";
-import type TranslateDirectoryDiffOptions from "./interfaces/translation_directory_diff_options";
-import type TranslateDirectoryOptions from "./interfaces/translation_directory_options";
-import type TranslateFileDiffOptions from "./interfaces/translation_file_diff_options";
-import type TranslateFileOptions from "./interfaces/translation_file_options";
-import type TranslationDiffOptions from "./interfaces/translation_diff_options";
-import type TranslationOptions from "./interfaces/translation_options";
+import type TranslateDiffOptions from "./interfaces/translate_diff_options";
+import type TranslateDirectoryDiffOptions from "./interfaces/translate_directory_diff_options";
+import type TranslateDirectoryOptions from "./interfaces/translate_directory_options";
+import type TranslateFileDiffOptions from "./interfaces/translate_file_diff_options";
+import type TranslateFileOptions from "./interfaces/translate_file_options";
+import type TranslateOptions from "./interfaces/translate_options";
 
 const VERSION = "2.0.9";
 
@@ -35,7 +35,7 @@ config({ path: path.resolve(process.cwd(), ".env") });
  * @param options - The options for the translation
  */
 export async function translate(
-    options: TranslationOptions,
+    options: TranslateOptions,
 ): Promise<{ [key: string]: string }> {
     if (options.verbose) {
         console.log(
@@ -179,7 +179,7 @@ export async function translate(
  * @param options - The options for the translation
  */
 export async function translateDiff(
-    options: TranslationDiffOptions,
+    options: TranslateDiffOptions,
 ): Promise<{ [language: string]: Object }> {
     const flatInputBefore = flatten(options.inputJSONBefore, {
         delimiter: "_",

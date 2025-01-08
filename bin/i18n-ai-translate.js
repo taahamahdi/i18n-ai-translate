@@ -10718,7 +10718,10 @@ function getAllFilesInPath(directory) {
   return files;
 }
 function getTranslationDirectoryKey(sourceFilePath, key, inputLanguageCode, outputLanguageCode) {
-  const outputPath = sourceFilePath.replace(`/${inputLanguageCode}/`, `/${outputLanguageCode}/`);
+  const outputPath = sourceFilePath.replace(
+    `/${inputLanguageCode}/`,
+    `/${outputLanguageCode}/`
+  );
   return `${outputPath}:${key}`;
 }
 
@@ -17755,12 +17758,18 @@ ${output[keys[j2]]}
   return unflattenedOutput;
 }
 async function translateDiff(options) {
-  const flatInputBefore = (0, import_flat.flatten)(options.inputJSONBefore, { delimiter: "_" });
-  const flatInputAfter = (0, import_flat.flatten)(options.inputJSONAfter, { delimiter: "_" });
+  const flatInputBefore = (0, import_flat.flatten)(options.inputJSONBefore, {
+    delimiter: "_"
+  });
+  const flatInputAfter = (0, import_flat.flatten)(options.inputJSONAfter, {
+    delimiter: "_"
+  });
   const flatToUpdateJSONs = {};
   for (const lang in options.toUpdateJSONs) {
     if (Object.prototype.hasOwnProperty.call(options.toUpdateJSONs, lang)) {
-      const flatToUpdateJSON = (0, import_flat.flatten)(options.toUpdateJSONs[lang], { delimiter: "_" });
+      const flatToUpdateJSON = (0, import_flat.flatten)(options.toUpdateJSONs[lang], {
+        delimiter: "_"
+      });
       flatToUpdateJSONs[lang] = flatToUpdateJSON;
     }
   }
@@ -17842,7 +17851,9 @@ async function translateDiff(options) {
   const unflatToUpdateJSONs = {};
   for (const lang in flatToUpdateJSONs) {
     if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
-      unflatToUpdateJSONs[lang] = (0, import_flat.unflatten)(flatToUpdateJSONs[lang], { delimiter: "_" });
+      unflatToUpdateJSONs[lang] = (0, import_flat.unflatten)(flatToUpdateJSONs[lang], {
+        delimiter: "_"
+      });
     }
   }
   return unflatToUpdateJSONs;
@@ -17996,9 +18007,14 @@ var translateDirectory = async (options) => {
       inputPath = import_path3.default.resolve(process.cwd(), options.baseDirectory);
     }
   }
-  const sourceLanguagePath = import_path3.default.resolve(inputPath, options.inputLanguageCode);
+  const sourceLanguagePath = import_path3.default.resolve(
+    inputPath,
+    options.inputLanguageCode
+  );
   if (!import_fs3.default.existsSync(sourceLanguagePath)) {
-    throw new Error(`Source language path does not exist. sourceLanguagePath = ${sourceLanguagePath}`);
+    throw new Error(
+      `Source language path does not exist. sourceLanguagePath = ${sourceLanguagePath}`
+    );
   }
   const sourceFilePaths = getAllFilesInPath(sourceLanguagePath);
   const inputJSON = {};
@@ -18008,16 +18024,25 @@ var translateDirectory = async (options) => {
     const flatJSON = (0, import_flat.flatten)(fileJSON, { delimiter: "_" });
     for (const key in flatJSON) {
       if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
-        inputJSON[getTranslationDirectoryKey(sourceFilePath, key, options.inputLanguageCode, options.outputLanguageCode)] = flatJSON[key];
+        inputJSON[getTranslationDirectoryKey(
+          sourceFilePath,
+          key,
+          options.inputLanguageCode,
+          options.outputLanguageCode
+        )] = flatJSON[key];
       }
     }
   }
-  const inputLanguage = getLanguageCodeFromFilename(options.inputLanguageCode);
+  const inputLanguage = getLanguageCodeFromFilename(
+    options.inputLanguageCode
+  );
   let outputLanguage = "";
   if (options.forceLanguageName) {
     outputLanguage = options.forceLanguageName;
   } else {
-    outputLanguage = getLanguageCodeFromFilename(options.outputLanguageCode);
+    outputLanguage = getLanguageCodeFromFilename(
+      options.outputLanguageCode
+    );
   }
   try {
     const outputJSON = await translate({
@@ -18047,7 +18072,9 @@ var translateDirectory = async (options) => {
     }
     for (const perFileJSON in filesToJSON) {
       if (Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)) {
-        const unflattenedOutput = (0, import_flat.unflatten)(filesToJSON[perFileJSON], { delimiter: "_" });
+        const unflattenedOutput = (0, import_flat.unflatten)(filesToJSON[perFileJSON], {
+          delimiter: "_"
+        });
         const outputText = JSON.stringify(unflattenedOutput, null, 4);
         import_fs3.default.mkdirSync((0, import_path3.dirname)(perFileJSON), { recursive: true });
         import_fs3.default.writeFileSync(perFileJSON, `${outputText}
@@ -18055,7 +18082,9 @@ var translateDirectory = async (options) => {
       }
     }
   } catch (err) {
-    console.error(`Failed to translate directory to ${outputLanguage}: ${err}`);
+    console.error(
+      `Failed to translate directory to ${outputLanguage}: ${err}`
+    );
   }
 };
 program.name("i18n-ai-translate").description(
