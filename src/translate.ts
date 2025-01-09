@@ -364,6 +364,17 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
 const translateFileDiff = async (
     options: TranslateFileDiffOptions,
 ): Promise<void> => {
+    // Get all the *json files from the same path as beforeInputPath
+    const outputFilesOrPaths = fs
+        .readdirSync(path.dirname(options.inputBeforeFileOrPath))
+        .filter((file: string) => file.endsWith(".json"))
+        .filter(
+            (file) =>
+                file !== path.basename(options.inputBeforeFileOrPath) &&
+                file !== path.basename(options.inputAfterFileOrPath),
+        )
+        .map((file) => path.resolve(path.dirname(options.inputBeforeFileOrPath), file));
+
     const jsonFolder = path.resolve(process.cwd(), "jsons");
     let inputBeforePath: string;
     let inputAfterPath: string;
@@ -390,7 +401,7 @@ const translateFileDiff = async (
     }
 
     const outputPaths: Array<string> = [];
-    for (const outputFileOrPath of options.outputFilesOrPaths) {
+    for (const outputFileOrPath of outputFilesOrPaths) {
         let outputPath: string;
         if (path.isAbsolute(outputFileOrPath)) {
             outputPath = path.resolve(outputFileOrPath);
@@ -1007,17 +1018,6 @@ program
             return;
         }
 
-        // Get all the *json files from the same path as beforeInputPath
-        const outputFilesOrPaths = fs
-            .readdirSync(path.dirname(beforeInputPath))
-            .filter((file) => file.endsWith(".json"))
-            .filter(
-                (file) =>
-                    file !== path.basename(beforeInputPath) &&
-                    file !== path.basename(afterInputPath),
-            )
-            .map((file) => path.resolve(path.dirname(beforeInputPath), file));
-
         await translateFileDiff({
             engine: options.engine,
             model,
@@ -1027,7 +1027,6 @@ program
             inputLanguage: options.inputLanguage,
             inputBeforeFileOrPath: beforeInputPath,
             inputAfterFileOrPath: afterInputPath,
-            outputFilesOrPaths,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
             verbose: options.verbose,

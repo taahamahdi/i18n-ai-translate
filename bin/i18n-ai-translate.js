@@ -17904,6 +17904,9 @@ var translateFile = async (options) => {
   }
 };
 var translateFileDiff = async (options) => {
+  const outputFilesOrPaths = import_fs3.default.readdirSync(import_path3.default.dirname(options.inputBeforeFileOrPath)).filter((file) => file.endsWith(".json")).filter(
+    (file) => file !== import_path3.default.basename(options.inputBeforeFileOrPath) && file !== import_path3.default.basename(options.inputAfterFileOrPath)
+  ).map((file) => import_path3.default.resolve(import_path3.default.dirname(options.inputBeforeFileOrPath), file));
   const jsonFolder = import_path3.default.resolve(process.cwd(), "jsons");
   let inputBeforePath;
   let inputAfterPath;
@@ -17927,7 +17930,7 @@ var translateFileDiff = async (options) => {
     inputAfterPath = import_path3.default.resolve(jsonFolder, options.inputAfterFileOrPath);
   }
   const outputPaths = [];
-  for (const outputFileOrPath of options.outputFilesOrPaths) {
+  for (const outputFileOrPath of outputFilesOrPaths) {
     let outputPath;
     if (import_path3.default.isAbsolute(outputFileOrPath)) {
       outputPath = import_path3.default.resolve(outputFileOrPath);
@@ -18428,9 +18431,6 @@ program.command("diff").requiredOption(
     console.error("Input files are not in the same directory");
     return;
   }
-  const outputFilesOrPaths = import_fs3.default.readdirSync(import_path3.default.dirname(beforeInputPath)).filter((file) => file.endsWith(".json")).filter(
-    (file) => file !== import_path3.default.basename(beforeInputPath) && file !== import_path3.default.basename(afterInputPath)
-  ).map((file) => import_path3.default.resolve(import_path3.default.dirname(beforeInputPath), file));
   await translateFileDiff({
     engine: options.engine,
     model,
@@ -18440,7 +18440,6 @@ program.command("diff").requiredOption(
     inputLanguage: options.inputLanguage,
     inputBeforeFileOrPath: beforeInputPath,
     inputAfterFileOrPath: afterInputPath,
-    outputFilesOrPaths,
     templatedStringPrefix: options.templatedStringPrefix,
     templatedStringSuffix: options.templatedStringSuffix,
     verbose: options.verbose,
