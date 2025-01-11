@@ -30,7 +30,6 @@ const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 
 const FLATTEN_DELIMITER = "*";
-const DIR_FLATTEN_DELIMITER = "^";
 
 config({ path: path.resolve(process.cwd(), ".env") });
 
@@ -518,7 +517,7 @@ const translateDirectory = async (
         const fileContents = fs.readFileSync(sourceFilePath, "utf-8");
         const fileJSON = JSON.parse(fileContents);
         const flatJSON = flatten(fileJSON, {
-            delimiter: DIR_FLATTEN_DELIMITER,
+            delimiter: FLATTEN_DELIMITER,
         }) as {
             [key: string]: string;
         };
@@ -582,7 +581,7 @@ const translateDirectory = async (
                 Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)
             ) {
                 const unflattenedOutput = unflatten(filesToJSON[perFileJSON], {
-                    delimiter: DIR_FLATTEN_DELIMITER,
+                    delimiter: FLATTEN_DELIMITER,
                 });
 
                 const outputText = JSON.stringify(unflattenedOutput, null, 4);
@@ -640,7 +639,7 @@ const translateDirectoryDiff = async (
         const fileContents = fs.readFileSync(sourceFilePath, "utf-8");
         const fileJSON = JSON.parse(fileContents);
         const flatJSON = flatten(fileJSON, {
-            delimiter: DIR_FLATTEN_DELIMITER,
+            delimiter: FLATTEN_DELIMITER,
         }) as {
             [key: string]: string;
         };
@@ -703,7 +702,7 @@ const translateDirectoryDiff = async (
             const fileContents = fs.readFileSync(file, "utf-8");
             const fileJSON = JSON.parse(fileContents);
             const flatJSON = flatten(fileJSON, {
-                delimiter: DIR_FLATTEN_DELIMITER,
+                delimiter: FLATTEN_DELIMITER,
             }) as {
                 [key: string]: string;
             };
@@ -802,7 +801,7 @@ const translateDirectoryDiff = async (
                         const unflattenedOutput = unflatten(
                             filesToJSON[perFileJSON],
                             {
-                                delimiter: DIR_FLATTEN_DELIMITER,
+                                delimiter: FLATTEN_DELIMITER,
                             },
                         );
 

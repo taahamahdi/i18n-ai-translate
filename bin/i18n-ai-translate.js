@@ -17648,7 +17648,6 @@ var DEFAULT_BATCH_SIZE = 32;
 var DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 var DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 var FLATTEN_DELIMITER = "*";
-var DIR_FLATTEN_DELIMITER = "^";
 (0, import_dotenv.config)({ path: import_path3.default.resolve(process.cwd(), ".env") });
 async function translate(options) {
   if (options.verbose) {
@@ -18038,7 +18037,7 @@ var translateDirectory = async (options) => {
     const fileContents = import_fs3.default.readFileSync(sourceFilePath, "utf-8");
     const fileJSON = JSON.parse(fileContents);
     const flatJSON = (0, import_flat.flatten)(fileJSON, {
-      delimiter: DIR_FLATTEN_DELIMITER
+      delimiter: FLATTEN_DELIMITER
     });
     for (const key in flatJSON) {
       if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
@@ -18087,7 +18086,7 @@ var translateDirectory = async (options) => {
     for (const perFileJSON in filesToJSON) {
       if (Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)) {
         const unflattenedOutput = (0, import_flat.unflatten)(filesToJSON[perFileJSON], {
-          delimiter: DIR_FLATTEN_DELIMITER
+          delimiter: FLATTEN_DELIMITER
         });
         const outputText = JSON.stringify(unflattenedOutput, null, 4);
         import_fs3.default.mkdirSync((0, import_path3.dirname)(perFileJSON), { recursive: true });
@@ -18136,7 +18135,7 @@ var translateDirectoryDiff = async (options) => {
     const fileContents = import_fs3.default.readFileSync(sourceFilePath, "utf-8");
     const fileJSON = JSON.parse(fileContents);
     const flatJSON = (0, import_flat.flatten)(fileJSON, {
-      delimiter: DIR_FLATTEN_DELIMITER
+      delimiter: FLATTEN_DELIMITER
     });
     for (const key in flatJSON) {
       if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
@@ -18179,7 +18178,7 @@ var translateDirectoryDiff = async (options) => {
       const fileContents = import_fs3.default.readFileSync(file, "utf-8");
       const fileJSON = JSON.parse(fileContents);
       const flatJSON = (0, import_flat.flatten)(fileJSON, {
-        delimiter: DIR_FLATTEN_DELIMITER
+        delimiter: FLATTEN_DELIMITER
       });
       const relative = import_path3.default.relative(
         options.baseDirectory,
@@ -18251,7 +18250,7 @@ var translateDirectoryDiff = async (options) => {
             const unflattenedOutput = (0, import_flat.unflatten)(
               filesToJSON[perFileJSON],
               {
-                delimiter: DIR_FLATTEN_DELIMITER
+                delimiter: FLATTEN_DELIMITER
               }
             );
             const outputText = JSON.stringify(
