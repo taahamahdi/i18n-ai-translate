@@ -4,4 +4,5 @@ export default interface TranslateOptions extends Options {
     inputJSON: Object;
     inputLanguage: string;
     outputLanguage: string;
+    forceLanguageName?: string;
 }

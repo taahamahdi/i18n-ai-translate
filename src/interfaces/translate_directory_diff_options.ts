@@ -5,5 +5,4 @@ export default interface TranslateDirectoryDiffOptions extends Options {
     inputLanguageCode: string;
     inputFolderNameBefore: string;
     inputFolderNameAfter: string;
-    // NO forcelanguagename
 }
