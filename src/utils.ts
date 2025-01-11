@@ -95,11 +95,11 @@ export function getTranslationDirectoryKey(
     sourceFilePath: string,
     key: string,
     inputLanguageCode: string,
-    outputLanguageCode: string,
+    outputLanguageCode?: string,
 ): string {
     const outputPath = sourceFilePath.replace(
         `/${inputLanguageCode}/`,
-        `/${outputLanguageCode}/`,
+        `/${outputLanguageCode ?? inputLanguageCode}/`,
     );
 
     return `${outputPath}:${key}`;

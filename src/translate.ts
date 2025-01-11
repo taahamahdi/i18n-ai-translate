@@ -9,6 +9,7 @@ import {
 import { program } from "commander";
 import ChatFactory from "./chat_interface/chat_factory";
 import Engine from "./enums/engine";
+import ISO6391 from "iso-639-1";
 import RateLimiter from "./rate_limiter";
 import fs from "fs";
 import generateTranslation from "./generate";
@@ -28,7 +29,8 @@ const DEFAULT_BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 
-const FLATTEN_DELIMITER = "_";
+const FLATTEN_DELIMITER = "*";
+const DIR_FLATTEN_DELIMITER = "^";
 
 config({ path: path.resolve(process.cwd(), ".env") });
 
@@ -36,9 +38,7 @@ config({ path: path.resolve(process.cwd(), ".env") });
  * Translate the input JSON to the given language
  * @param options - The options for the translation
  */
-export async function translate(
-    options: TranslateOptions,
-): Promise<{ [key: string]: string }> {
+export async function translate(options: TranslateOptions): Promise<Object> {
     if (options.verbose) {
         console.log(
             `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
@@ -178,7 +178,7 @@ export async function translate(
         console.log(`Actual execution time: ${roundedSeconds} seconds`);
     }
 
-    return unflattenedOutput as { [key: string]: string };
+    return unflattenedOutput as Object;
 }
 
 /**
@@ -373,7 +373,9 @@ const translateFileDiff = async (
                 file !== path.basename(options.inputBeforeFileOrPath) &&
                 file !== path.basename(options.inputAfterFileOrPath),
         )
-        .map((file) => path.resolve(path.dirname(options.inputBeforeFileOrPath), file));
+        .map((file) =>
+            path.resolve(path.dirname(options.inputBeforeFileOrPath), file),
+        );
 
     const jsonFolder = path.resolve(process.cwd(), "jsons");
     let inputBeforePath: string;
@@ -456,7 +458,7 @@ const translateFileDiff = async (
             chatParams: options.chatParams,
             rateLimitMs: options.rateLimitMs,
             apiKey: options.apiKey,
-            inputLanguage: options.inputLanguage,
+            inputLanguage: ISO6391.getName(options.inputLanguageCode),
             inputJSONBefore: inputBeforeJSON,
             inputJSONAfter: inputAfterJSON,
             toUpdateJSONs,
@@ -488,25 +490,20 @@ const translateFileDiff = async (
 const translateDirectory = async (
     options: TranslateDirectoryOptions,
 ): Promise<void> => {
-    // collect all the keys in the format path/to/file/keyName
-    // pass it into translate()
-    //
-    // Some assumptions: in the given path there will be a folder called {inputLanguageInISO-639-1}/
-    // and we want to output each translation to new directories in this path
     const jsonFolder = path.resolve(process.cwd(), "jsons");
-    let inputPath: string;
+    let fullBasePath: string;
     if (path.isAbsolute(options.baseDirectory)) {
-        inputPath = path.resolve(options.baseDirectory);
+        fullBasePath = path.resolve(options.baseDirectory);
     } else {
-        inputPath = path.resolve(jsonFolder, options.baseDirectory);
-        if (!fs.existsSync(inputPath)) {
-            inputPath = path.resolve(process.cwd(), options.baseDirectory);
+        fullBasePath = path.resolve(jsonFolder, options.baseDirectory);
+        if (!fs.existsSync(fullBasePath)) {
+            fullBasePath = path.resolve(process.cwd(), options.baseDirectory);
         }
     }
 
     const sourceLanguagePath = path.resolve(
-        inputPath,
-        options.inputLanguageCode,
+        fullBasePath,
+        options.inputLanguage,
     );
 
     if (!fs.existsSync(sourceLanguagePath)) {
@@ -521,7 +518,7 @@ const translateDirectory = async (
         const fileContents = fs.readFileSync(sourceFilePath, "utf-8");
         const fileJSON = JSON.parse(fileContents);
         const flatJSON = flatten(fileJSON, {
-            delimiter: FLATTEN_DELIMITER,
+            delimiter: DIR_FLATTEN_DELIMITER,
         }) as {
             [key: string]: string;
         };
@@ -532,29 +529,25 @@ const translateDirectory = async (
                     getTranslationDirectoryKey(
                         sourceFilePath,
                         key,
-                        options.inputLanguageCode,
-                        options.outputLanguageCode,
+                        options.inputLanguage,
+                        options.outputLanguage,
                     )
                 ] = flatJSON[key];
             }
         }
     }
 
-    const inputLanguage = getLanguageCodeFromFilename(
-        options.inputLanguageCode,
-    );
+    const inputLanguage = getLanguageCodeFromFilename(options.inputLanguage);
 
     let outputLanguage = "";
     if (options.forceLanguageName) {
         outputLanguage = options.forceLanguageName;
     } else {
-        outputLanguage = getLanguageCodeFromFilename(
-            options.outputLanguageCode,
-        );
+        outputLanguage = getLanguageCodeFromFilename(options.outputLanguage);
     }
 
     try {
-        const outputJSON = await translate({
+        const outputJSON = (await translate({
             engine: options.engine,
             model: options.model,
             chatParams: options.chatParams,
@@ -567,7 +560,7 @@ const translateDirectory = async (
             templatedStringSuffix: options.templatedStringSuffix,
             verbose: options.verbose,
             batchSize: options.batchSize,
-        });
+        })) as { [filePathKey: string]: string };
 
         const filesToJSON: { [filePath: string]: { [key: string]: string } } =
             {};
@@ -589,7 +582,7 @@ const translateDirectory = async (
                 Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)
             ) {
                 const unflattenedOutput = unflatten(filesToJSON[perFileJSON], {
-                    delimiter: FLATTEN_DELIMITER,
+                    delimiter: DIR_FLATTEN_DELIMITER,
                 });
 
                 const outputText = JSON.stringify(unflattenedOutput, null, 4);
@@ -607,10 +600,227 @@ const translateDirectory = async (
 const translateDirectoryDiff = async (
     options: TranslateDirectoryDiffOptions,
 ): Promise<void> => {
-    // collect all the keys in the format path|to|file_keyName
-    // remove all keys that have unchanged values in pathAfter
-    // pass it into translateDiff()
-    // split by | and output into keyName
+    const jsonFolder = path.resolve(process.cwd(), "jsons");
+    let fullBasePath: string;
+    if (path.isAbsolute(options.baseDirectory)) {
+        fullBasePath = path.resolve(options.baseDirectory);
+    } else {
+        fullBasePath = path.resolve(jsonFolder, options.baseDirectory);
+        if (!fs.existsSync(fullBasePath)) {
+            fullBasePath = path.resolve(process.cwd(), options.baseDirectory);
+        }
+    }
+
+    const sourceLanguagePathBefore = path.resolve(
+        fullBasePath,
+        options.inputFolderNameBefore,
+    );
+
+    const sourceLanguagePathAfter = path.resolve(
+        fullBasePath,
+        options.inputFolderNameAfter,
+    );
+
+    if (!fs.existsSync(sourceLanguagePathBefore)) {
+        throw new Error(
+            `Source language path before does not exist. sourceLanguagePathBefore = ${sourceLanguagePathBefore}`,
+        );
+    }
+
+    if (!fs.existsSync(sourceLanguagePathAfter)) {
+        throw new Error(
+            `Source language path after does not exist. sourceLanguagePathAfter = ${sourceLanguagePathAfter}`,
+        );
+    }
+
+    // TODO: abstract to fn
+    const sourceFilePathsBefore = getAllFilesInPath(sourceLanguagePathBefore);
+    const inputJSONBefore: { [key: string]: string } = {};
+    for (const sourceFilePath of sourceFilePathsBefore) {
+        const fileContents = fs.readFileSync(sourceFilePath, "utf-8");
+        const fileJSON = JSON.parse(fileContents);
+        const flatJSON = flatten(fileJSON, {
+            delimiter: DIR_FLATTEN_DELIMITER,
+        }) as {
+            [key: string]: string;
+        };
+
+        for (const key in flatJSON) {
+            if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+                inputJSONBefore[
+                    getTranslationDirectoryKey(
+                        sourceFilePath,
+                        key,
+                        options.inputLanguageCode,
+                    )
+                ] = flatJSON[key];
+            }
+        }
+    }
+
+    const sourceFilePathsAfter = getAllFilesInPath(sourceLanguagePathAfter);
+    const inputJSONAfter: { [key: string]: string } = {};
+    for (const sourceFilePath of sourceFilePathsAfter) {
+        const fileContents = fs.readFileSync(sourceFilePath, "utf-8");
+        const fileJSON = JSON.parse(fileContents);
+        const flatJSON = flatten(fileJSON, {
+            delimiter: FLATTEN_DELIMITER,
+        }) as {
+            [key: string]: string;
+        };
+
+        for (const key in flatJSON) {
+            if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+                inputJSONAfter[
+                    getTranslationDirectoryKey(
+                        sourceFilePath.replace(
+                            options.inputFolderNameAfter,
+                            options.inputFolderNameBefore,
+                        ),
+                        key,
+                        options.inputLanguageCode,
+                    )
+                ] = flatJSON[key];
+            }
+        }
+    }
+
+    const outputLanguagePaths = fs
+        .readdirSync(options.baseDirectory)
+        .filter(
+            (folder) =>
+                folder !== path.basename(options.inputFolderNameBefore) &&
+                folder !== path.basename(options.inputFolderNameAfter),
+        )
+        .map((folder) => path.resolve(options.baseDirectory, folder));
+
+    const toUpdateJSONs: { [languageCode: string]: { [key: string]: string } } =
+        {};
+
+    for (const outputLanguagePath of outputLanguagePaths) {
+        const files = getAllFilesInPath(outputLanguagePath);
+        for (const file of files) {
+            const fileContents = fs.readFileSync(file, "utf-8");
+            const fileJSON = JSON.parse(fileContents);
+            const flatJSON = flatten(fileJSON, {
+                delimiter: DIR_FLATTEN_DELIMITER,
+            }) as {
+                [key: string]: string;
+            };
+
+            const relative = path.relative(
+                options.baseDirectory,
+                outputLanguagePath,
+            );
+
+            const segments = relative.split(path.sep).filter(Boolean);
+            const language = segments[0];
+            if (!toUpdateJSONs[language]) {
+                toUpdateJSONs[language] = {};
+            }
+
+            for (const key in flatJSON) {
+                if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+                    toUpdateJSONs[language][
+                        getTranslationDirectoryKey(
+                            file.replace(
+                                outputLanguagePath,
+                                options.inputFolderNameBefore,
+                            ),
+                            key,
+                            options.inputLanguageCode,
+                        )
+                    ] = flatJSON[key];
+                }
+            }
+        }
+    }
+
+    try {
+        const perLanguageOutputJSON = await translateDiff({
+            engine: options.engine,
+            model: options.model,
+            chatParams: options.chatParams,
+            rateLimitMs: options.rateLimitMs,
+            apiKey: options.apiKey,
+            inputJSONBefore,
+            inputJSONAfter,
+            inputLanguage: ISO6391.getName(options.inputLanguageCode),
+            toUpdateJSONs,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+            verbose: options.verbose,
+            batchSize: options.batchSize,
+        });
+
+        const filesToJSON: { [filePath: string]: { [key: string]: string } } =
+            {};
+
+        for (const outputLanguage in perLanguageOutputJSON) {
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    perLanguageOutputJSON,
+                    outputLanguage,
+                )
+            ) {
+                const outputJSON = perLanguageOutputJSON[outputLanguage] as {
+                    [key: string]: string;
+                };
+
+                for (const pathWithKey in outputJSON) {
+                    if (
+                        Object.prototype.hasOwnProperty.call(
+                            outputJSON,
+                            pathWithKey,
+                        )
+                    ) {
+                        const filePath = pathWithKey
+                            .split(":")
+                            .slice(0, -1)
+                            .join(":")
+                            .replace(
+                                options.inputFolderNameBefore,
+                                `${options.baseDirectory}/${outputLanguage}`,
+                            );
+
+                        if (!filesToJSON[filePath]) {
+                            filesToJSON[filePath] = {};
+                        }
+
+                        const key = pathWithKey.split(":").pop()!;
+                        filesToJSON[filePath][key] = outputJSON[pathWithKey];
+                    }
+                }
+
+                for (const perFileJSON in filesToJSON) {
+                    if (
+                        Object.prototype.hasOwnProperty.call(
+                            filesToJSON,
+                            perFileJSON,
+                        )
+                    ) {
+                        const unflattenedOutput = unflatten(
+                            filesToJSON[perFileJSON],
+                            {
+                                delimiter: DIR_FLATTEN_DELIMITER,
+                            },
+                        );
+
+                        const outputText = JSON.stringify(
+                            unflattenedOutput,
+                            null,
+                            4,
+                        );
+
+                        fs.mkdirSync(dirname(perFileJSON), { recursive: true });
+                        fs.writeFileSync(perFileJSON, `${outputText}\n`);
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        console.error(`Failed to translate directory diff: ${err}`);
+    }
 };
 
 program
@@ -824,8 +1034,8 @@ program
                             rateLimitMs,
                             apiKey,
                             baseDirectory: path.resolve(inputPath, ".."),
-                            inputLanguageCode: path.basename(inputPath),
-                            outputLanguageCode: languageCode,
+                            inputLanguage: path.basename(inputPath),
+                            outputLanguage: languageCode,
                             templatedStringPrefix:
                                 options.templatedStringPrefix,
                             templatedStringSuffix:
@@ -901,16 +1111,16 @@ program
 program
     .command("diff")
     .requiredOption(
-        "-b, --before <fileBefore>",
-        "Source i18n file before changes, in the jsons/ directory if a relative path is given",
+        "-b, --before <fileOrDirectoryBefore>",
+        "Source i18n file or directory before changes, in the jsons/ directory if a relative path is given",
     )
     .requiredOption(
-        "-a, --after <fileAfter>",
-        "Source i18n file after changes, in the jsons/ directory if a relative path is given",
+        "-a, --after <fileOrDirectoryAfter>",
+        "Source i18n file or directory after changes, in the jsons/ directory if a relative path is given",
     )
     .requiredOption(
-        "-l, --input-language <inputLanguage>",
-        "The full input language name",
+        "-l, --input-language <inputLanguageCode>",
+        "The input language's code, in ISO6391 (e.g. en, fr)",
     )
     .requiredOption(
         "-e, --engine <engine>",
@@ -1012,27 +1222,58 @@ program
             }
         }
 
-        // Ensure they're in the same path
-        if (path.dirname(beforeInputPath) !== path.dirname(afterInputPath)) {
-            console.error("Input files are not in the same directory");
+        if (
+            fs.statSync(beforeInputPath).isFile() !==
+            fs.statSync(afterInputPath).isFile()
+        ) {
+            console.error(
+                "--before and --after arguments must be both files or both directories",
+            );
             return;
         }
 
-        await translateFileDiff({
-            engine: options.engine,
-            model,
-            chatParams,
-            rateLimitMs,
-            apiKey,
-            inputLanguage: options.inputLanguage,
-            inputBeforeFileOrPath: beforeInputPath,
-            inputAfterFileOrPath: afterInputPath,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
-            verbose: options.verbose,
-            ensureChangedTranslation: options.ensureChangedTranslation,
-            batchSize: options.batchSize,
-        });
+        if (fs.statSync(beforeInputPath).isFile()) {
+            // Ensure they're in the same path
+            if (
+                path.dirname(beforeInputPath) !== path.dirname(afterInputPath)
+            ) {
+                console.error("Input files are not in the same directory");
+                return;
+            }
+
+            await translateFileDiff({
+                engine: options.engine,
+                model,
+                chatParams,
+                rateLimitMs,
+                apiKey,
+                inputLanguageCode: options.inputLanguage,
+                inputBeforeFileOrPath: beforeInputPath,
+                inputAfterFileOrPath: afterInputPath,
+                templatedStringPrefix: options.templatedStringPrefix,
+                templatedStringSuffix: options.templatedStringSuffix,
+                verbose: options.verbose,
+                ensureChangedTranslation: options.ensureChangedTranslation,
+                batchSize: options.batchSize,
+            });
+        } else {
+            await translateDirectoryDiff({
+                engine: options.engine,
+                model,
+                chatParams,
+                rateLimitMs,
+                apiKey,
+                inputLanguageCode: options.inputLanguage,
+                baseDirectory: path.resolve(beforeInputPath, ".."),
+                inputFolderNameBefore: beforeInputPath,
+                inputFolderNameAfter: afterInputPath,
+                templatedStringPrefix: options.templatedStringPrefix,
+                templatedStringSuffix: options.templatedStringSuffix,
+                verbose: options.verbose,
+                ensureChangedTranslation: options.ensureChangedTranslation,
+                batchSize: options.batchSize,
+            });
+        }
     });
 
 program.parse();

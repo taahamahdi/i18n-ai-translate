@@ -371,118 +371,6 @@ var require_main = __commonJS({
   }
 });
 
-// node_modules/flat/index.js
-var require_flat = __commonJS({
-  "node_modules/flat/index.js"(exports2, module2) {
-    module2.exports = flatten2;
-    flatten2.flatten = flatten2;
-    flatten2.unflatten = unflatten2;
-    function isBuffer(obj) {
-      return obj && obj.constructor && typeof obj.constructor.isBuffer === "function" && obj.constructor.isBuffer(obj);
-    }
-    function keyIdentity(key) {
-      return key;
-    }
-    function flatten2(target, opts) {
-      opts = opts || {};
-      const delimiter = opts.delimiter || ".";
-      const maxDepth = opts.maxDepth;
-      const transformKey = opts.transformKey || keyIdentity;
-      const output = {};
-      function step(object, prev, currentDepth) {
-        currentDepth = currentDepth || 1;
-        Object.keys(object).forEach(function(key) {
-          const value = object[key];
-          const isarray = opts.safe && Array.isArray(value);
-          const type = Object.prototype.toString.call(value);
-          const isbuffer = isBuffer(value);
-          const isobject = type === "[object Object]" || type === "[object Array]";
-          const newKey = prev ? prev + delimiter + transformKey(key) : transformKey(key);
-          if (!isarray && !isbuffer && isobject && Object.keys(value).length && (!opts.maxDepth || currentDepth < maxDepth)) {
-            return step(value, newKey, currentDepth + 1);
-          }
-          output[newKey] = value;
-        });
-      }
-      step(target);
-      return output;
-    }
-    function unflatten2(target, opts) {
-      opts = opts || {};
-      const delimiter = opts.delimiter || ".";
-      const overwrite = opts.overwrite || false;
-      const transformKey = opts.transformKey || keyIdentity;
-      const result = {};
-      const isbuffer = isBuffer(target);
-      if (isbuffer || Object.prototype.toString.call(target) !== "[object Object]") {
-        return target;
-      }
-      function getkey(key) {
-        const parsedKey = Number(key);
-        return isNaN(parsedKey) || key.indexOf(".") !== -1 || opts.object ? key : parsedKey;
-      }
-      function addKeys(keyPrefix, recipient, target2) {
-        return Object.keys(target2).reduce(function(result2, key) {
-          result2[keyPrefix + delimiter + key] = target2[key];
-          return result2;
-        }, recipient);
-      }
-      function isEmpty(val) {
-        const type = Object.prototype.toString.call(val);
-        const isArray = type === "[object Array]";
-        const isObject = type === "[object Object]";
-        if (!val) {
-          return true;
-        } else if (isArray) {
-          return !val.length;
-        } else if (isObject) {
-          return !Object.keys(val).length;
-        }
-      }
-      target = Object.keys(target).reduce(function(result2, key) {
-        const type = Object.prototype.toString.call(target[key]);
-        const isObject = type === "[object Object]" || type === "[object Array]";
-        if (!isObject || isEmpty(target[key])) {
-          result2[key] = target[key];
-          return result2;
-        } else {
-          return addKeys(
-            key,
-            result2,
-            flatten2(target[key], opts)
-          );
-        }
-      }, {});
-      Object.keys(target).forEach(function(key) {
-        const split = key.split(delimiter).map(transformKey);
-        let key1 = getkey(split.shift());
-        let key2 = getkey(split[0]);
-        let recipient = result;
-        while (key2 !== void 0) {
-          if (key1 === "__proto__") {
-            return;
-          }
-          const type = Object.prototype.toString.call(recipient[key1]);
-          const isobject = type === "[object Object]" || type === "[object Array]";
-          if (!overwrite && !isobject && typeof recipient[key1] !== "undefined") {
-            return;
-          }
-          if (overwrite && !isobject || !overwrite && recipient[key1] == null) {
-            recipient[key1] = typeof key2 === "number" && !opts.object ? [] : {};
-          }
-          recipient = recipient[key1];
-          if (split.length > 0) {
-            key1 = getkey(split.shift());
-            key2 = getkey(split[0]);
-          }
-        }
-        recipient[key1] = unflatten2(target[key], opts);
-      });
-      return result;
-    }
-  }
-});
-
 // node_modules/iso-639-1/src/data.js
 var require_data = __commonJS({
   "node_modules/iso-639-1/src/data.js"(exports2, module2) {
@@ -1240,20 +1128,20 @@ var require_src = __commonJS({
       LANGUAGE_NAMES.push(name);
       LANGUAGE_NATIVE_NAMES.push(nativeName);
     }
-    module2.exports = class ISO63912 {
+    module2.exports = class ISO63913 {
       static getLanguages(codes = []) {
         return codes.map(
-          (code) => ISO63912.validate(code) ? Object.assign({}, LANGUAGES[code]) : { code, name: "", nativeName: "" }
+          (code) => ISO63913.validate(code) ? Object.assign({}, LANGUAGES[code]) : { code, name: "", nativeName: "" }
         );
       }
       static getName(code) {
-        return ISO63912.validate(code) ? LANGUAGES_LIST[code].name : "";
+        return ISO63913.validate(code) ? LANGUAGES_LIST[code].name : "";
       }
       static getAllNames() {
         return LANGUAGE_NAMES.slice();
       }
       static getNativeName(code) {
-        return ISO63912.validate(code) ? LANGUAGES_LIST[code].nativeName : "";
+        return ISO63913.validate(code) ? LANGUAGES_LIST[code].nativeName : "";
       }
       static getAllNativeNames() {
         return LANGUAGE_NATIVE_NAMES.slice();
@@ -1269,6 +1157,118 @@ var require_src = __commonJS({
         return LANGUAGES_LIST.hasOwnProperty(code);
       }
     };
+  }
+});
+
+// node_modules/flat/index.js
+var require_flat = __commonJS({
+  "node_modules/flat/index.js"(exports2, module2) {
+    module2.exports = flatten2;
+    flatten2.flatten = flatten2;
+    flatten2.unflatten = unflatten2;
+    function isBuffer(obj) {
+      return obj && obj.constructor && typeof obj.constructor.isBuffer === "function" && obj.constructor.isBuffer(obj);
+    }
+    function keyIdentity(key) {
+      return key;
+    }
+    function flatten2(target, opts) {
+      opts = opts || {};
+      const delimiter = opts.delimiter || ".";
+      const maxDepth = opts.maxDepth;
+      const transformKey = opts.transformKey || keyIdentity;
+      const output = {};
+      function step(object, prev, currentDepth) {
+        currentDepth = currentDepth || 1;
+        Object.keys(object).forEach(function(key) {
+          const value = object[key];
+          const isarray = opts.safe && Array.isArray(value);
+          const type = Object.prototype.toString.call(value);
+          const isbuffer = isBuffer(value);
+          const isobject = type === "[object Object]" || type === "[object Array]";
+          const newKey = prev ? prev + delimiter + transformKey(key) : transformKey(key);
+          if (!isarray && !isbuffer && isobject && Object.keys(value).length && (!opts.maxDepth || currentDepth < maxDepth)) {
+            return step(value, newKey, currentDepth + 1);
+          }
+          output[newKey] = value;
+        });
+      }
+      step(target);
+      return output;
+    }
+    function unflatten2(target, opts) {
+      opts = opts || {};
+      const delimiter = opts.delimiter || ".";
+      const overwrite = opts.overwrite || false;
+      const transformKey = opts.transformKey || keyIdentity;
+      const result = {};
+      const isbuffer = isBuffer(target);
+      if (isbuffer || Object.prototype.toString.call(target) !== "[object Object]") {
+        return target;
+      }
+      function getkey(key) {
+        const parsedKey = Number(key);
+        return isNaN(parsedKey) || key.indexOf(".") !== -1 || opts.object ? key : parsedKey;
+      }
+      function addKeys(keyPrefix, recipient, target2) {
+        return Object.keys(target2).reduce(function(result2, key) {
+          result2[keyPrefix + delimiter + key] = target2[key];
+          return result2;
+        }, recipient);
+      }
+      function isEmpty(val) {
+        const type = Object.prototype.toString.call(val);
+        const isArray = type === "[object Array]";
+        const isObject = type === "[object Object]";
+        if (!val) {
+          return true;
+        } else if (isArray) {
+          return !val.length;
+        } else if (isObject) {
+          return !Object.keys(val).length;
+        }
+      }
+      target = Object.keys(target).reduce(function(result2, key) {
+        const type = Object.prototype.toString.call(target[key]);
+        const isObject = type === "[object Object]" || type === "[object Array]";
+        if (!isObject || isEmpty(target[key])) {
+          result2[key] = target[key];
+          return result2;
+        } else {
+          return addKeys(
+            key,
+            result2,
+            flatten2(target[key], opts)
+          );
+        }
+      }, {});
+      Object.keys(target).forEach(function(key) {
+        const split = key.split(delimiter).map(transformKey);
+        let key1 = getkey(split.shift());
+        let key2 = getkey(split[0]);
+        let recipient = result;
+        while (key2 !== void 0) {
+          if (key1 === "__proto__") {
+            return;
+          }
+          const type = Object.prototype.toString.call(recipient[key1]);
+          const isobject = type === "[object Object]" || type === "[object Array]";
+          if (!overwrite && !isobject && typeof recipient[key1] !== "undefined") {
+            return;
+          }
+          if (overwrite && !isobject || !overwrite && recipient[key1] == null) {
+            recipient[key1] = typeof key2 === "number" && !opts.object ? [] : {};
+          }
+          recipient = recipient[key1];
+          if (split.length > 0) {
+            key1 = getkey(split.shift());
+            key2 = getkey(split[0]);
+          }
+        }
+        recipient[key1] = unflatten2(target[key], opts);
+      });
+      return result;
+    }
   }
 });
 
@@ -10671,6 +10671,7 @@ __export(translate_exports, {
 });
 module.exports = __toCommonJS(translate_exports);
 var import_dotenv = __toESM(require_main());
+var import_iso_639_12 = __toESM(require_src());
 var import_flat = __toESM(require_flat());
 
 // src/utils.ts
@@ -10720,7 +10721,7 @@ function getAllFilesInPath(directory) {
 function getTranslationDirectoryKey(sourceFilePath, key, inputLanguageCode, outputLanguageCode) {
   const outputPath = sourceFilePath.replace(
     `/${inputLanguageCode}/`,
-    `/${outputLanguageCode}/`
+    `/${outputLanguageCode ?? inputLanguageCode}/`
   );
   return `${outputPath}:${key}`;
 }
@@ -17644,7 +17645,8 @@ var VERSION2 = "2.0.9";
 var DEFAULT_BATCH_SIZE = 32;
 var DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 var DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
-var FLATTEN_DELIMITER = "_";
+var FLATTEN_DELIMITER = "*";
+var DIR_FLATTEN_DELIMITER = "^";
 (0, import_dotenv.config)({ path: import_path3.default.resolve(process.cwd(), ".env") });
 async function translate(options) {
   if (options.verbose) {
@@ -17979,7 +17981,7 @@ var translateFileDiff = async (options) => {
       chatParams: options.chatParams,
       rateLimitMs: options.rateLimitMs,
       apiKey: options.apiKey,
-      inputLanguage: options.inputLanguage,
+      inputLanguage: import_iso_639_12.default.getName(options.inputLanguageCode),
       inputJSONBefore: inputBeforeJSON,
       inputJSONAfter: inputAfterJSON,
       toUpdateJSONs,
@@ -18008,18 +18010,18 @@ var translateFileDiff = async (options) => {
 };
 var translateDirectory = async (options) => {
   const jsonFolder = import_path3.default.resolve(process.cwd(), "jsons");
-  let inputPath;
+  let fullBasePath;
   if (import_path3.default.isAbsolute(options.baseDirectory)) {
-    inputPath = import_path3.default.resolve(options.baseDirectory);
+    fullBasePath = import_path3.default.resolve(options.baseDirectory);
   } else {
-    inputPath = import_path3.default.resolve(jsonFolder, options.baseDirectory);
-    if (!import_fs3.default.existsSync(inputPath)) {
-      inputPath = import_path3.default.resolve(process.cwd(), options.baseDirectory);
+    fullBasePath = import_path3.default.resolve(jsonFolder, options.baseDirectory);
+    if (!import_fs3.default.existsSync(fullBasePath)) {
+      fullBasePath = import_path3.default.resolve(process.cwd(), options.baseDirectory);
     }
   }
   const sourceLanguagePath = import_path3.default.resolve(
-    inputPath,
-    options.inputLanguageCode
+    fullBasePath,
+    options.inputLanguage
   );
   if (!import_fs3.default.existsSync(sourceLanguagePath)) {
     throw new Error(
@@ -18032,28 +18034,28 @@ var translateDirectory = async (options) => {
     const fileContents = import_fs3.default.readFileSync(sourceFilePath, "utf-8");
     const fileJSON = JSON.parse(fileContents);
     const flatJSON = (0, import_flat.flatten)(fileJSON, {
-      delimiter: FLATTEN_DELIMITER
+      delimiter: DIR_FLATTEN_DELIMITER
     });
     for (const key in flatJSON) {
       if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
         inputJSON[getTranslationDirectoryKey(
           sourceFilePath,
           key,
-          options.inputLanguageCode,
-          options.outputLanguageCode
+          options.inputLanguage,
+          options.outputLanguage
         )] = flatJSON[key];
       }
     }
   }
   const inputLanguage = getLanguageCodeFromFilename(
-    options.inputLanguageCode
+    options.inputLanguage
   );
   let outputLanguage = "";
   if (options.forceLanguageName) {
     outputLanguage = options.forceLanguageName;
   } else {
     outputLanguage = getLanguageCodeFromFilename(
-      options.outputLanguageCode
+      options.outputLanguage
     );
   }
   try {
@@ -18085,7 +18087,7 @@ var translateDirectory = async (options) => {
     for (const perFileJSON in filesToJSON) {
       if (Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)) {
         const unflattenedOutput = (0, import_flat.unflatten)(filesToJSON[perFileJSON], {
-          delimiter: FLATTEN_DELIMITER
+          delimiter: DIR_FLATTEN_DELIMITER
         });
         const outputText = JSON.stringify(unflattenedOutput, null, 4);
         import_fs3.default.mkdirSync((0, import_path3.dirname)(perFileJSON), { recursive: true });
@@ -18096,6 +18098,143 @@ var translateDirectory = async (options) => {
   } catch (err) {
     console.error(
       `Failed to translate directory to ${outputLanguage}: ${err}`
+    );
+  }
+};
+var translateDirectoryDiff = async (options) => {
+  const jsonFolder = import_path3.default.resolve(process.cwd(), "jsons");
+  let fullBasePath;
+  if (import_path3.default.isAbsolute(options.baseDirectory)) {
+    fullBasePath = import_path3.default.resolve(options.baseDirectory);
+  } else {
+    fullBasePath = import_path3.default.resolve(jsonFolder, options.baseDirectory);
+    if (!import_fs3.default.existsSync(fullBasePath)) {
+      fullBasePath = import_path3.default.resolve(process.cwd(), options.baseDirectory);
+    }
+  }
+  const sourceLanguagePathBefore = import_path3.default.resolve(fullBasePath, options.inputFolderNameBefore);
+  const sourceLanguagePathAfter = import_path3.default.resolve(fullBasePath, options.inputFolderNameAfter);
+  if (!import_fs3.default.existsSync(sourceLanguagePathBefore)) {
+    throw new Error(
+      `Source language path before does not exist. sourceLanguagePathBefore = ${sourceLanguagePathBefore}`
+    );
+  }
+  if (!import_fs3.default.existsSync(sourceLanguagePathAfter)) {
+    throw new Error(
+      `Source language path after does not exist. sourceLanguagePathAfter = ${sourceLanguagePathAfter}`
+    );
+  }
+  const sourceFilePathsBefore = getAllFilesInPath(sourceLanguagePathBefore);
+  const inputJSONBefore = {};
+  for (const sourceFilePath of sourceFilePathsBefore) {
+    const fileContents = import_fs3.default.readFileSync(sourceFilePath, "utf-8");
+    const fileJSON = JSON.parse(fileContents);
+    const flatJSON = (0, import_flat.flatten)(fileJSON, {
+      delimiter: DIR_FLATTEN_DELIMITER
+    });
+    for (const key in flatJSON) {
+      if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+        inputJSONBefore[getTranslationDirectoryKey(
+          sourceFilePath,
+          key,
+          options.inputLanguageCode
+        )] = flatJSON[key];
+      }
+    }
+  }
+  const sourceFilePathsAfter = getAllFilesInPath(sourceLanguagePathAfter);
+  const inputJSONAfter = {};
+  for (const sourceFilePath of sourceFilePathsAfter) {
+    const fileContents = import_fs3.default.readFileSync(sourceFilePath, "utf-8");
+    const fileJSON = JSON.parse(fileContents);
+    const flatJSON = (0, import_flat.flatten)(fileJSON, {
+      delimiter: FLATTEN_DELIMITER
+    });
+    for (const key in flatJSON) {
+      if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+        inputJSONAfter[getTranslationDirectoryKey(
+          sourceFilePath.replace(options.inputFolderNameAfter, options.inputFolderNameBefore),
+          key,
+          options.inputLanguageCode
+        )] = flatJSON[key];
+      }
+    }
+  }
+  const outputLanguagePaths = import_fs3.default.readdirSync(options.baseDirectory).filter(
+    (folder) => folder !== import_path3.default.basename(options.inputFolderNameBefore) && folder !== import_path3.default.basename(options.inputFolderNameAfter)
+  ).map((folder) => import_path3.default.resolve(options.baseDirectory, folder));
+  const toUpdateJSONs = {};
+  for (const outputLanguagePath of outputLanguagePaths) {
+    const files = getAllFilesInPath(outputLanguagePath);
+    for (const file of files) {
+      const fileContents = import_fs3.default.readFileSync(file, "utf-8");
+      const fileJSON = JSON.parse(fileContents);
+      const flatJSON = (0, import_flat.flatten)(fileJSON, {
+        delimiter: DIR_FLATTEN_DELIMITER
+      });
+      const relative = import_path3.default.relative(options.baseDirectory, outputLanguagePath);
+      const segments = relative.split(import_path3.default.sep).filter(Boolean);
+      const language = segments[0];
+      if (!toUpdateJSONs[language]) {
+        toUpdateJSONs[language] = {};
+      }
+      for (const key in flatJSON) {
+        if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+          toUpdateJSONs[language][getTranslationDirectoryKey(
+            file.replace(outputLanguagePath, options.inputFolderNameBefore),
+            key,
+            options.inputLanguageCode
+          )] = flatJSON[key];
+        }
+      }
+    }
+  }
+  try {
+    const perLanguageOutputJSON = await translateDiff({
+      engine: options.engine,
+      model: options.model,
+      chatParams: options.chatParams,
+      rateLimitMs: options.rateLimitMs,
+      apiKey: options.apiKey,
+      inputJSONBefore,
+      inputJSONAfter,
+      inputLanguage: import_iso_639_12.default.getName(options.inputLanguageCode),
+      toUpdateJSONs,
+      templatedStringPrefix: options.templatedStringPrefix,
+      templatedStringSuffix: options.templatedStringSuffix,
+      verbose: options.verbose,
+      batchSize: options.batchSize
+    });
+    const filesToJSON = {};
+    for (const outputLanguage in perLanguageOutputJSON) {
+      if (Object.prototype.hasOwnProperty.call(perLanguageOutputJSON, outputLanguage)) {
+        const outputJSON = perLanguageOutputJSON[outputLanguage];
+        for (const pathWithKey in outputJSON) {
+          if (Object.prototype.hasOwnProperty.call(outputJSON, pathWithKey)) {
+            const filePath = pathWithKey.split(":").slice(0, -1).join(":").replace(options.inputFolderNameBefore, `${options.baseDirectory}/${outputLanguage}`);
+            if (!filesToJSON[filePath]) {
+              filesToJSON[filePath] = {};
+            }
+            const key = pathWithKey.split(":").pop();
+            filesToJSON[filePath][key] = outputJSON[pathWithKey];
+          }
+        }
+        for (const perFileJSON in filesToJSON) {
+          if (Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)) {
+            const unflattenedOutput = (0, import_flat.unflatten)(filesToJSON[perFileJSON], {
+              delimiter: DIR_FLATTEN_DELIMITER
+            });
+            const outputText = JSON.stringify(unflattenedOutput, null, 4);
+            import_fs3.default.mkdirSync((0, import_path3.dirname)(perFileJSON), { recursive: true });
+            import_fs3.default.writeFileSync(perFileJSON, `${outputText}
+`);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error(
+      `Failed to translate directory diff: ${err}`
     );
   }
 };
@@ -18271,8 +18410,8 @@ program.command("translate").requiredOption(
             rateLimitMs,
             apiKey,
             baseDirectory: import_path3.default.resolve(inputPath, ".."),
-            inputLanguageCode: import_path3.default.basename(inputPath),
-            outputLanguageCode: languageCode,
+            inputLanguage: import_path3.default.basename(inputPath),
+            outputLanguage: languageCode,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
             verbose: options.verbose,
@@ -18335,14 +18474,14 @@ program.command("translate").requiredOption(
   }
 });
 program.command("diff").requiredOption(
-  "-b, --before <fileBefore>",
-  "Source i18n file before changes, in the jsons/ directory if a relative path is given"
+  "-b, --before <fileOrDirectoryBefore>",
+  "Source i18n file or directory before changes, in the jsons/ directory if a relative path is given"
 ).requiredOption(
-  "-a, --after <fileAfter>",
-  "Source i18n file after changes, in the jsons/ directory if a relative path is given"
+  "-a, --after <fileOrDirectoryAfter>",
+  "Source i18n file or directory after changes, in the jsons/ directory if a relative path is given"
 ).requiredOption(
-  "-l, --input-language <inputLanguage>",
-  "The full input language name"
+  "-l, --input-language <inputLanguageCode>",
+  "The input language's code, in ISO6391 (e.g. en, fr)"
 ).requiredOption(
   "-e, --engine <engine>",
   "Engine to use (chatgpt or gemini)"
@@ -18427,25 +18566,48 @@ program.command("diff").requiredOption(
       afterInputPath = import_path3.default.resolve(process.cwd(), options.after);
     }
   }
-  if (import_path3.default.dirname(beforeInputPath) !== import_path3.default.dirname(afterInputPath)) {
-    console.error("Input files are not in the same directory");
+  if (import_fs3.default.statSync(beforeInputPath).isFile() !== import_fs3.default.statSync(afterInputPath).isFile()) {
+    console.error("--before and --after arguments must be both files or both directories");
     return;
   }
-  await translateFileDiff({
-    engine: options.engine,
-    model,
-    chatParams,
-    rateLimitMs,
-    apiKey,
-    inputLanguage: options.inputLanguage,
-    inputBeforeFileOrPath: beforeInputPath,
-    inputAfterFileOrPath: afterInputPath,
-    templatedStringPrefix: options.templatedStringPrefix,
-    templatedStringSuffix: options.templatedStringSuffix,
-    verbose: options.verbose,
-    ensureChangedTranslation: options.ensureChangedTranslation,
-    batchSize: options.batchSize
-  });
+  if (import_fs3.default.statSync(beforeInputPath).isFile()) {
+    if (import_path3.default.dirname(beforeInputPath) !== import_path3.default.dirname(afterInputPath)) {
+      console.error("Input files are not in the same directory");
+      return;
+    }
+    await translateFileDiff({
+      engine: options.engine,
+      model,
+      chatParams,
+      rateLimitMs,
+      apiKey,
+      inputLanguageCode: options.inputLanguage,
+      inputBeforeFileOrPath: beforeInputPath,
+      inputAfterFileOrPath: afterInputPath,
+      templatedStringPrefix: options.templatedStringPrefix,
+      templatedStringSuffix: options.templatedStringSuffix,
+      verbose: options.verbose,
+      ensureChangedTranslation: options.ensureChangedTranslation,
+      batchSize: options.batchSize
+    });
+  } else {
+    await translateDirectoryDiff({
+      engine: options.engine,
+      model,
+      chatParams,
+      rateLimitMs,
+      apiKey,
+      inputLanguageCode: options.inputLanguage,
+      baseDirectory: import_path3.default.resolve(beforeInputPath, ".."),
+      inputFolderNameBefore: beforeInputPath,
+      inputFolderNameAfter: afterInputPath,
+      templatedStringPrefix: options.templatedStringPrefix,
+      templatedStringSuffix: options.templatedStringSuffix,
+      verbose: options.verbose,
+      ensureChangedTranslation: options.ensureChangedTranslation,
+      batchSize: options.batchSize
+    });
+  }
 });
 program.parse();
 // Annotate the CommonJS export names for ESM import in node:
