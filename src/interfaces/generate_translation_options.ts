@@ -10,4 +10,6 @@ export default interface GenerateTranslationOptions {
     templatedStringSuffix: string;
     verboseLogging: boolean;
     ensureChangedTranslation: boolean;
+    skipTranslationVerification: boolean;
+    skipStylingVerification: boolean;
 }

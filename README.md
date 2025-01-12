@@ -155,6 +155,8 @@ Options:
   -k, --api-key <API key>                     API key
   --ensure-changed-translation                Each generated translation key must differ from the input (for keys longer than 4) (default: false)
   -n, --batch-size <batchSize>                How many keys to process at a time (default: "32")
+  --skip-translation-verification             Skip validating the resulting translation through another query (default: false)
+  --skip-styling-verification                 Skip validating the resulting translation's formatting through another query (default: false)
   --verbose                                   Print logs about progress (default: false)
   -h, --help                                  display help for command
 ```
@@ -174,6 +176,8 @@ Options:
   -p, --templated-string-prefix <prefix>    Prefix for templated strings (default: "{{")
   -s, --templated-string-suffix <suffix>    Suffix for templated strings (default: "}}")
   -n, --batch-size <batchSize>              How many keys to process at a time (default: "32")
+  --skip-translation-verification           Skip validating the resulting translation through another query (default: false)
+  --skip-styling-verification               Skip validating the resulting translation's formatting through another query (default: false)
   --verbose                                 Print logs about progress (default: false)
   -h, --help                                display help for command
 ```
@@ -216,6 +220,8 @@ const translation = await translate({
     verbose, // Print status of conversion to stdout/stderr
     ensureChangedTranslation, // Every key longer than 4 characters must be different than the input
     batchSize, // How many keys to process at a time
+    skipTranslationVerification, // Whether to skip an additional query to see whether the resultant translation makes sense
+    skipStylingVerification, // Whether to skip an additional query to see whether the text formatting remained consistent
 });
 
 const translations = await translateDiff({
@@ -234,6 +240,8 @@ const translations = await translateDiff({
     ensureChangedTranslation, // Every key longer than 4 characters must be different than the input
     verbose, // Print status of conversion to stdout/stderr
     batchSize, // How many keys to process at a time
+    skipTranslationVerification, // Whether to skip an additional query to see whether the resultant translation makes sense
+    skipStylingVerification, // Whether to skip an additional query to see whether the text formatting remained consistent
 });
 ```
 

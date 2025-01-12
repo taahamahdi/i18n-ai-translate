@@ -12,4 +12,6 @@ export default interface Options {
     verbose?: boolean;
     ensureChangedTranslation?: boolean;
     batchSize?: number;
+    skipTranslationVerification?: boolean;
+    skipStylingVerification?: boolean;
 }

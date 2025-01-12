@@ -255,28 +255,34 @@ async function generate(
         }
     }
 
-    const translationVerification = await verifyTranslation(
-        chats.verifyTranslationChat,
-        inputLanguage,
-        outputLanguage,
-        input,
-        text,
-    );
+    let translationVerificationResponse = "";
+    if (!options.skipTranslationVerification) {
+        translationVerificationResponse = await verifyTranslation(
+            chats.verifyTranslationChat,
+            inputLanguage,
+            outputLanguage,
+            input,
+            text,
+        );
+    }
 
-    if (translationVerification === "NAK") {
+    if (translationVerificationResponse === "NAK") {
         chats.generateTranslationChat.invalidTranslation();
         return Promise.reject(new Error(`Invalid translation. text = ${text}`));
     }
 
-    const stylingVerification = await verifyStyling(
-        chats.verifyStylingChat,
-        inputLanguage,
-        outputLanguage,
-        input,
-        text,
-    );
+    let stylingVerificationResponse = "";
+    if (!options.skipStylingVerification) {
+        stylingVerificationResponse = await verifyStyling(
+            chats.verifyStylingChat,
+            inputLanguage,
+            outputLanguage,
+            input,
+            text,
+        );
+    }
 
-    if (stylingVerification === "NAK") {
+    if (stylingVerificationResponse === "NAK") {
         chats.generateTranslationChat.invalidStyling();
         return Promise.reject(new Error(`Invalid styling. text = ${text}`));
     }
