@@ -7,7 +7,6 @@ export default interface Options {
     chatParams: ChatParams;
     rateLimitMs: number;
     apiKey: string;
-    forceLanguageName?: string;
     templatedStringPrefix: string;
     templatedStringSuffix: string;
     verbose?: boolean;

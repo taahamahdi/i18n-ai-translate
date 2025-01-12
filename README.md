@@ -1,6 +1,6 @@
 # `i18n-ai-translate`
 
-Leverage ChatGPT or Google Gemini for seamless translation of application localization files across any language. Supports templated strings, and ensures consistent formatting. Requires [i18next-style](https://github.com/i18next/i18next) JSON files.
+Leverage ChatGPT or Google Gemini for seamless translation of localization files. Supports directories of nested translation files. Requires [i18next-style](https://github.com/i18next/i18next) JSON files.
 
 Three prompts are chained to ensure each translation is well-formed.
 
@@ -143,49 +143,46 @@ Commands:
 Usage: i18n-ai-translate translate [options]
 
 Options:
-  -i, --input <input>                        Source i18n file, in the jsons/ directory if a relative path is given
-  -o, --output <output>                      Output i18n file, in the jsons/ directory if a relative path is given
-  -e, --engine <engine>                      Engine to use (chatgpt or gemini)
-  -m, --model <model>                        Model to use (e.g. gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro)
-  -r, --rate-limit-ms <rateLimitMs>          How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)
-  -f, --force-language-name <language name>  Force language name
-  -A, --all-languages                        Translate to all supported languages
-  -l, --languages [language codes...]        Pass a list of languages to translate to
-  -p, --templated-string-prefix <prefix>     Prefix for templated strings (default: "{{")
-  -s, --templated-string-suffix <suffix>     Suffix for templated strings (default: "}}")
-  -k, --api-key <API key>                    API key
-  --ensure-changed-translation               Each generated translation key must differ from the input (for keys longer than 4) (default: false)
-  -n, --batch-size <batchSize>               How many keys to process at a time (default: "32")
-  --verbose                                  Print logs about progress (default: false)
-  -h, --help                                 display help for command
+  -i, --input <input>                         Source i18n file or path of source language, in the jsons/ directory if a relative path is given
+  -o, --output-languages [language codes...]  A list of languages to translate to
+  -e, --engine <engine>                       Engine to use (chatgpt or gemini)
+  -m, --model <model>                         Model to use (e.g. gpt-o1, gpt-4o, gpt-4-turbo, gpt-3.5-turbo, gemini-pro)
+  -r, --rate-limit-ms <rateLimitMs>           How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)
+  -f, --force-language-name <language name>   Force language name
+  -A, --all-languages                         Translate to all supported languages
+  -p, --templated-string-prefix <prefix>      Prefix for templated strings (default: "{{")
+  -s, --templated-string-suffix <suffix>      Suffix for templated strings (default: "}}")
+  -k, --api-key <API key>                     API key
+  --ensure-changed-translation                Each generated translation key must differ from the input (for keys longer than 4) (default: false)
+  -n, --batch-size <batchSize>                How many keys to process at a time (default: "32")
+  --verbose                                   Print logs about progress (default: false)
+  -h, --help                                  display help for command
 ```
 
 ```
 Usage: i18n-ai-translate diff [options]
 
 Options:
-  -b, --before <fileBefore>               Source i18n file before changes, in the jsons/ directory if a relative path is given
-  -a, --after <fileAfter>                 Source i18n file after changes, in the jsons/ directory if a relative path is given
-  -l, --input-language <inputLanguage>    The full input language name
-  -e, --engine <engine>                   Engine to use (chatgpt or gemini)
-  -m, --model <model>                     Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro)
-  -r, --rate-limit-ms <rateLimitMs>       How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for
-                                          ChatGPT)
-  -k, --api-key <API key>                 API key
-  --ensure-changed-translation            Each generated translation key must differ from the input (for keys longer than 4)
-                                          (default: false)
-  -p, --templated-string-prefix <prefix>  Prefix for templated strings (default: "{{")
-  -s, --templated-string-suffix <suffix>  Suffix for templated strings (default: "}}")
-  -n, --batch-size <batchSize>            How many keys to process at a time (default: "32")
-  --verbose                               Print logs about progress (default: false)
-  -h, --help                              display help for command
+  -b, --before <fileOrDirectoryBefore>      Source i18n file or directory before changes, in the jsons/ directory if a relative path is given
+  -a, --after <fileOrDirectoryAfter>        Source i18n file or directory after changes, in the jsons/ directory if a relative path is given
+  -l, --input-language <inputLanguageCode>  The input language's code, in ISO6391 (e.g. en, fr)
+  -e, --engine <engine>                     Engine to use (chatgpt or gemini)
+  -m, --model <model>                       Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro)
+  -r, --rate-limit-ms <rateLimitMs>         How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)
+  -k, --api-key <API key>                   API key
+  --ensure-changed-translation              Each generated translation key must differ from the input (for keys longer than 4) (default: false)
+  -p, --templated-string-prefix <prefix>    Prefix for templated strings (default: "{{")
+  -s, --templated-string-suffix <suffix>    Suffix for templated strings (default: "}}")
+  -n, --batch-size <batchSize>              How many keys to process at a time (default: "32")
+  --verbose                                 Print logs about progress (default: false)
+  -h, --help                                display help for command
 ```
 
 ### Example usage
-#### `npx i18n-ai-translate translate -i en.json -o fr.json`
+#### `npx i18n-ai-translate translate -i en.json -o fr`
 * Translate the `en.json` file in `jsons/` to French, and save the output in `fr.json`
 
-#### `npx i18n-ai-translate translate -i en.json -l es de nl --engine gemini`
+#### `npx i18n-ai-translate translate -i en.json -o es de nl --engine gemini`
 * Translate the `en.json` file in `jsons/` to Spanish, German, and Dutch, and save each file in `jsons/`, using Google Gemini
 
 #### `npx i18n-ai-translate diff -b en.json -a en-after.json -l English --verbose`
@@ -193,6 +190,9 @@ Options:
 
 #### `npx i18n-ai-translate translate -i en.json -A --engine chatgpt --model gpt-4-turbo --api-key <my_key> --rate-limit-ms 150 -n 64`
 * Translate the `en.json` file in `jsons/` to 200+ languages, save each file in `jsons/`, using the GPT-4 Turbo model of ChatGPT, with the given key, a rate limit of 150ms between requests, and 64 keys sent in each batch
+
+#### `npx i18n-ai-translate diff -b en -a en-after`
+* Translate the keys that have changed between `en/` and `en-after/` for all JSON files in both directories
 
 ## As a library
 Alternatively, import this project and use it to convert JSONs on-the-fly with [`translate()`](https://github.com/taahamahdi/i18n-ai-translate/blob/master/src/interfaces/translation_options.ts), or use [`translateDiff()`](https://github.com/taahamahdi/i18n-ai-translate/blob/master/src/interfaces/translation_diff_options.ts) to fetch updates to modified keys when your source i18n file has changed.
