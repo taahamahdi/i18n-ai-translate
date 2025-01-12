@@ -23,7 +23,7 @@ import type TranslateFileDiffOptions from "./interfaces/translate_file_diff_opti
 import type TranslateFileOptions from "./interfaces/translate_file_options";
 import type TranslateOptions from "./interfaces/translate_options";
 
-const VERSION = "2.0.9";
+const VERSION = "3.0.0";
 
 const DEFAULT_BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
@@ -133,6 +133,9 @@ export async function translate(options: TranslateOptions): Promise<Object> {
             templatedStringSuffix,
             verboseLogging: options.verbose ?? false,
             ensureChangedTranslation: options.ensureChangedTranslation ?? false,
+            skipTranslationVerification:
+                options.skipTranslationVerification ?? false,
+            skipStylingVerification: options.skipStylingVerification ?? false,
         });
 
         if (generatedTranslation === "") {
@@ -902,6 +905,16 @@ program
         "How many keys to process at a time",
         String(DEFAULT_BATCH_SIZE),
     )
+    .option(
+        "--skip-translation-verification",
+        "Skip validating the resulting translation through another query",
+        false,
+    )
+    .option(
+        "--skip-styling-verification",
+        "Skip validating the resulting translation's formatting through another query",
+        false,
+    )
     .option("--verbose", "Print logs about progress", false)
     .action(async (options: any) => {
         let model: Model;
@@ -1029,6 +1042,10 @@ program
                             ensureChangedTranslation:
                                 options.ensureChangedTranslation,
                             batchSize: options.batchSize,
+                            skipTranslationVerification:
+                                options.skipTranslationVerification,
+                            skipStylingVerification:
+                                options.skipStylingVerification,
                         });
                     } catch (err) {
                         console.error(
@@ -1071,6 +1088,10 @@ program
                             ensureChangedTranslation:
                                 options.ensureChangedTranslation,
                             batchSize: options.batchSize,
+                            skipTranslationVerification:
+                                options.skipTranslationVerification,
+                            skipStylingVerification:
+                                options.skipStylingVerification,
                         });
                     } catch (err) {
                         console.error(
@@ -1125,6 +1146,10 @@ program
                         ensureChangedTranslation:
                             options.ensureChangedTranslation,
                         batchSize: options.batchSize,
+                        skipTranslationVerification:
+                            options.skipTranslationVerification,
+                        skipStylingVerification:
+                            options.skipStylingVerification,
                     });
                 } catch (err) {
                     console.error(
@@ -1181,6 +1206,16 @@ program
         "-n, --batch-size <batchSize>",
         "How many keys to process at a time",
         String(DEFAULT_BATCH_SIZE),
+    )
+    .option(
+        "--skip-translation-verification",
+        "Skip validating the resulting translation through another query",
+        false,
+    )
+    .option(
+        "--skip-styling-verification",
+        "Skip validating the resulting translation's formatting through another query",
+        false,
     )
     .option("--verbose", "Print logs about progress", false)
     .action(async (options: any) => {
@@ -1282,6 +1317,9 @@ program
                 verbose: options.verbose,
                 ensureChangedTranslation: options.ensureChangedTranslation,
                 batchSize: options.batchSize,
+                skipTranslationVerification:
+                    options.skipTranslationVerification,
+                skipStylingVerification: options.skipStylingVerification,
             });
         } else {
             await translateDirectoryDiff({
@@ -1299,6 +1337,9 @@ program
                 verbose: options.verbose,
                 ensureChangedTranslation: options.ensureChangedTranslation,
                 batchSize: options.batchSize,
+                skipTranslationVerification:
+                    options.skipTranslationVerification,
+                skipStylingVerification: options.skipStylingVerification,
             });
         }
     });

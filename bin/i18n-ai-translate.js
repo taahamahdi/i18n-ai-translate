@@ -17874,25 +17874,31 @@ async function generate(options, generationPromptText, generateState) {
       }
     }
   }
-  const translationVerification = await verifyTranslation(
-    chats.verifyTranslationChat,
-    inputLanguage,
-    outputLanguage,
-    input,
-    text
-  );
-  if (translationVerification === "NAK") {
+  let translationVerificationResponse = "";
+  if (!options.skipTranslationVerification) {
+    translationVerificationResponse = await verifyTranslation(
+      chats.verifyTranslationChat,
+      inputLanguage,
+      outputLanguage,
+      input,
+      text
+    );
+  }
+  if (translationVerificationResponse === "NAK") {
     chats.generateTranslationChat.invalidTranslation();
     return Promise.reject(new Error(`Invalid translation. text = ${text}`));
   }
-  const stylingVerification = await verifyStyling(
-    chats.verifyStylingChat,
-    inputLanguage,
-    outputLanguage,
-    input,
-    text
-  );
-  if (stylingVerification === "NAK") {
+  let stylingVerificationResponse = "";
+  if (!options.skipStylingVerification) {
+    stylingVerificationResponse = await verifyStyling(
+      chats.verifyStylingChat,
+      inputLanguage,
+      outputLanguage,
+      input,
+      text
+    );
+  }
+  if (stylingVerificationResponse === "NAK") {
     chats.generateTranslationChat.invalidStyling();
     return Promise.reject(new Error(`Invalid styling. text = ${text}`));
   }
@@ -17901,7 +17907,7 @@ async function generate(options, generationPromptText, generateState) {
 
 // src/translate.ts
 var import_path3 = __toESM(require("path"));
-var VERSION2 = "2.0.9";
+var VERSION2 = "3.0.0";
 var DEFAULT_BATCH_SIZE = 32;
 var DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 var DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
@@ -17981,7 +17987,9 @@ async function translate(options) {
       templatedStringPrefix,
       templatedStringSuffix,
       verboseLogging: options.verbose ?? false,
-      ensureChangedTranslation: options.ensureChangedTranslation ?? false
+      ensureChangedTranslation: options.ensureChangedTranslation ?? false,
+      skipTranslationVerification: options.skipTranslationVerification ?? false,
+      skipStylingVerification: options.skipStylingVerification ?? false
     });
     if (generatedTranslation === "") {
       console.error(
@@ -18582,6 +18590,14 @@ program.command("translate").requiredOption(
   "-n, --batch-size <batchSize>",
   "How many keys to process at a time",
   String(DEFAULT_BATCH_SIZE)
+).option(
+  "--skip-translation-verification",
+  "Skip validating the resulting translation through another query",
+  false
+).option(
+  "--skip-styling-verification",
+  "Skip validating the resulting translation's formatting through another query",
+  false
 ).option("--verbose", "Print logs about progress", false).action(async (options) => {
   let model;
   let chatParams;
@@ -18690,7 +18706,9 @@ program.command("translate").requiredOption(
             templatedStringSuffix: options.templatedStringSuffix,
             verbose: options.verbose,
             ensureChangedTranslation: options.ensureChangedTranslation,
-            batchSize: options.batchSize
+            batchSize: options.batchSize,
+            skipTranslationVerification: options.skipTranslationVerification,
+            skipStylingVerification: options.skipStylingVerification
           });
         } catch (err) {
           console.error(
@@ -18726,7 +18744,9 @@ program.command("translate").requiredOption(
             templatedStringSuffix: options.templatedStringSuffix,
             verbose: options.verbose,
             ensureChangedTranslation: options.ensureChangedTranslation,
-            batchSize: options.batchSize
+            batchSize: options.batchSize,
+            skipTranslationVerification: options.skipTranslationVerification,
+            skipStylingVerification: options.skipStylingVerification
           });
         } catch (err) {
           console.error(
@@ -18773,7 +18793,9 @@ program.command("translate").requiredOption(
           templatedStringSuffix: options.templatedStringSuffix,
           verbose: options.verbose,
           ensureChangedTranslation: options.ensureChangedTranslation,
-          batchSize: options.batchSize
+          batchSize: options.batchSize,
+          skipTranslationVerification: options.skipTranslationVerification,
+          skipStylingVerification: options.skipStylingVerification
         });
       } catch (err) {
         console.error(
@@ -18817,6 +18839,14 @@ program.command("diff").requiredOption(
   "-n, --batch-size <batchSize>",
   "How many keys to process at a time",
   String(DEFAULT_BATCH_SIZE)
+).option(
+  "--skip-translation-verification",
+  "Skip validating the resulting translation through another query",
+  false
+).option(
+  "--skip-styling-verification",
+  "Skip validating the resulting translation's formatting through another query",
+  false
 ).option("--verbose", "Print logs about progress", false).action(async (options) => {
   let model;
   let chatParams;
@@ -18900,7 +18930,9 @@ program.command("diff").requiredOption(
       templatedStringSuffix: options.templatedStringSuffix,
       verbose: options.verbose,
       ensureChangedTranslation: options.ensureChangedTranslation,
-      batchSize: options.batchSize
+      batchSize: options.batchSize,
+      skipTranslationVerification: options.skipTranslationVerification,
+      skipStylingVerification: options.skipStylingVerification
     });
   } else {
     await translateDirectoryDiff({
@@ -18917,7 +18949,9 @@ program.command("diff").requiredOption(
       templatedStringSuffix: options.templatedStringSuffix,
       verbose: options.verbose,
       ensureChangedTranslation: options.ensureChangedTranslation,
-      batchSize: options.batchSize
+      batchSize: options.batchSize,
+      skipTranslationVerification: options.skipTranslationVerification,
+      skipStylingVerification: options.skipStylingVerification
     });
   }
 });
