@@ -12246,7 +12246,7 @@ function stringify(object, opts = {}) {
 }
 
 // node_modules/openai/version.mjs
-var VERSION = "4.76.0";
+var VERSION = "4.77.3";
 
 // node_modules/openai/_shims/registry.mjs
 var auto = false;
@@ -12678,8 +12678,8 @@ var APIError = class _APIError extends OpenAIError {
     this.status = status;
     this.headers = headers;
     this.request_id = headers?.["x-request-id"];
+    this.error = error;
     const data = error;
-    this.error = data;
     this.code = data?.["code"];
     this.param = data?.["param"];
     this.type = data?.["type"];
@@ -12698,7 +12698,7 @@ var APIError = class _APIError extends OpenAIError {
     return "(no status code or body)";
   }
   static generate(status, errorResponse, message, headers) {
-    if (!status) {
+    if (!status || !headers) {
       return new APIConnectionError({ message, cause: castToError(errorResponse) });
     }
     const error = errorResponse?.["error"];
@@ -12732,13 +12732,11 @@ var APIError = class _APIError extends OpenAIError {
 var APIUserAbortError = class extends APIError {
   constructor({ message } = {}) {
     super(void 0, void 0, message || "Request was aborted.", void 0);
-    this.status = void 0;
   }
 };
 var APIConnectionError = class extends APIError {
   constructor({ message, cause }) {
     super(void 0, void 0, message || "Connection error.", void 0);
-    this.status = void 0;
     if (cause)
       this.cause = cause;
   }
@@ -12749,46 +12747,18 @@ var APIConnectionTimeoutError = class extends APIConnectionError {
   }
 };
 var BadRequestError = class extends APIError {
-  constructor() {
-    super(...arguments);
-    this.status = 400;
-  }
 };
 var AuthenticationError = class extends APIError {
-  constructor() {
-    super(...arguments);
-    this.status = 401;
-  }
 };
 var PermissionDeniedError = class extends APIError {
-  constructor() {
-    super(...arguments);
-    this.status = 403;
-  }
 };
 var NotFoundError = class extends APIError {
-  constructor() {
-    super(...arguments);
-    this.status = 404;
-  }
 };
 var ConflictError = class extends APIError {
-  constructor() {
-    super(...arguments);
-    this.status = 409;
-  }
 };
 var UnprocessableEntityError = class extends APIError {
-  constructor() {
-    super(...arguments);
-    this.status = 422;
-  }
 };
 var RateLimitError = class extends APIError {
-  constructor() {
-    super(...arguments);
-    this.status = 429;
-  }
 };
 var InternalServerError = class extends APIError {
 };
@@ -13378,13 +13348,13 @@ var APIClient = class {
     timeout = 6e5,
     // 10 minutes
     httpAgent,
-    fetch: overridenFetch
+    fetch: overriddenFetch
   }) {
     this.baseURL = baseURL;
     this.maxRetries = validatePositiveInteger("maxRetries", maxRetries);
     this.timeout = validatePositiveInteger("timeout", timeout);
     this.httpAgent = httpAgent;
-    this.fetch = overridenFetch ?? fetch2;
+    this.fetch = overriddenFetch ?? fetch2;
   }
   authHeaders(opts) {
     return {};
@@ -13597,12 +13567,19 @@ var APIClient = class {
     if (signal)
       signal.addEventListener("abort", () => controller.abort());
     const timeout = setTimeout(() => controller.abort(), ms);
-    return this.getRequestClient().fetch.call(void 0, url, { signal: controller.signal, ...options }).finally(() => {
-      clearTimeout(timeout);
-    });
-  }
-  getRequestClient() {
-    return { fetch: this.fetch };
+    const fetchOptions = {
+      signal: controller.signal,
+      ...options
+    };
+    if (fetchOptions.method) {
+      fetchOptions.method = fetchOptions.method.toUpperCase();
+    }
+    return (
+      // use undefined this binding; fetch errors if bound to something else in browser/cloudflare
+      this.fetch.call(void 0, url, fetchOptions).finally(() => {
+        clearTimeout(timeout);
+      })
+    );
   }
   shouldRetry(response) {
     const shouldRetryHeader = response.headers.get("x-should-retry");
@@ -13871,7 +13848,7 @@ var safeJSON = (text) => {
     return void 0;
   }
 };
-var startsWithSchemeRegexp = new RegExp("^(?:[a-z]+:)?//", "i");
+var startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
 var isAbsoluteURL = (url) => {
   return startsWithSchemeRegexp.test(url);
 };
