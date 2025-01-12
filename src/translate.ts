@@ -23,7 +23,7 @@ import type TranslateFileDiffOptions from "./interfaces/translate_file_diff_opti
 import type TranslateFileOptions from "./interfaces/translate_file_options";
 import type TranslateOptions from "./interfaces/translate_options";
 
-const VERSION = "2.0.9";
+const VERSION = "3.0.0";
 
 const DEFAULT_BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";

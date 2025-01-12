@@ -17907,7 +17907,7 @@ async function generate(options, generationPromptText, generateState) {
 
 // src/translate.ts
 var import_path3 = __toESM(require("path"));
-var VERSION2 = "2.0.9";
+var VERSION2 = "3.0.0";
 var DEFAULT_BATCH_SIZE = 32;
 var DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 var DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
