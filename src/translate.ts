@@ -820,6 +820,34 @@ const translateDirectoryDiff = async (
     } catch (err) {
         console.error(`Failed to translate directory diff: ${err}`);
     }
+
+    // Remove any files in before not in after
+    const fileNamesBefore = sourceFilePathsBefore.map((x) =>
+        x.slice(sourceLanguagePathBefore.length),
+    );
+
+    const fileNamesAfter = sourceFilePathsAfter.map((x) =>
+        x.slice(sourceLanguagePathAfter.length),
+    );
+
+    const removedFiles = fileNamesBefore.filter(
+        (x) => !fileNamesAfter.includes(x),
+    );
+
+    for (const languagePath of outputLanguagePaths) {
+        for (const removedFile of removedFiles) {
+            const removedFilePath = languagePath + removedFile;
+            fs.rmSync(removedFilePath);
+
+            // Recursively cleanup parent folders if they're also empty
+            let folder = path.dirname(removedFilePath);
+            while (fs.readdirSync(folder).length === 0) {
+                const parentFolder = path.resolve(folder, "..");
+                fs.rmdirSync(folder);
+                folder = parentFolder;
+            }
+        }
+    }
 };
 
 program

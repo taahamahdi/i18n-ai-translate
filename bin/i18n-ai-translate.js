@@ -18268,6 +18268,27 @@ var translateDirectoryDiff = async (options) => {
   } catch (err) {
     console.error(`Failed to translate directory diff: ${err}`);
   }
+  const fileNamesBefore = sourceFilePathsBefore.map(
+    (x2) => x2.slice(sourceLanguagePathBefore.length)
+  );
+  const fileNamesAfter = sourceFilePathsAfter.map(
+    (x2) => x2.slice(sourceLanguagePathAfter.length)
+  );
+  const removedFiles = fileNamesBefore.filter(
+    (x2) => !fileNamesAfter.includes(x2)
+  );
+  for (const languagePath of outputLanguagePaths) {
+    for (const removedFile of removedFiles) {
+      const removedFilePath = languagePath + removedFile;
+      import_fs3.default.rmSync(removedFilePath);
+      let folder = import_path3.default.dirname(removedFilePath);
+      while (import_fs3.default.readdirSync(folder).length === 0) {
+        const parentFolder = import_path3.default.resolve(folder, "..");
+        import_fs3.default.rmdirSync(folder);
+        folder = parentFolder;
+      }
+    }
+  }
 };
 program.name("i18n-ai-translate").description(
   "Use ChatGPT or Gemini to translate your i18n JSON to any language"
