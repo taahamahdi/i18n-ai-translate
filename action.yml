@@ -70,7 +70,7 @@ runs:
   - name: Fetch original translation
     shell: bash
     run: |
-      cp "${{ inputs.json-file-path }}" "${{ inputs.json-file-path }}-latest"
+      cp -r "${{ inputs.json-file-path }}" "${{ inputs.json-file-path }}-latest"
       git checkout origin/${{ github.base_ref }} -- "${{ inputs.json-file-path }}"
 
   - name: Translate the diff
@@ -101,6 +101,7 @@ runs:
   - name: Commit the difference
     shell: bash
     run: |
+      rm -r "${{ inputs.json-file-path }}"
       mv "${{ inputs.json-file-path }}-latest" "${{ inputs.json-file-path }}"
       git add **/*json
       git commit -m "Update translations" || echo "No changes to commit"
