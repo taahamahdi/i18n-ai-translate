@@ -281,6 +281,9 @@ export async function translateDiff(
                 templatedStringSuffix: options.templatedStringSuffix,
                 verbose: options.verbose,
                 batchSize: options.batchSize,
+                ensureChangedTranslation: options.ensureChangedTranslation,
+                skipTranslationVerification: options.skipTranslationVerification,
+                skipStylingVerification: options.skipStylingVerification,
             });
 
             const flatTranslated = flatten(translated, {
@@ -354,6 +357,9 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
             templatedStringSuffix: options.templatedStringSuffix,
             verbose: options.verbose,
             batchSize: options.batchSize,
+            ensureChangedTranslation: options.ensureChangedTranslation,
+            skipTranslationVerification: options.skipTranslationVerification,
+            skipStylingVerification: options.skipStylingVerification,
         });
 
         const outputText = JSON.stringify(outputJSON, null, 4);
@@ -466,8 +472,11 @@ const translateFileDiff = async (
             toUpdateJSONs,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
+            ensureChangedTranslation: options.ensureChangedTranslation,
             verbose: options.verbose,
             batchSize: options.batchSize,
+            skipTranslationVerification: options.skipTranslationVerification,
+            skipStylingVerification: options.skipStylingVerification,
         });
 
         for (const language in outputJSON) {
@@ -560,8 +569,11 @@ const translateDirectory = async (
             outputLanguage,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
+            ensureChangedTranslation: options.ensureChangedTranslation,
             verbose: options.verbose,
             batchSize: options.batchSize,
+            skipTranslationVerification: options.skipTranslationVerification,
+            skipStylingVerification: options.skipStylingVerification,
         })) as { [filePathKey: string]: string };
 
         const filesToJSON: { [filePath: string]: { [key: string]: string } } =
@@ -751,8 +763,11 @@ const translateDirectoryDiff = async (
             toUpdateJSONs,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
+            ensureChangedTranslation: options.ensureChangedTranslation,
             verbose: options.verbose,
             batchSize: options.batchSize,
+            skipTranslationVerification: options.skipTranslationVerification,
+            skipStylingVerification: options.skipStylingVerification,
         });
 
         const filesToJSON: { [filePath: string]: { [key: string]: string } } =
