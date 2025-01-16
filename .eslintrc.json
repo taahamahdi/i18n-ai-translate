@@ -9,7 +9,8 @@
         "import",
         "sort-imports-es6-autofix",
         "deprecation",
-        "eslint-plugin-n"
+        "eslint-plugin-n",
+        "sort-keys-fix"
     ],
     "parserOptions": {
         "project": "./tsconfig.json"
@@ -157,6 +158,7 @@
             }
         ],
         "no-bitwise": ["off"],
-        "class-methods-use-this": ["off"]
+        "class-methods-use-this": ["off"],
+        "sort-keys-fix/sort-keys-fix": "warn"
     }
 }

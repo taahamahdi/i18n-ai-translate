@@ -56,13 +56,13 @@ export async function translate(options: TranslateOptions): Promise<Object> {
             options.apiKey,
             rateLimiter,
         ),
-        verifyTranslationChat: ChatFactory.newChat(
+        verifyStylingChat: ChatFactory.newChat(
             options.engine,
             options.model,
             options.apiKey,
             rateLimiter,
         ),
-        verifyStylingChat: ChatFactory.newChat(
+        verifyTranslationChat: ChatFactory.newChat(
             options.engine,
             options.model,
             options.apiKey,
@@ -125,17 +125,17 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         // eslint-disable-next-line no-await-in-loop
         const generatedTranslation = await generateTranslation({
             chats,
-            inputLanguage: `[${options.inputLanguage}]`,
-            outputLanguage: `[${options.outputLanguage}]`,
+            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
             input,
+            inputLanguage: `[${options.inputLanguage}]`,
             keys,
+            outputLanguage: `[${options.outputLanguage}]`,
+            skipStylingVerification: options.skipStylingVerification ?? false,
+            skipTranslationVerification:
+                options.skipTranslationVerification ?? false,
             templatedStringPrefix,
             templatedStringSuffix,
             verboseLogging: options.verbose ?? false,
-            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
-            skipTranslationVerification:
-                options.skipTranslationVerification ?? false,
-            skipStylingVerification: options.skipStylingVerification ?? false,
         });
 
         if (generatedTranslation === "") {
@@ -269,21 +269,21 @@ export async function translateDiff(
 
             // eslint-disable-next-line no-await-in-loop
             const translated = await translate({
-                engine: options.engine,
-                model: options.model,
-                chatParams: options.chatParams,
-                rateLimitMs: options.rateLimitMs,
                 apiKey: options.apiKey,
+                batchSize: options.batchSize,
+                chatParams: options.chatParams,
+                engine: options.engine,
+                ensureChangedTranslation: options.ensureChangedTranslation,
                 inputJSON: addedAndModifiedTranslations,
                 inputLanguage: options.inputLanguage,
+                model: options.model,
                 outputLanguage: languageCode,
+                rateLimitMs: options.rateLimitMs,
+                skipStylingVerification: options.skipStylingVerification,
+                skipTranslationVerification: options.skipTranslationVerification,
                 templatedStringPrefix: options.templatedStringPrefix,
                 templatedStringSuffix: options.templatedStringSuffix,
                 verbose: options.verbose,
-                batchSize: options.batchSize,
-                ensureChangedTranslation: options.ensureChangedTranslation,
-                skipTranslationVerification: options.skipTranslationVerification,
-                skipStylingVerification: options.skipStylingVerification,
             });
 
             const flatTranslated = flatten(translated, {
@@ -345,21 +345,21 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
 
     try {
         const outputJSON = await translate({
-            engine: options.engine,
-            model: options.model,
-            chatParams: options.chatParams,
-            rateLimitMs: options.rateLimitMs,
             apiKey: options.apiKey,
+            batchSize: options.batchSize,
+            chatParams: options.chatParams,
+            engine: options.engine,
+            ensureChangedTranslation: options.ensureChangedTranslation,
             inputJSON,
             inputLanguage,
+            model: options.model,
             outputLanguage,
+            rateLimitMs: options.rateLimitMs,
+            skipStylingVerification: options.skipStylingVerification,
+            skipTranslationVerification: options.skipTranslationVerification,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
             verbose: options.verbose,
-            batchSize: options.batchSize,
-            ensureChangedTranslation: options.ensureChangedTranslation,
-            skipTranslationVerification: options.skipTranslationVerification,
-            skipStylingVerification: options.skipStylingVerification,
         });
 
         const outputText = JSON.stringify(outputJSON, null, 4);
@@ -461,22 +461,22 @@ const translateFileDiff = async (
 
     try {
         const outputJSON = await translateDiff({
-            engine: options.engine,
-            model: options.model,
-            chatParams: options.chatParams,
-            rateLimitMs: options.rateLimitMs,
             apiKey: options.apiKey,
-            inputLanguage: ISO6391.getName(options.inputLanguageCode),
-            inputJSONBefore: inputBeforeJSON,
+            batchSize: options.batchSize,
+            chatParams: options.chatParams,
+            engine: options.engine,
+            ensureChangedTranslation: options.ensureChangedTranslation,
             inputJSONAfter: inputAfterJSON,
-            toUpdateJSONs,
+            inputJSONBefore: inputBeforeJSON,
+            inputLanguage: ISO6391.getName(options.inputLanguageCode),
+            model: options.model,
+            rateLimitMs: options.rateLimitMs,
+            skipStylingVerification: options.skipStylingVerification,
+            skipTranslationVerification: options.skipTranslationVerification,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
-            ensureChangedTranslation: options.ensureChangedTranslation,
+            toUpdateJSONs,
             verbose: options.verbose,
-            batchSize: options.batchSize,
-            skipTranslationVerification: options.skipTranslationVerification,
-            skipStylingVerification: options.skipStylingVerification,
         });
 
         for (const language in outputJSON) {
@@ -559,21 +559,21 @@ const translateDirectory = async (
 
     try {
         const outputJSON = (await translate({
-            engine: options.engine,
-            model: options.model,
-            chatParams: options.chatParams,
-            rateLimitMs: options.rateLimitMs,
             apiKey: options.apiKey,
+            batchSize: options.batchSize,
+            chatParams: options.chatParams,
+            engine: options.engine,
+            ensureChangedTranslation: options.ensureChangedTranslation,
             inputJSON,
             inputLanguage,
+            model: options.model,
             outputLanguage,
+            rateLimitMs: options.rateLimitMs,
+            skipStylingVerification: options.skipStylingVerification,
+            skipTranslationVerification: options.skipTranslationVerification,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
-            ensureChangedTranslation: options.ensureChangedTranslation,
             verbose: options.verbose,
-            batchSize: options.batchSize,
-            skipTranslationVerification: options.skipTranslationVerification,
-            skipStylingVerification: options.skipStylingVerification,
         })) as { [filePathKey: string]: string };
 
         const filesToJSON: { [filePath: string]: { [key: string]: string } } =
@@ -752,22 +752,22 @@ const translateDirectoryDiff = async (
 
     try {
         const perLanguageOutputJSON = await translateDiff({
-            engine: options.engine,
-            model: options.model,
-            chatParams: options.chatParams,
-            rateLimitMs: options.rateLimitMs,
             apiKey: options.apiKey,
-            inputJSONBefore,
+            batchSize: options.batchSize,
+            chatParams: options.chatParams,
+            engine: options.engine,
+            ensureChangedTranslation: options.ensureChangedTranslation,
             inputJSONAfter,
+            inputJSONBefore,
             inputLanguage: ISO6391.getName(options.inputLanguageCode),
-            toUpdateJSONs,
+            model: options.model,
+            rateLimitMs: options.rateLimitMs,
+            skipStylingVerification: options.skipStylingVerification,
+            skipTranslationVerification: options.skipTranslationVerification,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
-            ensureChangedTranslation: options.ensureChangedTranslation,
+            toUpdateJSONs,
             verbose: options.verbose,
-            batchSize: options.batchSize,
-            skipTranslationVerification: options.skipTranslationVerification,
-            skipStylingVerification: options.skipStylingVerification,
         });
 
         const filesToJSON: { [filePath: string]: { [key: string]: string } } =
@@ -955,9 +955,9 @@ program
             case Engine.ChatGPT:
                 model = options.model || "gpt-4o";
                 chatParams = {
-                    seed: 69420,
-                    model,
                     messages: [],
+                    model,
+                    seed: 69420,
                 };
                 if (!options.rateLimitMs) {
                     rateLimitMs = 120;
@@ -1042,25 +1042,25 @@ program
                     try {
                         // eslint-disable-next-line no-await-in-loop
                         await translateFile({
-                            engine: options.engine,
-                            model,
-                            chatParams,
-                            rateLimitMs,
                             apiKey,
+                            batchSize: options.batchSize,
+                            chatParams,
+                            engine: options.engine,
+                            ensureChangedTranslation:
+                                options.ensureChangedTranslation,
                             inputFilePath: inputPath,
+                            model,
                             outputFilePath: outputPath,
+                            rateLimitMs,
+                            skipStylingVerification:
+                                options.skipStylingVerification,
+                            skipTranslationVerification:
+                                options.skipTranslationVerification,
                             templatedStringPrefix:
                                 options.templatedStringPrefix,
                             templatedStringSuffix:
                                 options.templatedStringSuffix,
                             verbose: options.verbose,
-                            ensureChangedTranslation:
-                                options.ensureChangedTranslation,
-                            batchSize: options.batchSize,
-                            skipTranslationVerification:
-                                options.skipTranslationVerification,
-                            skipStylingVerification:
-                                options.skipStylingVerification,
                         });
                     } catch (err) {
                         console.error(
@@ -1087,26 +1087,26 @@ program
                     try {
                         // eslint-disable-next-line no-await-in-loop
                         await translateDirectory({
-                            engine: options.engine,
-                            model,
-                            chatParams,
-                            rateLimitMs,
                             apiKey,
                             baseDirectory: path.resolve(inputPath, ".."),
+                            batchSize: options.batchSize,
+                            chatParams,
+                            engine: options.engine,
+                            ensureChangedTranslation:
+                                options.ensureChangedTranslation,
                             inputLanguage: path.basename(inputPath),
+                            model,
                             outputLanguage: languageCode,
+                            rateLimitMs,
+                            skipStylingVerification:
+                                options.skipStylingVerification,
+                            skipTranslationVerification:
+                                options.skipTranslationVerification,
                             templatedStringPrefix:
                                 options.templatedStringPrefix,
                             templatedStringSuffix:
                                 options.templatedStringSuffix,
                             verbose: options.verbose,
-                            ensureChangedTranslation:
-                                options.ensureChangedTranslation,
-                            batchSize: options.batchSize,
-                            skipTranslationVerification:
-                                options.skipTranslationVerification,
-                            skipStylingVerification:
-                                options.skipStylingVerification,
                         });
                     } catch (err) {
                         console.error(
@@ -1148,23 +1148,23 @@ program
                 try {
                     // eslint-disable-next-line no-await-in-loop
                     await translateFile({
-                        engine: options.engine,
-                        model,
-                        chatParams,
-                        rateLimitMs,
                         apiKey,
+                        batchSize: options.batchSize,
+                        chatParams,
+                        engine: options.engine,
+                        ensureChangedTranslation:
+                            options.ensureChangedTranslation,
                         inputFilePath: options.input,
+                        model,
                         outputFilePath: output,
+                        rateLimitMs,
+                        skipStylingVerification:
+                            options.skipStylingVerification,
+                        skipTranslationVerification:
+                            options.skipTranslationVerification,
                         templatedStringPrefix: options.templatedStringPrefix,
                         templatedStringSuffix: options.templatedStringSuffix,
                         verbose: options.verbose,
-                        ensureChangedTranslation:
-                            options.ensureChangedTranslation,
-                        batchSize: options.batchSize,
-                        skipTranslationVerification:
-                            options.skipTranslationVerification,
-                        skipStylingVerification:
-                            options.skipStylingVerification,
                     });
                 } catch (err) {
                     console.error(
@@ -1257,9 +1257,9 @@ program
             case Engine.ChatGPT:
                 model = options.model || "gpt-4o";
                 chatParams = {
-                    seed: 69420,
-                    model,
                     messages: [],
+                    model,
+                    seed: 69420,
                 };
                 if (!options.rateLimitMs) {
                     rateLimitMs = 120;
@@ -1319,42 +1319,42 @@ program
             }
 
             await translateFileDiff({
-                engine: options.engine,
-                model,
-                chatParams,
-                rateLimitMs,
                 apiKey,
-                inputLanguageCode: options.inputLanguage,
-                inputBeforeFileOrPath: beforeInputPath,
+                batchSize: options.batchSize,
+                chatParams,
+                engine: options.engine,
+                ensureChangedTranslation: options.ensureChangedTranslation,
                 inputAfterFileOrPath: afterInputPath,
+                inputBeforeFileOrPath: beforeInputPath,
+                inputLanguageCode: options.inputLanguage,
+                model,
+                rateLimitMs,
+                skipStylingVerification: options.skipStylingVerification,
+                skipTranslationVerification:
+                    options.skipTranslationVerification,
                 templatedStringPrefix: options.templatedStringPrefix,
                 templatedStringSuffix: options.templatedStringSuffix,
                 verbose: options.verbose,
-                ensureChangedTranslation: options.ensureChangedTranslation,
-                batchSize: options.batchSize,
-                skipTranslationVerification:
-                    options.skipTranslationVerification,
-                skipStylingVerification: options.skipStylingVerification,
             });
         } else {
             await translateDirectoryDiff({
-                engine: options.engine,
-                model,
-                chatParams,
-                rateLimitMs,
                 apiKey,
-                inputLanguageCode: options.inputLanguage,
                 baseDirectory: path.resolve(beforeInputPath, ".."),
-                inputFolderNameBefore: beforeInputPath,
+                batchSize: options.batchSize,
+                chatParams,
+                engine: options.engine,
+                ensureChangedTranslation: options.ensureChangedTranslation,
                 inputFolderNameAfter: afterInputPath,
+                inputFolderNameBefore: beforeInputPath,
+                inputLanguageCode: options.inputLanguage,
+                model,
+                rateLimitMs,
+                skipStylingVerification: options.skipStylingVerification,
+                skipTranslationVerification:
+                    options.skipTranslationVerification,
                 templatedStringPrefix: options.templatedStringPrefix,
                 templatedStringSuffix: options.templatedStringSuffix,
                 verbose: options.verbose,
-                ensureChangedTranslation: options.ensureChangedTranslation,
-                batchSize: options.batchSize,
-                skipTranslationVerification:
-                    options.skipTranslationVerification,
-                skipStylingVerification: options.skipStylingVerification,
             });
         }
     });

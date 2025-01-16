@@ -12033,7 +12033,7 @@ var ChatGPT = class extends ChatInterface {
     }
     await this.rateLimiter.wait();
     this.rateLimiter.apiCalled();
-    this.history.push({ role: role_default.User, content: message });
+    this.history.push({ content: message, role: role_default.User });
     try {
       const response = await this.model.chat.completions.create({
         ...this.chatParams,
@@ -12043,7 +12043,7 @@ var ChatGPT = class extends ChatInterface {
       if (!responseText) {
         return "";
       }
-      this.history.push({ role: role_default.Assistant, content: responseText });
+      this.history.push({ content: responseText, role: role_default.Assistant });
       return responseText;
     } catch (err) {
       console.error(err);
@@ -12063,14 +12063,14 @@ var ChatGPT = class extends ChatInterface {
   }
   invalidTranslation() {
     this.history.push({
-      role: role_default.System,
-      content: this.invalidTranslationMessage()
+      content: this.invalidTranslationMessage(),
+      role: role_default.System
     });
   }
   invalidStyling() {
     this.history.push({
-      role: role_default.System,
-      content: this.invalidStylingMessage()
+      content: this.invalidStylingMessage(),
+      role: role_default.System
     });
   }
 };
@@ -12103,8 +12103,8 @@ var Gemini = class extends ChatInterface {
     if (this.history.length > 0) {
       params.history = this.history.map(
         (x2) => ({
-          role: x2.role === role_default.User ? "user" : "model",
-          parts: [{ text: x2.parts }]
+          parts: [{ text: x2.parts }],
+          role: x2.role === role_default.User ? "user" : "model"
         })
       );
     }
@@ -12146,14 +12146,14 @@ var Gemini = class extends ChatInterface {
   }
   invalidTranslation() {
     this.history.push({
-      role: role_default.System,
-      parts: this.invalidTranslationMessage()
+      parts: this.invalidTranslationMessage(),
+      role: role_default.System
     });
   }
   invalidStyling() {
     this.history.push({
-      role: role_default.System,
-      parts: this.invalidStylingMessage()
+      parts: this.invalidStylingMessage(),
+      role: role_default.System
     });
   }
 };
@@ -17521,8 +17521,8 @@ var ChatFactory = class {
         const openAI = new openai_default({ apiKey });
         chat = new ChatGPT(openAI, rateLimiter);
         params = {
-          model,
-          messages: []
+          messages: [],
+          model
         };
         break;
       }
@@ -17708,10 +17708,10 @@ async function generateTranslation(options) {
   const splitInput = input.split("\n");
   const generateState = {
     fixedTranslationMappings: {},
-    translationToRetryAttempts: {},
+    generationRetries: 0,
     inputLineToTemplatedString: {},
     splitInput,
-    generationRetries: 0
+    translationToRetryAttempts: {}
   };
   for (let i2 = 0; i2 < splitInput.length; i2++) {
     const match = splitInput[i2].match(templatedStringRegex);
@@ -17930,13 +17930,13 @@ async function translate(options) {
       options.apiKey,
       rateLimiter
     ),
-    verifyTranslationChat: ChatFactory.newChat(
+    verifyStylingChat: ChatFactory.newChat(
       options.engine,
       options.model,
       options.apiKey,
       rateLimiter
     ),
-    verifyStylingChat: ChatFactory.newChat(
+    verifyTranslationChat: ChatFactory.newChat(
       options.engine,
       options.model,
       options.apiKey,
@@ -17980,16 +17980,16 @@ async function translate(options) {
     const input = keys.map((x2) => `"${flatInput[x2]}"`).join("\n");
     const generatedTranslation = await generateTranslation({
       chats,
-      inputLanguage: `[${options.inputLanguage}]`,
-      outputLanguage: `[${options.outputLanguage}]`,
+      ensureChangedTranslation: options.ensureChangedTranslation ?? false,
       input,
+      inputLanguage: `[${options.inputLanguage}]`,
       keys,
+      outputLanguage: `[${options.outputLanguage}]`,
+      skipStylingVerification: options.skipStylingVerification ?? false,
+      skipTranslationVerification: options.skipTranslationVerification ?? false,
       templatedStringPrefix,
       templatedStringSuffix,
-      verboseLogging: options.verbose ?? false,
-      ensureChangedTranslation: options.ensureChangedTranslation ?? false,
-      skipTranslationVerification: options.skipTranslationVerification ?? false,
-      skipStylingVerification: options.skipStylingVerification ?? false
+      verboseLogging: options.verbose ?? false
     });
     if (generatedTranslation === "") {
       console.error(
@@ -18092,21 +18092,21 @@ async function translateDiff(options) {
         addedAndModifiedTranslations[key] = flatInputAfter[key];
       }
       const translated = await translate({
-        engine: options.engine,
-        model: options.model,
-        chatParams: options.chatParams,
-        rateLimitMs: options.rateLimitMs,
         apiKey: options.apiKey,
+        batchSize: options.batchSize,
+        chatParams: options.chatParams,
+        engine: options.engine,
+        ensureChangedTranslation: options.ensureChangedTranslation,
         inputJSON: addedAndModifiedTranslations,
         inputLanguage: options.inputLanguage,
+        model: options.model,
         outputLanguage: languageCode,
+        rateLimitMs: options.rateLimitMs,
+        skipStylingVerification: options.skipStylingVerification,
+        skipTranslationVerification: options.skipTranslationVerification,
         templatedStringPrefix: options.templatedStringPrefix,
         templatedStringSuffix: options.templatedStringSuffix,
-        verbose: options.verbose,
-        batchSize: options.batchSize,
-        ensureChangedTranslation: options.ensureChangedTranslation,
-        skipTranslationVerification: options.skipTranslationVerification,
-        skipStylingVerification: options.skipStylingVerification
+        verbose: options.verbose
       });
       const flatTranslated = (0, import_flat.flatten)(translated, {
         delimiter: FLATTEN_DELIMITER
@@ -18155,21 +18155,21 @@ var translateFile = async (options) => {
   }
   try {
     const outputJSON = await translate({
-      engine: options.engine,
-      model: options.model,
-      chatParams: options.chatParams,
-      rateLimitMs: options.rateLimitMs,
       apiKey: options.apiKey,
+      batchSize: options.batchSize,
+      chatParams: options.chatParams,
+      engine: options.engine,
+      ensureChangedTranslation: options.ensureChangedTranslation,
       inputJSON,
       inputLanguage,
+      model: options.model,
       outputLanguage,
+      rateLimitMs: options.rateLimitMs,
+      skipStylingVerification: options.skipStylingVerification,
+      skipTranslationVerification: options.skipTranslationVerification,
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
-      verbose: options.verbose,
-      batchSize: options.batchSize,
-      ensureChangedTranslation: options.ensureChangedTranslation,
-      skipTranslationVerification: options.skipTranslationVerification,
-      skipStylingVerification: options.skipStylingVerification
+      verbose: options.verbose
     });
     const outputText = JSON.stringify(outputJSON, null, 4);
     import_fs3.default.writeFileSync(options.outputFilePath, `${outputText}
@@ -18251,22 +18251,22 @@ var translateFileDiff = async (options) => {
   }
   try {
     const outputJSON = await translateDiff({
-      engine: options.engine,
-      model: options.model,
-      chatParams: options.chatParams,
-      rateLimitMs: options.rateLimitMs,
       apiKey: options.apiKey,
-      inputLanguage: import_iso_639_12.default.getName(options.inputLanguageCode),
-      inputJSONBefore: inputBeforeJSON,
+      batchSize: options.batchSize,
+      chatParams: options.chatParams,
+      engine: options.engine,
+      ensureChangedTranslation: options.ensureChangedTranslation,
       inputJSONAfter: inputAfterJSON,
-      toUpdateJSONs,
+      inputJSONBefore: inputBeforeJSON,
+      inputLanguage: import_iso_639_12.default.getName(options.inputLanguageCode),
+      model: options.model,
+      rateLimitMs: options.rateLimitMs,
+      skipStylingVerification: options.skipStylingVerification,
+      skipTranslationVerification: options.skipTranslationVerification,
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
-      ensureChangedTranslation: options.ensureChangedTranslation,
-      verbose: options.verbose,
-      batchSize: options.batchSize,
-      skipTranslationVerification: options.skipTranslationVerification,
-      skipStylingVerification: options.skipStylingVerification
+      toUpdateJSONs,
+      verbose: options.verbose
     });
     for (const language in outputJSON) {
       if (Object.prototype.hasOwnProperty.call(outputJSON, language)) {
@@ -18334,21 +18334,21 @@ var translateDirectory = async (options) => {
   }
   try {
     const outputJSON = await translate({
-      engine: options.engine,
-      model: options.model,
-      chatParams: options.chatParams,
-      rateLimitMs: options.rateLimitMs,
       apiKey: options.apiKey,
+      batchSize: options.batchSize,
+      chatParams: options.chatParams,
+      engine: options.engine,
+      ensureChangedTranslation: options.ensureChangedTranslation,
       inputJSON,
       inputLanguage,
+      model: options.model,
       outputLanguage,
+      rateLimitMs: options.rateLimitMs,
+      skipStylingVerification: options.skipStylingVerification,
+      skipTranslationVerification: options.skipTranslationVerification,
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
-      ensureChangedTranslation: options.ensureChangedTranslation,
-      verbose: options.verbose,
-      batchSize: options.batchSize,
-      skipTranslationVerification: options.skipTranslationVerification,
-      skipStylingVerification: options.skipStylingVerification
+      verbose: options.verbose
     });
     const filesToJSON = {};
     for (const pathWithKey in outputJSON) {
@@ -18483,22 +18483,22 @@ var translateDirectoryDiff = async (options) => {
   }
   try {
     const perLanguageOutputJSON = await translateDiff({
-      engine: options.engine,
-      model: options.model,
-      chatParams: options.chatParams,
-      rateLimitMs: options.rateLimitMs,
       apiKey: options.apiKey,
-      inputJSONBefore,
+      batchSize: options.batchSize,
+      chatParams: options.chatParams,
+      engine: options.engine,
+      ensureChangedTranslation: options.ensureChangedTranslation,
       inputJSONAfter,
+      inputJSONBefore,
       inputLanguage: import_iso_639_12.default.getName(options.inputLanguageCode),
-      toUpdateJSONs,
+      model: options.model,
+      rateLimitMs: options.rateLimitMs,
+      skipStylingVerification: options.skipStylingVerification,
+      skipTranslationVerification: options.skipTranslationVerification,
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
-      ensureChangedTranslation: options.ensureChangedTranslation,
-      verbose: options.verbose,
-      batchSize: options.batchSize,
-      skipTranslationVerification: options.skipTranslationVerification,
-      skipStylingVerification: options.skipStylingVerification
+      toUpdateJSONs,
+      verbose: options.verbose
     });
     const filesToJSON = {};
     for (const outputLanguage in perLanguageOutputJSON) {
@@ -18635,9 +18635,9 @@ program.command("translate").requiredOption(
     case engine_default.ChatGPT:
       model = options.model || "gpt-4o";
       chatParams = {
-        seed: 69420,
+        messages: [],
         model,
-        messages: []
+        seed: 69420
       };
       if (!options.rateLimitMs) {
         rateLimitMs = 120;
@@ -18710,20 +18710,20 @@ program.command("translate").requiredOption(
         }
         try {
           await translateFile({
-            engine: options.engine,
-            model,
-            chatParams,
-            rateLimitMs,
             apiKey,
+            batchSize: options.batchSize,
+            chatParams,
+            engine: options.engine,
+            ensureChangedTranslation: options.ensureChangedTranslation,
             inputFilePath: inputPath,
+            model,
             outputFilePath: outputPath,
+            rateLimitMs,
+            skipStylingVerification: options.skipStylingVerification,
+            skipTranslationVerification: options.skipTranslationVerification,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
-            verbose: options.verbose,
-            ensureChangedTranslation: options.ensureChangedTranslation,
-            batchSize: options.batchSize,
-            skipTranslationVerification: options.skipTranslationVerification,
-            skipStylingVerification: options.skipStylingVerification
+            verbose: options.verbose
           });
         } catch (err) {
           console.error(
@@ -18747,21 +18747,21 @@ program.command("translate").requiredOption(
         }
         try {
           await translateDirectory({
-            engine: options.engine,
-            model,
-            chatParams,
-            rateLimitMs,
             apiKey,
             baseDirectory: import_path3.default.resolve(inputPath, ".."),
+            batchSize: options.batchSize,
+            chatParams,
+            engine: options.engine,
+            ensureChangedTranslation: options.ensureChangedTranslation,
             inputLanguage: import_path3.default.basename(inputPath),
+            model,
             outputLanguage: languageCode,
+            rateLimitMs,
+            skipStylingVerification: options.skipStylingVerification,
+            skipTranslationVerification: options.skipTranslationVerification,
             templatedStringPrefix: options.templatedStringPrefix,
             templatedStringSuffix: options.templatedStringSuffix,
-            verbose: options.verbose,
-            ensureChangedTranslation: options.ensureChangedTranslation,
-            batchSize: options.batchSize,
-            skipTranslationVerification: options.skipTranslationVerification,
-            skipStylingVerification: options.skipStylingVerification
+            verbose: options.verbose
           });
         } catch (err) {
           console.error(
@@ -18797,20 +18797,20 @@ program.command("translate").requiredOption(
       }
       try {
         await translateFile({
-          engine: options.engine,
-          model,
-          chatParams,
-          rateLimitMs,
           apiKey,
+          batchSize: options.batchSize,
+          chatParams,
+          engine: options.engine,
+          ensureChangedTranslation: options.ensureChangedTranslation,
           inputFilePath: options.input,
+          model,
           outputFilePath: output,
+          rateLimitMs,
+          skipStylingVerification: options.skipStylingVerification,
+          skipTranslationVerification: options.skipTranslationVerification,
           templatedStringPrefix: options.templatedStringPrefix,
           templatedStringSuffix: options.templatedStringSuffix,
-          verbose: options.verbose,
-          ensureChangedTranslation: options.ensureChangedTranslation,
-          batchSize: options.batchSize,
-          skipTranslationVerification: options.skipTranslationVerification,
-          skipStylingVerification: options.skipStylingVerification
+          verbose: options.verbose
         });
       } catch (err) {
         console.error(
@@ -18884,9 +18884,9 @@ program.command("diff").requiredOption(
     case engine_default.ChatGPT:
       model = options.model || "gpt-4o";
       chatParams = {
-        seed: 69420,
+        messages: [],
         model,
-        messages: []
+        seed: 69420
       };
       if (!options.rateLimitMs) {
         rateLimitMs = 120;
@@ -18933,40 +18933,40 @@ program.command("diff").requiredOption(
       return;
     }
     await translateFileDiff({
-      engine: options.engine,
-      model,
-      chatParams,
-      rateLimitMs,
       apiKey,
-      inputLanguageCode: options.inputLanguage,
-      inputBeforeFileOrPath: beforeInputPath,
+      batchSize: options.batchSize,
+      chatParams,
+      engine: options.engine,
+      ensureChangedTranslation: options.ensureChangedTranslation,
       inputAfterFileOrPath: afterInputPath,
+      inputBeforeFileOrPath: beforeInputPath,
+      inputLanguageCode: options.inputLanguage,
+      model,
+      rateLimitMs,
+      skipStylingVerification: options.skipStylingVerification,
+      skipTranslationVerification: options.skipTranslationVerification,
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
-      verbose: options.verbose,
-      ensureChangedTranslation: options.ensureChangedTranslation,
-      batchSize: options.batchSize,
-      skipTranslationVerification: options.skipTranslationVerification,
-      skipStylingVerification: options.skipStylingVerification
+      verbose: options.verbose
     });
   } else {
     await translateDirectoryDiff({
-      engine: options.engine,
-      model,
-      chatParams,
-      rateLimitMs,
       apiKey,
-      inputLanguageCode: options.inputLanguage,
       baseDirectory: import_path3.default.resolve(beforeInputPath, ".."),
-      inputFolderNameBefore: beforeInputPath,
+      batchSize: options.batchSize,
+      chatParams,
+      engine: options.engine,
+      ensureChangedTranslation: options.ensureChangedTranslation,
       inputFolderNameAfter: afterInputPath,
+      inputFolderNameBefore: beforeInputPath,
+      inputLanguageCode: options.inputLanguage,
+      model,
+      rateLimitMs,
+      skipStylingVerification: options.skipStylingVerification,
+      skipTranslationVerification: options.skipTranslationVerification,
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
-      verbose: options.verbose,
-      ensureChangedTranslation: options.ensureChangedTranslation,
-      batchSize: options.batchSize,
-      skipTranslationVerification: options.skipTranslationVerification,
-      skipStylingVerification: options.skipStylingVerification
+      verbose: options.verbose
     });
   }
 });
