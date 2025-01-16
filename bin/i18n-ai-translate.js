@@ -18103,7 +18103,10 @@ async function translateDiff(options) {
         templatedStringPrefix: options.templatedStringPrefix,
         templatedStringSuffix: options.templatedStringSuffix,
         verbose: options.verbose,
-        batchSize: options.batchSize
+        batchSize: options.batchSize,
+        ensureChangedTranslation: options.ensureChangedTranslation,
+        skipTranslationVerification: options.skipTranslationVerification,
+        skipStylingVerification: options.skipStylingVerification
       });
       const flatTranslated = (0, import_flat.flatten)(translated, {
         delimiter: FLATTEN_DELIMITER
@@ -18163,7 +18166,10 @@ var translateFile = async (options) => {
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
       verbose: options.verbose,
-      batchSize: options.batchSize
+      batchSize: options.batchSize,
+      ensureChangedTranslation: options.ensureChangedTranslation,
+      skipTranslationVerification: options.skipTranslationVerification,
+      skipStylingVerification: options.skipStylingVerification
     });
     const outputText = JSON.stringify(outputJSON, null, 4);
     import_fs3.default.writeFileSync(options.outputFilePath, `${outputText}
@@ -18256,8 +18262,11 @@ var translateFileDiff = async (options) => {
       toUpdateJSONs,
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
+      ensureChangedTranslation: options.ensureChangedTranslation,
       verbose: options.verbose,
-      batchSize: options.batchSize
+      batchSize: options.batchSize,
+      skipTranslationVerification: options.skipTranslationVerification,
+      skipStylingVerification: options.skipStylingVerification
     });
     for (const language in outputJSON) {
       if (Object.prototype.hasOwnProperty.call(outputJSON, language)) {
@@ -18335,8 +18344,11 @@ var translateDirectory = async (options) => {
       outputLanguage,
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
+      ensureChangedTranslation: options.ensureChangedTranslation,
       verbose: options.verbose,
-      batchSize: options.batchSize
+      batchSize: options.batchSize,
+      skipTranslationVerification: options.skipTranslationVerification,
+      skipStylingVerification: options.skipStylingVerification
     });
     const filesToJSON = {};
     for (const pathWithKey in outputJSON) {
@@ -18482,8 +18494,11 @@ var translateDirectoryDiff = async (options) => {
       toUpdateJSONs,
       templatedStringPrefix: options.templatedStringPrefix,
       templatedStringSuffix: options.templatedStringSuffix,
+      ensureChangedTranslation: options.ensureChangedTranslation,
       verbose: options.verbose,
-      batchSize: options.batchSize
+      batchSize: options.batchSize,
+      skipTranslationVerification: options.skipTranslationVerification,
+      skipStylingVerification: options.skipStylingVerification
     });
     const filesToJSON = {};
     for (const outputLanguage in perLanguageOutputJSON) {

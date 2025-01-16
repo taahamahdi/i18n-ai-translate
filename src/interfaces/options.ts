@@ -9,9 +9,9 @@ export default interface Options {
     apiKey: string;
     templatedStringPrefix: string;
     templatedStringSuffix: string;
-    verbose?: boolean;
-    ensureChangedTranslation?: boolean;
-    batchSize?: number;
-    skipTranslationVerification?: boolean;
-    skipStylingVerification?: boolean;
+    verbose: boolean;
+    ensureChangedTranslation: boolean;
+    batchSize: number;
+    skipTranslationVerification: boolean;
+    skipStylingVerification: boolean;
 }
