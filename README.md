@@ -10,6 +10,12 @@ Three prompts are chained to ensure each translation is well-formed.
 
 History is retained between calls to ensure consistency when translating the entire file.
 
+
+
+https://github.com/user-attachments/assets/4909bf01-3e7a-464a-9c6e-2d1b82cc47d0
+
+
+
 # Usage
 ## Quick-start
 ### GitHub Actions
