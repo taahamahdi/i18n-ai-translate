@@ -39,8 +39,8 @@ export default class Gemini extends ChatInterface {
         if (this.history.length > 0) {
             params.history = this.history.map(
                 (x): Content => ({
-                    role: x.role === Role.User ? "user" : "model",
                     parts: [{ text: x.parts }],
+                    role: x.role === Role.User ? "user" : "model",
                 }),
             );
         }
@@ -92,15 +92,15 @@ export default class Gemini extends ChatInterface {
 
     invalidTranslation(): void {
         this.history.push({
-            role: Role.System,
             parts: this.invalidTranslationMessage(),
+            role: Role.System,
         });
     }
 
     invalidStyling(): void {
         this.history.push({
-            role: Role.System,
             parts: this.invalidStylingMessage(),
+            role: Role.System,
         });
     }
 }

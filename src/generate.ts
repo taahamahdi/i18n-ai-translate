@@ -41,10 +41,10 @@ export default async function generateTranslation(
 
     const generateState: GenerateState = {
         fixedTranslationMappings: {},
-        translationToRetryAttempts: {},
+        generationRetries: 0,
         inputLineToTemplatedString: {},
         splitInput,
-        generationRetries: 0,
+        translationToRetryAttempts: {},
     };
 
     for (let i = 0; i < splitInput.length; i++) {

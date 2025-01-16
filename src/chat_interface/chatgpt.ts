@@ -40,7 +40,7 @@ export default class ChatGPT extends ChatInterface {
 
         await this.rateLimiter.wait();
         this.rateLimiter.apiCalled();
-        this.history.push({ role: Role.User, content: message });
+        this.history.push({ content: message, role: Role.User });
 
         try {
             const response = await this.model.chat.completions.create({
@@ -53,7 +53,7 @@ export default class ChatGPT extends ChatInterface {
                 return "";
             }
 
-            this.history.push({ role: Role.Assistant, content: responseText });
+            this.history.push({ content: responseText, role: Role.Assistant });
             return responseText;
         } catch (err) {
             console.error(err);
@@ -79,15 +79,15 @@ export default class ChatGPT extends ChatInterface {
 
     invalidTranslation(): void {
         this.history.push({
-            role: Role.System,
             content: this.invalidTranslationMessage(),
+            role: Role.System,
         });
     }
 
     invalidStyling(): void {
         this.history.push({
-            role: Role.System,
             content: this.invalidStylingMessage(),
+            role: Role.System,
         });
     }
 }

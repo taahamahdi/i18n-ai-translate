@@ -37,8 +37,8 @@ export default class ChatFactory {
                 // TODO: token limits
                 chat = new ChatGPT(openAI, rateLimiter);
                 params = {
-                    model,
                     messages: [],
+                    model,
                 };
                 break;
             }
