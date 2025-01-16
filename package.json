@@ -31,7 +31,7 @@
     "eslint-plugin-only-warn": "^1.1.0",
     "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
     "eslint-plugin-sort-keys-fix": "^1.1.2",
-    "eslint-plugin-tsdoc": "^0.3.0",
+    "eslint-plugin-tsdoc": "^0.4.0",
     "prettier": "^3.2.5"
   },
   "scripts": {
