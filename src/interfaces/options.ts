@@ -6,7 +6,8 @@ export default interface Options {
     model: Model;
     chatParams: ChatParams;
     rateLimitMs: number;
-    apiKey: string;
+    apiKey?: string;
+    host?: string;
     templatedStringPrefix: string;
     templatedStringSuffix: string;
     verbose: boolean;
