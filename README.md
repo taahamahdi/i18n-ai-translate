@@ -1,6 +1,6 @@
 # `i18n-ai-translate`
 
-Leverage ChatGPT or Google Gemini for seamless translation of localization files. Supports directories of nested translation files. Requires [i18next-style](https://github.com/i18next/i18next) JSON files.
+Leverage ChatGPT, Gemini, or Ollama for seamless translation of localization files. Supports directories of nested translation files. Requires [i18next-style](https://github.com/i18next/i18next) JSON files.
 
 Three prompts are chained to ensure each translation is well-formed.
 
@@ -130,6 +130,9 @@ Create a `.env` file with an entry for your API key, or pass the `--api-key` fla
 * `GEMINI_API_KEY=<your Gemini API key>`
 * `OPENAI_API_KEY=<your OpenAI API key>`
 
+For Ollama, create an entry for your host, use the `--host` flag to set a custom host and path (Defaults to `localhost:11434`).
+* `OLLAMA_HOSTNAME=<the server and port number running Ollama>`
+
 ```
 Usage: i18n-ai-translate [options] [command]
 
@@ -151,20 +154,21 @@ Usage: i18n-ai-translate translate [options]
 Options:
   -i, --input <input>                         Source i18n file or path of source language, in the jsons/ directory if a relative path is given
   -o, --output-languages [language codes...]  A list of languages to translate to
-  -e, --engine <engine>                       Engine to use (chatgpt or gemini)
-  -m, --model <model>                         Model to use (e.g. gpt-o1, gpt-4o, gpt-4-turbo, gpt-3.5-turbo, gemini-pro)
+  -e, --engine <engine>                       Engine to use (chatgpt, gemini, or ollama)
+  -m, --model <model>                         Model to use (e.g. gpt-o1, gpt-4o, gpt-4-turbo, gpt-3.5-turbo, gemini-pro, llama3.3, phi4)
   -r, --rate-limit-ms <rateLimitMs>           How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)
   -f, --force-language-name <language name>   Force language name
   -A, --all-languages                         Translate to all supported languages
   -p, --templated-string-prefix <prefix>      Prefix for templated strings (default: "{{")
   -s, --templated-string-suffix <suffix>      Suffix for templated strings (default: "}}")
   -k, --api-key <API key>                     API key
+  -h, --host <hostIP:port>                    The host and port number serving Ollama. 11434 is the default port number.
   --ensure-changed-translation                Each generated translation key must differ from the input (for keys longer than 4) (default: false)
   -n, --batch-size <batchSize>                How many keys to process at a time (default: "32")
   --skip-translation-verification             Skip validating the resulting translation through another query (default: false)
   --skip-styling-verification                 Skip validating the resulting translation's formatting through another query (default: false)
   --verbose                                   Print logs about progress (default: false)
-  -h, --help                                  display help for command
+  --help                                      display help for command
 ```
 
 ```
@@ -174,10 +178,11 @@ Options:
   -b, --before <fileOrDirectoryBefore>      Source i18n file or directory before changes, in the jsons/ directory if a relative path is given
   -a, --after <fileOrDirectoryAfter>        Source i18n file or directory after changes, in the jsons/ directory if a relative path is given
   -l, --input-language <inputLanguageCode>  The input language's code, in ISO6391 (e.g. en, fr)
-  -e, --engine <engine>                     Engine to use (chatgpt or gemini)
-  -m, --model <model>                       Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro)
+  -e, --engine <engine>                     Engine to use (chatgpt, gemini, or ollama)
+  -m, --model <model>                       Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro, llama3.3, phi4)
   -r, --rate-limit-ms <rateLimitMs>         How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)
   -k, --api-key <API key>                   API key
+  -h, --host <hostIP:port>                  The host and port number serving Ollama. 11434 is the default port number.
   --ensure-changed-translation              Each generated translation key must differ from the input (for keys longer than 4) (default: false)
   -p, --templated-string-prefix <prefix>    Prefix for templated strings (default: "{{")
   -s, --templated-string-suffix <suffix>    Suffix for templated strings (default: "}}")
@@ -185,7 +190,7 @@ Options:
   --skip-translation-verification           Skip validating the resulting translation through another query (default: false)
   --skip-styling-verification               Skip validating the resulting translation's formatting through another query (default: false)
   --verbose                                 Print logs about progress (default: false)
-  -h, --help                                display help for command
+  --help                                    display help for command
 ```
 
 ### Example usage
@@ -213,11 +218,12 @@ import { translate, translateDiff } from "i18n-ai-translate";
 ...
 
 const translation = await translate({
-    engine, // ChatGPT or Gemini
-    model, // The model to use with the engine (e.g. gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro)
+    engine, // ChatGPT, Gemini, or Ollama
+    model, // The model to use with the engine (e.g. gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro, llama3.3, phi4)
     chatParams, // Additional configuration to pass to the model
     rateLimitMs, // How many milliseconds between requests
-    apiKey, // Gemini API key
+    apiKey, // OpenAI/Gemini API key
+    host, // The host and port number running Ollama
     inputJSON, // JSON to translate
     inputLanguage, // Language of inputJSON
     outputLanguage, // Targeted language (e.g. French, Spanish, etc.)
@@ -231,11 +237,12 @@ const translation = await translate({
 });
 
 const translations = await translateDiff({
-    engine, // ChatGPT or Gemini
-    model, // The model to use with the engine (e.g. gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro)
+    engine, // ChatGPT, Gemini, or Ollama
+    model, // The model to use with the engine (e.g. gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro, llama3.3, phi4)
     chatParams, // Additional configuration to pass to the model
     rateLimitMs, // How many milliseconds between requests
-    apiKey, // Gemini API key
+    apiKey, // OpenAI/Gemini API key
+    host, // The host and port number running Ollama
     inputLanguage, // Language of inputJSONBefore/After
     inputJSONBefore, // The source translation before a change
     inputJSONAfter, // The source translation after a change

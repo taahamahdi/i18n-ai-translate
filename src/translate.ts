@@ -23,7 +23,7 @@ import type TranslateFileDiffOptions from "./interfaces/translate_file_diff_opti
 import type TranslateFileOptions from "./interfaces/translate_file_options";
 import type TranslateOptions from "./interfaces/translate_options";
 
-const VERSION = "3.0.2";
+const VERSION = "3.1.0";
 
 const DEFAULT_BATCH_SIZE = 32;
 const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
@@ -53,20 +53,23 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         generateTranslationChat: ChatFactory.newChat(
             options.engine,
             options.model,
-            options.apiKey,
             rateLimiter,
+            options.apiKey,
+            options.host,
         ),
         verifyStylingChat: ChatFactory.newChat(
             options.engine,
             options.model,
-            options.apiKey,
             rateLimiter,
+            options.apiKey,
+            options.host,
         ),
         verifyTranslationChat: ChatFactory.newChat(
             options.engine,
             options.model,
-            options.apiKey,
             rateLimiter,
+            options.apiKey,
+            options.host,
         ),
     };
 
@@ -274,13 +277,15 @@ export async function translateDiff(
                 chatParams: options.chatParams,
                 engine: options.engine,
                 ensureChangedTranslation: options.ensureChangedTranslation,
+                host: options.host,
                 inputJSON: addedAndModifiedTranslations,
                 inputLanguage: options.inputLanguage,
                 model: options.model,
                 outputLanguage: languageCode,
                 rateLimitMs: options.rateLimitMs,
                 skipStylingVerification: options.skipStylingVerification,
-                skipTranslationVerification: options.skipTranslationVerification,
+                skipTranslationVerification:
+                    options.skipTranslationVerification,
                 templatedStringPrefix: options.templatedStringPrefix,
                 templatedStringSuffix: options.templatedStringSuffix,
                 verbose: options.verbose,
@@ -340,7 +345,7 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
     if (options.forceLanguageName) {
         outputLanguage = options.forceLanguageName;
     } else {
-        outputLanguage = getLanguageCodeFromFilename(options.inputFilePath);
+        outputLanguage = getLanguageCodeFromFilename(options.outputFilePath);
     }
 
     try {
@@ -350,6 +355,7 @@ const translateFile = async (options: TranslateFileOptions): Promise<void> => {
             chatParams: options.chatParams,
             engine: options.engine,
             ensureChangedTranslation: options.ensureChangedTranslation,
+            host: options.host,
             inputJSON,
             inputLanguage,
             model: options.model,
@@ -466,6 +472,7 @@ const translateFileDiff = async (
             chatParams: options.chatParams,
             engine: options.engine,
             ensureChangedTranslation: options.ensureChangedTranslation,
+            host: options.host,
             inputJSONAfter: inputAfterJSON,
             inputJSONBefore: inputBeforeJSON,
             inputLanguage: ISO6391.getName(options.inputLanguageCode),
@@ -564,6 +571,7 @@ const translateDirectory = async (
             chatParams: options.chatParams,
             engine: options.engine,
             ensureChangedTranslation: options.ensureChangedTranslation,
+            host: options.host,
             inputJSON,
             inputLanguage,
             model: options.model,
@@ -757,6 +765,7 @@ const translateDirectoryDiff = async (
             chatParams: options.chatParams,
             engine: options.engine,
             ensureChangedTranslation: options.ensureChangedTranslation,
+            host: options.host,
             inputJSONAfter,
             inputJSONBefore,
             inputLanguage: ISO6391.getName(options.inputLanguageCode),
@@ -871,7 +880,7 @@ const translateDirectoryDiff = async (
 program
     .name("i18n-ai-translate")
     .description(
-        "Use ChatGPT or Gemini to translate your i18n JSON to any language",
+        "Use ChatGPT, Gemini, or Ollama to translate your i18n JSON to any language",
     )
     .version(VERSION);
 
@@ -887,11 +896,11 @@ program
     )
     .requiredOption(
         "-e, --engine <engine>",
-        "Engine to use (chatgpt or gemini)",
+        "Engine to use (chatgpt, gemini, or ollama)",
     )
     .option(
         "-m, --model <model>",
-        "Model to use (e.g. gpt-o1, gpt-4o, gpt-4-turbo, gpt-3.5-turbo, gemini-pro)",
+        "Model to use (e.g. gpt-o1, gpt-4o, gpt-4-turbo, gpt-3.5-turbo, gemini-pro, llama3.3, phi4)",
     )
     .option(
         "-r, --rate-limit-ms <rateLimitMs>",
@@ -910,6 +919,10 @@ program
         DEFAULT_TEMPLATED_STRING_SUFFIX,
     )
     .option("-k, --api-key <API key>", "API key")
+    .option(
+        "-h, --host <hostIP:port>",
+        "The host and port number serving Ollama. 11434 is the default port number.",
+    )
     .option(
         "--ensure-changed-translation",
         "Each generated translation key must differ from the input (for keys longer than 4)",
@@ -935,7 +948,8 @@ program
         let model: Model;
         let chatParams: ChatParams;
         let rateLimitMs = Number(options.rateLimitMs);
-        let apiKey: string;
+        let apiKey: string | undefined;
+        let host: string | undefined;
         switch (options.engine) {
             case Engine.Gemini:
                 model = options.model || "gemini-pro";
@@ -968,6 +982,22 @@ program
                     return;
                 } else {
                     apiKey = options.apiKey || process.env.OPENAI_API_KEY;
+                }
+
+                break;
+            case Engine.Ollama:
+                model = options.model || "llama3.3";
+                chatParams = {
+                    messages: [],
+                    model,
+                    seed: 69420,
+                };
+
+                if (!process.env.OLLAMA_HOSTNAME && !options.host) {
+                    console.error("OLLAMA_HOSTNAME not found in .env file");
+                    return;
+                } else {
+                    host = options.host || process.env.OLLAMA_HOSTNAME;
                 }
 
                 break;
@@ -1048,6 +1078,7 @@ program
                             engine: options.engine,
                             ensureChangedTranslation:
                                 options.ensureChangedTranslation,
+                            host,
                             inputFilePath: inputPath,
                             model,
                             outputFilePath: outputPath,
@@ -1094,6 +1125,7 @@ program
                             engine: options.engine,
                             ensureChangedTranslation:
                                 options.ensureChangedTranslation,
+                            host,
                             inputLanguage: path.basename(inputPath),
                             model,
                             outputLanguage: languageCode,
@@ -1154,6 +1186,7 @@ program
                         engine: options.engine,
                         ensureChangedTranslation:
                             options.ensureChangedTranslation,
+                        host,
                         inputFilePath: options.input,
                         model,
                         outputFilePath: output,
@@ -1191,17 +1224,21 @@ program
     )
     .requiredOption(
         "-e, --engine <engine>",
-        "Engine to use (chatgpt or gemini)",
+        "Engine to use (chatgpt, gemini, or ollama)",
     )
     .option(
         "-m, --model <model>",
-        "Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro)",
+        "Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro, llama3.3, phi4)",
     )
     .option(
         "-r, --rate-limit-ms <rateLimitMs>",
         "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)",
     )
     .option("-k, --api-key <API key>", "API key")
+    .option(
+        "-h, --host <hostIP:port>",
+        "The host and port number serving Ollama. 11434 is the default port number.",
+    )
     .option(
         "--ensure-changed-translation",
         "Each generated translation key must differ from the input (for keys longer than 4)",
@@ -1237,7 +1274,8 @@ program
         let model: Model;
         let chatParams: ChatParams;
         let rateLimitMs = Number(options.rateLimitMs);
-        let apiKey: string;
+        let apiKey: string | undefined;
+        let host: string | undefined;
         switch (options.engine) {
             case Engine.Gemini:
                 model = options.model || "gemini-pro";
@@ -1270,6 +1308,22 @@ program
                     return;
                 } else {
                     apiKey = options.apiKey || process.env.OPENAI_API_KEY;
+                }
+
+                break;
+            case Engine.Ollama:
+                model = options.model || "llama3.3";
+                chatParams = {
+                    messages: [],
+                    model,
+                    seed: 69420,
+                };
+
+                if (!process.env.OLLAMA_HOSTNAME && !options.host) {
+                    console.error("OLLAMA_HOSTNAME not found in .env file");
+                    return;
+                } else {
+                    host = options.host || process.env.OLLAMA_HOSTNAME;
                 }
 
                 break;
@@ -1324,6 +1378,7 @@ program
                 chatParams,
                 engine: options.engine,
                 ensureChangedTranslation: options.ensureChangedTranslation,
+                host,
                 inputAfterFileOrPath: afterInputPath,
                 inputBeforeFileOrPath: beforeInputPath,
                 inputLanguageCode: options.inputLanguage,
@@ -1344,6 +1399,7 @@ program
                 chatParams,
                 engine: options.engine,
                 ensureChangedTranslation: options.ensureChangedTranslation,
+                host,
                 inputFolderNameAfter: afterInputPath,
                 inputFolderNameBefore: beforeInputPath,
                 inputLanguageCode: options.inputLanguage,
