@@ -1,5 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Anthropic as InternalAnthropic } from "@anthropic-ai/sdk";
 import { Ollama as InternalOllama } from "ollama";
+import Anthropic from "./anthropic";
 import ChatGPT from "./chatgpt";
 import Engine from "../enums/engine";
 import Gemini from "./gemini";
@@ -23,8 +25,6 @@ export default class ChatFactory {
             case Engine.Gemini: {
                 const genAI = new GoogleGenerativeAI(apiKey!);
                 const geminiModel = genAI.getGenerativeModel({ model });
-
-                // Gemini limits us to 60 RPM => 1 call per second
                 chat = new Gemini(geminiModel, rateLimiter);
                 params = {
                     history: [],
@@ -34,10 +34,6 @@ export default class ChatFactory {
 
             case Engine.ChatGPT: {
                 const openAI = new OpenAI({ apiKey: apiKey! });
-
-                // Free-tier rate limits are 3 RPM => 1 call every 20 seconds
-                // Tier 1 is a reasonable 500 RPM => 1 call every 120ms
-                // TODO: token limits
                 chat = new ChatGPT(openAI, rateLimiter);
                 params = {
                     messages: [],
@@ -49,6 +45,17 @@ export default class ChatFactory {
             case Engine.Ollama: {
                 const llama = new InternalOllama({ host });
                 chat = new Ollama(llama);
+                params = {
+                    messages: [],
+                    model,
+                };
+
+                break;
+            }
+
+            case Engine.Claude: {
+                const anthropic = new InternalAnthropic({ apiKey: apiKey! });
+                chat = new Anthropic(anthropic, rateLimiter);
                 params = {
                     messages: [],
                     model,

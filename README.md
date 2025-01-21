@@ -1,6 +1,6 @@
 # `i18n-ai-translate`
 
-Leverage ChatGPT, Gemini, or Ollama for seamless translation of localization files. Supports directories of nested translation files. Requires [i18next-style](https://github.com/i18next/i18next) JSON files.
+Leverage ChatGPT, Gemini, Ollama, or Claude for seamless translation of localization files. Supports directories of nested translation files. Requires [i18next-style](https://github.com/i18next/i18next) JSON files.
 
 Three prompts are chained to ensure each translation is well-formed.
 
@@ -81,10 +81,10 @@ npm run i18n-ai-translate -- translate -i en.json -o fr.json --engine chatgpt --
 yarn add i18n-ai-translate
 
 # Generate French translations
-npx i18n-ai-translate translate -i en.json -o fr.json --engine gemini --model gemini-pro --api-key <gemini_key>
+npx i18n-ai-translate translate -i en.json -o fr.json --engine gemini --model gemini-2.0-flash-exp --api-key <gemini_key>
 
 # Or, assuming you already have other translations in the current directory
-npx i18n-ai-translate diff --before en-before.json --after en.json --input-language English --engine chatgpt --model gpt-4 --api-key <openai_key>
+npx i18n-ai-translate diff --before en-before.json --after en.json --input-language English --engine claude --model claude-3-5-sonnet-latest --api-key <anthropic_key>
 ```
 
 ### [Running as a library](#as-a-library)
@@ -129,6 +129,7 @@ Use `i18n-ai-translate diff` to find the differences between two versions of a s
 Create a `.env` file with an entry for your API key, or pass the `--api-key` flag.
 * `GEMINI_API_KEY=<your Gemini API key>`
 * `OPENAI_API_KEY=<your OpenAI API key>`
+* `ANTHROPIC_API_KEY=<your Anthropic API key>`
 
 For Ollama, create an entry for your host, use the `--host` flag to set a custom host and path (Defaults to `localhost:11434`).
 * `OLLAMA_HOSTNAME=<the server and port number running Ollama>`
@@ -154,9 +155,10 @@ Usage: i18n-ai-translate translate [options]
 Options:
   -i, --input <input>                         Source i18n file or path of source language, in the jsons/ directory if a relative path is given
   -o, --output-languages [language codes...]  A list of languages to translate to
-  -e, --engine <engine>                       Engine to use (chatgpt, gemini, or ollama)
-  -m, --model <model>                         Model to use (e.g. gpt-o1, gpt-4o, gpt-4-turbo, gpt-3.5-turbo, gemini-pro, llama3.3, phi4)
-  -r, --rate-limit-ms <rateLimitMs>           How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)
+  -e, --engine <engine>                       Engine to use (chatgpt, gemini, ollama, or claude)
+  -m, --model <model>                         Model to use (e.g. gpt-4o, gemini-2.0-flash-exp, llama3.3, claude-3-5-sonnet-latest)
+  -r, --rate-limit-ms <rateLimitMs>           How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT, 1200ms
+                                              for Claude)
   -f, --force-language-name <language name>   Force language name
   -A, --all-languages                         Translate to all supported languages
   -p, --templated-string-prefix <prefix>      Prefix for templated strings (default: "{{")
@@ -178,9 +180,10 @@ Options:
   -b, --before <fileOrDirectoryBefore>      Source i18n file or directory before changes, in the jsons/ directory if a relative path is given
   -a, --after <fileOrDirectoryAfter>        Source i18n file or directory after changes, in the jsons/ directory if a relative path is given
   -l, --input-language <inputLanguageCode>  The input language's code, in ISO6391 (e.g. en, fr)
-  -e, --engine <engine>                     Engine to use (chatgpt, gemini, or ollama)
-  -m, --model <model>                       Model to use (e.g. gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, gemini-pro, llama3.3, phi4)
-  -r, --rate-limit-ms <rateLimitMs>         How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT)
+  -e, --engine <engine>                     Engine to use (chatgpt, gemini, ollama, or claude)
+  -m, --model <model>                       Model to use (e.g. gpt-4o, gemini-2.0-flash-exp, llama3.3, claude-3-5-sonnet-latest)
+  -r, --rate-limit-ms <rateLimitMs>         How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT, 1200ms for
+                                            Claude)
   -k, --api-key <API key>                   API key
   -h, --host <hostIP:port>                  The host and port number serving Ollama. 11434 is the default port number.
   --ensure-changed-translation              Each generated translation key must differ from the input (for keys longer than 4) (default: false)
@@ -200,14 +203,14 @@ Options:
 #### `npx i18n-ai-translate translate -i en.json -o es de nl --engine gemini`
 * Translate the `en.json` file in `jsons/` to Spanish, German, and Dutch, and save each file in `jsons/`, using Google Gemini
 
-#### `npx i18n-ai-translate diff -b en.json -a en-after.json -l English --verbose`
-* Translate the keys that have changed between `en.json` and `en-after.json` for all files in the `en.json` directory, with logging enabled
+#### `npx i18n-ai-translate diff -b en.json -a en-after.json -l English --verbose --engine ollama --host my-olllama-server.com:12345`
+* Translate the keys that have changed between `en.json` and `en-after.json` for all files in the `en.json` directory, with logging enabled using Ollama running on `my-ollama-server.com:12345`
 
 #### `npx i18n-ai-translate translate -i en.json -A --engine chatgpt --model gpt-4-turbo --api-key <my_key> --rate-limit-ms 150 -n 64`
 * Translate the `en.json` file in `jsons/` to 200+ languages, save each file in `jsons/`, using the GPT-4 Turbo model of ChatGPT, with the given key, a rate limit of 150ms between requests, and 64 keys sent in each batch
 
-#### `npx i18n-ai-translate diff -b en -a en-after`
-* Translate the keys that have changed between `en/` and `en-after/` for all JSON files in both directories
+#### `npx i18n-ai-translate diff -b en -a en-after --engine claude`
+* Translate the keys that have changed between `en/` and `en-after/` for all JSON files in both directories using Claude
 
 ## As a library
 Alternatively, import this project and use it to convert JSONs on-the-fly with [`translate()`](https://github.com/taahamahdi/i18n-ai-translate/blob/master/src/interfaces/translation_options.ts), or use [`translateDiff()`](https://github.com/taahamahdi/i18n-ai-translate/blob/master/src/interfaces/translation_diff_options.ts) to fetch updates to modified keys when your source i18n file has changed.
@@ -218,11 +221,11 @@ import { translate, translateDiff } from "i18n-ai-translate";
 ...
 
 const translation = await translate({
-    engine, // ChatGPT, Gemini, or Ollama
-    model, // The model to use with the engine (e.g. gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro, llama3.3, phi4)
+    engine, // ChatGPT, Gemini, Ollama, or Claude
+    model, // Model to use (e.g. gpt-4o, gemini-2.0-flash-exp, llama3.3, claude-3-5-sonnet-latest)
     chatParams, // Additional configuration to pass to the model
     rateLimitMs, // How many milliseconds between requests
-    apiKey, // OpenAI/Gemini API key
+    apiKey, // OpenAI/Gemini/Anthropic API key
     host, // The host and port number running Ollama
     inputJSON, // JSON to translate
     inputLanguage, // Language of inputJSON
@@ -237,11 +240,11 @@ const translation = await translate({
 });
 
 const translations = await translateDiff({
-    engine, // ChatGPT, Gemini, or Ollama
-    model, // The model to use with the engine (e.g. gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro, llama3.3, phi4)
+    engine, // ChatGPT, Gemini, Ollama, or Claude
+    model, // Model to use (e.g. gpt-4o, gemini-2.0-flash-exp, llama3.3, claude-3-5-sonnet-latest)
     chatParams, // Additional configuration to pass to the model
     rateLimitMs, // How many milliseconds between requests
-    apiKey, // OpenAI/Gemini API key
+    apiKey, // OpenAI/Gemini/Anthropic API key
     host, // The host and port number running Ollama
     inputLanguage, // Language of inputJSONBefore/After
     inputJSONBefore, // The source translation before a change
