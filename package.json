@@ -12,10 +12,10 @@
     "typescript": "^5.1.6"
   },
   "name": "i18n-ai-translate",
-  "version": "3.1.0",
-  "main": "src/translate.js",
+  "version": "3.1.1",
+  "main": "./build/index.js",
   "bin": {
-    "i18n-ai-translate": "bin/i18n-ai-translate.js"
+    "i18n-ai-translate": "./build/i18n-ai-translate.js"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.15.0",
@@ -36,7 +36,8 @@
     "prettier": "^3.2.5"
   },
   "scripts": {
-    "build": "npx tsc && npx esbuild src/translate.ts --bundle --platform=node --outfile=bin/i18n-ai-translate.js --banner:js='#!/usr/bin/env node'",
+    "build": "npx tsc",
+    "prepare": "npm run build && npx esbuild src/translate.ts --bundle --platform=node --outfile=build/i18n-ai-translate.js --banner:js='#!/usr/bin/env node'",
     "i18n-ai-translate": "npm run build && node build/translate.js",
     "clean": "rm -r build/ && rm tsconfig.tsbuildinfo",
     "clean-build": "npm run clean && npm run build",
