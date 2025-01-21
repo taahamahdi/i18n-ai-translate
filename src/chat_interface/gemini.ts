@@ -67,7 +67,7 @@ export default class Gemini extends ChatInterface {
                 );
             }
 
-            return response;
+            return response.trimEnd();
         } catch (err) {
             console.error(err);
             return "";
@@ -80,6 +80,10 @@ export default class Gemini extends ChatInterface {
     }
 
     rollbackLastMessage(): void {
+        if (this.history.length === 0) {
+            return;
+        }
+
         if (this.history[this.history.length - 1].role === Role.Assistant) {
             this.history.pop();
             this.history.pop();

@@ -74,7 +74,9 @@ const verify = async (
                 }
 
                 if (text !== "ACK" && text !== "NAK") {
-                    return Promise.reject(new Error("Invalid response"));
+                    return Promise.reject(
+                        new Error(`Invalid response: ${text}`),
+                    );
                 }
 
                 return text;
