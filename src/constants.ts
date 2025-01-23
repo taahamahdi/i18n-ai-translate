@@ -13,8 +13,18 @@ export const DEFAULT_MODEL = {
 };
 
 export const CLI_HELP = {
+    BatchSize: "How many keys to process at a time",
     Engine: "Engine to use (chatgpt, gemini, ollama, or claude)",
+    EnsureChangedTranslation:
+        "Each generated translation key must differ from the input (for keys longer than 4)",
     Model: `Model to use (e.g. ${Object.values(DEFAULT_MODEL).join(", ")})`,
+    OllamaHost:
+        "The host and port number serving Ollama. 11434 is the default port number.",
     RateLimit:
         "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT, 1200ms for Claude)",
+    SkipStylingVerification:
+        "Skip validating the resulting translation's formatting through another query",
+    SkipTranslationVerification:
+        "Skip validating the resulting translation through another query",
+    Verbose: "Print logs about progress",
 };
