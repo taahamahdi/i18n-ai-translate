@@ -73,11 +73,7 @@ const processModelArgs = (options: any): ModelArgs => {
                 seed: 69420,
             };
 
-            if (!process.env.OLLAMA_HOSTNAME && !options.host) {
-                throw new Error("OLLAMA_HOSTNAME not found in .env file");
-            } else {
-                host = options.host || process.env.OLLAMA_HOSTNAME;
-            }
+            host = options.host || process.env.OLLAMA_HOSTNAME;
 
             break;
         case Engine.Claude:
