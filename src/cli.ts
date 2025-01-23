@@ -105,7 +105,7 @@ const processModelArgs = (options: any): ModelArgs => {
         apiKey,
         chatParams,
         host,
-        model,
+        model: options.model || DEFAULT_MODEL[options.engine as Engine],
         rateLimitMs,
     };
 };
