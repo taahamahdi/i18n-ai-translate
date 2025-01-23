@@ -130,7 +130,10 @@ program
     .requiredOption("-e, --engine <engine>", CLI_HELP.Engine)
     .option("-m, --model <model>", CLI_HELP.Model)
     .option("-r, --rate-limit-ms <rateLimitMs>", CLI_HELP.RateLimit)
-    .option("-f, --force-language-name <language name>", "Force language name")
+    .option(
+        "-f, --force-language-name <language name>",
+        "Force output language name",
+    )
     .option("-A, --all-languages", "Translate to all supported languages")
     .option(
         "-p, --templated-string-prefix <prefix>",
@@ -143,31 +146,28 @@ program
         DEFAULT_TEMPLATED_STRING_SUFFIX,
     )
     .option("-k, --api-key <API key>", "API key")
-    .option(
-        "-h, --host <hostIP:port>",
-        "The host and port number serving Ollama. 11434 is the default port number.",
-    )
+    .option("-h, --host <hostIP:port>", CLI_HELP.OllamaHost)
     .option(
         "--ensure-changed-translation",
-        "Each generated translation key must differ from the input (for keys longer than 4)",
+        CLI_HELP.EnsureChangedTranslation,
         false,
     )
     .option(
         "-n, --batch-size <batchSize>",
-        "How many keys to process at a time",
+        CLI_HELP.BatchSize,
         String(DEFAULT_BATCH_SIZE),
     )
     .option(
         "--skip-translation-verification",
-        "Skip validating the resulting translation through another query",
+        CLI_HELP.SkipTranslationVerification,
         false,
     )
     .option(
         "--skip-styling-verification",
-        "Skip validating the resulting translation's formatting through another query",
+        CLI_HELP.SkipStylingVerification,
         false,
     )
-    .option("--verbose", "Print logs about progress", false)
+    .option("--verbose", CLI_HELP.Verbose, false)
     .action(async (options: any) => {
         const { model, chatParams, rateLimitMs, apiKey, host } =
             processModelArgs(options);
@@ -392,13 +392,10 @@ program
     .option("-m, --model <model>", CLI_HELP.Model)
     .option("-r, --rate-limit-ms <rateLimitMs>", CLI_HELP.RateLimit)
     .option("-k, --api-key <API key>", "API key")
-    .option(
-        "-h, --host <hostIP:port>",
-        "The host and port number serving Ollama. 11434 is the default port number.",
-    )
+    .option("-h, --host <hostIP:port>", CLI_HELP.OllamaHost)
     .option(
         "--ensure-changed-translation",
-        "Each generated translation key must differ from the input (for keys longer than 4)",
+        CLI_HELP.EnsureChangedTranslation,
         false,
     )
     .option(
@@ -413,20 +410,20 @@ program
     )
     .option(
         "-n, --batch-size <batchSize>",
-        "How many keys to process at a time",
+        CLI_HELP.BatchSize,
         String(DEFAULT_BATCH_SIZE),
     )
     .option(
         "--skip-translation-verification",
-        "Skip validating the resulting translation through another query",
+        CLI_HELP.SkipTranslationVerification,
         false,
     )
     .option(
         "--skip-styling-verification",
-        "Skip validating the resulting translation's formatting through another query",
+        CLI_HELP.SkipStylingVerification,
         false,
     )
-    .option("--verbose", "Print logs about progress", false)
+    .option("--verbose", CLI_HELP.Verbose, false)
     .action(async (options: any) => {
         const { model, chatParams, rateLimitMs, apiKey, host } =
             processModelArgs(options);
