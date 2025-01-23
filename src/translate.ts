@@ -144,7 +144,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
 
             if (options.verbose)
                 console.log(
-                    `${keys[j]}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
+                    `${keys[j].replaceAll("*", ".")}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
                 );
         }
     }

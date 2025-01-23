@@ -1,5 +1,5 @@
 import { failedTranslationPrompt, generationPrompt } from "./prompts";
-import { retryJob } from "./utils";
+import { isNAK, retryJob } from "./utils";
 import { verifyStyling, verifyTranslation } from "./verify";
 import type GenerateTranslationOptions from "./interfaces/generate_translation_options";
 
@@ -266,7 +266,7 @@ async function generate(
         );
     }
 
-    if (translationVerificationResponse === "NAK") {
+    if (isNAK(translationVerificationResponse)) {
         chats.generateTranslationChat.invalidTranslation();
         return Promise.reject(new Error(`Invalid translation. text = ${text}`));
     }
@@ -282,7 +282,7 @@ async function generate(
         );
     }
 
-    if (stylingVerificationResponse === "NAK") {
+    if (isNAK(stylingVerificationResponse)) {
         chats.generateTranslationChat.invalidStyling();
         return Promise.reject(new Error(`Invalid styling. text = ${text}`));
     }

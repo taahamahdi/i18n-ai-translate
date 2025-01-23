@@ -1,4 +1,4 @@
-import { retryJob } from "./utils";
+import { isACK, isNAK, retryJob } from "./utils";
 import {
     stylingVerificationPrompt,
     translationVerificationPrompt,
@@ -73,7 +73,7 @@ const verify = async (
                     );
                 }
 
-                if (text !== "ACK" && text !== "NAK") {
+                if (!isNAK(text) && !isACK(text)) {
                     return Promise.reject(
                         new Error(`Invalid response: ${text}`),
                     );
