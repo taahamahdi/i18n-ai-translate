@@ -4,6 +4,7 @@ import {
     DEFAULT_TEMPLATED_STRING_SUFFIX,
     FLATTEN_DELIMITER,
 } from "./constants";
+import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
 import {
     getAllFilesInPath,
@@ -72,7 +73,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     const templatedStringSuffix =
         options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
 
-    const flatInput = flatten(options.inputJSON, {
+    let flatInput = flatten(options.inputJSON, {
         delimiter: FLATTEN_DELIMITER,
     }) as {
         [key: string]: string;
@@ -87,12 +88,42 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         }
     }
 
-    // randomize flatInput ordering
-    const allKeys = Object.keys(flatInput);
-    for (let i = allKeys.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [allKeys[i], allKeys[j]] = [allKeys[j], allKeys[i]];
+    const groups: Array<{ [key: string]: string }> = [];
+    for (const key in flatInput) {
+        if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
+            const val = flatInput[key];
+
+            const existingGroup = groups.find((group) =>
+                Object.values(group).some((entry) => {
+                    const distPercent =
+                        distance(val, entry) /
+                        Math.max(val.length, entry.length);
+
+                    return distPercent < 0.3;
+                }),
+            );
+
+            if (existingGroup) {
+                existingGroup[key] = val;
+            } else {
+                groups.push({ [key]: val });
+            }
+        }
     }
+
+    for (let i = groups.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [groups[i], groups[j]] = [groups[j], groups[i]];
+    }
+
+    flatInput = {};
+    for (const groupObj of groups) {
+        for (const [k, v] of Object.entries(groupObj)) {
+            flatInput[k] = v;
+        }
+    }
+
+    const allKeys = Object.keys(flatInput);
 
     const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
     const batchStartTime = Date.now();
