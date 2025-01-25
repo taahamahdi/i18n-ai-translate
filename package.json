@@ -60,7 +60,7 @@
   ],
   "author": "Taaha Mahdi",
   "license": "GPL-3.0",
-  "description": "Use ChatGPT or Gemini Pro to translate your i18n JSON to any language.",
+  "description": "Use LLMs to translate your i18n JSON to any language.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/taahamahdi/i18n-ai-translate.git"
