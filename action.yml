@@ -44,9 +44,6 @@ inputs:
     description: 'How many keys to process at a time'
     required: false
     default: 32
-  base-ref:
-    description: 'Branch to compare against. Required for triggering from a comment'
-    required: false
 
 runs:
   using: 'composite'
@@ -62,17 +59,11 @@ runs:
       with:
         node-version: 18
 
-    - name: Determine final base ref
-      run: |
-        echo "BASE_REF=${{ (github.base_ref != '' && github.base_ref) || inputs.base-ref }}" >> $GITHUB_OUTPUT
-      shell: bash
-      id: determine-base
-
     - name: Fetch original translation
       shell: bash
       run: |
         mv "${{ inputs.json-file-path }}" "${{ inputs.json-file-path }}-latest"
-        git checkout origin/${{ steps.determine-base.outputs.BASE_REF }} -- "${{ inputs.json-file-path }}"
+        git checkout origin/${{ github.base_ref }} -- "${{ inputs.json-file-path }}"
 
     - name: Translate the diff
       shell: bash

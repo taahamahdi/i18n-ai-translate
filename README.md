@@ -42,29 +42,6 @@ jobs:
           api-key: ${{ secrets.OPENAI_API_KEY }}
 ```
 
-The following requires a comment containing `/translate` to be sent in the PR before it is translated.
-
-Note: the workflow must be merged into the main branch before this action can be triggered.
-```yml
-name: i18n-ai-translate
-
-on:
-  issue_comment:
-    types: [created, edited, deleted]
-
-jobs:
-  build:
-    if: ${{ github.event.issue.pull_request }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: i18n-ai-translate
-        if: contains(github.event.comment.body, '/translate')
-        uses: taahamahdi/i18n-ai-translate@master
-        with:
-          json-file-path: i18n/en.json
-          api-key: ${{ secrets.OPENAI_API_KEY }}
-```
-
 ### [Running directly](#script)
 ```bash
 git clone git@github.com:taahamahdi/i18n-ai-translate.git
