@@ -77,6 +77,7 @@ runs:
     - name: Translate the diff
       shell: bash
       run: |
+        set -e
         if [ -n "${{ inputs.api-key }}" ]; then
           npx --yes i18n-ai-translate@latest diff \
             -b "${{ inputs.json-file-path }}" \
