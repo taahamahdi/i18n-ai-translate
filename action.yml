@@ -23,7 +23,7 @@ inputs:
   language:
     description: 'Language to translate from'
     required: false
-    default: 'English'
+    default: 'en'
   engine:
     description: 'Engine to use for translation'
     required: false
