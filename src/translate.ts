@@ -12,7 +12,6 @@ import {
     getTranslationDirectoryKey,
 } from "./utils";
 import ChatFactory from "./chat_interface/chat_factory";
-import ISO6391 from "iso-639-1";
 import RateLimiter from "./rate_limiter";
 import fs from "fs";
 import generateTranslation from "./generate";
