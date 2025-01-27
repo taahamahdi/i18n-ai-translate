@@ -8,7 +8,10 @@ inputs:
     required: true
   api-key:
     description: 'The API key'
-    required: true
+    required: false
+  host:
+    description: "The ollama host and port number"
+    required: false
 
   author-email:
     description: 'The email of the person to attribute the i18n change to'
@@ -70,18 +73,33 @@ runs:
 
   - name: Translate the diff
     shell: bash
-    run: |
-      npx i18n-ai-translate diff \
-        -b "${{ inputs.json-file-path }}" \
-        -a "${{ inputs.json-file-path }}-latest" \
-        -l "${{ inputs.language }}" \
-        --verbose \
-        --engine "${{ inputs.engine }}" \
-        --model "${{ inputs.model }}" \
-        -p "${{ inputs.templated-string-prefix }}" \
-        -s "${{ inputs.templated-string-suffix }}" \
-        -n "${{ inputs.batch-size }}" \
-        -k ${{ inputs.api-key }}
+    steps:
+      - if: ${{ inputs.api-key != '' }}
+        run: |
+          npx i18n-ai-translate diff \
+            -b "${{ inputs.json-file-path }}" \
+            -a "${{ inputs.json-file-path }}-latest" \
+            -l "${{ inputs.language }}" \
+            --verbose \
+            --engine "${{ inputs.engine }}" \
+            --model "${{ inputs.model }}" \
+            -p "${{ inputs.templated-string-prefix }}" \
+            -s "${{ inputs.templated-string-suffix }}" \
+            -n "${{ inputs.batch-size }}" \
+            -k ${{ inputs.api-key }}
+      - if: ${{ inputs.host != '' }}
+        run:
+          npx i18n-ai-translate diff \
+            -b "${{ inputs.json-file-path }}" \
+            -a "${{ inputs.json-file-path }}-latest" \
+            -l "${{ inputs.language }}" \
+            --verbose \
+            --engine "${{ inputs.engine }}" \
+            --model "${{ inputs.model }}" \
+            -p "${{ inputs.templated-string-prefix }}" \
+            -s "${{ inputs.templated-string-suffix }}" \
+            -n "${{ inputs.batch-size }}" \
+            -h ${{ inputs.host }}
 
   - name: Setup Git Config
     shell: bash
