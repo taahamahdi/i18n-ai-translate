@@ -12,7 +12,6 @@ import {
     getTranslationDirectoryKey,
 } from "./utils";
 import ChatFactory from "./chat_interface/chat_factory";
-import ISO6391 from "iso-639-1";
 import RateLimiter from "./rate_limiter";
 import fs from "fs";
 import generateTranslation from "./generate";
@@ -508,7 +507,7 @@ export async function translateFileDiff(
             host: options.host,
             inputJSONAfter: inputAfterJSON,
             inputJSONBefore: inputBeforeJSON,
-            inputLanguage: ISO6391.getName(options.inputLanguageCode),
+            inputLanguage: options.inputLanguageCode,
             model: options.model,
             rateLimitMs: options.rateLimitMs,
             skipStylingVerification: options.skipStylingVerification,
@@ -811,7 +810,7 @@ export async function translateDirectoryDiff(
             host: options.host,
             inputJSONAfter,
             inputJSONBefore,
-            inputLanguage: ISO6391.getName(options.inputLanguageCode),
+            inputLanguage: options.inputLanguageCode,
             model: options.model,
             rateLimitMs: options.rateLimitMs,
             skipStylingVerification: options.skipStylingVerification,

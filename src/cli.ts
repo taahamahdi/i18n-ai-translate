@@ -213,9 +213,12 @@ program
                 let i = 0;
                 for (const languageCode of options.outputLanguages) {
                     i++;
-                    console.log(
-                        `Translating ${i}/${options.outputLanguages.length} languages...`,
-                    );
+                    if (options.verbose) {
+                        console.log(
+                            `Translating ${i}/${options.outputLanguages.length} languages...`,
+                        );
+                    }
+
                     const output = options.input.replace(
                         getLanguageCodeFromFilename(options.input),
                         languageCode,
@@ -269,9 +272,12 @@ program
                 let i = 0;
                 for (const languageCode of options.outputLanguages) {
                     i++;
-                    console.log(
-                        `Translating ${i}/${options.outputLanguages.length} languages...`,
-                    );
+                    if (options.verbose) {
+                        console.log(
+                            `Translating ${i}/${options.outputLanguages.length} languages...`,
+                        );
+                    }
+
                     const output = options.input.replace(
                         getLanguageCodeFromFilename(options.input),
                         languageCode,
