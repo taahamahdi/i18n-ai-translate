@@ -44,6 +44,9 @@ inputs:
     description: 'How many keys to process at a time'
     required: false
     default: 32
+  base-ref:
+    description: 'Branch to compare against. Required for triggering from a comment'
+    required: false
 
 runs:
   using: 'composite'
@@ -51,7 +54,6 @@ runs:
     - name: Check out Repo
       uses: actions/checkout@v3
       with:
-        # This references the head of the pull request
         ref: ${{ github.head_ref }}
         fetch-depth: 0
 
@@ -65,48 +67,21 @@ runs:
         npx --yes i18n-ai-translate@latest
       shell: bash
 
-    #
-    # This step determines the base ref we should compare against.
-    # Because environment variables don't persist across steps in composite actions,
-    # we expose the base ref via step outputs.
-    #
-    - name: Determine base ref
-      id: determine-base-ref
-      shell: bash
+    - name: Determine final base ref
       run: |
-        # If this is a pull_request event:
-        if [ "${{ github.event_name }}" = "pull_request" ]; then
-          echo "BASE_REF=${{ github.base_ref }}" >> $GITHUB_OUTPUT
-          exit 0
-        fi
-
-        # If this is an issue_comment event on a pull request:
-        if [ "${{ github.event_name }}" = "issue_comment" ] && [ -n "${{ github.event.issue.pull_request }}" ]; then
-          PULL_NUMBER="${{ github.event.issue.number }}"
-          REPO="${{ github.repository }}"
-          PR_DATA=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/$REPO/pulls/$PULL_NUMBER")
-
-          base=$(echo "$PR_DATA" | jq -r .base.ref)
-          echo "BASE_REF=$base" >> $GITHUB_OUTPUT
-          exit 0
-        fi
-
-        # Fallback if not a known event; set to main or some default:
-        echo "BASE_REF=main" >> $GITHUB_OUTPUT
+        echo "BASE_REF=${{ (github.base_ref != '' && github.base_ref) || inputs.base-ref }}" >> $GITHUB_OUTPUT
+      shell: bash
+      id: determine-base
 
     - name: Fetch original translation
       shell: bash
       run: |
-        # Move the current JSON to a "latest" file
         mv "${{ inputs.json-file-path }}" "${{ inputs.json-file-path }}-latest"
-        # Check out the old version from base ref
-        git checkout origin/${{ steps.determine-base-ref.outputs.BASE_REF }} -- "${{ inputs.json-file-path }}"
+        git checkout origin/${{ steps.determine-base.outputs.BASE_REF }} -- "${{ inputs.json-file-path }}"
 
     - name: Translate the diff
       shell: bash
       run: |
-        # If an API key is provided, use that
         if [ -n "${{ inputs.api-key }}" ]; then
           npx i18n-ai-translate@latest diff \
             -b "${{ inputs.json-file-path }}" \
@@ -119,7 +94,6 @@ runs:
             -s "${{ inputs.templated-string-suffix }}" \
             -n "${{ inputs.batch-size }}" \
             -k "${{ inputs.api-key }}"
-        # If a host is provided (ollama), use that
         elif [ -n "${{ inputs.host }}" ]; then
           npx i18n-ai-translate@latest diff \
             -b "${{ inputs.json-file-path }}" \
@@ -145,7 +119,6 @@ runs:
     - name: Commit the difference
       shell: bash
       run: |
-        # Restore the final file and commit if there are changes
         rm -r "${{ inputs.json-file-path }}"
         mv "${{ inputs.json-file-path }}-latest" "${{ inputs.json-file-path }}"
         git add --all
