@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.33.1",
+    "@anthropic-ai/sdk": "^0.36.2",
     "@google/generative-ai": "^0.21.0",
     "@types/flat": "^5.0.5",
     "@types/node": "^22.1.0",
