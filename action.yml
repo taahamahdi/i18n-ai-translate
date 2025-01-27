@@ -7,7 +7,7 @@ inputs:
     description: 'Path to the source i18n JSON file'
     required: true
   api-key:
-    description: 'The API key for ChatGPT or Gemini'
+    description: 'The API key'
     required: true
 
   author-email:
@@ -23,7 +23,7 @@ inputs:
     required: false
     default: 'English'
   engine:
-    description: 'Engine to use for translation ("chatgpt" or "gemini")'
+    description: 'Engine to use for translation'
     required: false
     default: 'chatgpt'
   model:
@@ -62,15 +62,10 @@ runs:
     run: |
       yarn add i18n-ai-translate
 
-  - name: Copy .env for CI
-    shell: bash
-    run: |
-      echo "OPENAI_API_KEY=${{ inputs.api-key }}" >> .env
-
   - name: Fetch original translation
     shell: bash
     run: |
-      cp -r "${{ inputs.json-file-path }}" "${{ inputs.json-file-path }}-latest"
+      mv "${{ inputs.json-file-path }}" "${{ inputs.json-file-path }}-latest"
       git checkout origin/${{ github.base_ref }} -- "${{ inputs.json-file-path }}"
 
   - name: Translate the diff
@@ -85,7 +80,8 @@ runs:
         --model "${{ inputs.model }}" \
         -p "${{ inputs.templated-string-prefix }}" \
         -s "${{ inputs.templated-string-suffix }}" \
-        -n "${{ inputs.batch-size }}"
+        -n "${{ inputs.batch-size }}" \
+        -k ${{ inputs.api-key }}
 
   - name: Setup Git Config
     shell: bash
