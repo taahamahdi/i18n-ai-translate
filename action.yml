@@ -77,7 +77,6 @@ runs:
     - name: Translate the diff
       shell: bash
       run: |
-        set -e
         if [ -n "${{ inputs.api-key }}" ]; then
           npx --yes i18n-ai-translate@latest diff \
             -b "${{ inputs.json-file-path }}" \
@@ -104,6 +103,11 @@ runs:
             -h "${{ inputs.host }}"
         else
           echo "No API key or host specified; skipping automatic translation."
+        fi
+
+        if [ $? -ne 0 ]; then
+          echo "Translation step failed" >&2
+          exit 1
         fi
 
     - name: Configure Git
