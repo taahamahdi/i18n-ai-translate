@@ -63,20 +63,39 @@ runs:
   - name: Install Dependencies
     shell: bash
     run: |
-      yarn add i18n-ai-translate
+      npx --yes i18n-ai-translate@latest
+
+  unify-base-ref:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set base ref from pull_request context
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          echo "BASE_REF=${{ github.base_ref }}" >> $GITHUB_ENV
+
+      - name: Fetch base ref for PR (issue_comment event)
+        if: ${{ github.event_name == 'issue_comment' && github.event.issue.pull_request }}
+        run: |
+          PULL_NUMBER="${{ github.event.issue.number }}"
+          REPO="${{ github.repository }}"
+          PR_DATA=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/$REPO/pulls/$PULL_NUMBER")
+
+          BASE_REF=$(echo "$PR_DATA" | jq -r .base.ref)
+          echo "BASE_REF=$BASE_REF" >> $GITHUB_ENV
 
   - name: Fetch original translation
     shell: bash
     run: |
       mv "${{ inputs.json-file-path }}" "${{ inputs.json-file-path }}-latest"
-      git checkout origin/${{ github.base_ref }} -- "${{ inputs.json-file-path }}"
+      git checkout origin/${BASE_REF} -- "${{ inputs.json-file-path }}"
 
   - name: Translate the diff
     shell: bash
     steps:
       - if: ${{ inputs.api-key != '' }}
         run: |
-          npx i18n-ai-translate diff \
+          npx i18n-ai-translate@latest diff \
             -b "${{ inputs.json-file-path }}" \
             -a "${{ inputs.json-file-path }}-latest" \
             -l "${{ inputs.language }}" \
@@ -89,7 +108,7 @@ runs:
             -k ${{ inputs.api-key }}
       - if: ${{ inputs.host != '' }}
         run:
-          npx i18n-ai-translate diff \
+          npx i18n-ai-translate@latest diff \
             -b "${{ inputs.json-file-path }}" \
             -a "${{ inputs.json-file-path }}-latest" \
             -l "${{ inputs.language }}" \
@@ -106,11 +125,6 @@ runs:
     run: |
       git config --global user.email "${{ inputs.author-email }}"
       git config --global user.name "${{ inputs.author-name }}"
-
-  - name: Remove dependencies to prevent being merged
-    shell: bash
-    run: |
-      yarn remove i18n-ai-translate
 
   - name: Commit the difference
     shell: bash
