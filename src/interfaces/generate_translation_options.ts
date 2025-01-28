@@ -1,4 +1,5 @@
 import type Chats from "./chats";
+import type OverridePrompt from "./override_prompt";
 
 export default interface GenerateTranslationOptions {
     chats: Chats;
@@ -12,4 +13,5 @@ export default interface GenerateTranslationOptions {
     ensureChangedTranslation: boolean;
     skipTranslationVerification: boolean;
     skipStylingVerification: boolean;
+    overridePrompt?: OverridePrompt;
 }

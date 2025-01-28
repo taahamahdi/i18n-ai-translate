@@ -1,5 +1,6 @@
 import type { ChatParams, Model } from "../types";
 import type Engine from "../enums/engine";
+import type OverridePrompt from "./override_prompt";
 
 export default interface Options {
     engine: Engine;
@@ -15,4 +16,5 @@ export default interface Options {
     batchSize?: number;
     skipTranslationVerification?: boolean;
     skipStylingVerification?: boolean;
+    overridePrompt?: OverridePrompt;
 }

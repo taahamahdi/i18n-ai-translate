@@ -1,15 +1,39 @@
+import type OverridePrompt from "./interfaces/override_prompt";
+
 /**
  * Prompt an AI to convert a given input from one language to another
  * @param inputLanguage - The language of the input
  * @param outputLanguage - The language of the output
  * @param input - The input to be translated
+ * @param overridePrompt - An optional custom prompt
  * @returns A prompt for the AI to translate the input
  */
 export function generationPrompt(
     inputLanguage: string,
     outputLanguage: string,
     input: string,
+    overridePrompt?: OverridePrompt,
 ): string {
+    const customPrompt = overridePrompt?.generationPrompt;
+    const requiredArguments = ["inputLanguage", "outputLanguage", "input"];
+    if (customPrompt) {
+        for (const arg of requiredArguments) {
+            if (!customPrompt.includes(`\${${arg}}`)) {
+                throw new Error(`Missing required argument: \${${arg}}`);
+            }
+        }
+
+        const argumentToValue: { [key: string]: string } = {
+            input,
+            inputLanguage,
+            outputLanguage,
+        };
+
+        return customPrompt.replace(/\$\{([^}]+)\}/g, (match, key) =>
+            key in argumentToValue ? argumentToValue[key] : match,
+        );
+    }
+
     return `You are a professional translator.
 
 Translate each line from ${inputLanguage} to ${outputLanguage}.
@@ -62,6 +86,7 @@ ${input}
  * @param outputLanguage - The language of the output
  * @param input - The input to be translated
  * @param output - The output of the translation
+ * @param overridePrompt - An optional custom prompt
  * @returns A prompt for the AI to verify the translation
  */
 export function translationVerificationPrompt(
@@ -69,12 +94,33 @@ export function translationVerificationPrompt(
     outputLanguage: string,
     input: string,
     output: string,
+    overridePrompt?: OverridePrompt,
 ): string {
     const splitInput = input.split("\n");
     const splitOutput = output.split("\n");
     const mergedCsv = splitInput
         .map((x, i) => `${x},${splitOutput[i]}`)
         .join("\n");
+
+    const customPrompt = overridePrompt?.translationVerificationPrompt;
+    const requiredArguments = ["inputLanguage", "outputLanguage", "mergedCsv"];
+    if (customPrompt) {
+        for (const arg of requiredArguments) {
+            if (!customPrompt.includes(`\${${arg}}`)) {
+                throw new Error(`Missing required argument: \${${arg}}`);
+            }
+        }
+
+        const argumentToValue: { [key: string]: string } = {
+            inputLanguage,
+            mergedCsv,
+            outputLanguage,
+        };
+
+        return customPrompt.replace(/\$\{([^}]+)\}/g, (match, key) =>
+            key in argumentToValue ? argumentToValue[key] : match,
+        );
+    }
 
     return `
 Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated.
@@ -96,6 +142,7 @@ ${mergedCsv}
  * @param outputLanguage - The language of the output
  * @param input - The input to be translated
  * @param output - The output of the translation
+ * @param overridePrompt - An optional custom prompt
  * @returns A prompt for the AI to verify the translation
  */
 export function stylingVerificationPrompt(
@@ -103,12 +150,33 @@ export function stylingVerificationPrompt(
     outputLanguage: string,
     input: string,
     output: string,
+    overridePrompt?: OverridePrompt,
 ): string {
     const splitInput = input.split("\n");
     const splitOutput = output.split("\n");
     const mergedCsv = splitInput
         .map((x, i) => `${x},${splitOutput[i]}`)
         .join("\n");
+
+    const customPrompt = overridePrompt?.stylingVerificationPrompt;
+    const requiredArguments = ["inputLanguage", "outputLanguage", "mergedCsv"];
+    if (customPrompt) {
+        for (const arg of requiredArguments) {
+            if (!customPrompt.includes(`\${${arg}}`)) {
+                throw new Error(`Missing required argument: \${${arg}}`);
+            }
+        }
+
+        const argumentToValue: { [key: string]: string } = {
+            inputLanguage,
+            mergedCsv,
+            outputLanguage,
+        };
+
+        return customPrompt.replace(/\$\{([^}]+)\}/g, (match, key) =>
+            key in argumentToValue ? argumentToValue[key] : match,
+        );
+    }
 
     return `
 Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original.

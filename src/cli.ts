@@ -6,6 +6,7 @@ import {
     DEFAULT_TEMPLATED_STRING_SUFFIX,
     VERSION,
 } from "./constants";
+import { OVERRIDE_PROMPT_KEYS } from "./interfaces/override_prompt";
 import { config } from "dotenv";
 import { getAllLanguageCodes, getLanguageCodeFromFilename } from "./utils";
 import { program } from "commander";
@@ -19,6 +20,7 @@ import Engine from "./enums/engine";
 import fs from "fs";
 import path from "path";
 import type { ChatParams, Model, ModelArgs } from "./types";
+import type OverridePrompt from "./interfaces/override_prompt";
 
 config({ path: path.resolve(process.cwd(), ".env") });
 
@@ -110,6 +112,50 @@ const processModelArgs = (options: any): ModelArgs => {
     };
 };
 
+const processOverridePromptFile = (
+    overridePromptFilePath: string,
+): OverridePrompt => {
+    const filePath = path.resolve(process.cwd(), overridePromptFilePath);
+    if (!fs.existsSync(filePath)) {
+        throw new Error(
+            `The override prompt file does not exist at ${filePath}`,
+        );
+    }
+
+    let overridePrompt: OverridePrompt;
+    try {
+        overridePrompt = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    } catch (err) {
+        throw new Error(
+            `Failed to read the override prompt file. err = ${err}`,
+        );
+    }
+
+    if (Object.keys(overridePrompt).length === 0) {
+        throw new Error(
+            `Received an empty object for the override prompt file. Valid keys are: ${OVERRIDE_PROMPT_KEYS.join(", ")}`,
+        );
+    }
+
+    for (const key of Object.keys(overridePrompt) as (keyof OverridePrompt)[]) {
+        if (!OVERRIDE_PROMPT_KEYS.includes(key)) {
+            throw new Error(
+                `Received an unexpected key ${key} in the override prompt file. Valid keys are: ${OVERRIDE_PROMPT_KEYS.join(", ")}`,
+            );
+        }
+    }
+
+    for (const value of Object.values(overridePrompt)) {
+        if (typeof value !== "string") {
+            throw new Error(
+                `Expected a string as a key for every entry in the override prompt file. Received: ${typeof value}`,
+            );
+        }
+    }
+
+    return overridePrompt;
+};
+
 program
     .name("i18n-ai-translate")
     .description(
@@ -167,10 +213,20 @@ program
         CLI_HELP.SkipStylingVerification,
         false,
     )
+    .option(
+        "--override-prompt <path to JSON file>",
+        CLI_HELP.OverridePromptFile,
+    )
     .option("--verbose", CLI_HELP.Verbose, false)
     .action(async (options: any) => {
         const { model, chatParams, rateLimitMs, apiKey, host } =
             processModelArgs(options);
+
+        let overridePrompt: OverridePrompt | undefined;
+
+        if (options.overridePrompt) {
+            overridePrompt = processOverridePromptFile(options.overridePrompt);
+        }
 
         if (options.outputLanguages) {
             if (options.forceLanguageName) {
@@ -251,6 +307,7 @@ program
                             inputFilePath: inputPath,
                             model,
                             outputFilePath: outputPath,
+                            overridePrompt,
                             rateLimitMs,
                             skipStylingVerification:
                                 options.skipStylingVerification,
@@ -301,6 +358,7 @@ program
                             inputLanguage: path.basename(inputPath),
                             model,
                             outputLanguage: languageCode,
+                            overridePrompt,
                             rateLimitMs,
                             skipStylingVerification:
                                 options.skipStylingVerification,
@@ -362,6 +420,7 @@ program
                         inputFilePath: options.input,
                         model,
                         outputFilePath: output,
+                        overridePrompt,
                         rateLimitMs,
                         skipStylingVerification:
                             options.skipStylingVerification,
@@ -429,10 +488,20 @@ program
         CLI_HELP.SkipStylingVerification,
         false,
     )
+    .option(
+        "--override-prompt <path to JSON file>",
+        CLI_HELP.OverridePromptFile,
+    )
     .option("--verbose", CLI_HELP.Verbose, false)
     .action(async (options: any) => {
         const { model, chatParams, rateLimitMs, apiKey, host } =
             processModelArgs(options);
+
+        let overridePrompt: OverridePrompt | undefined;
+
+        if (options.overridePrompt) {
+            overridePrompt = processOverridePromptFile(options.overridePrompt);
+        }
 
         const jsonFolder = path.resolve(process.cwd(), "jsons");
         let beforeInputPath: string;
@@ -485,6 +554,7 @@ program
                 inputBeforeFileOrPath: beforeInputPath,
                 inputLanguageCode: options.inputLanguage,
                 model,
+                overridePrompt,
                 rateLimitMs,
                 skipStylingVerification: options.skipStylingVerification,
                 skipTranslationVerification:
@@ -506,6 +576,7 @@ program
                 inputFolderNameBefore: beforeInputPath,
                 inputLanguageCode: options.inputLanguage,
                 model,
+                overridePrompt,
                 rateLimitMs,
                 skipStylingVerification: options.skipStylingVerification,
                 skipTranslationVerification:
