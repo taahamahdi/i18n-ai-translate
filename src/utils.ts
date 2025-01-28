@@ -110,7 +110,7 @@ export function getTranslationDirectoryKey(
  * @returns whether the response includes NAK
  */
 export function isNAK(response: string): boolean {
-    return response.includes("NAK");
+    return response.includes("NAK") && !response.includes("ACK");
 }
 
 /**

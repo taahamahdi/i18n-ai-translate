@@ -136,7 +136,7 @@ Options:
   -m, --model <model>                         Model to use (e.g. gpt-4o, gemini-2.0-flash-exp, llama3.3, claude-3-5-sonnet-latest)
   -r, --rate-limit-ms <rateLimitMs>           How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT, 1200ms
                                               for Claude)
-  -f, --force-language-name <language name>   Force language name
+  -f, --force-language-name <language name>   Force output language name
   -A, --all-languages                         Translate to all supported languages
   -p, --templated-string-prefix <prefix>      Prefix for templated strings (default: "{{")
   -s, --templated-string-suffix <suffix>      Suffix for templated strings (default: "}}")
@@ -146,6 +146,8 @@ Options:
   -n, --batch-size <batchSize>                How many keys to process at a time (default: "32")
   --skip-translation-verification             Skip validating the resulting translation through another query (default: false)
   --skip-styling-verification                 Skip validating the resulting translation's formatting through another query (default: false)
+  --override-prompt <path to JSON file>       Use the prompts from the given JSON file, containing keys for at least one of generationPrompt,
+                                              translationVerificationPrompt, stylingVerificationPrompt
   --verbose                                   Print logs about progress (default: false)
   --help                                      display help for command
 ```
@@ -169,6 +171,8 @@ Options:
   -n, --batch-size <batchSize>              How many keys to process at a time (default: "32")
   --skip-translation-verification           Skip validating the resulting translation through another query (default: false)
   --skip-styling-verification               Skip validating the resulting translation's formatting through another query (default: false)
+  --override-prompt <path to JSON file>     Use the prompts from the given JSON file, containing keys for at least one of generationPrompt,
+                                            translationVerificationPrompt, stylingVerificationPrompt
   --verbose                                 Print logs about progress (default: false)
   --help                                    display help for command
 ```
@@ -214,6 +218,7 @@ const translation = await translate({
     batchSize, // How many keys to process at a time
     skipTranslationVerification, // Whether to skip an additional query to see whether the resultant translation makes sense
     skipStylingVerification, // Whether to skip an additional query to see whether the text formatting remained consistent
+    overridePrompt, // Set custom prompts for generation or verification
 });
 
 const translations = await translateDiff({
@@ -235,6 +240,7 @@ const translations = await translateDiff({
     batchSize, // How many keys to process at a time
     skipTranslationVerification, // Whether to skip an additional query to see whether the resultant translation makes sense
     skipStylingVerification, // Whether to skip an additional query to see whether the text formatting remained consistent
+    overridePrompt, // Set custom prompts for generation or verification
 });
 ```
 

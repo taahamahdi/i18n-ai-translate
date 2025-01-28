@@ -30,6 +30,7 @@ export default async function generateTranslation(
         inputLanguage,
         outputLanguage,
         input,
+        options.overridePrompt,
     );
 
     const templatedStringRegex = new RegExp(
@@ -263,6 +264,7 @@ async function generate(
             outputLanguage,
             input,
             text,
+            options.overridePrompt,
         );
     }
 
@@ -279,6 +281,7 @@ async function generate(
             outputLanguage,
             input,
             text,
+            options.overridePrompt,
         );
     }
 

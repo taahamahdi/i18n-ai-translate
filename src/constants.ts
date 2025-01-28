@@ -1,3 +1,4 @@
+import { OverridePromptKeys } from "./interfaces/override_prompt";
 import Engine from "./enums/engine";
 
 export const DEFAULT_BATCH_SIZE = 32;
@@ -20,6 +21,7 @@ export const CLI_HELP = {
     Model: `Model to use (e.g. ${Object.values(DEFAULT_MODEL).join(", ")})`,
     OllamaHost:
         "The host and port number serving Ollama. 11434 is the default port number.",
+    OverridePromptFile: `Use the prompts from the given JSON file, containing keys for at least one of ${OverridePromptKeys.join(", ")}`,
     RateLimit:
         "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT, 1200ms for Claude)",
     SkipStylingVerification:

@@ -4,6 +4,7 @@ import {
     translationVerificationPrompt,
 } from "./prompts";
 import type ChatInterface from "./chat_interface/chat_interface";
+import type OverridePrompt from "./interfaces/override_prompt";
 
 /**
  * Confirm whether a given translation is valid
@@ -12,6 +13,7 @@ import type ChatInterface from "./chat_interface/chat_interface";
  * @param outputLanguage - the language of the output
  * @param input - the input text
  * @param outputToVerify - the output text to verify
+ * @param overridePrompt - An optional custom prompt
  */
 export async function verifyTranslation(
     chat: ChatInterface,
@@ -19,12 +21,14 @@ export async function verifyTranslation(
     outputLanguage: string,
     input: string,
     outputToVerify: string,
+    overridePrompt?: OverridePrompt,
 ): Promise<string> {
     const translationVerificationPromptText = translationVerificationPrompt(
         inputLanguage,
         outputLanguage,
         input,
         outputToVerify,
+        overridePrompt,
     );
 
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
@@ -38,6 +42,7 @@ export async function verifyTranslation(
  * @param outputLanguage - the language of the output
  * @param input - the input text
  * @param outputToVerify - the output text to verify
+ * @param overridePrompt - An optional custom prompt
  */
 export async function verifyStyling(
     chat: ChatInterface,
@@ -45,12 +50,14 @@ export async function verifyStyling(
     outputLanguage: string,
     input: string,
     outputToVerify: string,
+    overridePrompt?: OverridePrompt,
 ): Promise<string> {
     const stylingVerificationPromptText = stylingVerificationPrompt(
         inputLanguage,
         outputLanguage,
         input,
         outputToVerify,
+        overridePrompt,
     );
 
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
