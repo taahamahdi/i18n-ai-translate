@@ -6,7 +6,7 @@ import {
     DEFAULT_TEMPLATED_STRING_SUFFIX,
     VERSION,
 } from "./constants";
-import { OverridePromptKeys } from "./interfaces/override_prompt";
+import { OVERRIDE_PROMPT_KEYS } from "./interfaces/override_prompt";
 import { config } from "dotenv";
 import { getAllLanguageCodes, getLanguageCodeFromFilename } from "./utils";
 import { program } from "commander";
@@ -133,14 +133,14 @@ const processOverridePromptFile = (
 
     if (Object.keys(overridePrompt).length === 0) {
         throw new Error(
-            `Received an empty object for the override prompt file. Valid keys are: ${OverridePromptKeys.join(", ")}`,
+            `Received an empty object for the override prompt file. Valid keys are: ${OVERRIDE_PROMPT_KEYS.join(", ")}`,
         );
     }
 
-    for (const key of Object.keys(overridePrompt)) {
-        if (!OverridePromptKeys.includes(key)) {
+    for (const key of Object.keys(overridePrompt) as (keyof OverridePrompt)[]) {
+        if (!OVERRIDE_PROMPT_KEYS.includes(key)) {
             throw new Error(
-                `Received an unexpected key ${key} in the override prompt file. Valid keys are: ${OverridePromptKeys.join(", ")}`,
+                `Received an unexpected key ${key} in the override prompt file. Valid keys are: ${OVERRIDE_PROMPT_KEYS.join(", ")}`,
             );
         }
     }
