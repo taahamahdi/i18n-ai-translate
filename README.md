@@ -14,7 +14,18 @@ History is retained between calls to ensure consistency when translating the ent
 
 https://github.com/user-attachments/assets/4909bf01-3e7a-464a-9c6e-2d1b82cc47d0
 
-
+- [Usage](#usage)
+  - [Quick-start](#quick-start)
+    - [GitHub Actions](#github-actions)
+    - [Running directly](#running-directly)
+    - [Running as a script in your own project](#running-as-a-script-in-your-own-project)
+  - [Script](#script)
+    - [Example usage](#example-usage)
+    - [As a library](#as-a-library)
+- [Translation prompt](#translation-prompt)
+- [Translation verification prompt](#translation-verification-prompt)
+- [Styling verification prompt](#styling-verification-prompt)
+- [Prompt overriding](#prompt-overriding)
 
 # Usage
 ## Quick-start
@@ -284,3 +295,6 @@ Otherwise, reply with ACK.
 
 Only reply with ACK/NAK.
 ```
+
+## Prompt overriding
+Replace the aforementioned prompts with your own by creating a JSON file containing keys of at least one of `generationPrompt`, `translationVerificationPrompt`, or `stylingVerificationPrompt`. Then, pass it as an argument with `--override-prompt <path to file>`. Be sure to include templated arguments like `${inputLanguage}` as part of the prompt.
