@@ -3,9 +3,9 @@
 
 
 "@anthropic-ai/sdk@^0.36.2":
-  version "0.36.2"
-  resolved "https://registry.yarnpkg.com/@anthropic-ai/sdk/-/sdk-0.36.2.tgz#5c99fbd433883990da79066e10bc471f7cf2c85b"
-  integrity sha512-+/DcVCGoPtUBOPO+1w+7YPdw9Xzt2M5GW6LpSxeGwDfdUSoJbyezGJvGEtdYjV/XXyGx5pf852S4+PG+3MUEsA==
+  version "0.36.3"
+  resolved "https://registry.yarnpkg.com/@anthropic-ai/sdk/-/sdk-0.36.3.tgz#0ca754f047e2847c8b1d064550f05e9a8e7e16b3"
+  integrity sha512-+c0mMLxL/17yFZ4P5+U6bTWiCSFZUKJddrv01ud2aFBWnTPLdRncYV76D3q1tqfnL7aCnhRtykFnoCFzvr4U3Q==
   dependencies:
     "@types/node" "^18.11.18"
     "@types/node-fetch" "^2.6.4"
