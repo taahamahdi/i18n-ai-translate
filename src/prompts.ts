@@ -1,4 +1,5 @@
 import type OverridePrompt from "./interfaces/override_prompt";
+import { CheckTranslateItem, RetranslateItem, TranslateItem } from "./types";
 
 /**
  * Prompt an AI to convert a given input from one language to another
@@ -11,11 +12,13 @@ import type OverridePrompt from "./interfaces/override_prompt";
 export function generationPrompt(
     inputLanguage: string,
     outputLanguage: string,
-    input: string,
+    translateItems: TranslateItem[],
     overridePrompt?: OverridePrompt,
 ): string {
     const customPrompt = overridePrompt?.generationPrompt;
     const requiredArguments = ["inputLanguage", "outputLanguage", "input"];
+    const input = JSON.stringify(translateItems);
+
     if (customPrompt) {
         for (const arg of requiredArguments) {
             if (!customPrompt.includes(`\${${arg}}`)) {
@@ -36,15 +39,30 @@ export function generationPrompt(
 
     return `You are a professional translator.
 
-Translate each line from ${inputLanguage} to ${outputLanguage}.
+You are given a JSON file containing an array of items to translate.
 
-Return translations in the same text formatting.
+- Do not change or translate the names of the fields. They must stay exactly as they are: key, originalText, translatedText, and context. Changing any of these field names will result in a failed translation.
+- The value of the field 'key' must remain unchanged. It is used to identify which entity has been translated. Modifying it will cause the translation to fail.
+- 'originalText' is the text that needs to be translated, do not translate this field it is not needed, but if it is, will NOT result in failure.
+- 'translatedText' is the field where you will enter the translation of the 'originalText'.
+- 'context' provides additional context for the 'originalText'. If this field is empty, you do not need any additional context. Do not translate this field it is not needed, but if it is, will NOT result in failure.
+- The outputted json must be valid json, if it isn't the translation to fail.
 
-Maintain case sensitivity and whitespacing.
+Special Instructions:
 
-Output only the translations.
+-Some translations may contain variables in the text, such as {{timeLeft}}. These variables should not be translated or altered in any way. They must remain exactly as they are in the 'originalText'.
+-If the 'originalText' does not contain variables, such as {{timeLeft}, ignore these special instructions.
 
-All lines should start and end with an ASCII quotation mark (").
+Translate from ${inputLanguage} to ${outputLanguage}.
+
+-Maintain the same text formatting for the translation; failure to do so will result in an error.
+-Ensure case sensitivity and whitespace are preserved exactly as they are in the original text. Modifying these will cause the translation to fail.
+
+Return only the original JSON array with your translations in the translatedText field
+VERY IMPORTANT: Wrap it in the original triple backticks, if the json is not wrapped correctly for the backticks the translation will fail. 
+Do not output anything else, no need for a message before/ after, do not modify any other fields of the JSON object, no notes or anything else.
+
+If the translation fails you will be punished, if it succeeds you will be rewarded.
 
 \`\`\`
 ${input}
@@ -62,17 +80,34 @@ ${input}
 export function failedTranslationPrompt(
     inputLanguage: string,
     outputLanguage: string,
-    input: string,
+    retranslateInput: RetranslateItem[],
 ): string {
+    const input = JSON.stringify(retranslateInput);
     return `You are a professional translator.
 
-The following translation from ${inputLanguage} to ${outputLanguage} failed.
+You are given a JSON file containing an array of items to fix.
 
-Attempt to translate it to ${outputLanguage} by considering it as a concatenation of ${inputLanguage} words, or re-interpreting it such that it makes sense in ${outputLanguage}.
+- Do not change or translate the names of the fields. They must stay exactly as they are: 'key', 'originalText', 'newTranslatedText', 'context', 'invalidTranslatedText' and 'invalidReason'. Changing any of these field names will result in a failed verification.
+- The value of the field 'key' must remain unchanged. It is used to identify which entity has been verified. Modifying it will cause the verification to fail.
+- 'newTranslatedText' is the field where you will enter the translation of the 'originalText', take into acount the 'invalidTranslatedText' and 'invalidReason' when translating
+- 'originalText' is the source of the translated text, 'invalidTranslatedText'. Do not change these two fields, it is not needed, but if it is, will NOT result in failure.
+- 'context' provides additional context for the 'originalText'. If this field is empty, you do not need any additional context. Do not translate this field it is not needed, but if it is, will NOT result in failure.
+- Very important! The outputted json must be valid json, if it isn't the translation to fail.
 
-Return only the translation with no additional formatting, apart from returning it in quotes.
+Special Instructions:
 
-Maintain case sensitivity and whitespacing.
+-Some translations may contain variables in the text, such as {{timeLeft}}. These variables should not be translated or altered in any way. They must remain exactly as they are in the 'originalText'.
+-If the 'originalText' does not contain variables, such as {{timeLeft}, ignore these special instructions.
+
+Translate from ${inputLanguage} to ${outputLanguage}.
+
+-Maintain the same text formatting for the translation; failure to do so will result in an error.
+-Ensure case sensitivity and whitespace are preserved exactly as they are in the original text. Modifying these will cause the translation to fail.
+
+VERY IMPORTANT: Wrap it in the original triple backticks, if the json is not wrapped correctly with backticks, the verification will fail. 
+Do not output anything else, no need for a message before/ after, do not modify any other fields of the JSON object, no notes or anything else.
+Do not output scripts or try to automate this task, I am asking you to translate these on your own.
+If the verification fails you will be punished, if it succeeds you will be rewarded.
 
 \`\`\`
 ${input}
@@ -92,16 +127,10 @@ ${input}
 export function translationVerificationPrompt(
     inputLanguage: string,
     outputLanguage: string,
-    input: string,
-    output: string,
+    verificationInput: CheckTranslateItem[],
     overridePrompt?: OverridePrompt,
 ): string {
-    const splitInput = input.split("\n");
-    const splitOutput = output.split("\n");
-    const mergedCsv = splitInput
-        .map((x, i) => `${x},${splitOutput[i]}`)
-        .join("\n");
-
+    const input = JSON.stringify(verificationInput);
     const customPrompt = overridePrompt?.translationVerificationPrompt;
     const requiredArguments = ["inputLanguage", "outputLanguage", "mergedCsv"];
     if (customPrompt) {
@@ -113,7 +142,6 @@ export function translationVerificationPrompt(
 
         const argumentToValue: { [key: string]: string } = {
             inputLanguage,
-            mergedCsv,
             outputLanguage,
         };
 
@@ -122,16 +150,32 @@ export function translationVerificationPrompt(
         );
     }
 
-    return `
-Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated.
+    return `You are a professional translator.
 
-Otherwise, reply with ACK.
+You are given a JSON file containing an array of items to verify.
 
-Only reply with ACK/NAK.
+- Do not change or translate the names of the fields. They must stay exactly as they are: 'key', 'originalText', 'translatedText', 'context', 'invalid' and 'invalidReason'. Changing any of these field names will result in a failed verification.
+- The value of the field 'key' must remain unchanged. It is used to identify which entity has been verified. Modifying it will cause the verification to fail.
+- 'originalText' is the source of the translated text, 'translatedText'. Do not change these two fields, it is not needed, but if it is, will NOT result in failure.
+- 'context' provides additional context for the 'originalText'. If this field is empty, you do not need any additional context. Do not translate this field it is not needed, but if it is, will NOT result in failure.
+- Very important! The outputted json must be valid json, if it isn't the translation to fail.
+
+Special Instructions:
+
+-Some translations may contain variables in the text, such as {{timeLeft}}. These variables should not be translated or altered in any way. They must remain exactly as they are in the 'originalText'.
+-If the 'originalText' does not contain variables, such as {{timeLeft}, ignore these special instructions.
+
+Verify the translation from ${inputLanguage} to ${outputLanguage}.
+
+Compare the value of each 'originalText' to the value of 'translatedText' and return only the original JSON array with the field 'invalid' set either to the boolean value true or false (not as a string, as a boolean). 
+If invalid is true, also add a very small comment in 'invalidReason' to explain why it is invalid, otherwise leave this field empty.
+VERY IMPORTANT: Wrap it in the original triple backticks, if the json is not wrapped correctly with backticks, the verification will fail. 
+Do not output anything else, no need for a message before/ after, do not modify any other fields of the JSON object, no notes or anything else.
+Do not output scripts or try to automate this task, I am asking you to verify these translations on your own.
+If the verification fails you will be punished, if it succeeds you will be rewarded.
 
 \`\`\`
-${inputLanguage},${outputLanguage}
-${mergedCsv}
+${input}
 \`\`\`
 `;
 }

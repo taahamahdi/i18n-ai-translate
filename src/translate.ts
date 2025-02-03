@@ -4,6 +4,7 @@ import {
     DEFAULT_TEMPLATED_STRING_SUFFIX,
     FLATTEN_DELIMITER,
 } from "./constants";
+import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
 import {
@@ -16,6 +17,8 @@ import RateLimiter from "./rate_limiter";
 import fs from "fs";
 import generateTranslation from "./generate";
 import path, { dirname } from "path";
+import xml2js from "xml2js";
+import type { TranslateItem } from "./types";
 import type Chats from "./interfaces/chats";
 import type TranslateDiffOptions from "./interfaces/translate_diff_options";
 import type TranslateDirectoryDiffOptions from "./interfaces/translate_directory_diff_options";
@@ -72,11 +75,13 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     const templatedStringSuffix =
         options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
 
-    let flatInput = flatten(options.inputJSON, {
+    const flatInput = flatten(options.inputJSON, {
         delimiter: FLATTEN_DELIMITER,
     }) as {
         [key: string]: string;
     };
+
+    const translateItemArray: TranslateItem[] = [];
 
     for (const key in flatInput) {
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
@@ -84,45 +89,45 @@ export async function translate(options: TranslateOptions): Promise<Object> {
                 "\n",
                 `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
             );
+
+            translateItemArray.push(createJsonInput(key, flatInput[key]));
         }
     }
 
-    const groups: Array<{ [key: string]: string }> = [];
-    for (const key in flatInput) {
-        if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
-            const val = flatInput[key];
+    // const groups: Array<{ [key: string]: string }> = [];
+    // for (const key in flatInput) {
+    //     if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
+    //         const val = flatInput[key];
 
-            const existingGroup = groups.find((group) =>
-                Object.values(group).some((entry) => {
-                    const distPercent =
-                        distance(val, entry) /
-                        Math.max(val.length, entry.length);
+    //         const existingGroup = groups.find((group) =>
+    //             Object.values(group).some((entry) => {
+    //                 const distPercent =
+    //                     distance(val, entry) /
+    //                     Math.max(val.length, entry.length);
 
-                    return distPercent < 0.3;
-                }),
-            );
+    //                 return distPercent < 0.3;
+    //             }),
+    //         );
 
-            if (existingGroup) {
-                existingGroup[key] = val;
-            } else {
-                groups.push({ [key]: val });
-            }
-        }
-    }
+    //         if (existingGroup) {
+    //             existingGroup[key] = val;
+    //         } else {
+    //             groups.push({ [key]: val });
+    //         }
+    //     }
+    // }
 
-    for (let i = groups.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [groups[i], groups[j]] = [groups[j], groups[i]];
-    }
+    // for (let i = groups.length - 1; i > 0; i--) {
+    //     const j = Math.floor(Math.random() * (i + 1));
+    //     [groups[i], groups[j]] = [groups[j], groups[i]];
+    // }
 
-    flatInput = {};
-    for (const groupObj of groups) {
-        for (const [k, v] of Object.entries(groupObj)) {
-            flatInput[k] = v;
-        }
-    }
-
-    const allKeys = Object.keys(flatInput);
+    // flatInput = {};
+    // for (const groupObj of groups) {
+    //     for (const [k, v] of Object.entries(groupObj)) {
+    //         flatInput[k] = v;
+    //     }
+    // }
 
     const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
     const batchStartTime = Date.now();
@@ -143,40 +148,30 @@ export async function translate(options: TranslateOptions): Promise<Object> {
             );
         }
 
-        const keys = allKeys.slice(i, i + batchSize);
-        const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
+        const batchTranslateItemArray = translateItemArray.slice(
+            i,
+            i + batchSize,
+        );
 
         // eslint-disable-next-line no-await-in-loop
         const generatedTranslation = await generateTranslation({
             chats,
             ensureChangedTranslation: options.ensureChangedTranslation ?? false,
-            input,
+            translateItems: batchTranslateItemArray,
             inputLanguage: `[${options.inputLanguage}]`,
-            keys,
             outputLanguage: `[${options.outputLanguage}]`,
             overridePrompt: options.overridePrompt,
             skipStylingVerification: options.skipStylingVerification ?? false,
             skipTranslationVerification:
                 options.skipTranslationVerification ?? false,
-            templatedStringPrefix,
-            templatedStringSuffix,
             verboseLogging: options.verbose ?? false,
         });
 
-        if (generatedTranslation === "") {
+        if (!generatedTranslation) {
             console.error(
                 `Failed to generate translation for ${options.outputLanguage}`,
             );
             break;
-        }
-
-        for (let j = 0; j < keys.length; j++) {
-            output[keys[j]] = generatedTranslation.split("\n")[j].slice(1, -1);
-
-            if (options.verbose)
-                console.log(
-                    `${keys[j].replaceAll("*", ".")}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
-                );
         }
     }
 
@@ -206,6 +201,15 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     }
 
     return unflattenedOutput as Object;
+}
+
+function createJsonInput(key: string, originalText: string): TranslateItem {
+    return {
+        context: "",
+        key: key,
+        originalText: originalText,
+        translatedText: "",
+    } as TranslateItem;
 }
 
 /**
@@ -360,6 +364,42 @@ export async function translateDiff(
 export async function translateFile(
     options: TranslateFileOptions,
 ): Promise<void> {
+    //
+    // const inputFile = fs.readFileSync(options.inputFilePath, "utf-8");
+
+    // // Parse the XML data
+    // const parser = new xml2js.Parser({
+    //     explicitArray: false,
+    //     mergeAttrs: true,
+    // });
+    // parser.parseString(inputFile, (err, result) => {
+    //     if (err) {
+    //         console.error("Error parsing XML:", err);
+    //         return;
+    //     }
+
+    //     // Do something with the parsed result
+    //     // console.log(JSON.stringify(result, null, 2)); // Log the parsed JSON
+    //     var builder = new xml2js.Builder();
+    //     var xml = builder.buildObject(result);
+    //     console.log(xml);
+    // });
+
+    // const parser = new XMLParser();
+    // const jsonObj = parser.parse(inputFile);
+
+    // // Convert back to XML
+    // const builder = new XMLBuilder();
+    // const xml = builder.build(jsonObj);
+    // console.log(xml); // Converted back to XML
+
+    // const xmljs = require("xml-js");
+    // const result = xmljs.xml2js(inputFile, { compact: true });
+
+    // // Convert back to XML
+    // const xml = xmljs.js2xml(result, { compact: true, spaces: 4 });
+    // console.log(xml); // Converted back to XML
+
     let inputJSON = {};
     try {
         const inputFile = fs.readFileSync(options.inputFilePath, "utf-8");

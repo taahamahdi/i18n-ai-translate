@@ -23,3 +23,33 @@ export type ModelArgs = {
     apiKey: string | undefined;
     host: string | undefined;
 };
+
+export type TranslateItem = {
+    key: string;
+    originalText: string;
+    translatedText: string;
+    context: string;
+};
+
+export type CheckTranslateItem = {
+    key: string;
+    originalText: string;
+    translatedText: string;
+    context: string;
+    invalid: boolean | null;
+    invalidReason: string;
+};
+
+export type RetranslateItem = {
+    key: string;
+    originalText: string;
+    newTranslatedText: string;
+    context: string;
+    invalidTranslatedText: string;
+    invalidReason: string;
+};
+
+export type TranslateItemResult = {
+    key: string;
+    translatedText: string;
+};

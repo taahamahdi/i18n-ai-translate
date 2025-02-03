@@ -1,10 +1,11 @@
-import { isACK, isNAK, retryJob } from "./utils";
+import { retryJob } from "./utils";
 import {
     stylingVerificationPrompt,
     translationVerificationPrompt,
 } from "./prompts";
 import type ChatInterface from "./chat_interface/chat_interface";
 import type OverridePrompt from "./interfaces/override_prompt";
+import { CheckTranslateItem } from "./types";
 
 /**
  * Confirm whether a given translation is valid
@@ -19,15 +20,13 @@ export async function verifyTranslation(
     chat: ChatInterface,
     inputLanguage: string,
     outputLanguage: string,
-    input: string,
-    outputToVerify: string,
+    verificationInput: CheckTranslateItem[],
     overridePrompt?: OverridePrompt,
 ): Promise<string> {
     const translationVerificationPromptText = translationVerificationPrompt(
         inputLanguage,
         outputLanguage,
-        input,
-        outputToVerify,
+        verificationInput,
         overridePrompt,
     );
 
@@ -77,12 +76,6 @@ const verify = async (
                 if (text === "") {
                     return Promise.reject(
                         new Error("Failed to generate content"),
-                    );
-                }
-
-                if (!isNAK(text) && !isACK(text)) {
-                    return Promise.reject(
-                        new Error(`Invalid response: ${text}`),
                     );
                 }
 

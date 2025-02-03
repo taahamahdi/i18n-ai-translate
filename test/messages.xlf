@@ -1,0 +1,1374 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en-US" datatype="plaintext" original="ng2.template">
+    <body>
+      <trans-unit id="7363800555484417301" datatype="html">
+        <source>Copyright © <x id="INTERPOLATION" equiv-text="{{ date }}"/>test</source>
+        <target>Response</target>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/app-footer/app-footer.component.html</context>
+          <context context-type="linenumber">5,6</context>
+        </context-group>
+        <note priority="1" from="description">copyright text</note>
+        <note priority="1" from="meaning">app-footer</note>
+      </trans-unit>
+      <trans-unit id="2647271228667533519" datatype="html">
+        <source>COPYRIGHT <x id="INTERPOLATION" equiv-text="{{ common.Owner }}"/></source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/ballistics-chart/ballistics-chart.component.html</context>
+          <context context-type="linenumber">10,11</context>
+        </context-group>
+        <note priority="1" from="description">Copyright text</note>
+        <note priority="1" from="meaning">dope-chart</note>
+      </trans-unit>
+      <trans-unit id="5962774517775901908" datatype="html">
+        <source>Apex</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/ballistics-chart/flight-data/flight-data.component.html</context>
+          <context context-type="linenumber">8,9</context>
+        </context-group>
+        <note priority="1" from="description">apex distance</note>
+        <note priority="1" from="meaning">dope-chart-flight-data</note>
+      </trans-unit>
+      <trans-unit id="8542733625775482228" datatype="html">
+        <source>TOF</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/ballistics-chart/flight-data/flight-data.component.html</context>
+          <context context-type="linenumber">14,15</context>
+        </context-group>
+        <note priority="1" from="description">Apex time of flight acronym</note>
+        <note priority="1" from="meaning">dope-chart-flight-data</note>
+      </trans-unit>
+      <trans-unit id="6438769321131639911" datatype="html">
+        <source>Mobile Target</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/ballistics-chart/mobile-target-data/mobile-target-data.component.html</context>
+          <context context-type="linenumber">7,8</context>
+        </context-group>
+        <note priority="1" from="description">Mobile target</note>
+        <note priority="1" from="meaning">dope-chart-extra-data</note>
+      </trans-unit>
+      <trans-unit id="pressureSymbol" datatype="html">
+        <source>P</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/ballistics-chart/pressure-data/pressure-data.component.html</context>
+          <context context-type="linenumber">10</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="2915472318022417868" datatype="html">
+        <source>Vertical</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/ballistics-chart/range-data/range-data.component.html</context>
+          <context context-type="linenumber">11,16</context>
+        </context-group>
+        <note priority="1" from="description">Vertical target angle</note>
+        <note priority="1" from="meaning">dope-chart-intermediate-data</note>
+      </trans-unit>
+      <trans-unit id="temperatureSymbol" datatype="html">
+        <source>T</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/ballistics-chart/temperature-data/temperature-data.component.html</context>
+          <context context-type="linenumber">10</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="aboutUs" datatype="html">
+        <source>About Us</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/external-links/external-links.component.html</context>
+          <context context-type="linenumber">7,9</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="contactUs" datatype="html">
+        <source>Contact Us</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/external-links/external-links.component.html</context>
+          <context context-type="linenumber">10,12</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="termsConditions" datatype="html">
+        <source>Terms &amp; Conditions</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/external-links/external-links.component.html</context>
+          <context context-type="linenumber">13,15</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="privacyPolicy" datatype="html">
+        <source>Privacy Policy</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/external-links/external-links.component.html</context>
+          <context context-type="linenumber">16,18</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="fieldRequired" datatype="html">
+        <source>Field required</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/field-with-unit/field-with-unit.component.ts</context>
+          <context context-type="linenumber">82</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="minValue" datatype="html">
+        <source>Minimum value <x id="PH" equiv-text="min"/></source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/field-with-unit/field-with-unit.component.ts</context>
+          <context context-type="linenumber">87</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="maxValue" datatype="html">
+        <source>Maximum value <x id="PH" equiv-text="max"/></source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/field-with-unit/field-with-unit.component.ts</context>
+          <context context-type="linenumber">92</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="okAction" datatype="html">
+        <source>Ok</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/components/snackbar/snackbar.component.ts</context>
+          <context context-type="linenumber">17</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="1175812518197072270" datatype="html">
+        <source>Ballistic calculator</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/consts/common.const.ts</context>
+          <context context-type="linenumber">2</context>
+        </context-group>
+        <note priority="1" from="description">app-title</note>
+      </trans-unit>
+      <trans-unit id="3400763941841538062" datatype="html">
+        <source>Christophe FRITSCHY</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/consts/common.const.ts</context>
+          <context context-type="linenumber">3</context>
+        </context-group>
+        <note priority="1" from="description">owner</note>
+      </trans-unit>
+      <trans-unit id="4995301029095262142" datatype="html">
+        <source>Forgot your password?</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-forgot-password-page/account-forgot-password-page.component.html</context>
+          <context context-type="linenumber">7,8</context>
+        </context-group>
+        <note priority="1" from="description">Forgot password title</note>
+        <note priority="1" from="meaning">account-forgot-password</note>
+      </trans-unit>
+      <trans-unit id="7380937357869567884" datatype="html">
+        <source> Email </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-forgot-password-page/account-forgot-password-page.component.html</context>
+          <context context-type="linenumber">14,17</context>
+        </context-group>
+        <note priority="1" from="description">Forgot password title</note>
+        <note priority="1" from="meaning">account-forgot-password</note>
+      </trans-unit>
+      <trans-unit id="1284110512182411562" datatype="html">
+        <source>Email</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-forgot-password-page/account-forgot-password-page.component.html</context>
+          <context context-type="linenumber">20</context>
+        </context-group>
+        <note priority="1" from="description">Email placeholder</note>
+        <note priority="1" from="meaning">account-forgot-password</note>
+      </trans-unit>
+      <trans-unit id="2796297670384986430" datatype="html">
+        <source> Reset password </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-forgot-password-page/account-forgot-password-page.component.html</context>
+          <context context-type="linenumber">27,32</context>
+        </context-group>
+        <note priority="1" from="description">Reset password button</note>
+        <note priority="1" from="meaning">account-forgot-password</note>
+      </trans-unit>
+      <trans-unit id="7429694660964450948" datatype="html">
+        <source>Login</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-login-page/account-login-page.component.html</context>
+          <context context-type="linenumber">7,8</context>
+        </context-group>
+        <note priority="1" from="description">Login title</note>
+        <note priority="1" from="meaning">account-login-page</note>
+      </trans-unit>
+      <trans-unit id="8932548273771316858" datatype="html">
+        <source> Email </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-login-page/account-login-page.component.html</context>
+          <context context-type="linenumber">13,15</context>
+        </context-group>
+        <note priority="1" from="description">Email title</note>
+        <note priority="1" from="meaning">account-login-page</note>
+      </trans-unit>
+      <trans-unit id="2835721428084160536" datatype="html">
+        <source>Email</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-login-page/account-login-page.component.html</context>
+          <context context-type="linenumber">18</context>
+        </context-group>
+        <note priority="1" from="description">Email placeholder</note>
+        <note priority="1" from="meaning">account-login-page</note>
+      </trans-unit>
+      <trans-unit id="5635754565680910272" datatype="html">
+        <source> Password </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-login-page/account-login-page.component.html</context>
+          <context context-type="linenumber">26,29</context>
+        </context-group>
+        <note priority="1" from="description">Password title</note>
+        <note priority="1" from="meaning">account-login-page</note>
+      </trans-unit>
+      <trans-unit id="5384427810060863874" datatype="html">
+        <source>Password</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-login-page/account-login-page.component.html</context>
+          <context context-type="linenumber">31,32</context>
+        </context-group>
+        <note priority="1" from="description">Password placeholder</note>
+        <note priority="1" from="meaning">account-login-page</note>
+      </trans-unit>
+      <trans-unit id="7768643401983122665" datatype="html">
+        <source> Remember me </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-login-page/account-login-page.component.html</context>
+          <context context-type="linenumber">40,42</context>
+        </context-group>
+        <note priority="1" from="description">Remember me checkbox</note>
+        <note priority="1" from="meaning">account-login-page</note>
+      </trans-unit>
+      <trans-unit id="4202978153393523750" datatype="html">
+        <source>Sign In</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-login-page/account-login-page.component.html</context>
+          <context context-type="linenumber">42,47</context>
+        </context-group>
+        <note priority="1" from="description">Sign in button</note>
+        <note priority="1" from="meaning">account-login-page</note>
+      </trans-unit>
+      <trans-unit id="7976587826848025960" datatype="html">
+        <source>Forgot password?</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-login-page/account-login-page.component.html</context>
+          <context context-type="linenumber">51,55</context>
+        </context-group>
+        <note priority="1" from="description">Forgot password button</note>
+        <note priority="1" from="meaning">account-login-page</note>
+      </trans-unit>
+      <trans-unit id="2594728504107428229" datatype="html">
+        <source>Create new account</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-login-page/account-login-page.component.html</context>
+          <context context-type="linenumber">58,62</context>
+        </context-group>
+        <note priority="1" from="description">Create account button</note>
+        <note priority="1" from="meaning">account-login-page</note>
+      </trans-unit>
+      <trans-unit id="4723033261718093808" datatype="html">
+        <source>Register</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-register-page/account-register-page.component.html</context>
+          <context context-type="linenumber">7,8</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-register-page/account-register-page.component.html</context>
+          <context context-type="linenumber">38,42</context>
+        </context-group>
+        <note priority="1" from="description">Register title</note>
+        <note priority="1" from="meaning">account-register</note>
+      </trans-unit>
+      <trans-unit id="4531815428178986077" datatype="html">
+        <source> Email </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-register-page/account-register-page.component.html</context>
+          <context context-type="linenumber">13,15</context>
+        </context-group>
+        <note priority="1" from="description">Email title</note>
+        <note priority="1" from="meaning">account-register</note>
+      </trans-unit>
+      <trans-unit id="7658360619346605563" datatype="html">
+        <source>Email</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-register-page/account-register-page.component.html</context>
+          <context context-type="linenumber">18</context>
+        </context-group>
+        <note priority="1" from="description">Email input</note>
+        <note priority="1" from="meaning">account-register</note>
+      </trans-unit>
+      <trans-unit id="1235021720088579491" datatype="html">
+        <source> Password </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-register-page/account-register-page.component.html</context>
+          <context context-type="linenumber">26,28</context>
+        </context-group>
+        <note priority="1" from="description">Register title</note>
+        <note priority="1" from="meaning">account-register</note>
+      </trans-unit>
+      <trans-unit id="983694964468533093" datatype="html">
+        <source>Password</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/account-page/account-register-page/account-register-page.component.html</context>
+          <context context-type="linenumber">31,32</context>
+        </context-group>
+        <note priority="1" from="description">Password input</note>
+        <note priority="1" from="meaning">account-register</note>
+      </trans-unit>
+      <trans-unit id="3518456937202402700" datatype="html">
+        <source> Enable Custom BC </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/advanced-options-dialog/advanced-options-dialog.component.html</context>
+          <context context-type="linenumber">43,47</context>
+        </context-group>
+        <note priority="1" from="description">Enable Custom BC toggle</note>
+        <note priority="1" from="meaning">advanced-options</note>
+      </trans-unit>
+      <trans-unit id="1744702727597186937" datatype="html">
+        <source>Ballistic Coefficient</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/advanced-options-dialog/custom-bc-line/custom-bc-line.component.html</context>
+          <context context-type="linenumber">21,22</context>
+        </context-group>
+        <note priority="1" from="description">Ballistic Coefficient label</note>
+        <note priority="1" from="meaning">custom-bc-line</note>
+      </trans-unit>
+      <trans-unit id="3459879452049276465" datatype="html">
+        <source>Ballistic Coefficient</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/bullet-input/bullet-input.component.html</context>
+          <context context-type="linenumber">11,12</context>
+        </context-group>
+        <note priority="1" from="description">Ballistic Coefficient label</note>
+        <note priority="1" from="meaning">bullet-input</note>
+      </trans-unit>
+      <trans-unit id="8625624673845618368" datatype="html">
+        <source>!!! The precision of the calculations depends greatly on the accuracy of this value !!! Use advanced options if you have multiple BC&apos;s for different velocities.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/bullet-input/bullet-input.component.html</context>
+          <context context-type="linenumber">16,17</context>
+        </context-group>
+        <note priority="1" from="description">Ballistic Coefficient tooltip</note>
+        <note priority="1" from="meaning">bullet-input</note>
+      </trans-unit>
+      <trans-unit id="weight" datatype="html">
+        <source>Weight</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/bullet-input/bullet-input.component.html</context>
+          <context context-type="linenumber">22</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/print-header/print-header.component.html</context>
+          <context context-type="linenumber">44</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="2196386083077316035" datatype="html">
+        <source>Used for calculating energy/optimal target weight. Leave default value if not needed</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/bullet-input/bullet-input.component.html</context>
+          <context context-type="linenumber">26,27</context>
+        </context-group>
+        <note priority="1" from="description">Weight tooltip</note>
+        <note priority="1" from="meaning">bullet-input</note>
+      </trans-unit>
+      <trans-unit id="3444236500237641074" datatype="html">
+        <source>Muzzle Velocity</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/bullet-input/bullet-input.component.html</context>
+          <context context-type="linenumber">33,34</context>
+        </context-group>
+        <note priority="1" from="description">Muzzle Velocity label</note>
+        <note priority="1" from="meaning">bullet-input</note>
+      </trans-unit>
+      <trans-unit id="8835131366118649546" datatype="html">
+        <source>!!! The precision of the calculations depends greatly on the accuracy of this value !!! Avoid using the value on the ammo box as it generally for a 24 inch (61cm) barrel.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/bullet-input/bullet-input.component.html</context>
+          <context context-type="linenumber">38,39</context>
+        </context-group>
+        <note priority="1" from="description">Muzzle Velocity tooltip</note>
+        <note priority="1" from="meaning">bullet-input</note>
+      </trans-unit>
+      <trans-unit id="5212219899814061881" datatype="html">
+        <source>Muzzle Velocity Deviation</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/bullet-input/bullet-input.component.html</context>
+          <context context-type="linenumber">43,44</context>
+        </context-group>
+        <note priority="1" from="description">Muzzle Velocity Deviation label</note>
+        <note priority="1" from="meaning">bullet-input</note>
+      </trans-unit>
+      <trans-unit id="5116604413542111115" datatype="html">
+        <source>Used for calculating the margin of error. Leave default value if not needed</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/bullet-input/bullet-input.component.html</context>
+          <context context-type="linenumber">48,49</context>
+        </context-group>
+        <note priority="1" from="description">Muzzle Velocity Deviation tooltip</note>
+        <note priority="1" from="meaning">bullet-input</note>
+      </trans-unit>
+      <trans-unit id="diameter" datatype="html">
+        <source>Diameter</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/bullet-input/bullet-input.component.html</context>
+          <context context-type="linenumber">55,56</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/print-header/print-header.component.html</context>
+          <context context-type="linenumber">49,50</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="6782882318505872465" datatype="html">
+        <source>Diameter of the bullet at the thickest segment, very small impact on results accuracy. Leave default value if not needed</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/bullet-input/bullet-input.component.html</context>
+          <context context-type="linenumber">60,61</context>
+        </context-group>
+        <note priority="1" from="description">Diameter tooltip</note>
+        <note priority="1" from="meaning">bullet-input</note>
+      </trans-unit>
+      <trans-unit id="length" datatype="html">
+        <source>Length</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/bullet-input/bullet-input.component.html</context>
+          <context context-type="linenumber">66</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/print-header/print-header.component.html</context>
+          <context context-type="linenumber">56</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="8274669863677486168" datatype="html">
+        <source>Length of the projectile from tip to base, very small impact on results accuracy. Leave default value if not needed</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/bullet-input/bullet-input.component.html</context>
+          <context context-type="linenumber">70,71</context>
+        </context-group>
+        <note priority="1" from="description">Length tooltip</note>
+        <note priority="1" from="meaning">bullet-input</note>
+      </trans-unit>
+      <trans-unit id="5100462164179894884" datatype="html">
+        <source>Bullet Characteristics</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/calculator-input.component.html</context>
+          <context context-type="linenumber">8,10</context>
+        </context-group>
+        <note priority="1" from="description">Bullet Characteristics Title</note>
+        <note priority="1" from="meaning">calculator-input</note>
+      </trans-unit>
+      <trans-unit id="8160775621378136128" datatype="html">
+        <source>Weapon Characteristics</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/calculator-input.component.html</context>
+          <context context-type="linenumber">18,19</context>
+        </context-group>
+        <note priority="1" from="description">Weapon Characteristics Title</note>
+        <note priority="1" from="meaning">calculator-input</note>
+      </trans-unit>
+      <trans-unit id="4257652998963703069" datatype="html">
+        <source>Environment Characteristics</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/calculator-input.component.html</context>
+          <context context-type="linenumber">23,24</context>
+        </context-group>
+        <note priority="1" from="description">Environment Characteristics Title</note>
+        <note priority="1" from="meaning">calculator-input</note>
+      </trans-unit>
+      <trans-unit id="4108793675270601294" datatype="html">
+        <source>Advanced options</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/calculator-input.component.html</context>
+          <context context-type="linenumber">28,29</context>
+        </context-group>
+        <note priority="1" from="description">Advanced options button</note>
+        <note priority="1" from="meaning">calculator-input</note>
+      </trans-unit>
+      <trans-unit id="8157699972539824015" datatype="html">
+        <source>Calculate</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/calculator-input.component.html</context>
+          <context context-type="linenumber">29,31</context>
+        </context-group>
+        <note priority="1" from="description">Calculate button</note>
+        <note priority="1" from="meaning">calculator-input</note>
+      </trans-unit>
+      <trans-unit id="2783864911323688192" datatype="html">
+        <source>Bullet form invalid</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/calculator-input.form-service.ts</context>
+          <context context-type="linenumber">170</context>
+        </context-group>
+        <note priority="1" from="description">bullet-form-invalid</note>
+      </trans-unit>
+      <trans-unit id="1772844520453894456" datatype="html">
+        <source>Environment form invalid</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/calculator-input.form-service.ts</context>
+          <context context-type="linenumber">174</context>
+        </context-group>
+        <note priority="1" from="description">environment-form-invalid</note>
+      </trans-unit>
+      <trans-unit id="7608157603981089228" datatype="html">
+        <source>Weapon form invalid</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/calculator-input.form-service.ts</context>
+          <context context-type="linenumber">178</context>
+        </context-group>
+        <note priority="1" from="description">weapon-form-invalid</note>
+      </trans-unit>
+      <trans-unit id="7332464848125285787" datatype="html">
+        <source>Advanced bullet form invalid</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/calculator-input.form-service.ts</context>
+          <context context-type="linenumber">182</context>
+        </context-group>
+        <note priority="1" from="description">adv-bullet-form-invalid</note>
+      </trans-unit>
+      <trans-unit id="calculationRange" datatype="html">
+        <source>Calculation range</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/environment-input/environment-input.component.html</context>
+          <context context-type="linenumber">10,11</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="zeroTemperature" datatype="html">
+        <source>Zero temperature</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/environment-input/environment-input.component.html</context>
+          <context context-type="linenumber">19,20</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="zeroPressure" datatype="html">
+        <source>Zero pressure</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/environment-input/environment-input.component.html</context>
+          <context context-type="linenumber">25,26</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="sightHeight" datatype="html">
+        <source>Sight Height</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/weapon-input/weapon-input.component.html</context>
+          <context context-type="linenumber">11,12</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/print-header/print-header.component.html</context>
+          <context context-type="linenumber">72,73</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="barrelTwist" datatype="html">
+        <source>Barrel Twist</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/weapon-input/weapon-input.component.html</context>
+          <context context-type="linenumber">22,23</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="zeroRange" datatype="html">
+        <source>Zero Range</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-input/weapon-input/weapon-input.component.html</context>
+          <context context-type="linenumber">33,34</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="6654775920988855030" datatype="html">
+        <source>Shot Characteristics</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-page.component.html</context>
+          <context context-type="linenumber">9,10</context>
+        </context-group>
+        <note priority="1" from="description">shot characteristics</note>
+        <note priority="1" from="meaning">step-title</note>
+      </trans-unit>
+      <trans-unit id="7844820139666680075" datatype="html">
+        <source> Edit results </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-page.component.html</context>
+          <context context-type="linenumber">15,16</context>
+        </context-group>
+        <note priority="1" from="description">edit results</note>
+        <note priority="1" from="meaning">step-title</note>
+      </trans-unit>
+      <trans-unit id="4476628509170006865" datatype="html">
+        <source>Print results</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-page.component.html</context>
+          <context context-type="linenumber">27,28</context>
+        </context-group>
+        <note priority="1" from="description">print results</note>
+        <note priority="1" from="meaning">step-title</note>
+      </trans-unit>
+      <trans-unit id="8088208371339278469" datatype="html">
+        <source>Bullet Characteristics</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/calculator-print.form-service.ts</context>
+          <context context-type="linenumber">18</context>
+        </context-group>
+        <note priority="1" from="description">calculator-print-form-bullet-char</note>
+      </trans-unit>
+      <trans-unit id="394993063083623283" datatype="html">
+        <source>Weapon Characteristics</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/calculator-print.form-service.ts</context>
+          <context context-type="linenumber">19</context>
+        </context-group>
+        <note priority="1" from="description">calculator-print-form-weapon-char</note>
+      </trans-unit>
+      <trans-unit id="bc" datatype="html">
+        <source>BC</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/print-header/print-header.component.html</context>
+          <context context-type="linenumber">21</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/print-header/print-header.component.html</context>
+          <context context-type="linenumber">30</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="velocity" datatype="html">
+        <source>Velocity</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/print-header/print-header.component.html</context>
+          <context context-type="linenumber">36,37</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="barrel-twist" datatype="html">
+        <source>Barrel Twist</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/print-header/print-header.component.html</context>
+          <context context-type="linenumber">78,79</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="zero-range" datatype="html">
+        <source>Zero Range</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/print-header/print-header.component.html</context>
+          <context context-type="linenumber">85,86</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="4204655459989348103" datatype="html">
+        <source> Designation - <x id="INTERPOLATION" equiv-text="{{ title }}"/> </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">10,12</context>
+        </context-group>
+        <note priority="1" from="description">Target designation</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="9079674478156836304" datatype="html">
+        <source>Description</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">15,17</context>
+        </context-group>
+        <note priority="1" from="description">Target description</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="8074587564848040469" datatype="html">
+        <source>Color</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">19,21</context>
+        </context-group>
+        <note priority="1" from="description">Target color</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="4585851848996102192" datatype="html">
+        <source>Wind</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">28,29</context>
+        </context-group>
+        <note priority="1" from="description">Wind section</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="8503669031571901459" datatype="html">
+        <source>Speed</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">34,35</context>
+        </context-group>
+        <note priority="1" from="description">Wind speed</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="6531149029275170131" datatype="html">
+        <source>Angle</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">41,42</context>
+        </context-group>
+        <note priority="1" from="description">Wind angle</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="7883352984644540633" datatype="html">
+        <source>Drop</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">51,52</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">93,94</context>
+        </context-group>
+        <note priority="1" from="description">Elevation bullet drop section</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="3161305465593703159" datatype="html">
+        <source>Value</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">52,53</context>
+        </context-group>
+        <note priority="1" from="description">Elevation bullet drop value</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="4769668012207976285" datatype="html">
+        <source>Adjust</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">53,55</context>
+        </context-group>
+        <note priority="1" from="description">Elevation bullet drop adjust</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="7560520740194600152" datatype="html">
+        <source>Dist</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">58,59</context>
+        </context-group>
+        <note priority="1" from="description">Elevation target distance</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="8737712181596524903" datatype="html">
+        <source>Vert</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">66,68</context>
+        </context-group>
+        <note priority="1" from="description">Elevation target vertical angle</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="6575441456926655841" datatype="html">
+        <source>P</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">75</context>
+        </context-group>
+        <note priority="1" from="description">Elevation environment pressure Single-letter symbol</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="6360598468681968419" datatype="html">
+        <source>T</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">83</context>
+        </context-group>
+        <note priority="1" from="description">Elevation environment temperature Single-letter symbol</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="6397974210019399881" datatype="html">
+        <source>Windage</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">105,106</context>
+        </context-group>
+        <note priority="1" from="description">Windage final correction</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="84804493783041735" datatype="html">
+        <source>Elevation</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.html</context>
+          <context context-type="linenumber">112,113</context>
+        </context-group>
+        <note priority="1" from="description">Elevation final correction</note>
+        <note priority="1" from="meaning">work-sheet</note>
+      </trans-unit>
+      <trans-unit id="click" datatype="html">
+        <source>Click</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-print/work-sheet/work-sheet-item/work-sheet-item.component.ts</context>
+          <context context-type="linenumber">41</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="375839270753911113" datatype="html">
+        <source>Display Mode</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.component.html</context>
+          <context context-type="linenumber">8,9</context>
+        </context-group>
+        <note priority="1" from="description">Display mode</note>
+        <note priority="1" from="meaning">ballistic-chart</note>
+      </trans-unit>
+      <trans-unit id="299144373043861832" datatype="html">
+        <source>Windage Mode</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.component.html</context>
+          <context context-type="linenumber">18,19</context>
+        </context-group>
+        <note priority="1" from="description">Windage mode</note>
+        <note priority="1" from="meaning">ballistic-chart</note>
+      </trans-unit>
+      <trans-unit id="4930379166734905634" datatype="html">
+        <source>Angular Unit</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.component.html</context>
+          <context context-type="linenumber">28,29</context>
+        </context-group>
+        <note priority="1" from="description">Angular Unit</note>
+        <note priority="1" from="meaning">ballistic-chart</note>
+      </trans-unit>
+      <trans-unit id="1508982266087390404" datatype="html">
+        <source>The value of one clicks angle
+			Example:
+			Your scope shifts by 1/10 mrad (0.1 mrad) for every click, set this as 1/10 in fraction mode or 0.1 in default mode. 
+			Your scope shifts by 1/4 MOA (0.25 MOA) for every click, set this as 1/4 in fraction mode or 0.25 in default mode </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.component.html</context>
+          <context context-type="linenumber">40,44</context>
+        </context-group>
+        <note priority="1" from="description">Click increment toggle tooltip</note>
+        <note priority="1" from="meaning">ballistic-chart</note>
+      </trans-unit>
+      <trans-unit id="7663872868610271584" datatype="html">
+        <source>Click increment</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.component.html</context>
+          <context context-type="linenumber">46,47</context>
+        </context-group>
+        <note priority="1" from="description">Click increment title</note>
+        <note priority="1" from="meaning">ballistic-chart</note>
+      </trans-unit>
+      <trans-unit id="5594058948118393474" datatype="html">
+        <source>The increment by which the results are rounded.
+			Example:
+			The correction to hit the target is &apos;3.789&apos;. 
+			The value of the &apos;Angular increment&apos; is &apos;0.25&apos; (or 1/4). 
+			The displayed value is rounded to &apos;3.75&apos;.
+			This helps the shooter make faster and easier calculations.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.component.html</context>
+          <context context-type="linenumber">54,60</context>
+        </context-group>
+        <note priority="1" from="description">Angular increment toggle tooltip</note>
+        <note priority="1" from="meaning">ballistic-chart</note>
+      </trans-unit>
+      <trans-unit id="326849370259504643" datatype="html">
+        <source>Angular increment</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.component.html</context>
+          <context context-type="linenumber">62,63</context>
+        </context-group>
+        <note priority="1" from="description">Angular increment title</note>
+        <note priority="1" from="meaning">ballistic-chart</note>
+      </trans-unit>
+      <trans-unit id="2732318327672382557" datatype="html">
+        <source>Elevation default</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.component.html</context>
+          <context context-type="linenumber">66,67</context>
+        </context-group>
+        <note priority="1" from="description">Elevation default title</note>
+        <note priority="1" from="meaning">ballistic-chart</note>
+      </trans-unit>
+      <trans-unit id="4428811753402375365" datatype="html">
+        <source>Elevation diff</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.component.html</context>
+          <context context-type="linenumber">72,73</context>
+        </context-group>
+        <note priority="1" from="description">Elevation diff title</note>
+        <note priority="1" from="meaning">ballistic-chart</note>
+      </trans-unit>
+      <trans-unit id="4832098079127447840" datatype="html">
+        <source>Windage Left</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.component.html</context>
+          <context context-type="linenumber">78,79</context>
+        </context-group>
+        <note priority="1" from="description">Windage Left title</note>
+        <note priority="1" from="meaning">ballistic-chart</note>
+      </trans-unit>
+      <trans-unit id="1554349382187017417" datatype="html">
+        <source>Windage Right</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.component.html</context>
+          <context context-type="linenumber">84,85</context>
+        </context-group>
+        <note priority="1" from="description">Windage Right title</note>
+        <note priority="1" from="meaning">ballistic-chart</note>
+      </trans-unit>
+      <trans-unit id="4621507498152879746" datatype="html">
+        <source>Click + Difference</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.const.ts</context>
+          <context context-type="linenumber">13</context>
+        </context-group>
+        <note priority="1" from="description">ballistic-chart-click-difference</note>
+      </trans-unit>
+      <trans-unit id="7542544180507295201" datatype="html">
+        <source>The number of &apos;clicks&apos; to get on target. Recommended for Millirad</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.const.ts</context>
+          <context context-type="linenumber">15</context>
+        </context-group>
+        <note priority="1" from="description">ballistic-chart-click-difference-tooltip</note>
+      </trans-unit>
+      <trans-unit id="8138567975028719353" datatype="html">
+        <source>Angular + Difference</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.const.ts</context>
+          <context context-type="linenumber">18</context>
+        </context-group>
+        <note priority="1" from="description">ballistic-chart-angular-difference</note>
+      </trans-unit>
+      <trans-unit id="1172871930864904259" datatype="html">
+        <source>The angular correction needed to get on target. Recommended for Millirad/MOA</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.const.ts</context>
+          <context context-type="linenumber">20</context>
+        </context-group>
+        <note priority="1" from="description">ballistic-chart-angular-difference-tooltip</note>
+      </trans-unit>
+      <trans-unit id="2273138046426803666" datatype="html">
+        <source>Angular rounded</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.const.ts</context>
+          <context context-type="linenumber">23</context>
+        </context-group>
+        <note priority="1" from="description">ballistic-chart-angular-rounded</note>
+      </trans-unit>
+      <trans-unit id="3682626300493805594" datatype="html">
+        <source>The angular correction needed to get on target, rounded to nearest increment of your choice. Recommended for MOA</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.const.ts</context>
+          <context context-type="linenumber">25</context>
+        </context-group>
+        <note priority="1" from="description">ballistic-chart-angular-rounded-tooltip</note>
+      </trans-unit>
+      <trans-unit id="6370642728789544052" datatype="html">
+        <source>Number</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.const.ts</context>
+          <context context-type="linenumber">41</context>
+        </context-group>
+        <note priority="1" from="description">ballistic-chart-number</note>
+      </trans-unit>
+      <trans-unit id="3985184597787189091" datatype="html">
+        <source>The angular correction as a positive or negative.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.const.ts</context>
+          <context context-type="linenumber">43</context>
+        </context-group>
+        <note priority="1" from="description">ballistic-chart-number-tooltip</note>
+      </trans-unit>
+      <trans-unit id="1553728160774700134" datatype="html">
+        <source>Left / Right</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.const.ts</context>
+          <context context-type="linenumber">46</context>
+        </context-group>
+        <note priority="1" from="description">ballistic-chart-left-right</note>
+      </trans-unit>
+      <trans-unit id="2705069485783699717" datatype="html">
+        <source>The angular correction displayed with L (left) or R(right) as a prefix.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.const.ts</context>
+          <context context-type="linenumber">48</context>
+        </context-group>
+        <note priority="1" from="description">ballistic-chart-left-right-tooltip</note>
+      </trans-unit>
+      <trans-unit id="millirad" datatype="html">
+        <source>Millirad</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.const.ts</context>
+          <context context-type="linenumber">54</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="moa" datatype="html">
+        <source>MOA</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/ballistics-chart-settings.const.ts</context>
+          <context context-type="linenumber">58</context>
+        </context-group>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">119</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="6057224389658233558" datatype="html">
+        <source>Toggle for unit as fraction</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/fraction-toggle/fraction-toggle.component.html</context>
+          <context context-type="linenumber">22,24</context>
+        </context-group>
+        <note priority="1" from="description">toggle for unit as fraction</note>
+        <note priority="1" from="meaning">fraction-toggle</note>
+      </trans-unit>
+      <trans-unit id="8388038578523312154" datatype="html">
+        <source>You must enter a value between 0.05 and 1</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/fraction-toggle/fraction-toggle.component.ts</context>
+          <context context-type="linenumber">89</context>
+        </context-group>
+        <note priority="1" from="description">fraction-toggle-raw-value-error</note>
+      </trans-unit>
+      <trans-unit id="1122515126651922208" datatype="html">
+        <source>You must enter a value between 1 and 20</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/calculator-page/calculator-result/ballistics-chart-settings/fraction-toggle/fraction-toggle.component.ts</context>
+          <context context-type="linenumber">98</context>
+        </context-group>
+        <note priority="1" from="description">fraction-toggle-fraction-value-error</note>
+      </trans-unit>
+      <trans-unit id="logout" datatype="html">
+        <source>Logout</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/dashboard-navbar/dashboard-navbar.component.ts</context>
+          <context context-type="linenumber">27</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="4939001214826529053" datatype="html">
+        <source>Calculator</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/dashboard-page.const.ts</context>
+          <context context-type="linenumber">7</context>
+        </context-group>
+        <note priority="1" from="description">dashboard-sidenav-title</note>
+      </trans-unit>
+      <trans-unit id="1822957459501777304" datatype="html">
+        <source>Ranging Card</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/dashboard-page/dashboard-page.const.ts</context>
+          <context context-type="linenumber">12</context>
+        </context-group>
+        <note priority="1" from="description">dashboard-sidenav-title</note>
+      </trans-unit>
+      <trans-unit id="6618967618257859782" datatype="html">
+        <source>Start Your Calculations!</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">12,13</context>
+        </context-group>
+        <note priority="1" from="description">Start your calculations heading</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="8777408965894775466" datatype="html">
+        <source> Whether you&apos;re a hunter, sports shooter, or military professional, our advanced tools provide precise ballistic calculations. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">14,18</context>
+        </context-group>
+        <note priority="1" from="description">Description for start calculations section</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="6776433667134177345" datatype="html">
+        <source>Start!</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">20,23</context>
+        </context-group>
+        <note priority="1" from="description">Start button text</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="6612362549328962648" datatype="html">
+        <source>Multi BC support</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">28,29</context>
+        </context-group>
+        <note priority="1" from="description">Multi BC support</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="4463634508963800918" datatype="html">
+        <source>Our calculator is designed fto supports multiple BC values, allowing for accurate ballistic calculations across various conditions.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">31,34</context>
+        </context-group>
+        <note priority="1" from="description">Description for multi BC support</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="798603293707639654" datatype="html">
+        <source>Spin Drift Correction</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">34,35</context>
+        </context-group>
+        <note priority="1" from="description">Spin Drift Correction</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="9017416343150733762" datatype="html">
+        <source> To achieve greater accuracy, our calculator includes spin drift corrections, compensating for the effects of rotational forces on your projectile. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">37,41</context>
+        </context-group>
+        <note priority="1" from="description">Description for spin drift correction</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="6080257441364058742" datatype="html">
+        <source>Powered by JBM Technology</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">41,42</context>
+        </context-group>
+        <note priority="1" from="description">Powered by JBM Technology</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="5889263754646227823" datatype="html">
+        <source> Our calculator is powered by JBM&apos;s trajectory model. It leverages optimized C# code, extended with insights from Applied Ballistics and Doppler radar data.</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">44,49</context>
+        </context-group>
+        <note priority="1" from="description">Description for powered by JBM technology</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="4968722903669758259" datatype="html">
+        <source>Detailed calculations</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">59,60</context>
+        </context-group>
+        <note priority="1" from="description">Heading for detailed calculations</note>
+        <note priority="1" from="meaning">dlanding-page</note>
+      </trans-unit>
+      <trans-unit id="9181289489989407673" datatype="html">
+        <source> A range card is created for each 100-meter/yard increment, featuring correction data for factors like wind, temperature, and pressure, along with other useful features for enhanced performance. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">61,65</context>
+        </context-group>
+        <note priority="1" from="description">Description for detailed calculations</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="7865483240000582294" datatype="html">
+        <source> Mobile targets </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">66,68</context>
+        </context-group>
+        <note priority="1" from="description">Mobile targets</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="1101695204648288161" datatype="html">
+        <source> Optimal target/game weight </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">69,71</context>
+        </context-group>
+        <note priority="1" from="description">Optimal target/game weight</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="2306059662460150204" datatype="html">
+        <source> Flight Characteristics </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">72,75</context>
+        </context-group>
+        <note priority="1" from="description">Flight Characteristics</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="8232942833333330320" datatype="html">
+        <source>What are you waiting for?</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">83,84</context>
+        </context-group>
+        <note priority="1" from="description">What are you waiting for? heading</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="6079919506316271718" datatype="html">
+        <source> Start your calculations now! You&apos;ll never miss a target again </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">85,89</context>
+        </context-group>
+        <note priority="1" from="description">What are you waiting for? description</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="4977941588523309491" datatype="html">
+        <source>Free sample!</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">90,91</context>
+        </context-group>
+        <note priority="1" from="description">Free sample!</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="4516297484395632967" datatype="html">
+        <source> Here&apos;s a free sample of our calculator! you can play around with different options and see everything that our calculator is capable of. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">93,96</context>
+        </context-group>
+        <note priority="1" from="description">Description for free sample</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="7300121949071680245" datatype="html">
+        <source>Free sample</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">99,102</context>
+        </context-group>
+        <note priority="1" from="description">Free sample button text</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="7209927834833156572" datatype="html">
+        <source>Start Calculations</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">104,105</context>
+        </context-group>
+        <note priority="1" from="description">Start Calculations</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="8010989518680841420" datatype="html">
+        <source> If you&apos;re already subscribed you can click here to directly access the calculator. </source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">107,110</context>
+        </context-group>
+        <note priority="1" from="description">Description for start calculations</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="6700602051376170959" datatype="html">
+        <source>Start calculator</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/pages/landing-page/landing-page.component.html</context>
+          <context context-type="linenumber">113,117</context>
+        </context-group>
+        <note priority="1" from="description">Start calculator button text</note>
+        <note priority="1" from="meaning">landing-page</note>
+      </trans-unit>
+      <trans-unit id="gram" datatype="html">
+        <source>gram</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">84</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="grain" datatype="html">
+        <source>grain</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">85</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="ounce" datatype="html">
+        <source>ounce</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">86</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="mm" datatype="html">
+        <source>mm</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">90</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="inch" datatype="html">
+        <source>inch</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">91</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="m" datatype="html">
+        <source>m</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">95</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="yd" datatype="html">
+        <source>yd</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">96</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="feet" datatype="html">
+        <source>feet</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">97</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="ms" datatype="html">
+        <source>m/s</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">101</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="fps" datatype="html">
+        <source>fps</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">102</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="celsius" datatype="html">
+        <source>°C</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">106</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="fahrenheit" datatype="html">
+        <source>°F</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">107</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="g1" datatype="html">
+        <source>G1</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">111</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="g7" datatype="html">
+        <source>G7</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">112</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="degree" datatype="html">
+        <source>Degree</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">116</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="radian" datatype="html">
+        <source>Radian</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">117</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="mrad" datatype="html">
+        <source>MRad</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">118</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="second" datatype="html">
+        <source>s</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">122</context>
+        </context-group>
+      </trans-unit>
+      <trans-unit id="bar" datatype="html">
+        <source>Bar</source>
+        <context-group purpose="location">
+          <context context-type="sourcefile">src/app/services/unit/unit.const.ts</context>
+          <context context-type="linenumber">124</context>
+        </context-group>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
