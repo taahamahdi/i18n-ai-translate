@@ -131,6 +131,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
 
     const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
     const batchStartTime = Date.now();
+    let generatedTranslation: TranslateItem[] = [];
     for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
         if (i > 0 && options.verbose) {
             console.log(
@@ -154,7 +155,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         );
 
         // eslint-disable-next-line no-await-in-loop
-        const generatedTranslation = await generateTranslation({
+        const result = await generateTranslation({
             chats,
             ensureChangedTranslation: options.ensureChangedTranslation ?? false,
             translateItems: batchTranslateItemArray,
@@ -167,12 +168,14 @@ export async function translate(options: TranslateOptions): Promise<Object> {
             verboseLogging: options.verbose ?? false,
         });
 
-        if (!generatedTranslation) {
+        if (!result) {
             console.error(
                 `Failed to generate translation for ${options.outputLanguage}`,
             );
             break;
         }
+        console.log(result);
+        generatedTranslation = generatedTranslation.concat(result);
     }
 
     // sort the keys

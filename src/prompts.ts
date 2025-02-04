@@ -1,6 +1,24 @@
 import type OverridePrompt from "./interfaces/override_prompt";
 import { CheckTranslateItem, RetranslateItem, TranslateItem } from "./types";
 
+const basePrompt: string = `
+- Very important! The outputted json must be valid json, if it isn't the translation to fail.
+- Maintain the same text formatting for the translation; failure to do so will result in failure.
+- Ensure case sensitivity and whitespace are preserved exactly as they are in the original text. Modifying these will cause the translation to fail.
+
+Special Instructions:
+
+- Some translations may contain variables in the text, such as {{timeLeft}}. These variables should not be translated or altered in any way. They must remain exactly as they are in the 'originalText'.
+- If the 'originalText' does not contain variables, such as {{timeLeft}, ignore these special instructions.
+
+Return only the original JSON array with your translations in the translatedText field
+VERY IMPORTANT: Wrap it in the original triple backticks, if the json is not wrapped correctly for the backticks the translation will fail. 
+Do not output anything else, no need for a message before/ after, do not modify any other fields of the JSON object or add your own fields, no notes or anything else.
+Do not output scripts or try to automate this task, I am asking you to translate these on your own.
+
+If the translation fails you will be punished, if it succeeds you will be rewarded.
+`;
+
 /**
  * Prompt an AI to convert a given input from one language to another
  * @param inputLanguage - The language of the input
@@ -39,6 +57,8 @@ export function generationPrompt(
 
     return `You are a professional translator.
 
+Translate from ${inputLanguage} to ${outputLanguage}.
+
 You are given a JSON file containing an array of items to translate.
 
 - Do not change or translate the names of the fields. They must stay exactly as they are: key, originalText, translatedText, and context. Changing any of these field names will result in a failed translation.
@@ -46,23 +66,7 @@ You are given a JSON file containing an array of items to translate.
 - 'originalText' is the text that needs to be translated, do not translate this field it is not needed, but if it is, will NOT result in failure.
 - 'translatedText' is the field where you will enter the translation of the 'originalText'.
 - 'context' provides additional context for the 'originalText'. If this field is empty, you do not need any additional context. Do not translate this field it is not needed, but if it is, will NOT result in failure.
-- The outputted json must be valid json, if it isn't the translation to fail.
-
-Special Instructions:
-
--Some translations may contain variables in the text, such as {{timeLeft}}. These variables should not be translated or altered in any way. They must remain exactly as they are in the 'originalText'.
--If the 'originalText' does not contain variables, such as {{timeLeft}, ignore these special instructions.
-
-Translate from ${inputLanguage} to ${outputLanguage}.
-
--Maintain the same text formatting for the translation; failure to do so will result in an error.
--Ensure case sensitivity and whitespace are preserved exactly as they are in the original text. Modifying these will cause the translation to fail.
-
-Return only the original JSON array with your translations in the translatedText field
-VERY IMPORTANT: Wrap it in the original triple backticks, if the json is not wrapped correctly for the backticks the translation will fail. 
-Do not output anything else, no need for a message before/ after, do not modify any other fields of the JSON object, no notes or anything else.
-
-If the translation fails you will be punished, if it succeeds you will be rewarded.
+${basePrompt}
 
 \`\`\`
 ${input}
@@ -85,6 +89,8 @@ export function failedTranslationPrompt(
     const input = JSON.stringify(retranslateInput);
     return `You are a professional translator.
 
+Translate from ${inputLanguage} to ${outputLanguage}.
+
 You are given a JSON file containing an array of items to fix.
 
 - Do not change or translate the names of the fields. They must stay exactly as they are: 'key', 'originalText', 'newTranslatedText', 'context', 'invalidTranslatedText' and 'invalidReason'. Changing any of these field names will result in a failed verification.
@@ -92,22 +98,7 @@ You are given a JSON file containing an array of items to fix.
 - 'newTranslatedText' is the field where you will enter the translation of the 'originalText', take into acount the 'invalidTranslatedText' and 'invalidReason' when translating
 - 'originalText' is the source of the translated text, 'invalidTranslatedText'. Do not change these two fields, it is not needed, but if it is, will NOT result in failure.
 - 'context' provides additional context for the 'originalText'. If this field is empty, you do not need any additional context. Do not translate this field it is not needed, but if it is, will NOT result in failure.
-- Very important! The outputted json must be valid json, if it isn't the translation to fail.
-
-Special Instructions:
-
--Some translations may contain variables in the text, such as {{timeLeft}}. These variables should not be translated or altered in any way. They must remain exactly as they are in the 'originalText'.
--If the 'originalText' does not contain variables, such as {{timeLeft}, ignore these special instructions.
-
-Translate from ${inputLanguage} to ${outputLanguage}.
-
--Maintain the same text formatting for the translation; failure to do so will result in an error.
--Ensure case sensitivity and whitespace are preserved exactly as they are in the original text. Modifying these will cause the translation to fail.
-
-VERY IMPORTANT: Wrap it in the original triple backticks, if the json is not wrapped correctly with backticks, the verification will fail. 
-Do not output anything else, no need for a message before/ after, do not modify any other fields of the JSON object, no notes or anything else.
-Do not output scripts or try to automate this task, I am asking you to translate these on your own.
-If the verification fails you will be punished, if it succeeds you will be rewarded.
+${basePrompt}
 
 \`\`\`
 ${input}
@@ -152,27 +143,19 @@ export function translationVerificationPrompt(
 
     return `You are a professional translator.
 
+Verify the translation from ${inputLanguage} to ${outputLanguage}.
+
 You are given a JSON file containing an array of items to verify.
 
 - Do not change or translate the names of the fields. They must stay exactly as they are: 'key', 'originalText', 'translatedText', 'context', 'invalid' and 'invalidReason'. Changing any of these field names will result in a failed verification.
 - The value of the field 'key' must remain unchanged. It is used to identify which entity has been verified. Modifying it will cause the verification to fail.
 - 'originalText' is the source of the translated text, 'translatedText'. Do not change these two fields, it is not needed, but if it is, will NOT result in failure.
 - 'context' provides additional context for the 'originalText'. If this field is empty, you do not need any additional context. Do not translate this field it is not needed, but if it is, will NOT result in failure.
-- Very important! The outputted json must be valid json, if it isn't the translation to fail.
-
-Special Instructions:
-
--Some translations may contain variables in the text, such as {{timeLeft}}. These variables should not be translated or altered in any way. They must remain exactly as they are in the 'originalText'.
--If the 'originalText' does not contain variables, such as {{timeLeft}, ignore these special instructions.
-
-Verify the translation from ${inputLanguage} to ${outputLanguage}.
 
 Compare the value of each 'originalText' to the value of 'translatedText' and return only the original JSON array with the field 'invalid' set either to the boolean value true or false (not as a string, as a boolean). 
 If invalid is true, also add a very small comment in 'invalidReason' to explain why it is invalid, otherwise leave this field empty.
-VERY IMPORTANT: Wrap it in the original triple backticks, if the json is not wrapped correctly with backticks, the verification will fail. 
-Do not output anything else, no need for a message before/ after, do not modify any other fields of the JSON object, no notes or anything else.
-Do not output scripts or try to automate this task, I am asking you to verify these translations on your own.
-If the verification fails you will be punished, if it succeeds you will be rewarded.
+
+${basePrompt}
 
 \`\`\`
 ${input}

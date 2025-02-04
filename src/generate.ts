@@ -1,13 +1,6 @@
-import { fixTranslation } from "./fix_translation";
 import { generationPrompt } from "./prompts";
-import { isNAK, retryJob } from "./utils";
-import { verifyStyling, verifyTranslation } from "./verify";
-import type {
-    CheckTranslateItem,
-    RetranslateItem,
-    TranslateItem,
-    TranslateItemResult,
-} from "./types";
+import { retryJob } from "./utils";
+import type { TranslateItem } from "./types";
 import type GenerateTranslationOptions from "./interfaces/generate_translation_options";
 
 type GenerateState = {
@@ -23,7 +16,7 @@ type GenerateState = {
  */
 export default async function generateTranslation(
     options: GenerateTranslationOptions,
-): Promise<TranslateItemResult[]> {
+): Promise<TranslateItem[]> {
     const { translateItems, inputLanguage, outputLanguage } = options;
 
     const generationPromptText = generationPrompt(
@@ -40,7 +33,7 @@ export default async function generateTranslation(
         translationToRetryAttempts: {},
     };
 
-    let translated: TranslateItemResult[] = [];
+    let translated: TranslateItem[] = [];
     try {
         translated = await retryJob(
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
@@ -87,90 +80,16 @@ function isValidTranslateItem(item: any): item is TranslateItem {
         typeof item.key === "string" &&
         typeof item.originalText === "string" &&
         typeof item.translatedText === "string" &&
-        typeof item.context === "string"
-    );
-}
-
-function isValidCheckTranslateItem(item: any): item is CheckTranslateItem {
-    return (
-        typeof item.key === "string" &&
-        typeof item.originalText === "string" &&
-        typeof item.translatedText === "string" &&
         typeof item.context === "string" &&
-        (typeof item.invalid === "boolean" || item.invalid === null) &&
-        typeof item.invalidReason === "string"
+        item.key !== "" &&
+        item.translatedText !== ""
     );
-}
-
-function isValidRetranslateItem(item: any): item is RetranslateItem {
-    return (
-        typeof item.key === "string" &&
-        typeof item.originalText === "string" &&
-        typeof item.newTranslatedText === "string" &&
-        typeof item.context === "string" &&
-        typeof item.invalidTranslatedText === "string" &&
-        typeof item.invalidReason === "string"
-    );
-}
-
-function createValidateTranslateItemArray(
-    untranslatedItems: TranslateItem[],
-    translatedItems: TranslateItem[],
-): CheckTranslateItem[] {
-    const verificationOutput: CheckTranslateItem[] = [];
-
-    for (const untranslatedItem of untranslatedItems) {
-        const translatedItem = translatedItems.find(
-            (checkTranslatedItem) =>
-                untranslatedItem.key === checkTranslatedItem.key,
-        );
-
-        if (translatedItem) {
-            verificationOutput.push({
-                context: untranslatedItem.context,
-                invalid: null,
-                invalidReason: "",
-                key: untranslatedItem.key,
-                originalText: untranslatedItem.originalText,
-                translatedText: translatedItem.translatedText,
-            } as CheckTranslateItem);
-        }
-    }
-
-    return verificationOutput;
-}
-
-function createValidatedTranslateItemArray(
-    checkTranslateItems: CheckTranslateItem[],
-    verifiedTranslateItems: CheckTranslateItem[],
-): CheckTranslateItem[] {
-    const verificationOutput: CheckTranslateItem[] = [];
-
-    for (const checkTranslateItem of checkTranslateItems) {
-        const verifiedTranslateItem = verifiedTranslateItems.find(
-            (checkVerifiedTranslateItem) =>
-                checkTranslateItem.key === checkVerifiedTranslateItem.key,
-        );
-
-        if (verifiedTranslateItem) {
-            verificationOutput.push({
-                context: checkTranslateItem.context,
-                invalid: verifiedTranslateItem.invalid,
-                invalidReason: verifiedTranslateItem.invalidReason,
-                key: checkTranslateItem.key,
-                originalText: checkTranslateItem.originalText,
-                translatedText: checkTranslateItem.translatedText,
-            } as CheckTranslateItem);
-        }
-    }
-
-    return verificationOutput;
 }
 
 function verifyGenerationAndRetry(
     options: GenerateTranslationOptions,
     generateState: GenerateState,
-): Promise<TranslateItemResult[]> {
+): Promise<TranslateItem[]> {
     generateState.generationRetries++;
     if (generateState.generationRetries > 10) {
         options.chats.generateTranslationChat.resetChatHistory();
@@ -188,65 +107,36 @@ function verifyGenerationAndRetry(
     );
 }
 
-async function verifyTranslationAndFix(
-    verificationInput: CheckTranslateItem[],
-    options: GenerateTranslationOptions,
-    input: CheckTranslateItem[],
-) {
-    const translationVerificationResponse = await verifyTranslation(
-        options.chats.verifyTranslationChat,
-        options.inputLanguage,
-        options.outputLanguage,
-        input,
-        options.overridePrompt,
-    );
+function createTranslateItemsWithTranslation(
+    untranslatedItems: TranslateItem[],
+    translatedItems: TranslateItem[],
+): TranslateItem[] {
+    const output: TranslateItem[] = [];
 
-    const parsedOutput = parseOutputToJson(
-        translationVerificationResponse,
-        options,
-    ) as CheckTranslateItem[];
-
-    const validatedTranslateItemArray = createValidatedTranslateItemArray(
-        verificationInput,
-        parsedOutput.filter(isValidCheckTranslateItem),
-    );
-
-    const invalidTranslations = validatedTranslateItemArray.filter(
-        (validatedTranslateItem) => validatedTranslateItem.invalid,
-    );
-
-    if (invalidTranslations) {
-        console.log(invalidTranslations);
-        const retranslateInput = invalidTranslations.map(
-            (invalidTranslation) =>
-                ({
-                    context: invalidTranslation.context,
-                    invalidReason: invalidTranslation.invalidReason,
-                    invalidTranslatedText: invalidTranslation.translatedText,
-                    key: invalidTranslation.key,
-                    newTranslatedText: "",
-                    originalText: invalidTranslation.originalText,
-                }) as RetranslateItem,
+    for (const untranslatedItem of untranslatedItems) {
+        const translatedItem = translatedItems.find(
+            (checkTranslatedItem) =>
+                untranslatedItem.key === checkTranslatedItem.key,
         );
 
-        const fixedTranslations = await fixTranslation(
-            options.chats.verifyTranslationChat,
-            options.inputLanguage,
-            options.outputLanguage,
-            retranslateInput,
-        );
-
-        console.log(fixedTranslations);
-    } else {
-        console.log("nothing to fix");
+        if (translatedItem) {
+            output.push({
+                context: untranslatedItem.context,
+                key: untranslatedItem.key,
+                originalText: untranslatedItem.originalText,
+                translatedText: translatedItem.translatedText,
+            } as TranslateItem);
+        }
     }
+
+    return output;
 }
 
 async function generate(
     options: GenerateTranslationOptions,
     generationPromptText: string,
     generateState: GenerateState,
-): Promise<TranslateItemResult[]> {
+): Promise<TranslateItem[]> {
     const text =
         await options.chats.generateTranslationChat.sendMessage(
             generationPromptText,
@@ -259,36 +149,10 @@ async function generate(
     }
 
     const parsedOutput = parseOutputToJson(text, options);
+    const validTranslationObjects = parsedOutput.filter(isValidTranslateItem);
 
-    const verificationInput = createValidateTranslateItemArray(
+    return createTranslateItemsWithTranslation(
         options.translateItems,
-        parsedOutput.filter(isValidTranslateItem),
+        validTranslationObjects,
     );
-
-    if (!options.skipTranslationVerification) {
-        await verifyTranslationAndFix(
-            verificationInput,
-            options,
-            verificationInput,
-        );
-    }
-
-    // let stylingVerificationResponse = "";
-    // if (!options.skipStylingVerification) {
-    //     stylingVerificationResponse = await verifyStyling(
-    //         chats.verifyStylingChat,
-    //         inputLanguage,
-    //         outputLanguage,
-    //         input,
-    //         text,
-    //         options.overridePrompt,
-    //     );
-    // }
-
-    // if (isNAK(stylingVerificationResponse)) {
-    //     chats.generateTranslationChat.invalidStyling();
-    //     return Promise.reject(new Error(`Invalid styling. text = ${text}`));
-    // }
-
-    return [];
 }
