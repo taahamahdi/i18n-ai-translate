@@ -67,80 +67,39 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         ),
     };
 
-    const output: { [key: string]: string } = {};
-
-    const templatedStringPrefix =
-        options.templatedStringPrefix || DEFAULT_TEMPLATED_STRING_PREFIX;
-
-    const templatedStringSuffix =
-        options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
-
     const flatInput = flatten(options.inputJSON, {
         delimiter: FLATTEN_DELIMITER,
     }) as {
         [key: string]: string;
     };
 
-    const translateItemArray: TranslateItem[] = [];
+    replaceNewlinesWithPlaceholder(options, flatInput);
+
+    // groupSimilarValues(flatInput)
+
+    let translateItemArray: TranslateItem[] = [];
 
     for (const key in flatInput) {
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
-            flatInput[key] = flatInput[key].replaceAll(
-                "\n",
-                `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
-            );
-
             translateItemArray.push(createJsonInput(key, flatInput[key]));
         }
     }
 
-    // const groups: Array<{ [key: string]: string }> = [];
-    // for (const key in flatInput) {
-    //     if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
-    //         const val = flatInput[key];
-
-    //         const existingGroup = groups.find((group) =>
-    //             Object.values(group).some((entry) => {
-    //                 const distPercent =
-    //                     distance(val, entry) /
-    //                     Math.max(val.length, entry.length);
-
-    //                 return distPercent < 0.3;
-    //             }),
-    //         );
-
-    //         if (existingGroup) {
-    //             existingGroup[key] = val;
-    //         } else {
-    //             groups.push({ [key]: val });
-    //         }
-    //     }
-    // }
-
-    // for (let i = groups.length - 1; i > 0; i--) {
-    //     const j = Math.floor(Math.random() * (i + 1));
-    //     [groups[i], groups[j]] = [groups[j], groups[i]];
-    // }
-
-    // flatInput = {};
-    // for (const groupObj of groups) {
-    //     for (const [k, v] of Object.entries(groupObj)) {
-    //         flatInput[k] = v;
-    //     }
-    // }
-
     const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
     const batchStartTime = Date.now();
-    let generatedTranslation: TranslateItem[] = [];
-    for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
-        if (i > 0 && options.verbose) {
+    const generatedTranslation: TranslateItem[] = [];
+    const totalItems = translateItemArray.length;
+    let processedItems = 0;
+    let enqueuedItems = 0;
+    while (translateItemArray.length > 0) {
+        if (processedItems > 0 && options.verbose) {
             console.log(
-                `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
+                `Completed ${((processedItems / totalItems) * 100).toFixed(0)}%`,
             );
 
             const roundedEstimatedTimeLeftSeconds = Math.round(
-                (((Date.now() - batchStartTime) / (i + 1)) *
-                    (Object.keys(flatInput).length - i)) /
+                (((Date.now() - batchStartTime) / (processedItems + 1)) *
+                    (totalItems - processedItems)) /
                     1000,
             );
 
@@ -149,11 +108,8 @@ export async function translate(options: TranslateOptions): Promise<Object> {
             );
         }
 
-        const batchTranslateItemArray = translateItemArray.slice(
-            i,
-            i + batchSize,
-        );
-
+        const batchTranslateItemArray = translateItemArray.slice(0, batchSize);
+        enqueuedItems += batchTranslateItemArray.length;
         // eslint-disable-next-line no-await-in-loop
         const result = await generateTranslation({
             chats,
@@ -174,8 +130,28 @@ export async function translate(options: TranslateOptions): Promise<Object> {
             );
             break;
         }
-        console.log(result);
-        generatedTranslation = generatedTranslation.concat(result);
+
+        for (const translatedItem of result) {
+            const index = translateItemArray.findIndex(
+                (item) => item.key === translatedItem.key,
+            );
+
+            if (index !== -1) {
+                translateItemArray.splice(index, 1);
+                generatedTranslation.push(translatedItem);
+            }
+
+            processedItems++;
+        }
+    }
+
+    console.log(processedItems, enqueuedItems);
+
+    const output: { [key: string]: string } = {};
+
+    // Convert array of TranslateItem objects to output
+    for (const translation of generatedTranslation) {
+        output[translation.key] = translation.translatedText;
     }
 
     // sort the keys
@@ -184,14 +160,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         sortedOutput[key] = output[key];
     }
 
-    for (const key in sortedOutput) {
-        if (Object.prototype.hasOwnProperty.call(sortedOutput, key)) {
-            sortedOutput[key] = sortedOutput[key].replaceAll(
-                `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
-                "\n",
-            );
-        }
-    }
+    replacePlaceholderWithNewLines(options, sortedOutput);
 
     const unflattenedOutput = unflatten(sortedOutput, {
         delimiter: FLATTEN_DELIMITER,
@@ -204,6 +173,87 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     }
 
     return unflattenedOutput as Object;
+}
+
+function groupSimilarValues(flatInput: { [key: string]: string }) {
+    const groups: Array<{ [key: string]: string }> = [];
+    for (const key in flatInput) {
+        if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
+            const val = flatInput[key];
+
+            const existingGroup = groups.find((group) =>
+                Object.values(group).some((entry) => {
+                    const distPercent =
+                        distance(val, entry) /
+                        Math.max(val.length, entry.length);
+
+                    return distPercent < 0.3;
+                }),
+            );
+
+            if (existingGroup) {
+                existingGroup[key] = val;
+            } else {
+                groups.push({ [key]: val });
+            }
+        }
+    }
+
+    for (let i = groups.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [groups[i], groups[j]] = [groups[j], groups[i]];
+    }
+
+    flatInput = {};
+    for (const groupObj of groups) {
+        for (const [k, v] of Object.entries(groupObj)) {
+            flatInput[k] = v;
+        }
+    }
+}
+
+function replaceNewlinesWithPlaceholder(
+    options: TranslateOptions,
+    flatInput: { [key: string]: string },
+) {
+    const templatedStringPrefix =
+        options.templatedStringPrefix || DEFAULT_TEMPLATED_STRING_PREFIX;
+
+    const templatedStringSuffix =
+        options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
+
+    const translateItemArray: TranslateItem[] = [];
+
+    for (const key in flatInput) {
+        if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
+            flatInput[key] = flatInput[key].replaceAll(
+                "\n",
+                `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
+            );
+
+            translateItemArray.push(createJsonInput(key, flatInput[key]));
+        }
+    }
+}
+
+function replacePlaceholderWithNewLines(
+    options: TranslateOptions,
+    sortedOutput: { [key: string]: string },
+) {
+    const templatedStringPrefix =
+        options.templatedStringPrefix || DEFAULT_TEMPLATED_STRING_PREFIX;
+
+    const templatedStringSuffix =
+        options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
+
+    for (const key in sortedOutput) {
+        if (Object.prototype.hasOwnProperty.call(sortedOutput, key)) {
+            sortedOutput[key] = sortedOutput[key].replaceAll(
+                `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
+                "\n",
+            );
+        }
+    }
 }
 
 function createJsonInput(key: string, originalText: string): TranslateItem {

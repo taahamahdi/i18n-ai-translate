@@ -12,7 +12,8 @@ Special Instructions:
 - If the 'originalText' does not contain variables, such as {{timeLeft}, ignore these special instructions.
 
 Return only the original JSON array with your translations in the translatedText field
-VERY IMPORTANT: Wrap it in the original triple backticks, if the json is not wrapped correctly for the backticks the translation will fail. 
+VERY IMPORTANT: Wrap it in the original triple backticks ans specify its type as json, if the json is not wrapped correctly for the backticks the translation will fail because the response cannot be parsed.
+Example: \`\`\`json ...the json response...\`\`\`
 Do not output anything else, no need for a message before/ after, do not modify any other fields of the JSON object or add your own fields, no notes or anything else.
 Do not output scripts or try to automate this task, I am asking you to translate these on your own.
 
@@ -62,13 +63,13 @@ Translate from ${inputLanguage} to ${outputLanguage}.
 You are given a JSON file containing an array of items to translate.
 
 - Do not change or translate the names of the fields. They must stay exactly as they are: key, originalText, translatedText, and context. Changing any of these field names will result in a failed translation.
-- The value of the field 'key' must remain unchanged. It is used to identify which entity has been translated. Modifying it will cause the translation to fail.
+- The value of the field 'key' must remain unchanged. It is used to identify which entity has been translated. Modifying it will cause the translation to fail. Do not forget to add the correct value of the key to your response.
 - 'originalText' is the text that needs to be translated, do not translate this field it is not needed, but if it is, will NOT result in failure.
-- 'translatedText' is the field where you will enter the translation of the 'originalText'.
+- 'translatedText' is the field where you will enter the translation of the 'originalText'. 'translatedText' CANNOT BE AN EMPTY STRING, it must contain the translation. 
 - 'context' provides additional context for the 'originalText'. If this field is empty, you do not need any additional context. Do not translate this field it is not needed, but if it is, will NOT result in failure.
 ${basePrompt}
 
-\`\`\`
+\`\`\`json
 ${input}
 \`\`\`
 `;
@@ -100,7 +101,7 @@ You are given a JSON file containing an array of items to fix.
 - 'context' provides additional context for the 'originalText'. If this field is empty, you do not need any additional context. Do not translate this field it is not needed, but if it is, will NOT result in failure.
 ${basePrompt}
 
-\`\`\`
+\`\`\`json
 ${input}
 \`\`\`
 `;
@@ -157,7 +158,7 @@ If invalid is true, also add a very small comment in 'invalidReason' to explain 
 
 ${basePrompt}
 
-\`\`\`
+\`\`\`json
 ${input}
 \`\`\`
 `;
@@ -214,7 +215,7 @@ Otherwise, reply with ACK.
 
 Only reply with ACK/NAK.
 
-\`\`\`
+\`\`\`json
 ${inputLanguage},${outputLanguage}
 ${mergedCsv}
 \`\`\`

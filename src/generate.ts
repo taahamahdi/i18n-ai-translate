@@ -51,26 +51,19 @@ export default async function generateTranslation(
     return translated;
 }
 
-function parseOutputToJson(
-    outputText: string,
-    options: GenerateTranslationOptions,
-): any[] {
+function parseOutputToJson(outputText: string): any[] {
     const match = outputText.match(/```json\n([\s\S]*?)\n```/); // looks for ```json ...content... ```
     if (match) {
         const jsonContent = match[1]; // Extracted JSON string
-        if (options.verboseLogging) console.log("Extracted JSON:", jsonContent);
-
         try {
             const parsedJson = JSON.parse(jsonContent);
-            if (options.verboseLogging)
-                console.log("Parsed JSON object:", parsedJson);
             return parsedJson;
         } catch (error) {
             console.error("Error parsing JSON:", error, jsonContent);
             return [];
         }
     } else {
-        console.log("No JSON found.");
+        console.log("No JSON found.", outputText);
         return [];
     }
 }
@@ -148,7 +141,7 @@ async function generate(
         generateState.generationRetries = 0;
     }
 
-    const parsedOutput = parseOutputToJson(text, options);
+    const parsedOutput = parseOutputToJson(text);
     const validTranslationObjects = parsedOutput.filter(isValidTranslateItem);
 
     return createTranslateItemsWithTranslation(
