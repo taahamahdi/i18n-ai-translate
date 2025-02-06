@@ -123,7 +123,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
                 options.skipTranslationVerification ?? false,
             verboseLogging: options.verbose ?? false,
         });
-
+        console.log(result);
         if (!result) {
             console.error(
                 `Failed to generate translation for ${options.outputLanguage}`,

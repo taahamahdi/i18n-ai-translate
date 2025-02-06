@@ -27,7 +27,10 @@ export default class Ollama extends ChatInterface {
         }
     }
 
-    async sendMessage(message: string): Promise<string> {
+    async sendMessage(
+        message: string,
+        format?: string | object,
+    ): Promise<string> {
         if (!this.chatParams) {
             console.trace("Chat not started");
             return "";
@@ -36,6 +39,7 @@ export default class Ollama extends ChatInterface {
         this.history.push({ content: message, role: Role.User });
         this.chatParams = {
             ...this.chatParams,
+            format,
             messages: this.history,
         };
 

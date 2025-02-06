@@ -1,7 +1,13 @@
 import { generationPrompt } from "./prompts";
 import { retryJob } from "./utils";
-import type { TranslateItem } from "./types";
+import {
+    TranslateItemOutputArraySchema,
+    TranslateItem,
+    TranslateItemOutput,
+    TranslateItemInput,
+} from "./types";
 import type GenerateTranslationOptions from "./interfaces/generate_translation_options";
+import zodToJsonSchema from "zod-to-json-schema";
 
 type GenerateState = {
     fixedTranslationMappings: { [input: string]: string };
@@ -22,7 +28,7 @@ export default async function generateTranslation(
     const generationPromptText = generationPrompt(
         inputLanguage,
         outputLanguage,
-        translateItems,
+        getTranslateItemsInput(translateItems),
         options.overridePrompt,
     );
 
@@ -51,19 +57,24 @@ export default async function generateTranslation(
     return translated;
 }
 
-function parseOutputToJson(outputText: string): any[] {
-    const match = outputText.match(/```json\n([\s\S]*?)\n```/); // looks for ```json ...content... ```
-    if (match) {
-        const jsonContent = match[1]; // Extracted JSON string
-        try {
-            const parsedJson = JSON.parse(jsonContent);
-            return parsedJson;
-        } catch (error) {
-            console.error("Error parsing JSON:", error, jsonContent);
-            return [];
-        }
-    } else {
-        console.log("No JSON found.", outputText);
+function getTranslateItemsInput(
+    translateItems: TranslateItem[],
+): TranslateItemInput[] {
+    return translateItems.map(
+        (translateItem) =>
+            ({
+                key: translateItem.key,
+                originalText: translateItem.originalText,
+                context: translateItem.context,
+            }) as TranslateItemInput,
+    );
+}
+
+function parseOutputToJson(outputText: string): TranslateItemOutput[] {
+    try {
+        return TranslateItemOutputArraySchema.parse(JSON.parse(outputText));
+    } catch (error) {
+        console.error("Error parsing JSON:", error, outputText);
         return [];
     }
 }
@@ -71,9 +82,7 @@ function parseOutputToJson(outputText: string): any[] {
 function isValidTranslateItem(item: any): item is TranslateItem {
     return (
         typeof item.key === "string" &&
-        typeof item.originalText === "string" &&
         typeof item.translatedText === "string" &&
-        typeof item.context === "string" &&
         item.key !== "" &&
         item.translatedText !== ""
     );
@@ -102,7 +111,7 @@ function verifyGenerationAndRetry(
 
 function createTranslateItemsWithTranslation(
     untranslatedItems: TranslateItem[],
-    translatedItems: TranslateItem[],
+    translatedItems: TranslateItemOutput[],
 ): TranslateItem[] {
     const output: TranslateItem[] = [];
 
@@ -130,10 +139,10 @@ async function generate(
     generationPromptText: string,
     generateState: GenerateState,
 ): Promise<TranslateItem[]> {
-    const text =
-        await options.chats.generateTranslationChat.sendMessage(
-            generationPromptText,
-        );
+    const text = await options.chats.generateTranslationChat.sendMessage(
+        generationPromptText,
+        zodToJsonSchema(TranslateItemOutputArraySchema),
+    );
 
     if (!text) {
         return verifyGenerationAndRetry(options, generateState);
