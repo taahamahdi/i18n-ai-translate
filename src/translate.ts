@@ -75,13 +75,16 @@ export async function translate(options: TranslateOptions): Promise<Object> {
 
     replaceNewlinesWithPlaceholder(options, flatInput);
 
-    // groupSimilarValues(flatInput)
+    groupSimilarValues(flatInput);
 
-    let translateItemArray: TranslateItem[] = [];
+    const translateItemArray: TranslateItem[] = [];
 
-    for (const key in flatInput) {
+    for (let i = 0; i < Object.keys(flatInput).length; i++) {
+        const key = Object.keys(flatInput)[i];
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
-            translateItemArray.push(createJsonInput(key, flatInput[key]));
+            translateItemArray.push(
+                createJsonInput(i + 1, key, flatInput[key]),
+            );
         }
     }
 
@@ -114,15 +117,16 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         const result = await generateTranslation({
             chats,
             ensureChangedTranslation: options.ensureChangedTranslation ?? false,
-            translateItems: batchTranslateItemArray,
             inputLanguage: `[${options.inputLanguage}]`,
             outputLanguage: `[${options.outputLanguage}]`,
             overridePrompt: options.overridePrompt,
             skipStylingVerification: options.skipStylingVerification ?? false,
             skipTranslationVerification:
                 options.skipTranslationVerification ?? false,
+            translateItems: batchTranslateItemArray,
             verboseLogging: options.verbose ?? false,
         });
+
         console.log(result);
         if (!result) {
             console.error(
@@ -133,7 +137,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
 
         for (const translatedItem of result) {
             const index = translateItemArray.findIndex(
-                (item) => item.key === translatedItem.key,
+                (item) => item.id === translatedItem.id,
             );
 
             if (index !== -1) {
@@ -151,7 +155,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
 
     // Convert array of TranslateItem objects to output
     for (const translation of generatedTranslation) {
-        output[translation.key] = translation.translatedText;
+        output[translation.key] = translation.translated;
     }
 
     // sort the keys
@@ -175,7 +179,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     return unflattenedOutput as Object;
 }
 
-function groupSimilarValues(flatInput: { [key: string]: string }) {
+function groupSimilarValues(flatInput: { [key: string]: string }): void {
     const groups: Array<{ [key: string]: string }> = [];
     for (const key in flatInput) {
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
@@ -215,14 +219,12 @@ function groupSimilarValues(flatInput: { [key: string]: string }) {
 function replaceNewlinesWithPlaceholder(
     options: TranslateOptions,
     flatInput: { [key: string]: string },
-) {
+): void {
     const templatedStringPrefix =
         options.templatedStringPrefix || DEFAULT_TEMPLATED_STRING_PREFIX;
 
     const templatedStringSuffix =
         options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
-
-    const translateItemArray: TranslateItem[] = [];
 
     for (const key in flatInput) {
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
@@ -230,8 +232,6 @@ function replaceNewlinesWithPlaceholder(
                 "\n",
                 `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
             );
-
-            translateItemArray.push(createJsonInput(key, flatInput[key]));
         }
     }
 }
@@ -239,7 +239,7 @@ function replaceNewlinesWithPlaceholder(
 function replacePlaceholderWithNewLines(
     options: TranslateOptions,
     sortedOutput: { [key: string]: string },
-) {
+): void {
     const templatedStringPrefix =
         options.templatedStringPrefix || DEFAULT_TEMPLATED_STRING_PREFIX;
 
@@ -256,12 +256,17 @@ function replacePlaceholderWithNewLines(
     }
 }
 
-function createJsonInput(key: string, originalText: string): TranslateItem {
+function createJsonInput(
+    id: number,
+    key: string,
+    original: string,
+): TranslateItem {
     return {
-        context: "",
-        key: key,
-        originalText: originalText,
-        translatedText: "",
+        id,
+        // context: "",
+        key,
+        original,
+        translated: "",
     } as TranslateItem;
 }
 

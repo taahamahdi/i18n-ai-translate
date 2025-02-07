@@ -1,13 +1,12 @@
 import { generationPrompt } from "./prompts";
 import { retryJob } from "./utils";
 import {
-    TranslateItemOutputArraySchema,
     TranslateItem,
     TranslateItemOutput,
     TranslateItemInput,
+    TranslateItemOutputObjectSchema,
 } from "./types";
 import type GenerateTranslationOptions from "./interfaces/generate_translation_options";
-import zodToJsonSchema from "zod-to-json-schema";
 
 type GenerateState = {
     fixedTranslationMappings: { [input: string]: string };
@@ -63,8 +62,8 @@ function getTranslateItemsInput(
     return translateItems.map(
         (translateItem) =>
             ({
-                key: translateItem.key,
-                originalText: translateItem.originalText,
+                id: translateItem.id,
+                original: translateItem.original,
                 context: translateItem.context,
             }) as TranslateItemInput,
     );
@@ -72,7 +71,8 @@ function getTranslateItemsInput(
 
 function parseOutputToJson(outputText: string): TranslateItemOutput[] {
     try {
-        return TranslateItemOutputArraySchema.parse(JSON.parse(outputText));
+        return TranslateItemOutputObjectSchema.parse(JSON.parse(outputText))
+            .items;
     } catch (error) {
         console.error("Error parsing JSON:", error, outputText);
         return [];
@@ -81,10 +81,10 @@ function parseOutputToJson(outputText: string): TranslateItemOutput[] {
 
 function isValidTranslateItem(item: any): item is TranslateItem {
     return (
-        typeof item.key === "string" &&
-        typeof item.translatedText === "string" &&
-        item.key !== "" &&
-        item.translatedText !== ""
+        typeof item.id === "number" &&
+        typeof item.translated === "string" &&
+        item.id > 0 &&
+        item.translated !== ""
     );
 }
 
@@ -118,15 +118,16 @@ function createTranslateItemsWithTranslation(
     for (const untranslatedItem of untranslatedItems) {
         const translatedItem = translatedItems.find(
             (checkTranslatedItem) =>
-                untranslatedItem.key === checkTranslatedItem.key,
+                untranslatedItem.id === checkTranslatedItem.id,
         );
 
         if (translatedItem) {
             output.push({
+                id: untranslatedItem.id,
                 context: untranslatedItem.context,
                 key: untranslatedItem.key,
-                originalText: untranslatedItem.originalText,
-                translatedText: translatedItem.translatedText,
+                original: untranslatedItem.original,
+                translated: translatedItem.translated,
             } as TranslateItem);
         }
     }
@@ -139,9 +140,11 @@ async function generate(
     generationPromptText: string,
     generateState: GenerateState,
 ): Promise<TranslateItem[]> {
+    // console.log(generationPromptText);
     const text = await options.chats.generateTranslationChat.sendMessage(
         generationPromptText,
-        zodToJsonSchema(TranslateItemOutputArraySchema),
+        TranslateItemOutputObjectSchema,
+        "TranslateItemOutputObjectSchema",
     );
 
     if (!text) {

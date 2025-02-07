@@ -8,13 +8,15 @@ import {
 const basePrompt: string = `
 - Maintain the same text formatting for the translation; failure to do so will result in failure.
 - Ensure case sensitivity and whitespace are preserved exactly as they are in the original text. Modifying these will cause the translation to fail.
-
 Special Instructions:
 
 - Some translations may contain variables in the text, such as {{timeLeft}}. These variables should not be translated or altered in any way. They must remain exactly as they are in the 'originalText'.
 - If the 'originalText' does not contain variables, such as {{timeLeft}, ignore these special instructions.
+- Do not convert {{NEWLINE}} to \`n 
 
 If the translation fails you will be punished, if it succeeds you will be rewarded.
+
+return as JSON
 `;
 
 /**

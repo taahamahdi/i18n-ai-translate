@@ -1,6 +1,8 @@
 import ChatInterface from "./chat_interface";
 import Role from "../enums/role";
 import type { ChatRequest, Ollama as InternalOllama, Message } from "ollama";
+import { ZodType, ZodTypeAny, ZodTypeDef } from "zod";
+import zodToJsonSchema from "zod-to-json-schema";
 
 export default class Ollama extends ChatInterface {
     model: InternalOllama;
@@ -29,17 +31,20 @@ export default class Ollama extends ChatInterface {
 
     async sendMessage(
         message: string,
-        format?: string | object,
+        format?: ZodType<any, ZodTypeDef, any>,
+        formatName?: string,
     ): Promise<string> {
         if (!this.chatParams) {
             console.trace("Chat not started");
             return "";
         }
 
+        const formatSchema = format ? zodToJsonSchema(format) : undefined;
+
         this.history.push({ content: message, role: Role.User });
         this.chatParams = {
             ...this.chatParams,
-            format,
+            format: formatSchema,
             messages: this.history,
         };
 

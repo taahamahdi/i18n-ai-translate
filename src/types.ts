@@ -26,31 +26,36 @@ export type ModelArgs = {
 };
 
 export type TranslateItem = {
+    id: number;
     key: string;
-    originalText: string;
-    translatedText: string;
+    original: string;
+    translated: string;
     context: string;
 };
 
 export type TranslateItemInput = {
-    key: string;
-    originalText: string;
-    context: string;
+    id: number;
+    original: string;
+    context?: string;
 };
 
 export const TranslateItemOutputSchema = z.object({
-    key: z.string(),
-    translatedText: z.string(),
+    id: z.number(),
+    translated: z.string(),
 });
 
 export type TranslateItemOutput = {
-    key: string;
-    translatedText: string;
+    id: number;
+    translated: string;
 };
 
-export const TranslateItemOutputArraySchema = z.array(
-    TranslateItemOutputSchema,
-);
+export const TranslateItemOutputObjectSchema = z.object({
+    items: z.array(TranslateItemOutputSchema),
+});
+
+export type TranslateItemOutputObject = {
+    items: TranslateItemOutput[];
+};
 
 export type CheckTranslateItem = {
     key: string;

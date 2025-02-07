@@ -1,10 +1,12 @@
+import { ZodType, ZodTypeDef } from "zod";
 import type { ChatParams } from "../types";
 
 export default abstract class ChatInterface {
     abstract startChat(params: ChatParams): void;
     abstract sendMessage(
         message: string,
-        format?: string | object,
+        format?: ZodType<any, ZodTypeDef, any>,
+        formatName?: string,
     ): Promise<string>;
     abstract resetChatHistory(): void;
     abstract rollbackLastMessage(): void;
