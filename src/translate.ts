@@ -3,6 +3,7 @@ import {
     DEFAULT_TEMPLATED_STRING_PREFIX,
     DEFAULT_TEMPLATED_STRING_SUFFIX,
     FLATTEN_DELIMITER,
+    MAX_TOKEN,
 } from "./constants";
 import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { distance } from "fastest-levenshtein";
@@ -18,7 +19,7 @@ import fs from "fs";
 import generateTranslation from "./generate";
 import path, { dirname } from "path";
 import xml2js from "xml2js";
-import type { TranslateItem } from "./types";
+import type { TranslateItem, TranslateItemInput } from "./types";
 import type Chats from "./interfaces/chats";
 import type TranslateDiffOptions from "./interfaces/translate_diff_options";
 import type TranslateDirectoryDiffOptions from "./interfaces/translate_directory_diff_options";
@@ -26,6 +27,9 @@ import type TranslateDirectoryOptions from "./interfaces/translate_directory_opt
 import type TranslateFileDiffOptions from "./interfaces/translate_file_diff_options";
 import type TranslateFileOptions from "./interfaces/translate_file_options";
 import type TranslateOptions from "./interfaces/translate_options";
+import { Tiktoken } from "tiktoken/lite";
+import * as cl100k_base from "tiktoken/encoders/cl100k_base.json";
+import { generationPrompt } from "./prompts";
 
 /**
  * Translate the input JSON to the given language
@@ -111,8 +115,18 @@ export async function translate(options: TranslateOptions): Promise<Object> {
             );
         }
 
-        const batchTranslateItemArray = translateItemArray.slice(0, batchSize);
+        // const batchTranslateItemArray = getBatchTranslateItemArray(
+        //     translateItemArray,
+        //     options,
+        // );
+
+        const batchTranslateItemArray = translateItemArray.slice(
+            0,
+            DEFAULT_BATCH_SIZE,
+        );
+
         enqueuedItems += batchTranslateItemArray.length;
+
         // eslint-disable-next-line no-await-in-loop
         const result = await generateTranslation({
             chats,
@@ -127,7 +141,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
             verboseLogging: options.verbose ?? false,
         });
 
-        console.log(result);
+        // console.log(result);
         if (!result) {
             console.error(
                 `Failed to generate translation for ${options.outputLanguage}`,
@@ -177,6 +191,61 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     }
 
     return unflattenedOutput as Object;
+}
+
+function getBatchTranslateItemArray(
+    translateItemArray: TranslateItem[],
+    options: TranslateOptions,
+): TranslateItem[] {
+    const promptTokens = getTokenCount(
+        generationPrompt(
+            options.inputLanguage,
+            options.outputLanguage,
+            [],
+            options.overridePrompt,
+        ),
+    );
+
+    const maxInputTokens = ((MAX_TOKEN - promptTokens) * 0.9) / 2;
+    // const maxInputTokens = MAX_TOKEN * 0.9;
+    // console.log(maxInputTokens);
+    let currentTokens = 0;
+
+    const batchTranslateItemArray: TranslateItem[] = [];
+
+    for (const translateItem of translateItemArray) {
+        currentTokens += getTokenCount(
+            JSON.stringify(getTranslateItemsInput(translateItem)),
+        );
+
+        if (currentTokens >= maxInputTokens) {
+            break;
+        }
+
+        batchTranslateItemArray.push(translateItem);
+    }
+
+    return batchTranslateItemArray;
+}
+
+function getTranslateItemsInput(
+    translateItem: TranslateItem,
+): TranslateItemInput {
+    return {
+        id: translateItem.id,
+        original: translateItem.original,
+        context: translateItem.context,
+    } as TranslateItemInput;
+}
+
+function getTokenCount(text: string): number {
+    const encoding = new Tiktoken(
+        cl100k_base.bpe_ranks,
+        cl100k_base.special_tokens,
+        cl100k_base.pat_str,
+    );
+
+    return encoding.encode(text).length;
 }
 
 function groupSimilarValues(flatInput: { [key: string]: string }): void {

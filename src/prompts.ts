@@ -5,20 +5,6 @@ import {
     TranslateItemInput,
 } from "./types";
 
-const basePrompt: string = `
-- Maintain the same text formatting for the translation; failure to do so will result in failure.
-- Ensure case sensitivity and whitespace are preserved exactly as they are in the original text. Modifying these will cause the translation to fail.
-Special Instructions:
-
-- Some translations may contain variables in the text, such as {{timeLeft}}. These variables should not be translated or altered in any way. They must remain exactly as they are in the 'originalText'.
-- If the 'originalText' does not contain variables, such as {{timeLeft}, ignore these special instructions.
-- Do not convert {{NEWLINE}} to \`n 
-
-If the translation fails you will be punished, if it succeeds you will be rewarded.
-
-return as JSON
-`;
-
 /**
  * Prompt an AI to convert a given input from one language to another
  * @param inputLanguage - The language of the input
@@ -59,12 +45,17 @@ export function generationPrompt(
 
 Translate from ${inputLanguage} to ${outputLanguage}.
 
-- The value of the field 'key' must remain unchanged. It is used to identify which entity has been translated. Modifying it will cause the translation to fail. Do not forget to add the correct value of the key to your response.
-- 'originalText' is the text that needs to be translated.
-- 'translatedText' is the field where you will enter the translation of the 'originalText'. 'translatedText' CANNOT BE AN EMPTY STRING, it must contain the translation. 
-- 'context' provides additional context for the 'originalText'. If this field is empty, you do not need any additional context.
-${basePrompt}
+- Translate each object in the array.
+- 'original' is the text to be translated. 
+- 'translated' must not be empty. 
+- 'context' is additional info if needed.
+- Preserve text formatting, case sensitivity, and whitespace.
 
+Special Instructions:
+- Do not translate or alter variables like {{timeLeft}}, Ignore this if 'original' lacks variables.
+- Do not convert {{NEWLINE}} to \\n.
+
+Return the translation as JSON.
 \`\`\`json
 ${input}
 \`\`\`
@@ -95,7 +86,6 @@ You are given a JSON file containing an array of items to fix.
 - 'newTranslatedText' is the field where you will enter the translation of the 'originalText', take into acount the 'invalidTranslatedText' and 'invalidReason' when translating
 - 'originalText' is the source of the translated text, 'invalidTranslatedText'. Do not change these two fields, it is not needed, but if it is, will NOT result in failure.
 - 'context' provides additional context for the 'originalText'. If this field is empty, you do not need any additional context. Do not translate this field it is not needed, but if it is, will NOT result in failure.
-${basePrompt}
 
 \`\`\`json
 ${input}
@@ -151,8 +141,6 @@ You are given a JSON file containing an array of items to verify.
 
 Compare the value of each 'originalText' to the value of 'translatedText' and return only the original JSON array with the field 'invalid' set either to the boolean value true or false (not as a string, as a boolean). 
 If invalid is true, also add a very small comment in 'invalidReason' to explain why it is invalid, otherwise leave this field empty.
-
-${basePrompt}
 
 \`\`\`json
 ${input}

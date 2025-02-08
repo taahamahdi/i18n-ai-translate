@@ -146,7 +146,7 @@ async function generate(
         TranslateItemOutputObjectSchema,
         "TranslateItemOutputObjectSchema",
     );
-
+    console.log(generationPromptText);
     if (!text) {
         return verifyGenerationAndRetry(options, generateState);
     } else {
