@@ -21,7 +21,7 @@ https://github.com/user-attachments/assets/4909bf01-3e7a-464a-9c6e-2d1b82cc47d0
     - [Running as a script in your own project](#running-as-a-script-in-your-own-project)
   - [Script](#script)
     - [Example usage](#example-usage)
-    - [As a library](#as-a-library)
+  - [As a library](#as-a-library)
 - [Translation prompt](#translation-prompt)
 - [Translation verification prompt](#translation-verification-prompt)
 - [Styling verification prompt](#styling-verification-prompt)
