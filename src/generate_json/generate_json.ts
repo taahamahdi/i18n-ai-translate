@@ -40,6 +40,7 @@ export default async function generateTranslation(
         fixedTranslationMappings: {},
         generationRetries: 0,
         inputLineToTemplatedString: {},
+        splitInput: [],
         translationToRetryAttempts: {},
     };
 
