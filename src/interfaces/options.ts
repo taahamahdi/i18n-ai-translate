@@ -9,8 +9,8 @@ export default interface Options {
     rateLimitMs: number;
     apiKey?: string;
     host?: string;
-    templatedStringPrefix?: string;
-    templatedStringSuffix?: string;
+    templatedStringPrefix: string;
+    templatedStringSuffix: string;
     verbose?: boolean;
     ensureChangedTranslation?: boolean;
     batchSize?: number;

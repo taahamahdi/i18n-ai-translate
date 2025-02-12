@@ -1,5 +1,7 @@
+import { zodResponseFormat } from "openai/helpers/zod";
 import ChatInterface from "./chat_interface";
 import Role from "../enums/role";
+import type { ZodType, ZodTypeDef } from "zod";
 import type OpenAI from "openai";
 import type RateLimiter from "../rate_limiter";
 
@@ -27,7 +29,10 @@ export default class ChatGPT extends ChatInterface {
         }
     }
 
-    async sendMessage(message: string): Promise<string> {
+    async sendMessage(
+        message: string,
+        format?: ZodType<any, ZodTypeDef, any>,
+    ): Promise<string> {
         if (!this.chatParams) {
             console.trace("Chat not started");
             return "";
@@ -42,10 +47,15 @@ export default class ChatGPT extends ChatInterface {
         this.rateLimiter.apiCalled();
         this.history.push({ content: message, role: Role.User });
 
+        const formatSchema = format
+            ? zodResponseFormat(format, format.description ?? "responseObject")
+            : undefined;
+
         try {
             const response = await this.model.chat.completions.create({
                 ...this.chatParams,
                 messages: this.history,
+                response_format: formatSchema,
             });
 
             const responseText = response.choices[0].message.content;

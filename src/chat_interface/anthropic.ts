@@ -6,6 +6,7 @@ import type {
     MessageParam,
 } from "@anthropic-ai/sdk/resources";
 import type RateLimiter from "../rate_limiter";
+import { ZodType, ZodTypeDef } from "zod";
 
 export default class Anthropic extends ChatInterface {
     model: InternalAnthropic;
@@ -31,7 +32,10 @@ export default class Anthropic extends ChatInterface {
         }
     }
 
-    async sendMessage(message: string): Promise<string> {
+    async sendMessage(
+        message: string,
+        format?: ZodType<any, ZodTypeDef, any>,
+    ): Promise<string> {
         if (!this.chatParams) {
             console.trace("Chat not started");
             return "";

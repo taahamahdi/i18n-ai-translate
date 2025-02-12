@@ -23,3 +23,17 @@ export type ModelArgs = {
     apiKey: string | undefined;
     host: string | undefined;
 };
+
+export type GenerateState = {
+    fixedTranslationMappings: { [input: string]: string };
+    translationToRetryAttempts: { [translation: string]: number };
+    inputLineToTemplatedString: { [index: number]: Array<string> };
+    splitInput?: Array<string>;
+    generationRetries: number;
+};
+
+export type TranslationStats = {
+    batchStartTime: number;
+    processedItems: number;
+    enqueuedItems: number;
+};
