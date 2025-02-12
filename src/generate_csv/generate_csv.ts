@@ -3,14 +3,14 @@ import { isNAK } from "./utils_csv";
 import { retryJob } from "../utils";
 import { verifyStyling, verifyTranslation } from "./verify_csv";
 import type { GenerateState } from "src/types";
-import type GenerateTranslationOptions from "../interfaces/generate_translation_options";
+import type GenerateTranslationOptionsCsv from "../interfaces/generate_translation_options_csv";
 
 /**
  * Complete the initial translation of the input text.
  * @param options - The options to generate the translation
  */
 export default async function generateTranslation(
-    options: GenerateTranslationOptions,
+    options: GenerateTranslationOptionsCsv,
 ): Promise<string> {
     const {
         input,
@@ -68,7 +68,7 @@ export default async function generateTranslation(
 }
 
 async function generate(
-    options: GenerateTranslationOptions,
+    options: GenerateTranslationOptionsCsv,
     generationPromptText: string,
     generateState: GenerateState,
 ): Promise<string> {

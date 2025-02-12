@@ -7,7 +7,7 @@ import type {
     TranslateItemInput,
     TranslateItemOutput,
 } from "./types_json";
-import type GenerateTranslationOptions from "src/interfaces/generate_translation_options";
+import type GenerateTranslationOptionsJson from "src/interfaces/generate_translation_options_json";
 
 function getTranslateItemsInput(
     translateItems: TranslateItem[],
@@ -26,8 +26,8 @@ function getTranslateItemsInput(
  * Complete the initial translation of the input text.
  * @param options - The options to generate the translation
  */
-export default async function generateTranslation(
-    options: GenerateTranslationOptions,
+export default async function generateTranslationJson(
+    options: GenerateTranslationOptionsJson,
 ): Promise<TranslateItem[]> {
     const generationPromptText = generationPromptJson(
         options.inputLanguage,
@@ -82,7 +82,7 @@ function isValidTranslateItem(item: any): item is TranslateItem {
 }
 
 function verifyGenerationAndRetry(
-    options: GenerateTranslationOptions,
+    options: GenerateTranslationOptionsJson,
     generateState: GenerateState,
 ): Promise<TranslateItem[]> {
     generateState.generationRetries++;
@@ -129,7 +129,7 @@ function createTranslateItemsWithTranslation(
 }
 
 async function generate(
-    options: GenerateTranslationOptions,
+    options: GenerateTranslationOptionsJson,
     generationPromptText: string,
     generateState: GenerateState,
 ): Promise<TranslateItem[]> {

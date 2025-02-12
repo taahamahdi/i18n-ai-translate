@@ -1,6 +1,9 @@
-import { DEFAULT_BATCH_SIZE, FLATTEN_DELIMITER } from "./constants";
+import * as cl100k_base from "tiktoken/encoders/cl100k_base.json";
+import { DEFAULT_BATCH_SIZE, FLATTEN_DELIMITER, MAX_TOKEN } from "./constants";
+import { Tiktoken } from "tiktoken";
 import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
+import { generationPromptJson } from "./generate_json/prompts_json";
 import {
     getAllFilesInPath,
     getLanguageCodeFromFilename,
@@ -11,7 +14,10 @@ import RateLimiter from "./rate_limiter";
 import fs from "fs";
 import generateTranslation from "./generate_csv/generate_csv";
 import path, { dirname } from "path";
-import type { TranslateItem } from "./generate_json/types_json";
+import type {
+    TranslateItem,
+    TranslateItemInput,
+} from "./generate_json/types_json";
 import type { TranslationStats } from "./types";
 import type Chats from "./interfaces/chats";
 import type TranslateDiffOptions from "./interfaces/translate_diff_options";
@@ -20,6 +26,7 @@ import type TranslateDirectoryOptions from "./interfaces/translate_directory_opt
 import type TranslateFileDiffOptions from "./interfaces/translate_file_diff_options";
 import type TranslateFileOptions from "./interfaces/translate_file_options";
 import type TranslateOptions from "./interfaces/translate_options";
+import generateTranslationJson from "./generate_json/generate_json";
 
 function getChats(options: TranslateOptions): Chats {
     const rateLimiter = new RateLimiter(
@@ -210,6 +217,64 @@ function createJsonInput(
     } as TranslateItem;
 }
 
+function getTranslateItemsInput(
+    translateItem: TranslateItem,
+): TranslateItemInput {
+    return {
+        context: translateItem.context,
+        id: translateItem.id,
+        original: translateItem.original,
+    } as TranslateItemInput;
+}
+
+function getTokenCount(text: string): number {
+    const encoding = new Tiktoken(
+        cl100k_base.bpe_ranks,
+        cl100k_base.special_tokens,
+        cl100k_base.pat_str,
+    );
+
+    return encoding.encode(text).length;
+}
+
+function getBatchTranslateItemArray(
+    translateItemArray: TranslateItem[],
+    options: TranslateOptions,
+): TranslateItem[] {
+    const promptTokens = getTokenCount(
+        generationPromptJson(
+            options.inputLanguage,
+            options.outputLanguage,
+            [],
+            options.overridePrompt,
+        ),
+    );
+
+    const maxInputTokens = ((MAX_TOKEN - promptTokens) * 0.9) / 2;
+
+    let currentTokens = 0;
+
+    const batchTranslateItemArray: TranslateItem[] = [];
+
+    for (const translateItem of translateItemArray) {
+        currentTokens += getTokenCount(
+            JSON.stringify(getTranslateItemsInput(translateItem)),
+        );
+
+        if (
+            currentTokens >= maxInputTokens ||
+            batchTranslateItemArray.length >=
+                Number(options.batchSize ?? DEFAULT_BATCH_SIZE)
+        ) {
+            break;
+        }
+
+        batchTranslateItemArray.push(translateItem);
+    }
+
+    return batchTranslateItemArray;
+}
+
 async function translateJson(
     flatInput: { [key: string]: string },
     options: TranslateOptions,
@@ -227,7 +292,6 @@ async function translateJson(
         }
     }
 
-    const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
     const generatedTranslation: TranslateItem[] = [];
     const totalItems = translateItemArray.length;
 
@@ -249,17 +313,15 @@ async function translateJson(
             );
         }
 
-        // const batchTranslateItemArray = getBatchTranslateItemArray(
-        //     translateItemArray,
-        //     options,
-        // );
-
-        const batchTranslateItemArray = translateItemArray.slice(0, batchSize);
+        const batchTranslateItemArray = getBatchTranslateItemArray(
+            translateItemArray,
+            options,
+        );
 
         translationStats.enqueuedItems += batchTranslateItemArray.length;
 
         // eslint-disable-next-line no-await-in-loop
-        const result = await generateTranslation({
+        const result = await generateTranslationJson({
             chats,
             ensureChangedTranslation: options.ensureChangedTranslation ?? false,
             inputLanguage: `[${options.inputLanguage}]`,
