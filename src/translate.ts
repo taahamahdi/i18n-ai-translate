@@ -184,6 +184,10 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         translationStats,
     );
 
+    if (!options.skipTranslationVerification) {
+        const verifiedTransation = 0;
+    }
+
     // sort the keys
     const sortedOutput: { [key: string]: string } = {};
     for (const key of Object.keys(flatInput).sort()) {
