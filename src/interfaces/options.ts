@@ -1,7 +1,7 @@
 import type { ChatParams, Model } from "../types";
 import type Engine from "../enums/engine";
 import type OverridePrompt from "./override_prompt";
-import type PromptMode from "src/enums/prompt_mode";
+import type PromptMode from "../enums/prompt_mode";
 
 export default interface Options {
     engine: Engine;

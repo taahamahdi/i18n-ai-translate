@@ -1,12 +1,12 @@
-import { DEFAULT_BATCH_SIZE } from "src/constants";
+import { DEFAULT_BATCH_SIZE } from "../constants";
 import { failedTranslationPrompt, generationPrompt } from "./prompts_csv";
 import { isNAK } from "./utils_csv";
 import { retryJob } from "../utils";
 import { verifyStyling, verifyTranslation } from "./verify_csv";
-import type { GenerateState, TranslationStats } from "src/types";
-import type Chats from "src/interfaces/chats";
+import type { GenerateState, TranslationStats } from "../types";
+import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsCsv from "../interfaces/generate_translation_options_csv";
-import type TranslateOptions from "src/interfaces/translate_options";
+import type TranslateOptions from "../interfaces/translate_options";
 
 /**
  * Complete the initial translation of the input text.

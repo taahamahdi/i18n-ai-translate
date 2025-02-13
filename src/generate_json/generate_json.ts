@@ -1,23 +1,24 @@
 import * as cl100k_base from "tiktoken/encoders/cl100k_base.json";
-import { DEFAULT_BATCH_SIZE, MAX_TOKEN } from "src/constants";
+import { DEFAULT_BATCH_SIZE, MAX_TOKEN } from "../constants";
 import { Tiktoken } from "tiktoken";
 import { TranslateItemOutputObjectSchema } from "./types_json";
 import { generationPromptJson } from "./prompts_json";
-import { retryJob } from "src/utils";
-import type { GenerateState, TranslationStats } from "src/types";
+import { retryJob } from "../utils";
+import type { GenerateState, TranslationStats } from "../types";
 import type {
     TranslateItem,
     TranslateItemInput,
     TranslateItemOutput,
 } from "./types_json";
-import type Chats from "src/interfaces/chats";
-import type GenerateTranslationOptionsJson from "src/interfaces/generate_translation_options_json";
-import type TranslateOptions from "src/interfaces/translate_options";
+import type Chats from "../interfaces/chats";
+import type GenerateTranslationOptionsJson from "../interfaces/generate_translation_options_json";
+import type TranslateOptions from "../interfaces/translate_options";
 
 function createJsonInput(
     id: number,
     key: string,
     original: string,
+    tikToken: Tiktoken,
 ): TranslateItem {
     const translateItem = {
         // context: "",
@@ -28,9 +29,9 @@ function createJsonInput(
         translated: "",
     } as TranslateItem;
 
-    translateItem.tokens = getTokenCount(
+    translateItem.tokens = tikToken.encode(
         JSON.stringify(getTranslateItemsInput([translateItem])[0]),
-    );
+    ).length;
 
     return translateItem;
 }
@@ -48,28 +49,19 @@ function getTranslateItemsInput(
     );
 }
 
-function getTokenCount(text: string): number {
-    const encoding = new Tiktoken(
-        cl100k_base.bpe_ranks,
-        cl100k_base.special_tokens,
-        cl100k_base.pat_str,
-    );
-
-    return encoding.encode(text).length;
-}
-
 function getBatchTranslateItemArray(
     translateItemArray: TranslateItem[],
     options: TranslateOptions,
+    tikToken: Tiktoken,
 ): TranslateItem[] {
-    const promptTokens = getTokenCount(
+    const promptTokens = tikToken.encode(
         generationPromptJson(
             options.inputLanguage,
             options.outputLanguage,
             [],
             options.overridePrompt,
         ),
-    );
+    ).length;
 
     const maxInputTokens = ((MAX_TOKEN - promptTokens) * 0.9) / 2;
 
@@ -99,7 +91,7 @@ function printCompletion(
     options: TranslateOptions,
     translationStats: TranslationStats,
 ): void {
-    if (translationStats.processedItems > 0 && options.verbose) {
+    if (translationStats.processedTokens > 0 && options.verbose) {
         console.log(
             `Step 1/2 - Completed ${((translationStats.processedTokens / translationStats.totalTokens) * 100).toFixed(0)}%`,
         );
@@ -131,13 +123,19 @@ export default async function translateJson(
     chats: Chats,
     translationStats: TranslationStats,
 ): Promise<{ [key: string]: string }> {
+    const tikToken = new Tiktoken(
+        cl100k_base.bpe_ranks,
+        cl100k_base.special_tokens,
+        cl100k_base.pat_str,
+    );
+
     const translateItemArray: TranslateItem[] = [];
 
     for (let i = 0; i < Object.keys(flatInput).length; i++) {
         const key = Object.keys(flatInput)[i];
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
             translateItemArray.push(
-                createJsonInput(i + 1, key, flatInput[key]),
+                createJsonInput(i + 1, key, flatInput[key], tikToken),
             );
         }
     }
@@ -155,6 +153,7 @@ export default async function translateJson(
         const batchTranslateItemArray = getBatchTranslateItemArray(
             translateItemArray,
             options,
+            tikToken,
         );
 
         translationStats.enqueuedItems += batchTranslateItemArray.length;
@@ -277,7 +276,7 @@ function verifyGenerationAndRetry(
         );
     }
 
-    console.error(`Erroring text = ${options.translateItems}`);
+    console.error(`Erroring text = ${JSON.stringify(options.translateItems)}`);
     options.chats.generateTranslationChat.rollbackLastMessage();
     return Promise.reject(
         new Error("Failed to generate content due to exception."),
@@ -322,7 +321,7 @@ async function generate(
         TranslateItemOutputObjectSchema,
     );
 
-    console.log(generationPromptText);
+    // console.log(generationPromptText);
     if (!text) {
         return verifyGenerationAndRetry(options, generateState);
     } else {

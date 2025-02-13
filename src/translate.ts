@@ -125,6 +125,11 @@ function groupSimilarValues(flatInput: { [key: string]: string }): {
 function startTranslationStats(): TranslationStats {
     return {
         batchStartTime: Date.now(),
+        enqueuedItems: 0,
+        processedItems: 0,
+        processedTokens: 0,
+        totalItems: 0,
+        totalTokens: 0,
     } as TranslationStats;
 }
 
