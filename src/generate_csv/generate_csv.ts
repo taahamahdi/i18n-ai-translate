@@ -1,15 +1,90 @@
+import { DEFAULT_BATCH_SIZE } from "src/constants";
 import { failedTranslationPrompt, generationPrompt } from "./prompts_csv";
 import { isNAK } from "./utils_csv";
 import { retryJob } from "../utils";
 import { verifyStyling, verifyTranslation } from "./verify_csv";
-import type { GenerateState } from "src/types";
+import type { GenerateState, TranslationStats } from "src/types";
+import type Chats from "src/interfaces/chats";
 import type GenerateTranslationOptionsCsv from "../interfaces/generate_translation_options_csv";
+import type TranslateOptions from "src/interfaces/translate_options";
 
 /**
  * Complete the initial translation of the input text.
+ * @param flatInput - The flatinput object containing the json to translate
  * @param options - The options to generate the translation
+ * @param chats - The options to generate the translation
+ * @param translationStats - The translation statictics
  */
-export default async function generateTranslation(
+export default async function translateCsv(
+    flatInput: { [key: string]: string },
+    options: TranslateOptions,
+    chats: Chats,
+    translationStats: TranslationStats,
+): Promise<{ [key: string]: string }> {
+    const output: { [key: string]: string } = {};
+
+    const allKeys = Object.keys(flatInput);
+
+    const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
+
+    for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
+        if (i > 0 && options.verbose) {
+            console.log(
+                `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
+            );
+
+            const roundedEstimatedTimeLeftSeconds = Math.round(
+                (((Date.now() - translationStats.batchStartTime) / (i + 1)) *
+                    (Object.keys(flatInput).length - i)) /
+                    1000,
+            );
+
+            console.log(
+                `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`,
+            );
+        }
+
+        const keys = allKeys.slice(i, i + batchSize);
+        const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
+
+        // eslint-disable-next-line no-await-in-loop
+        const generatedTranslation = await generateTranslation({
+            chats,
+            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
+            input,
+            inputLanguage: `[${options.inputLanguage}]`,
+            keys,
+            outputLanguage: `[${options.outputLanguage}]`,
+            overridePrompt: options.overridePrompt,
+            skipStylingVerification: options.skipStylingVerification ?? false,
+            skipTranslationVerification:
+                options.skipTranslationVerification ?? false,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+            verboseLogging: options.verbose ?? false,
+        });
+
+        if (generatedTranslation === "") {
+            console.error(
+                `Failed to generate translation for ${options.outputLanguage}`,
+            );
+            break;
+        }
+
+        for (let j = 0; j < keys.length; j++) {
+            output[keys[j]] = generatedTranslation.split("\n")[j].slice(1, -1);
+
+            if (options.verbose)
+                console.log(
+                    `${keys[j].replaceAll("*", ".")}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
+                );
+        }
+    }
+
+    return output;
+}
+
+async function generateTranslation(
     options: GenerateTranslationOptionsCsv,
 ): Promise<string> {
     const {

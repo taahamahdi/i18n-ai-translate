@@ -8,6 +8,7 @@ import type {
 } from "@google/generative-ai";
 import type RateLimiter from "../rate_limiter";
 import { ZodType, ZodTypeDef } from "zod";
+import { toGeminiSchema } from "gemini-zod";
 
 interface HistoryEntry {
     role: Role;
@@ -60,6 +61,14 @@ export default class Gemini extends ChatInterface {
 
         await this.rateLimiter.wait();
         this.rateLimiter.apiCalled();
+
+        if (format) {
+            this.model.generationConfig.responseMimeType = "application/json";
+            this.model.generationConfig.responseSchema = toGeminiSchema(format);
+        } else {
+            this.model.generationConfig.responseMimeType = "";
+            this.model.generationConfig.responseSchema = undefined;
+        }
 
         try {
             const generatedContent = await this.chat.sendMessage(message);

@@ -1,23 +1,18 @@
-import * as cl100k_base from "tiktoken/encoders/cl100k_base.json";
-import { DEFAULT_BATCH_SIZE, FLATTEN_DELIMITER, MAX_TOKEN } from "./constants";
-import { Tiktoken } from "tiktoken";
+import { FLATTEN_DELIMITER } from "./constants";
 import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
-import { generationPromptJson } from "./generate_json/prompts_json";
 import {
     getAllFilesInPath,
     getLanguageCodeFromFilename,
     getTranslationDirectoryKey,
 } from "./utils";
 import ChatFactory from "./chat_interface/chat_factory";
+import PromptMode from "./enums/prompt_mode";
 import RateLimiter from "./rate_limiter";
 import fs from "fs";
-import generateTranslation from "./generate_csv/generate_csv";
 import path, { dirname } from "path";
-import type {
-    TranslateItem,
-    TranslateItemInput,
-} from "./generate_json/types_json";
+import translateCsv from "./generate_csv/generate_csv";
+import translateJson from "./generate_json/generate_json";
 import type { TranslationStats } from "./types";
 import type Chats from "./interfaces/chats";
 import type TranslateDiffOptions from "./interfaces/translate_diff_options";
@@ -26,7 +21,6 @@ import type TranslateDirectoryOptions from "./interfaces/translate_directory_opt
 import type TranslateFileDiffOptions from "./interfaces/translate_file_diff_options";
 import type TranslateFileOptions from "./interfaces/translate_file_options";
 import type TranslateOptions from "./interfaces/translate_options";
-import generateTranslationJson from "./generate_json/generate_json";
 
 function getChats(options: TranslateOptions): Chats {
     const rateLimiter = new RateLimiter(
@@ -134,238 +128,20 @@ function startTranslationStats(): TranslationStats {
     } as TranslationStats;
 }
 
-async function translateCsv(
+async function getTranslation(
     flatInput: { [key: string]: string },
     options: TranslateOptions,
     chats: Chats,
     translationStats: TranslationStats,
 ): Promise<{ [key: string]: string }> {
-    const output: { [key: string]: string } = {};
-
-    const allKeys = Object.keys(flatInput);
-
-    const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
-
-    for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
-        if (i > 0 && options.verbose) {
-            console.log(
-                `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
-            );
-
-            const roundedEstimatedTimeLeftSeconds = Math.round(
-                (((Date.now() - translationStats.batchStartTime) / (i + 1)) *
-                    (Object.keys(flatInput).length - i)) /
-                    1000,
-            );
-
-            console.log(
-                `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`,
-            );
-        }
-
-        const keys = allKeys.slice(i, i + batchSize);
-        const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
-
-        // eslint-disable-next-line no-await-in-loop
-        const generatedTranslation = await generateTranslation({
-            chats,
-            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
-            input,
-            inputLanguage: `[${options.inputLanguage}]`,
-            keys,
-            outputLanguage: `[${options.outputLanguage}]`,
-            overridePrompt: options.overridePrompt,
-            skipStylingVerification: options.skipStylingVerification ?? false,
-            skipTranslationVerification:
-                options.skipTranslationVerification ?? false,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
-            verboseLogging: options.verbose ?? false,
-        });
-
-        if (generatedTranslation === "") {
-            console.error(
-                `Failed to generate translation for ${options.outputLanguage}`,
-            );
-            break;
-        }
-
-        for (let j = 0; j < keys.length; j++) {
-            output[keys[j]] = generatedTranslation.split("\n")[j].slice(1, -1);
-
-            if (options.verbose)
-                console.log(
-                    `${keys[j].replaceAll("*", ".")}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
-                );
-        }
+    switch (options.promptMode) {
+        case PromptMode.JSON:
+            return translateJson(flatInput, options, chats, translationStats);
+        case PromptMode.CSV:
+            return translateCsv(flatInput, options, chats, translationStats);
+        default:
+            throw new Error("Prompt mode is not set");
     }
-
-    return output;
-}
-
-function createJsonInput(
-    id: number,
-    key: string,
-    original: string,
-): TranslateItem {
-    return {
-        id,
-        // context: "",
-        key,
-        original,
-        translated: "",
-    } as TranslateItem;
-}
-
-function getTranslateItemsInput(
-    translateItem: TranslateItem,
-): TranslateItemInput {
-    return {
-        context: translateItem.context,
-        id: translateItem.id,
-        original: translateItem.original,
-    } as TranslateItemInput;
-}
-
-function getTokenCount(text: string): number {
-    const encoding = new Tiktoken(
-        cl100k_base.bpe_ranks,
-        cl100k_base.special_tokens,
-        cl100k_base.pat_str,
-    );
-
-    return encoding.encode(text).length;
-}
-
-function getBatchTranslateItemArray(
-    translateItemArray: TranslateItem[],
-    options: TranslateOptions,
-): TranslateItem[] {
-    const promptTokens = getTokenCount(
-        generationPromptJson(
-            options.inputLanguage,
-            options.outputLanguage,
-            [],
-            options.overridePrompt,
-        ),
-    );
-
-    const maxInputTokens = ((MAX_TOKEN - promptTokens) * 0.9) / 2;
-
-    let currentTokens = 0;
-
-    const batchTranslateItemArray: TranslateItem[] = [];
-
-    for (const translateItem of translateItemArray) {
-        currentTokens += getTokenCount(
-            JSON.stringify(getTranslateItemsInput(translateItem)),
-        );
-
-        if (
-            currentTokens >= maxInputTokens ||
-            batchTranslateItemArray.length >=
-                Number(options.batchSize ?? DEFAULT_BATCH_SIZE)
-        ) {
-            break;
-        }
-
-        batchTranslateItemArray.push(translateItem);
-    }
-
-    return batchTranslateItemArray;
-}
-
-async function translateJson(
-    flatInput: { [key: string]: string },
-    options: TranslateOptions,
-    chats: Chats,
-    translationStats: TranslationStats,
-): Promise<{ [key: string]: string }> {
-    const translateItemArray: TranslateItem[] = [];
-
-    for (let i = 0; i < Object.keys(flatInput).length; i++) {
-        const key = Object.keys(flatInput)[i];
-        if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
-            translateItemArray.push(
-                createJsonInput(i + 1, key, flatInput[key]),
-            );
-        }
-    }
-
-    const generatedTranslation: TranslateItem[] = [];
-    const totalItems = translateItemArray.length;
-
-    while (translateItemArray.length > 0) {
-        if (translationStats.processedItems > 0 && options.verbose) {
-            console.log(
-                `Completed ${((translationStats.processedItems / totalItems) * 100).toFixed(0)}%`,
-            );
-
-            const roundedEstimatedTimeLeftSeconds = Math.round(
-                (((Date.now() - translationStats.batchStartTime) /
-                    (translationStats.processedItems + 1)) *
-                    (totalItems - translationStats.processedItems)) /
-                    1000,
-            );
-
-            console.log(
-                `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`,
-            );
-        }
-
-        const batchTranslateItemArray = getBatchTranslateItemArray(
-            translateItemArray,
-            options,
-        );
-
-        translationStats.enqueuedItems += batchTranslateItemArray.length;
-
-        // eslint-disable-next-line no-await-in-loop
-        const result = await generateTranslationJson({
-            chats,
-            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
-            inputLanguage: `[${options.inputLanguage}]`,
-            outputLanguage: `[${options.outputLanguage}]`,
-            overridePrompt: options.overridePrompt,
-            skipStylingVerification: options.skipStylingVerification ?? false,
-            skipTranslationVerification:
-                options.skipTranslationVerification ?? false,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
-            translateItems: batchTranslateItemArray,
-            verboseLogging: options.verbose ?? false,
-        });
-
-        // console.log(result);
-        if (!result) {
-            console.error(
-                `Failed to generate translation for ${options.outputLanguage}`,
-            );
-            break;
-        }
-
-        for (const translatedItem of result) {
-            const index = translateItemArray.findIndex(
-                (item) => item.id === translatedItem.id,
-            );
-
-            if (index !== -1) {
-                translateItemArray.splice(index, 1);
-                generatedTranslation.push(translatedItem);
-            }
-
-            translationStats.processedItems++;
-        }
-    }
-
-    const output: { [key: string]: string } = {};
-
-    // Convert array of TranslateItem objects to output
-    for (const translation of generatedTranslation) {
-        output[translation.key] = translation.translated;
-    }
-
-    return output;
 }
 
 /**
@@ -393,7 +169,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
 
     const translationStats = startTranslationStats();
 
-    const output = await translateCsv(
+    const output = await getTranslation(
         flatInput,
         options,
         chats,
@@ -521,6 +297,7 @@ export async function translateDiff(
                 model: options.model,
                 outputLanguage: languageCode,
                 overridePrompt: options.overridePrompt,
+                promptMode: options.promptMode,
                 rateLimitMs: options.rateLimitMs,
                 skipStylingVerification: options.skipStylingVerification,
                 skipTranslationVerification:
@@ -606,6 +383,7 @@ export async function translateFile(
             model: options.model,
             outputLanguage,
             overridePrompt: options.overridePrompt,
+            promptMode: options.promptMode,
             rateLimitMs: options.rateLimitMs,
             skipStylingVerification: options.skipStylingVerification,
             skipTranslationVerification: options.skipTranslationVerification,
@@ -729,6 +507,7 @@ export async function translateFileDiff(
             inputLanguage: options.inputLanguageCode,
             model: options.model,
             overridePrompt: options.overridePrompt,
+            promptMode: options.promptMode,
             rateLimitMs: options.rateLimitMs,
             skipStylingVerification: options.skipStylingVerification,
             skipTranslationVerification: options.skipTranslationVerification,
@@ -834,6 +613,7 @@ export async function translateDirectory(
             model: options.model,
             outputLanguage,
             overridePrompt: options.overridePrompt,
+            promptMode: options.promptMode,
             rateLimitMs: options.rateLimitMs,
             skipStylingVerification: options.skipStylingVerification,
             skipTranslationVerification: options.skipTranslationVerification,
@@ -1034,6 +814,7 @@ export async function translateDirectoryDiff(
             inputLanguage: options.inputLanguageCode,
             model: options.model,
             overridePrompt: options.overridePrompt,
+            promptMode: options.promptMode,
             rateLimitMs: options.rateLimitMs,
             skipStylingVerification: options.skipStylingVerification,
             skipTranslationVerification: options.skipTranslationVerification,

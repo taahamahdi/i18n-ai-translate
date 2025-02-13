@@ -17,6 +17,7 @@ import {
     translateFileDiff,
 } from "./translate";
 import Engine from "./enums/engine";
+import PromptMode from "./enums/prompt_mode";
 import fs from "fs";
 import path from "path";
 import type { ChatParams, Model, ModelArgs } from "./types";
@@ -30,6 +31,7 @@ const processModelArgs = (options: any): ModelArgs => {
     let rateLimitMs = Number(options.rateLimitMs);
     let apiKey: string | undefined;
     let host: string | undefined;
+    let promptMode: PromptMode;
     switch (options.engine) {
         case Engine.Gemini:
             model = options.model || DEFAULT_MODEL[Engine.Gemini];
@@ -43,6 +45,15 @@ const processModelArgs = (options: any): ModelArgs => {
                 throw new Error("GEMINI_API_KEY not found in .env file");
             } else {
                 apiKey = options.apiKey || process.env.GEMINI_API_KEY;
+            }
+
+            if (!options.promptMode) {
+                promptMode = PromptMode.JSON;
+            } else {
+                promptMode = options.promptMode;
+                if (promptMode === PromptMode.CSV) {
+                    console.warn("WARNING: Json mode recommended for Gemini");
+                }
             }
 
             break;
@@ -66,6 +77,12 @@ const processModelArgs = (options: any): ModelArgs => {
                 apiKey = options.apiKey || process.env.OPENAI_API_KEY;
             }
 
+            if (!options.promptMode) {
+                promptMode = PromptMode.CSV;
+            } else {
+                promptMode = options.promptMode;
+            }
+
             break;
         case Engine.Ollama:
             model = options.model || DEFAULT_MODEL[Engine.Ollama];
@@ -76,6 +93,15 @@ const processModelArgs = (options: any): ModelArgs => {
             };
 
             host = options.host || process.env.OLLAMA_HOSTNAME;
+
+            if (!options.promptMode) {
+                promptMode = PromptMode.JSON;
+            } else {
+                promptMode = options.promptMode;
+                if (promptMode === PromptMode.CSV) {
+                    console.warn("WARNING: Json mode recommended for Ollama");
+                }
+            }
 
             break;
         case Engine.Claude:
@@ -97,6 +123,17 @@ const processModelArgs = (options: any): ModelArgs => {
                 apiKey = options.apiKey || process.env.ANTHROPIC_API_KEY;
             }
 
+            if (!options.promptMode) {
+                promptMode = PromptMode.CSV;
+            } else {
+                promptMode = options.promptMode;
+                if (promptMode === PromptMode.JSON) {
+                    throw new Error(
+                        "JSON mode is not compatible with Anthropic",
+                    );
+                }
+            }
+
             break;
         default: {
             throw new Error("Invalid engine");
@@ -108,6 +145,7 @@ const processModelArgs = (options: any): ModelArgs => {
         chatParams,
         host,
         model: options.model || DEFAULT_MODEL[options.engine as Engine],
+        promptMode,
         rateLimitMs,
     };
 };
@@ -218,8 +256,9 @@ program
         CLI_HELP.OverridePromptFile,
     )
     .option("--verbose", CLI_HELP.Verbose, false)
+    .option("--prompt-mode <prompt-mode>", CLI_HELP.PromptMode)
     .action(async (options: any) => {
-        const { model, chatParams, rateLimitMs, apiKey, host } =
+        const { model, chatParams, rateLimitMs, apiKey, host, promptMode } =
             processModelArgs(options);
 
         let overridePrompt: OverridePrompt | undefined;
@@ -308,6 +347,7 @@ program
                             model,
                             outputFilePath: outputPath,
                             overridePrompt,
+                            promptMode,
                             rateLimitMs,
                             skipStylingVerification:
                                 options.skipStylingVerification,
@@ -359,6 +399,7 @@ program
                             model,
                             outputLanguage: languageCode,
                             overridePrompt,
+                            promptMode,
                             rateLimitMs,
                             skipStylingVerification:
                                 options.skipStylingVerification,
@@ -421,6 +462,7 @@ program
                         model,
                         outputFilePath: output,
                         overridePrompt,
+                        promptMode,
                         rateLimitMs,
                         skipStylingVerification:
                             options.skipStylingVerification,
@@ -493,8 +535,9 @@ program
         CLI_HELP.OverridePromptFile,
     )
     .option("--verbose", CLI_HELP.Verbose, false)
+    .option("--prompt-mode <prompt-mode>", CLI_HELP.PromptMode)
     .action(async (options: any) => {
-        const { model, chatParams, rateLimitMs, apiKey, host } =
+        const { model, chatParams, rateLimitMs, apiKey, host, promptMode } =
             processModelArgs(options);
 
         let overridePrompt: OverridePrompt | undefined;
@@ -555,6 +598,7 @@ program
                 inputLanguageCode: options.inputLanguage,
                 model,
                 overridePrompt,
+                promptMode,
                 rateLimitMs,
                 skipStylingVerification: options.skipStylingVerification,
                 skipTranslationVerification:
@@ -577,6 +621,7 @@ program
                 inputLanguageCode: options.inputLanguage,
                 model,
                 overridePrompt,
+                promptMode,
                 rateLimitMs,
                 skipStylingVerification: options.skipStylingVerification,
                 skipTranslationVerification:
