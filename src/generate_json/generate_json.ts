@@ -81,9 +81,10 @@ function getBatchTranslateItemArray(
         currentTokens += translateItem.tokens;
 
         if (
-            currentTokens >= maxInputTokens ||
-            batchTranslateItemArray.length >=
-                Number(options.batchSize ?? DEFAULT_BATCH_SIZE)
+            batchTranslateItemArray.length !== 0 &&
+            (currentTokens >= maxInputTokens ||
+                batchTranslateItemArray.length >=
+                    Number(options.batchSize ?? DEFAULT_BATCH_SIZE))
         ) {
             break;
         }
@@ -92,6 +93,29 @@ function getBatchTranslateItemArray(
     }
 
     return batchTranslateItemArray;
+}
+
+function printCompletion(
+    options: TranslateOptions,
+    translationStats: TranslationStats,
+): void {
+    if (translationStats.processedItems > 0 && options.verbose) {
+        console.log(
+            `Step 1/2 - Completed ${((translationStats.processedTokens / translationStats.totalTokens) * 100).toFixed(0)}%`,
+        );
+
+        const roundedEstimatedTimeLeftSeconds = Math.round(
+            (((Date.now() - translationStats.batchStartTime) /
+                (translationStats.processedTokens + 1)) *
+                (translationStats.totalTokens -
+                    translationStats.processedTokens)) /
+                1000,
+        );
+
+        console.log(
+            `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`,
+        );
+    }
 }
 
 /**
@@ -119,25 +143,14 @@ export default async function translateJson(
     }
 
     const generatedTranslation: TranslateItem[] = [];
-    const totalItems = translateItemArray.length;
+    translationStats.totalItems = translateItemArray.length;
+    translationStats.totalTokens = translateItemArray.reduce(
+        (sum, translateItem) => sum + translateItem.tokens,
+        0,
+    );
 
     while (translateItemArray.length > 0) {
-        if (translationStats.processedItems > 0 && options.verbose) {
-            console.log(
-                `Completed ${((translationStats.processedItems / totalItems) * 100).toFixed(0)}%`,
-            );
-
-            const roundedEstimatedTimeLeftSeconds = Math.round(
-                (((Date.now() - translationStats.batchStartTime) /
-                    (translationStats.processedItems + 1)) *
-                    (totalItems - translationStats.processedItems)) /
-                    1000,
-            );
-
-            console.log(
-                `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`,
-            );
-        }
+        printCompletion(options, translationStats);
 
         const batchTranslateItemArray = getBatchTranslateItemArray(
             translateItemArray,
@@ -178,6 +191,7 @@ export default async function translateJson(
             if (index !== -1) {
                 translateItemArray.splice(index, 1);
                 generatedTranslation.push(translatedItem);
+                translationStats.processedTokens += translatedItem.tokens;
             }
 
             translationStats.processedItems++;

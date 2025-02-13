@@ -37,5 +37,8 @@ export type GenerateState = {
 export type TranslationStats = {
     batchStartTime: number;
     processedItems: number;
+    processedTokens: number;
     enqueuedItems: number;
+    totalItems: number;
+    totalTokens: number;
 };
