@@ -6,6 +6,7 @@ export type TranslateItem = {
     original: string;
     translated: string;
     context: string;
+    tokens: number;
 };
 
 export type TranslateItemInput = {

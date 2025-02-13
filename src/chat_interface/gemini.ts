@@ -1,3 +1,4 @@
+import { toGeminiSchema } from "gemini-zod";
 import ChatInterface from "./chat_interface";
 import Role from "../enums/role";
 import type {
@@ -6,9 +7,8 @@ import type {
     GenerativeModel,
     StartChatParams,
 } from "@google/generative-ai";
+import type { ZodType, ZodTypeDef } from "zod";
 import type RateLimiter from "../rate_limiter";
-import { ZodType, ZodTypeDef } from "zod";
-import { toGeminiSchema } from "gemini-zod";
 
 interface HistoryEntry {
     role: Role;

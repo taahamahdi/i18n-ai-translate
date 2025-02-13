@@ -1,8 +1,8 @@
 import ChatInterface from "./chat_interface";
 import Role from "../enums/role";
-import type { ChatRequest, Ollama as InternalOllama, Message } from "ollama";
-import { ZodType, ZodTypeDef } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
+import type { ChatRequest, Ollama as InternalOllama, Message } from "ollama";
+import type { ZodType, ZodTypeDef } from "zod";
 
 export default class Ollama extends ChatInterface {
     model: InternalOllama;
@@ -44,8 +44,8 @@ export default class Ollama extends ChatInterface {
 
         this.chatParams = {
             ...this.chatParams,
-            messages: this.history,
             format: formatSchema,
+            messages: this.history,
         };
 
         try {

@@ -19,13 +19,20 @@ function createJsonInput(
     key: string,
     original: string,
 ): TranslateItem {
-    return {
-        id,
+    const translateItem = {
         // context: "",
+        id,
         key,
         original,
+        tokens: 0,
         translated: "",
     } as TranslateItem;
+
+    translateItem.tokens = getTokenCount(
+        JSON.stringify(getTranslateItemsInput([translateItem])[0]),
+    );
+
+    return translateItem;
 }
 
 function getTranslateItemsInput(
@@ -71,9 +78,7 @@ function getBatchTranslateItemArray(
     const batchTranslateItemArray: TranslateItem[] = [];
 
     for (const translateItem of translateItemArray) {
-        currentTokens += getTokenCount(
-            JSON.stringify(getTranslateItemsInput([translateItem])[0]),
-        );
+        currentTokens += translateItem.tokens;
 
         if (
             currentTokens >= maxInputTokens ||
@@ -283,6 +288,7 @@ function createTranslateItemsWithTranslation(
                 id: untranslatedItem.id,
                 key: untranslatedItem.key,
                 original: untranslatedItem.original,
+                tokens: untranslatedItem.tokens,
                 translated: translatedItem.translated,
             } as TranslateItem);
         }

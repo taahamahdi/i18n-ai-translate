@@ -5,8 +5,8 @@ import type {
     MessageCreateParams,
     MessageParam,
 } from "@anthropic-ai/sdk/resources";
+import type { ZodType, ZodTypeDef } from "zod";
 import type RateLimiter from "../rate_limiter";
-import { ZodType, ZodTypeDef } from "zod";
 
 export default class Anthropic extends ChatInterface {
     model: InternalAnthropic;
