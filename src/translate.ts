@@ -136,8 +136,16 @@ async function getTranslation(
 ): Promise<{ [key: string]: string }> {
     switch (options.promptMode) {
         case PromptMode.JSON:
+            if (options.verbose) {
+                console.log("Transaltion prompting mode: JSON");
+            }
+
             return translateJson(flatInput, options, chats, translationStats);
         case PromptMode.CSV:
+            if (options.verbose) {
+                console.log("Transaltion prompting mode: CSV");
+            }
+
             return translateCsv(flatInput, options, chats, translationStats);
         default:
             throw new Error("Prompt mode is not set");
