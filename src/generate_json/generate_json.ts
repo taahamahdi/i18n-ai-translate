@@ -544,7 +544,7 @@ function createTranslateItemsWithTranslation(
                     translated: translatedItem.translated,
                 } as TranslateItem);
             } else {
-                untranslatedItem.failure = `variables missing from translation ${JSON.stringify(missingVariables)}`;
+                untranslatedItem.failure = `Must add variables, missing from last translation: '${JSON.stringify(missingVariables)}'`;
                 console.log(untranslatedItem.templateStrings, templateStrings);
                 console.log(
                     untranslatedItem.original,
@@ -593,7 +593,7 @@ function createVerifyItemsWithTranslation(
                         verifiedItem.fixedTranslation as string;
                     translatedItem.failure = "";
                 } else {
-                    translatedItem.failure = `must contain variables: '${JSON.stringify(missingVariables)}'`;
+                    translatedItem.failure = `Must add variables, missing from last translation: '${JSON.stringify(missingVariables)}'`;
                     console.log(
                         translatedItem.templateStrings,
                         templateStrings,
