@@ -26,7 +26,7 @@ export type ModelArgs = {
     promptMode: PromptMode;
 };
 
-export type GenerateState = {
+export type GenerateStateCsv = {
     fixedTranslationMappings: { [input: string]: string };
     translationToRetryAttempts: { [translation: string]: number };
     inputLineToTemplatedString: { [index: number]: Array<string> };

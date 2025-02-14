@@ -3,7 +3,7 @@ import { failedTranslationPrompt, generationPrompt } from "./prompts_csv";
 import { isNAK } from "./utils_csv";
 import { retryJob } from "../utils";
 import { verifyStyling, verifyTranslation } from "./verify_csv";
-import type { GenerateState, TranslationStatsItem } from "../types";
+import type { GenerateStateCsv, TranslationStatsItem } from "../types";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsCsv from "../interfaces/generate_translation_options_csv";
 import type TranslateOptions from "../interfaces/translate_options";
@@ -111,7 +111,7 @@ async function generateTranslation(
 
     const splitInput = input.split("\n");
 
-    const generateState: GenerateState = {
+    const generateState: GenerateStateCsv = {
         fixedTranslationMappings: {},
         generationRetries: 0,
         inputLineToTemplatedString: {},
@@ -147,7 +147,7 @@ async function generateTranslation(
 async function generate(
     options: GenerateTranslationOptionsCsv,
     generationPromptText: string,
-    generateState: GenerateState,
+    generateState: GenerateStateCsv,
 ): Promise<string> {
     const {
         chats,

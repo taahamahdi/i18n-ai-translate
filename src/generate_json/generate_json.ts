@@ -8,17 +8,14 @@ import {
 import { retryJob } from "../utils";
 import { translationPromptJson, verificationPromptJson } from "./prompts_json";
 import type {
-    GenerateState,
-    TranslationStats,
-    TranslationStatsItem,
-} from "../types";
-import type {
+    GenerateStateJson,
     TranslateItem,
     TranslateItemInput,
     TranslateItemOutput,
     VerifyItemInput,
     VerifyItemOutput,
 } from "./types_json";
+import type { TranslationStats, TranslationStatsItem } from "../types";
 import type { ZodType, ZodTypeDef } from "zod";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsJson from "../interfaces/generate_translation_options_json";
@@ -30,7 +27,12 @@ function generateTranslateItemsInput(
     return translateItems.map(
         (translateItem) =>
             ({
-                context: translateItem.context,
+                ...(translateItem.context !== ""
+                    ? { context: translateItem.context }
+                    : {}),
+                ...(translateItem.failure !== ""
+                    ? { failure: translateItem.failure }
+                    : {}),
                 id: translateItem.id,
                 original: translateItem.original,
             }) as TranslateItemInput,
@@ -43,7 +45,12 @@ function generateVerifyItemsInput(
     return verifyItems.map(
         (verifyItem) =>
             ({
-                context: verifyItem.context,
+                ...(verifyItem.context !== ""
+                    ? { context: verifyItem.context }
+                    : {}),
+                ...(verifyItem.failure !== ""
+                    ? { failure: verifyItem.failure }
+                    : {}),
                 id: verifyItem.id,
                 original: verifyItem.original,
                 translated: verifyItem.translated,
@@ -56,16 +63,26 @@ function generateTranslateItem(
     key: string,
     original: string,
     tikToken: Tiktoken,
+    templatedStringRegex: RegExp,
 ): TranslateItem {
     const translateItem = {
-        // context: "",
+        context: "",
+        failure: "",
         id,
         key,
         original,
+        templateStrings: [],
         translated: "",
+        translationAttempts: 0,
         translationTokens: 0,
+        verificationAttempts: 0,
         verificationTokens: 0,
     } as TranslateItem;
+
+    const match = original.match(templatedStringRegex);
+    if (match) {
+        translateItem.templateStrings = match;
+    }
 
     translateItem.translationTokens = tikToken.encode(
         JSON.stringify(generateTranslateItemsInput([translateItem])[0]),
@@ -129,6 +146,7 @@ function printCompletion(
 function generateTranslateItemArray(
     flatInput: any,
     tikToken: Tiktoken,
+    templatedStringRegex: RegExp,
 ): TranslateItem[] {
     return Object.keys(flatInput).reduce((acc, key) => {
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
@@ -138,6 +156,7 @@ function generateTranslateItemArray(
                     key,
                     flatInput[key],
                     tikToken,
+                    templatedStringRegex,
                 ),
             );
         }
@@ -152,6 +171,7 @@ async function generateTranslationJson(
     chats: Chats,
     translationStats: TranslationStatsItem,
     tikToken: Tiktoken,
+    templatedStringRegex: RegExp,
 ): Promise<TranslateItem[]> {
     const generatedTranslation: TranslateItem[] = [];
     translationStats.totalItems = translateItemArray.length;
@@ -161,6 +181,15 @@ async function generateTranslationJson(
     );
 
     translationStats.batchStartTime = Date.now();
+
+    const promptTokens = tikToken.encode(
+        translationPromptJson(
+            options.inputLanguage,
+            options.outputLanguage,
+            [],
+            options.overridePrompt,
+        ),
+    ).length;
 
     while (translateItemArray.length > 0) {
         if (options.verbose) {
@@ -172,38 +201,45 @@ async function generateTranslationJson(
             );
         }
 
-        const promptTokens = tikToken.encode(
-            translationPromptJson(
-                options.inputLanguage,
-                options.outputLanguage,
-                [],
-                options.overridePrompt,
-            ),
-        ).length;
-
         const batchTranslateItemArray = getBatchTranslateItemArray(
             translateItemArray,
             options,
             promptTokens,
         );
 
+        for (const batchTranslateItem of batchTranslateItemArray) {
+            batchTranslateItem.translationAttempts++;
+            if (batchTranslateItem.translationAttempts > 10) {
+                return Promise.reject(
+                    new Error(
+                        `Item failed to translate too many times: ${JSON.stringify(batchTranslateItem)}`,
+                    ),
+                );
+            }
+        }
+
         translationStats.enqueuedItems += batchTranslateItemArray.length;
 
         // eslint-disable-next-line no-await-in-loop
-        const result = await runTranslationJob({
-            chats,
-            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
-            inputLanguage: `[${options.inputLanguage}]`,
-            outputLanguage: `[${options.outputLanguage}]`,
-            overridePrompt: options.overridePrompt,
-            skipStylingVerification: options.skipStylingVerification ?? false,
-            skipTranslationVerification:
-                options.skipTranslationVerification ?? false,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
-            translateItems: batchTranslateItemArray,
-            verboseLogging: options.verbose ?? false,
-        });
+        const result = await runTranslationJob(
+            {
+                chats,
+                ensureChangedTranslation:
+                    options.ensureChangedTranslation ?? false,
+                inputLanguage: `[${options.inputLanguage}]`,
+                outputLanguage: `[${options.outputLanguage}]`,
+                overridePrompt: options.overridePrompt,
+                skipStylingVerification:
+                    options.skipStylingVerification ?? false,
+                skipTranslationVerification:
+                    options.skipTranslationVerification ?? false,
+                templatedStringPrefix: options.templatedStringPrefix,
+                templatedStringSuffix: options.templatedStringSuffix,
+                translateItems: batchTranslateItemArray,
+                verboseLogging: options.verbose ?? false,
+            },
+            templatedStringRegex,
+        );
 
         if (!result) {
             console.error(
@@ -246,6 +282,7 @@ async function generateVerificationJson(
     chats: Chats,
     translationStats: TranslationStatsItem,
     tikToken: Tiktoken,
+    templatedStringRegex: RegExp,
 ): Promise<TranslateItem[]> {
     const generatedVerification: TranslateItem[] = [];
     translationStats.totalItems = verifyItemArray.length;
@@ -255,6 +292,15 @@ async function generateVerificationJson(
     );
 
     translationStats.batchStartTime = Date.now();
+
+    const promptTokens = tikToken.encode(
+        verificationPromptJson(
+            options.inputLanguage,
+            options.outputLanguage,
+            [],
+            options.overridePrompt,
+        ),
+    ).length;
 
     while (verifyItemArray.length > 0) {
         if (options.verbose) {
@@ -266,38 +312,45 @@ async function generateVerificationJson(
             );
         }
 
-        const promptTokens = tikToken.encode(
-            verificationPromptJson(
-                options.inputLanguage,
-                options.outputLanguage,
-                [],
-                options.overridePrompt,
-            ),
-        ).length;
-
         const batchVerifyItemArray = getBatchTranslateItemArray(
             verifyItemArray,
             options,
             promptTokens,
         );
 
+        for (const batchVerifyItem of batchVerifyItemArray) {
+            batchVerifyItem.verificationAttempts++;
+            if (batchVerifyItem.translationAttempts > 10) {
+                return Promise.reject(
+                    new Error(
+                        `Item failed to verify too many times: ${JSON.stringify(batchVerifyItem)}`,
+                    ),
+                );
+            }
+        }
+
         translationStats.enqueuedItems += batchVerifyItemArray.length;
 
         // eslint-disable-next-line no-await-in-loop
-        const result = await runVerificationJob({
-            chats,
-            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
-            inputLanguage: `[${options.inputLanguage}]`,
-            outputLanguage: `[${options.outputLanguage}]`,
-            overridePrompt: options.overridePrompt,
-            skipStylingVerification: options.skipStylingVerification ?? false,
-            skipTranslationVerification:
-                options.skipTranslationVerification ?? false,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
-            translateItems: batchVerifyItemArray,
-            verboseLogging: options.verbose ?? false,
-        });
+        const result = await runVerificationJob(
+            {
+                chats,
+                ensureChangedTranslation:
+                    options.ensureChangedTranslation ?? false,
+                inputLanguage: `[${options.inputLanguage}]`,
+                outputLanguage: `[${options.outputLanguage}]`,
+                overridePrompt: options.overridePrompt,
+                skipStylingVerification:
+                    options.skipStylingVerification ?? false,
+                skipTranslationVerification:
+                    options.skipTranslationVerification ?? false,
+                templatedStringPrefix: options.templatedStringPrefix,
+                templatedStringSuffix: options.templatedStringSuffix,
+                translateItems: batchVerifyItemArray,
+                verboseLogging: options.verbose ?? false,
+            },
+            templatedStringRegex,
+        );
 
         if (!result) {
             console.error(
@@ -365,7 +418,16 @@ export default async function translateJson(
         cl100k_base.pat_str,
     );
 
-    const translateItemArray = generateTranslateItemArray(flatInput, tikToken);
+    const templatedStringRegex = new RegExp(
+        `${options.templatedStringPrefix}[^{}]+${options.templatedStringSuffix}`,
+        "g",
+    );
+
+    const translateItemArray = generateTranslateItemArray(
+        flatInput,
+        tikToken,
+        templatedStringRegex,
+    );
 
     const generatedTranslation = await generateTranslationJson(
         translateItemArray,
@@ -373,6 +435,7 @@ export default async function translateJson(
         chats,
         translationStats.translate,
         tikToken,
+        templatedStringRegex,
     );
 
     if (!options.skipTranslationVerification) {
@@ -392,6 +455,7 @@ export default async function translateJson(
             chats,
             translationStats.verify,
             tikToken,
+            templatedStringRegex,
         );
 
         return convertTranslateItemToIndex(generatedVerification);
@@ -442,9 +506,19 @@ function isValidVerificationItem(item: any): item is VerifyItemOutput {
     return true;
 }
 
+function getMissingVariables(arr1: string[], arr2: string[]): string[] {
+    if (arr1.length === 0) return [];
+
+    const set2 = new Set(arr2);
+    const missing = arr1.filter((item) => !set2.has(item));
+
+    return missing;
+}
+
 function createTranslateItemsWithTranslation(
     untranslatedItems: TranslateItem[],
     translatedItems: TranslateItemOutput[],
+    templatedStringRegex: RegExp,
 ): TranslateItem[] {
     const output: TranslateItem[] = [];
 
@@ -455,10 +529,28 @@ function createTranslateItemsWithTranslation(
         );
 
         if (translatedItem) {
-            output.push({
-                ...untranslatedItem,
-                translated: translatedItem.translated,
-            } as TranslateItem);
+            const templateStrings =
+                translatedItem.translated.match(templatedStringRegex) ?? [];
+
+            const missingVariables = getMissingVariables(
+                untranslatedItem.templateStrings,
+                templateStrings,
+            );
+
+            if (missingVariables.length === 0) {
+                output.push({
+                    ...untranslatedItem,
+                    failure: "",
+                    translated: translatedItem.translated,
+                } as TranslateItem);
+            } else {
+                untranslatedItem.failure = `variables missing from translation ${JSON.stringify(missingVariables)}`;
+                console.log(untranslatedItem.templateStrings, templateStrings);
+                console.log(
+                    untranslatedItem.original,
+                    translatedItem.translated,
+                );
+            }
         }
     }
 
@@ -468,6 +560,7 @@ function createTranslateItemsWithTranslation(
 function createVerifyItemsWithTranslation(
     translatedItemArray: TranslateItem[],
     verifiedItemArray: VerifyItemOutput[],
+    templatedStringRegex: RegExp,
 ): TranslateItem[] {
     const output: TranslateItem[] = [];
 
@@ -477,12 +570,41 @@ function createVerifyItemsWithTranslation(
         );
 
         if (verifiedItem) {
-            output.push({
-                ...translatedItem,
-                translated: verifiedItem.valid
-                    ? translatedItem.translated
-                    : verifiedItem.fixedTranslation,
-            } as TranslateItem);
+            if (verifiedItem.valid) {
+                output.push({
+                    ...translatedItem,
+                    failure: "",
+                } as TranslateItem);
+            } else if (
+                verifiedItem.fixedTranslation &&
+                verifiedItem.fixedTranslation !== ""
+            ) {
+                const templateStrings =
+                    verifiedItem.fixedTranslation.match(templatedStringRegex) ??
+                    [];
+
+                const missingVariables = getMissingVariables(
+                    translatedItem.templateStrings,
+                    templateStrings,
+                );
+
+                if (missingVariables.length === 0) {
+                    translatedItem.translated =
+                        verifiedItem.fixedTranslation as string;
+                    translatedItem.failure = "";
+                } else {
+                    translatedItem.failure = `must contain variables: '${JSON.stringify(missingVariables)}'`;
+                    console.log(
+                        translatedItem.templateStrings,
+                        templateStrings,
+                    );
+
+                    console.log(
+                        translatedItem.original,
+                        verifiedItem.fixedTranslation,
+                    );
+                }
+            }
         }
     }
 
@@ -491,12 +613,11 @@ function createVerifyItemsWithTranslation(
 
 async function runTranslationJob(
     options: GenerateTranslationOptionsJson,
+    templatedStringRegex: RegExp,
 ): Promise<TranslateItem[]> {
-    const generateState: GenerateState = {
+    const generateState: GenerateStateJson = {
         fixedTranslationMappings: {},
         generationRetries: 0,
-        inputLineToTemplatedString: {},
-        splitInput: [],
         translationToRetryAttempts: {},
     };
 
@@ -533,17 +654,17 @@ async function runTranslationJob(
     return createTranslateItemsWithTranslation(
         options.translateItems,
         validTranslationObjects,
+        templatedStringRegex,
     );
 }
 
 async function runVerificationJob(
     options: GenerateTranslationOptionsJson,
+    templatedStringRegex: RegExp,
 ): Promise<TranslateItem[]> {
-    const generateState: GenerateState = {
+    const generateState: GenerateStateJson = {
         fixedTranslationMappings: {},
         generationRetries: 0,
-        inputLineToTemplatedString: {},
-        splitInput: [],
         translationToRetryAttempts: {},
     };
 
@@ -582,13 +703,14 @@ async function runVerificationJob(
     return createVerifyItemsWithTranslation(
         options.translateItems,
         validTranslationObjects,
+        templatedStringRegex,
     );
 }
 
 function verifyGenerationAndRetry(
     generationPromptText: string,
     options: GenerateTranslationOptionsJson,
-    generateState: GenerateState,
+    generateState: GenerateStateJson,
 ): Promise<string> {
     generateState.generationRetries++;
     if (generateState.generationRetries > 10) {
@@ -610,7 +732,7 @@ function verifyGenerationAndRetry(
 async function generateJob(
     generationPromptText: string,
     options: GenerateTranslationOptionsJson,
-    generateState: GenerateState,
+    generateState: GenerateStateJson,
     format: ZodType<any, ZodTypeDef, any>,
 ): Promise<string> {
     const text = await options.chats.generateTranslationChat.sendMessage(

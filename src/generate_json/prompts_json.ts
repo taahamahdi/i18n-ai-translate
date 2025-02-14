@@ -45,10 +45,12 @@ Translate from ${inputLanguage} to ${outputLanguage}.
 - 'original' is the text to be translated. 
 - 'translated' must not be empty. 
 - 'context' is additional info if needed.
+- 'failure' explains why the previous translation failed.
 - Preserve text formatting, case sensitivity, and whitespace.
 
 Special Instructions:
-- Do not translate or alter variables like {{timeLeft}}, Ignore this if 'original' lacks variables.
+- Do not translate or alter variables like {{timeLeft}}, doing so will result in a failed translation, Ignore this if 'original' lacks variables.
+- The number of variables like {{timeLeft}} must be the same in the translated text.
 - Do not convert {{NEWLINE}} to \\n.
 
 Return the translation as JSON.
@@ -100,13 +102,15 @@ Check translations from ${inputLanguage} to ${outputLanguage}.
 - 'original' is the text to be translated. 
 - 'translated' is the translated text. 
 - 'context' is additional info if needed.
+- 'failure' explains why the previous translation failed.
 - check for Accuracy (meaning, tone, grammar), Formatting (case, whitespace, punctuation).
 
 If correct, return 'valid' as 'true' and leave 'fixedTranslation' empty.
 If incorrect, return 'valid' as 'false' and put the fixed translation in 'fixedTranslation'.
 
 Special Instructions:
-- Do not translate or alter variables like {{timeLeft}}, Ignore this if 'original' lacks variables.
+- Do not translate or alter variables like {{timeLeft}}, doing so will result in a failed translation, Ignore this if 'original' lacks variables.
+- The number of variables like {{timeLeft}} must be the same in the translated text.
 - Do not convert {{NEWLINE}} to \\n.
 
 Return the verified as JSON.

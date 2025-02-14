@@ -8,6 +8,10 @@ export type TranslateItem = {
     context: string;
     translationTokens: number;
     verificationTokens: number;
+    templateStrings: string[];
+    translationAttempts: number;
+    verificationAttempts: number;
+    failure: string;
 };
 
 // translation objects
@@ -16,6 +20,7 @@ export type TranslateItemInput = {
     id: number;
     original: string;
     context?: string;
+    failure?: string;
 };
 
 export const TranslateItemOutputSchema = z.object({
@@ -45,6 +50,7 @@ export type VerifyItemInput = {
     original: string;
     translated: string;
     context: string;
+    failure: string;
 };
 
 export const VerifyItemOutputSchema = z.object({
@@ -65,4 +71,10 @@ export const VerifyItemOutputObjectSchema = z.object({
 
 export type VerifyItemOutputObject = {
     items: VerifyItemOutput[];
+};
+
+export type GenerateStateJson = {
+    fixedTranslationMappings: { [input: string]: string };
+    translationToRetryAttempts: { [translation: string]: number };
+    generationRetries: number;
 };
