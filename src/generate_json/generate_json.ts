@@ -1,42 +1,30 @@
 import * as cl100k_base from "tiktoken/encoders/cl100k_base.json";
 import { DEFAULT_BATCH_SIZE, MAX_TOKEN } from "../constants";
 import { Tiktoken } from "tiktoken";
-import { TranslateItemOutputObjectSchema } from "./types_json";
-import { generationPromptJson } from "./prompts_json";
+import {
+    TranslateItemOutputObjectSchema,
+    VerifyItemOutputObjectSchema,
+} from "./types_json";
 import { retryJob } from "../utils";
-import type { GenerateState, TranslationStats } from "../types";
+import { translationPromptJson, verificationPromptJson } from "./prompts_json";
+import type {
+    GenerateState,
+    TranslationStats,
+    TranslationStatsItem,
+} from "../types";
 import type {
     TranslateItem,
     TranslateItemInput,
     TranslateItemOutput,
+    VerifyItemInput,
+    VerifyItemOutput,
 } from "./types_json";
+import type { ZodType, ZodTypeDef } from "zod";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsJson from "../interfaces/generate_translation_options_json";
 import type TranslateOptions from "../interfaces/translate_options";
 
-function createJsonInput(
-    id: number,
-    key: string,
-    original: string,
-    tikToken: Tiktoken,
-): TranslateItem {
-    const translateItem = {
-        // context: "",
-        id,
-        key,
-        original,
-        tokens: 0,
-        translated: "",
-    } as TranslateItem;
-
-    translateItem.tokens = tikToken.encode(
-        JSON.stringify(getTranslateItemsInput([translateItem])[0]),
-    ).length;
-
-    return translateItem;
-}
-
-function getTranslateItemsInput(
+function generateTranslateItemsInput(
     translateItems: TranslateItem[],
 ): TranslateItemInput[] {
     return translateItems.map(
@@ -49,20 +37,48 @@ function getTranslateItemsInput(
     );
 }
 
+function generateVerifyItemsInput(
+    verifyItems: TranslateItem[],
+): VerifyItemInput[] {
+    return verifyItems.map(
+        (verifyItem) =>
+            ({
+                context: verifyItem.context,
+                id: verifyItem.id,
+                original: verifyItem.original,
+                translated: verifyItem.translated,
+            }) as VerifyItemInput,
+    );
+}
+
+function generateTranslateItem(
+    id: number,
+    key: string,
+    original: string,
+    tikToken: Tiktoken,
+): TranslateItem {
+    const translateItem = {
+        // context: "",
+        id,
+        key,
+        original,
+        translated: "",
+        translationTokens: 0,
+        verificationTokens: 0,
+    } as TranslateItem;
+
+    translateItem.translationTokens = tikToken.encode(
+        JSON.stringify(generateTranslateItemsInput([translateItem])[0]),
+    ).length;
+
+    return translateItem;
+}
+
 function getBatchTranslateItemArray(
     translateItemArray: TranslateItem[],
     options: TranslateOptions,
-    tikToken: Tiktoken,
+    promptTokens: number,
 ): TranslateItem[] {
-    const promptTokens = tikToken.encode(
-        generationPromptJson(
-            options.inputLanguage,
-            options.outputLanguage,
-            [],
-            options.overridePrompt,
-        ),
-    ).length;
-
     const maxInputTokens = ((MAX_TOKEN - promptTokens) * 0.9) / 2;
 
     let currentTokens = 0;
@@ -70,7 +86,7 @@ function getBatchTranslateItemArray(
     const batchTranslateItemArray: TranslateItem[] = [];
 
     for (const translateItem of translateItemArray) {
-        currentTokens += translateItem.tokens;
+        currentTokens += translateItem.translationTokens;
 
         if (
             batchTranslateItemArray.length !== 0 &&
@@ -88,19 +104,19 @@ function getBatchTranslateItemArray(
 }
 
 function printCompletion(
-    options: TranslateOptions,
-    translationStats: TranslationStats,
+    processed: number,
+    total: number,
+    startTime: number,
+    step: string,
 ): void {
-    if (translationStats.processedTokens > 0 && options.verbose) {
+    if (processed > 0) {
         console.log(
-            `Step 1/2 - Completed ${((translationStats.processedTokens / translationStats.totalTokens) * 100).toFixed(0)}%`,
+            `Step ${step}/2 - Completed ${((processed / total) * 100).toFixed(0)}%`,
         );
 
         const roundedEstimatedTimeLeftSeconds = Math.round(
-            (((Date.now() - translationStats.batchStartTime) /
-                (translationStats.processedTokens + 1)) *
-                (translationStats.totalTokens -
-                    translationStats.processedTokens)) /
+            (((Date.now() - startTime) / (processed + 1)) *
+                (total - processed)) /
                 1000,
         );
 
@@ -108,6 +124,226 @@ function printCompletion(
             `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`,
         );
     }
+}
+
+function generateTranslateItemArray(
+    flatInput: any,
+    tikToken: Tiktoken,
+): TranslateItem[] {
+    return Object.keys(flatInput).reduce((acc, key) => {
+        if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
+            acc.push(
+                generateTranslateItem(
+                    Object.keys(flatInput).indexOf(key) + 1,
+                    key,
+                    flatInput[key],
+                    tikToken,
+                ),
+            );
+        }
+
+        return acc;
+    }, [] as TranslateItem[]);
+}
+
+async function generateTranslationJson(
+    translateItemArray: TranslateItem[],
+    options: TranslateOptions,
+    chats: Chats,
+    translationStats: TranslationStatsItem,
+    tikToken: Tiktoken,
+): Promise<TranslateItem[]> {
+    const generatedTranslation: TranslateItem[] = [];
+    translationStats.totalItems = translateItemArray.length;
+    translationStats.totalTokens = translateItemArray.reduce(
+        (sum, translateItem) => sum + translateItem.translationTokens,
+        0,
+    );
+
+    translationStats.batchStartTime = Date.now();
+
+    while (translateItemArray.length > 0) {
+        if (options.verbose) {
+            printCompletion(
+                translationStats.processedTokens,
+                translationStats.totalTokens,
+                translationStats.batchStartTime,
+                "1",
+            );
+        }
+
+        const promptTokens = tikToken.encode(
+            translationPromptJson(
+                options.inputLanguage,
+                options.outputLanguage,
+                [],
+                options.overridePrompt,
+            ),
+        ).length;
+
+        const batchTranslateItemArray = getBatchTranslateItemArray(
+            translateItemArray,
+            options,
+            promptTokens,
+        );
+
+        translationStats.enqueuedItems += batchTranslateItemArray.length;
+
+        // eslint-disable-next-line no-await-in-loop
+        const result = await runTranslationJob({
+            chats,
+            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
+            inputLanguage: `[${options.inputLanguage}]`,
+            outputLanguage: `[${options.outputLanguage}]`,
+            overridePrompt: options.overridePrompt,
+            skipStylingVerification: options.skipStylingVerification ?? false,
+            skipTranslationVerification:
+                options.skipTranslationVerification ?? false,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+            translateItems: batchTranslateItemArray,
+            verboseLogging: options.verbose ?? false,
+        });
+
+        if (!result) {
+            console.error(
+                `Failed to generate translation for ${options.outputLanguage}`,
+            );
+            break;
+        }
+
+        for (const translatedItem of result) {
+            const index = translateItemArray.findIndex(
+                (item) => item.id === translatedItem.id,
+            );
+
+            if (index !== -1) {
+                translateItemArray.splice(index, 1);
+                generatedTranslation.push(translatedItem);
+                translationStats.processedTokens +=
+                    translatedItem.translationTokens;
+            }
+
+            translationStats.processedItems++;
+        }
+    }
+
+    if (options.verbose) {
+        const endTime = Date.now();
+        const roundedSeconds = Math.round(
+            (endTime - translationStats.batchStartTime) / 1000,
+        );
+
+        console.log(`Translation execution time: ${roundedSeconds} seconds`);
+    }
+
+    return generatedTranslation;
+}
+
+async function generateVerificationJson(
+    verifyItemArray: TranslateItem[],
+    options: TranslateOptions,
+    chats: Chats,
+    translationStats: TranslationStatsItem,
+    tikToken: Tiktoken,
+): Promise<TranslateItem[]> {
+    const generatedVerification: TranslateItem[] = [];
+    translationStats.totalItems = verifyItemArray.length;
+    translationStats.totalTokens = verifyItemArray.reduce(
+        (sum, translateItem) => sum + translateItem.verificationTokens,
+        0,
+    );
+
+    translationStats.batchStartTime = Date.now();
+
+    while (verifyItemArray.length > 0) {
+        if (options.verbose) {
+            printCompletion(
+                translationStats.processedTokens,
+                translationStats.totalTokens,
+                translationStats.batchStartTime,
+                "2",
+            );
+        }
+
+        const promptTokens = tikToken.encode(
+            verificationPromptJson(
+                options.inputLanguage,
+                options.outputLanguage,
+                [],
+                options.overridePrompt,
+            ),
+        ).length;
+
+        const batchVerifyItemArray = getBatchTranslateItemArray(
+            verifyItemArray,
+            options,
+            promptTokens,
+        );
+
+        translationStats.enqueuedItems += batchVerifyItemArray.length;
+
+        // eslint-disable-next-line no-await-in-loop
+        const result = await runVerificationJob({
+            chats,
+            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
+            inputLanguage: `[${options.inputLanguage}]`,
+            outputLanguage: `[${options.outputLanguage}]`,
+            overridePrompt: options.overridePrompt,
+            skipStylingVerification: options.skipStylingVerification ?? false,
+            skipTranslationVerification:
+                options.skipTranslationVerification ?? false,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+            translateItems: batchVerifyItemArray,
+            verboseLogging: options.verbose ?? false,
+        });
+
+        if (!result) {
+            console.error(
+                `Failed to generate translation for ${options.outputLanguage}`,
+            );
+            break;
+        }
+
+        for (const translatedItem of result) {
+            const index = verifyItemArray.findIndex(
+                (item) => item.id === translatedItem.id,
+            );
+
+            if (index !== -1) {
+                verifyItemArray.splice(index, 1);
+                generatedVerification.push(translatedItem);
+                translationStats.processedTokens +=
+                    translatedItem.translationTokens;
+            }
+
+            translationStats.processedItems++;
+        }
+    }
+
+    if (options.verbose) {
+        const endTime = Date.now();
+        const roundedSeconds = Math.round(
+            (endTime - translationStats.batchStartTime) / 1000,
+        );
+
+        console.log(`Verification execution time: ${roundedSeconds} seconds`);
+    }
+
+    return generatedVerification;
+}
+
+function convertTranslateItemToIndex(generatedTranslation: TranslateItem[]): {
+    [key: string]: string;
+} {
+    return generatedTranslation.reduce(
+        (acc, translation) => {
+            acc[translation.key] = translation.translated;
+            return acc;
+        },
+        {} as { [key: string]: string },
+    );
 }
 
 /**
@@ -129,121 +365,42 @@ export default async function translateJson(
         cl100k_base.pat_str,
     );
 
-    const translateItemArray: TranslateItem[] = [];
+    const translateItemArray = generateTranslateItemArray(flatInput, tikToken);
 
-    for (let i = 0; i < Object.keys(flatInput).length; i++) {
-        const key = Object.keys(flatInput)[i];
-        if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
-            translateItemArray.push(
-                createJsonInput(i + 1, key, flatInput[key], tikToken),
-            );
-        }
-    }
-
-    const generatedTranslation: TranslateItem[] = [];
-    translationStats.totalItems = translateItemArray.length;
-    translationStats.totalTokens = translateItemArray.reduce(
-        (sum, translateItem) => sum + translateItem.tokens,
-        0,
+    const generatedTranslation = await generateTranslationJson(
+        translateItemArray,
+        options,
+        chats,
+        translationStats.translate,
+        tikToken,
     );
 
-    while (translateItemArray.length > 0) {
-        printCompletion(options, translationStats);
+    if (!options.skipTranslationVerification) {
+        if (options.verbose) {
+            console.log("Starting verification...");
+        }
 
-        const batchTranslateItemArray = getBatchTranslateItemArray(
-            translateItemArray,
+        for (const translatedItem of generatedTranslation) {
+            translatedItem.verificationTokens = tikToken.encode(
+                JSON.stringify(generateVerifyItemsInput([translatedItem])[0]),
+            ).length;
+        }
+
+        const generatedVerification = await generateVerificationJson(
+            generatedTranslation,
             options,
+            chats,
+            translationStats.verify,
             tikToken,
         );
 
-        translationStats.enqueuedItems += batchTranslateItemArray.length;
-
-        // eslint-disable-next-line no-await-in-loop
-        const result = await generateTranslationJson({
-            chats,
-            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
-            inputLanguage: `[${options.inputLanguage}]`,
-            outputLanguage: `[${options.outputLanguage}]`,
-            overridePrompt: options.overridePrompt,
-            skipStylingVerification: options.skipStylingVerification ?? false,
-            skipTranslationVerification:
-                options.skipTranslationVerification ?? false,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
-            translateItems: batchTranslateItemArray,
-            verboseLogging: options.verbose ?? false,
-        });
-
-        // console.log(result);
-        if (!result) {
-            console.error(
-                `Failed to generate translation for ${options.outputLanguage}`,
-            );
-            break;
-        }
-
-        for (const translatedItem of result) {
-            const index = translateItemArray.findIndex(
-                (item) => item.id === translatedItem.id,
-            );
-
-            if (index !== -1) {
-                translateItemArray.splice(index, 1);
-                generatedTranslation.push(translatedItem);
-                translationStats.processedTokens += translatedItem.tokens;
-            }
-
-            translationStats.processedItems++;
-        }
+        return convertTranslateItemToIndex(generatedVerification);
     }
 
-    const output: { [key: string]: string } = {};
-
-    // Convert array of TranslateItem objects to output
-    for (const translation of generatedTranslation) {
-        output[translation.key] = translation.translated;
-    }
-
-    return output;
+    return convertTranslateItemToIndex(generatedTranslation);
 }
 
-async function generateTranslationJson(
-    options: GenerateTranslationOptionsJson,
-): Promise<TranslateItem[]> {
-    const generationPromptText = generationPromptJson(
-        options.inputLanguage,
-        options.outputLanguage,
-        getTranslateItemsInput(options.translateItems),
-        options.overridePrompt,
-    );
-
-    const generateState: GenerateState = {
-        fixedTranslationMappings: {},
-        generationRetries: 0,
-        inputLineToTemplatedString: {},
-        splitInput: [],
-        translationToRetryAttempts: {},
-    };
-
-    let translated: TranslateItem[] = [];
-    try {
-        translated = await retryJob(
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            generate,
-            [options, generationPromptText, generateState],
-            25,
-            true,
-            0,
-            false,
-        );
-    } catch (e) {
-        console.error(`Failed to translate: ${e}`);
-    }
-
-    return translated;
-}
-
-function parseOutputToJson(outputText: string): TranslateItemOutput[] {
+function parseTranslationToJson(outputText: string): TranslateItemOutput[] {
     try {
         return TranslateItemOutputObjectSchema.parse(JSON.parse(outputText))
             .items;
@@ -253,7 +410,16 @@ function parseOutputToJson(outputText: string): TranslateItemOutput[] {
     }
 }
 
-function isValidTranslateItem(item: any): item is TranslateItem {
+function parseVerificationToJson(outputText: string): VerifyItemOutput[] {
+    try {
+        return VerifyItemOutputObjectSchema.parse(JSON.parse(outputText)).items;
+    } catch (error) {
+        console.error("Error parsing JSON:", error, outputText);
+        return [];
+    }
+}
+
+function isValidTranslateItem(item: any): item is TranslateItemOutput {
     return (
         typeof item.id === "number" &&
         typeof item.translated === "string" &&
@@ -262,25 +428,18 @@ function isValidTranslateItem(item: any): item is TranslateItem {
     );
 }
 
-function verifyGenerationAndRetry(
-    options: GenerateTranslationOptionsJson,
-    generateState: GenerateState,
-): Promise<TranslateItem[]> {
-    generateState.generationRetries++;
-    if (generateState.generationRetries > 10) {
-        options.chats.generateTranslationChat.resetChatHistory();
-        return Promise.reject(
-            new Error(
-                "Failed to generate content due to exception. Resetting history.",
-            ),
-        );
-    }
+function isValidVerificationItem(item: any): item is VerifyItemOutput {
+    if (!(typeof item.id === "number")) return false;
+    if (!(typeof item.valid === "boolean")) return false;
+    if (item.id <= 0) return false;
+    if (
+        item.valid === false &&
+        (!(typeof item.fixedTranslation === "string") ||
+            item.fixedTranslation === "")
+    )
+        return false;
 
-    console.error(`Erroring text = ${JSON.stringify(options.translateItems)}`);
-    options.chats.generateTranslationChat.rollbackLastMessage();
-    return Promise.reject(
-        new Error("Failed to generate content due to exception."),
-    );
+    return true;
 }
 
 function createTranslateItemsWithTranslation(
@@ -297,11 +456,7 @@ function createTranslateItemsWithTranslation(
 
         if (translatedItem) {
             output.push({
-                context: untranslatedItem.context,
-                id: untranslatedItem.id,
-                key: untranslatedItem.key,
-                original: untranslatedItem.original,
-                tokens: untranslatedItem.tokens,
+                ...untranslatedItem,
                 translated: translatedItem.translated,
             } as TranslateItem);
         }
@@ -310,29 +465,168 @@ function createTranslateItemsWithTranslation(
     return output;
 }
 
-async function generate(
-    options: GenerateTranslationOptionsJson,
-    generationPromptText: string,
-    generateState: GenerateState,
-): Promise<TranslateItem[]> {
-    // console.log(generationPromptText);
-    const text = await options.chats.generateTranslationChat.sendMessage(
-        generationPromptText,
-        TranslateItemOutputObjectSchema,
-    );
+function createVerifyItemsWithTranslation(
+    translatedItemArray: TranslateItem[],
+    verifiedItemArray: VerifyItemOutput[],
+): TranslateItem[] {
+    const output: TranslateItem[] = [];
 
-    // console.log(generationPromptText);
-    if (!text) {
-        return verifyGenerationAndRetry(options, generateState);
-    } else {
-        generateState.generationRetries = 0;
+    for (const translatedItem of translatedItemArray) {
+        const verifiedItem = verifiedItemArray.find(
+            (checkVerifiedItem) => translatedItem.id === checkVerifiedItem.id,
+        );
+
+        if (verifiedItem) {
+            output.push({
+                ...translatedItem,
+                translated: verifiedItem.valid
+                    ? translatedItem.translated
+                    : verifiedItem.fixedTranslation,
+            } as TranslateItem);
+        }
     }
 
-    const parsedOutput = parseOutputToJson(text);
+    return output;
+}
+
+async function runTranslationJob(
+    options: GenerateTranslationOptionsJson,
+): Promise<TranslateItem[]> {
+    const generateState: GenerateState = {
+        fixedTranslationMappings: {},
+        generationRetries: 0,
+        inputLineToTemplatedString: {},
+        splitInput: [],
+        translationToRetryAttempts: {},
+    };
+
+    const generationPromptText = translationPromptJson(
+        options.inputLanguage,
+        options.outputLanguage,
+        generateTranslateItemsInput(options.translateItems),
+        options.overridePrompt,
+    );
+
+    let translated = "";
+    try {
+        translated = await retryJob(
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            generateJob,
+            [
+                generationPromptText,
+                options,
+                generateState,
+                TranslateItemOutputObjectSchema,
+            ],
+            25,
+            true,
+            0,
+            false,
+        );
+    } catch (e) {
+        console.error(`Failed to translate: ${e}`);
+    }
+
+    const parsedOutput = parseTranslationToJson(translated);
     const validTranslationObjects = parsedOutput.filter(isValidTranslateItem);
 
     return createTranslateItemsWithTranslation(
         options.translateItems,
         validTranslationObjects,
     );
+}
+
+async function runVerificationJob(
+    options: GenerateTranslationOptionsJson,
+): Promise<TranslateItem[]> {
+    const generateState: GenerateState = {
+        fixedTranslationMappings: {},
+        generationRetries: 0,
+        inputLineToTemplatedString: {},
+        splitInput: [],
+        translationToRetryAttempts: {},
+    };
+
+    const generationPromptText = verificationPromptJson(
+        options.inputLanguage,
+        options.outputLanguage,
+        generateVerifyItemsInput(options.translateItems),
+        options.overridePrompt,
+    );
+
+    let verified = "";
+    try {
+        verified = await retryJob(
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            generateJob,
+            [
+                generationPromptText,
+                options,
+                generateState,
+                VerifyItemOutputObjectSchema,
+            ],
+            25,
+            true,
+            0,
+            false,
+        );
+    } catch (e) {
+        console.error(`Failed to translate: ${e}`);
+    }
+
+    const parsedOutput = parseVerificationToJson(verified);
+    const validTranslationObjects = parsedOutput.filter(
+        isValidVerificationItem,
+    );
+
+    return createVerifyItemsWithTranslation(
+        options.translateItems,
+        validTranslationObjects,
+    );
+}
+
+function verifyGenerationAndRetry(
+    generationPromptText: string,
+    options: GenerateTranslationOptionsJson,
+    generateState: GenerateState,
+): Promise<string> {
+    generateState.generationRetries++;
+    if (generateState.generationRetries > 10) {
+        options.chats.generateTranslationChat.resetChatHistory();
+        return Promise.reject(
+            new Error(
+                "Failed to generate content due to exception. Resetting history.",
+            ),
+        );
+    }
+
+    console.error(`Erroring text = ${generationPromptText}`);
+    options.chats.generateTranslationChat.rollbackLastMessage();
+    return Promise.reject(
+        new Error("Failed to generate content due to exception."),
+    );
+}
+
+async function generateJob(
+    generationPromptText: string,
+    options: GenerateTranslationOptionsJson,
+    generateState: GenerateState,
+    format: ZodType<any, ZodTypeDef, any>,
+): Promise<string> {
+    const text = await options.chats.generateTranslationChat.sendMessage(
+        generationPromptText,
+        format,
+    );
+
+    if (!text) {
+        return verifyGenerationAndRetry(
+            generationPromptText,
+            options,
+            generateState,
+        );
+    } else {
+        generateState.generationRetries = 0;
+    }
+
+    return text;
 }

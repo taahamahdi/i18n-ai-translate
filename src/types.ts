@@ -35,6 +35,11 @@ export type GenerateState = {
 };
 
 export type TranslationStats = {
+    translate: TranslationStatsItem;
+    verify: TranslationStatsItem;
+};
+
+export type TranslationStatsItem = {
     batchStartTime: number;
     processedItems: number;
     processedTokens: number;

@@ -23,12 +23,13 @@ export default class RateLimiter {
                 this.delayBetweenCallsMs - (Date.now() - this.lastAPICall);
 
             if (timeToWait > 0) {
-                await delay(timeToWait);
                 if (this.verboseLogging) {
                     console.log(
                         `RateLimiter | Waiting ${timeToWait}ms before next API call`,
                     );
                 }
+
+                await delay(timeToWait);
             }
         }
     }

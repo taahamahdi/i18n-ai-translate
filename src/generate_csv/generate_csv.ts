@@ -3,7 +3,7 @@ import { failedTranslationPrompt, generationPrompt } from "./prompts_csv";
 import { isNAK } from "./utils_csv";
 import { retryJob } from "../utils";
 import { verifyStyling, verifyTranslation } from "./verify_csv";
-import type { GenerateState, TranslationStats } from "../types";
+import type { GenerateState, TranslationStatsItem } from "../types";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsCsv from "../interfaces/generate_translation_options_csv";
 import type TranslateOptions from "../interfaces/translate_options";
@@ -19,13 +19,15 @@ export default async function translateCsv(
     flatInput: { [key: string]: string },
     options: TranslateOptions,
     chats: Chats,
-    translationStats: TranslationStats,
+    translationStats: TranslationStatsItem,
 ): Promise<{ [key: string]: string }> {
     const output: { [key: string]: string } = {};
 
     const allKeys = Object.keys(flatInput);
 
     const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
+
+    translationStats.batchStartTime = Date.now();
 
     for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
         if (i > 0 && options.verbose) {

@@ -6,8 +6,11 @@ export type TranslateItem = {
     original: string;
     translated: string;
     context: string;
-    tokens: number;
+    translationTokens: number;
+    verificationTokens: number;
 };
+
+// translation objects
 
 export type TranslateItemInput = {
     id: number;
@@ -35,25 +38,31 @@ export type TranslateItemOutputObject = {
     items: TranslateItemOutput[];
 };
 
-export type CheckTranslateItem = {
-    key: string;
-    originalText: string;
-    translatedText: string;
+// verification objects
+
+export type VerifyItemInput = {
+    id: number;
+    original: string;
+    translated: string;
     context: string;
-    invalid: boolean | null;
-    invalidReason: string;
 };
 
-export type RetranslateItem = {
-    key: string;
-    originalText: string;
-    newTranslatedText: string;
-    context: string;
-    invalidTranslatedText: string;
-    invalidReason: string;
+export const VerifyItemOutputSchema = z.object({
+    id: z.number(),
+    valid: z.boolean(),
+    fixedTranslation: z.string().optional(),
+});
+
+export type VerifyItemOutput = {
+    id: number;
+    valid: boolean;
+    fixedTranslation?: string;
 };
 
-export type TranslateItemResult = {
-    key: string;
-    translatedText: string;
+export const VerifyItemOutputObjectSchema = z.object({
+    items: z.array(VerifyItemOutputSchema).describe("VerifyItemOutputSchema"), // used for open ai schema name
+});
+
+export type VerifyItemOutputObject = {
+    items: VerifyItemOutput[];
 };

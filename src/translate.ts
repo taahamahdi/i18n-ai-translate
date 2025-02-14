@@ -13,7 +13,7 @@ import fs from "fs";
 import path, { dirname } from "path";
 import translateCsv from "./generate_csv/generate_csv";
 import translateJson from "./generate_json/generate_json";
-import type { TranslationStats } from "./types";
+import type { TranslationStats, TranslationStatsItem } from "./types";
 import type Chats from "./interfaces/chats";
 import type TranslateDiffOptions from "./interfaces/translate_diff_options";
 import type TranslateDirectoryDiffOptions from "./interfaces/translate_directory_diff_options";
@@ -124,13 +124,20 @@ function groupSimilarValues(flatInput: { [key: string]: string }): {
 
 function startTranslationStats(): TranslationStats {
     return {
-        batchStartTime: Date.now(),
-        enqueuedItems: 0,
+        translate: startTranslationStatsItem(),
+        verify: startTranslationStatsItem(),
+    } as TranslationStats;
+}
+
+function startTranslationStatsItem(): TranslationStatsItem {
+    return {
+        batchStartTime: 0,
         processedItems: 0,
         processedTokens: 0,
+        enqueuedItems: 0,
         totalItems: 0,
         totalTokens: 0,
-    } as TranslationStats;
+    } as TranslationStatsItem;
 }
 
 async function getTranslation(
@@ -151,7 +158,12 @@ async function getTranslation(
                 console.log("Transaltion prompting mode: CSV");
             }
 
-            return translateCsv(flatInput, options, chats, translationStats);
+            return translateCsv(
+                flatInput,
+                options,
+                chats,
+                translationStats.translate,
+            );
         default:
             throw new Error("Prompt mode is not set");
     }
@@ -189,10 +201,6 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         translationStats,
     );
 
-    if (!options.skipTranslationVerification) {
-        const verifiedTransation = 0;
-    }
-
     // sort the keys
     const sortedOutput: { [key: string]: string } = {};
     for (const key of Object.keys(flatInput).sort()) {
@@ -208,7 +216,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     if (options.verbose) {
         const endTime = Date.now();
         const roundedSeconds = Math.round(
-            (endTime - translationStats.batchStartTime) / 1000,
+            (endTime - translationStats.translate.batchStartTime) / 1000,
         );
 
         console.log(`Actual execution time: ${roundedSeconds} seconds`);
