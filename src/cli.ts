@@ -21,6 +21,7 @@ import fs from "fs";
 import path from "path";
 import type { ChatParams, Model, ModelArgs } from "./types";
 import type OverridePrompt from "./interfaces/override_prompt";
+import { ANSIStyles } from "./print_styles";
 
 config({ path: path.resolve(process.cwd(), ".env") });
 
@@ -326,26 +327,40 @@ program
         if (options.outputLanguages) {
             if (options.forceLanguageName) {
                 console.error(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.red,
                     "Cannot use both --output-languages and --force-language",
+                    ANSIStyles.reset,
                 );
                 return;
             }
 
             if (options.allLanguages) {
                 console.error(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.red,
                     "Cannot use both --all-languages and --output-languages",
+                    ANSIStyles.reset,
                 );
                 return;
             }
 
             if (options.outputLanguages.length === 0) {
-                console.error("No languages specified");
+                console.error(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.red,
+                    "No languages specified",
+                    ANSIStyles.reset,
+                );
                 return;
             }
 
             if (options.verbose) {
-                console.log(
+                console.info(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.cyan,
                     `Translating to ${options.outputLanguages.join(", ")}...`,
+                    ANSIStyles.reset,
                 );
             }
 
@@ -365,8 +380,11 @@ program
                 for (const languageCode of options.outputLanguages) {
                     i++;
                     if (options.verbose) {
-                        console.log(
+                        console.info(
+                            ANSIStyles.bright,
+                            ANSIStyles.fg.cyan,
                             `Translating ${i}/${options.outputLanguages.length} languages...`,
+                            ANSIStyles.reset,
                         );
                     }
 
@@ -418,7 +436,10 @@ program
                         });
                     } catch (err) {
                         console.error(
+                            ANSIStyles.bright,
+                            ANSIStyles.fg.red,
                             `Failed to translate file to ${languageCode}: ${err}`,
+                            ANSIStyles.reset,
                         );
                     }
                 }
@@ -427,8 +448,11 @@ program
                 for (const languageCode of options.outputLanguages) {
                     i++;
                     if (options.verbose) {
-                        console.log(
+                        console.info(
+                            ANSIStyles.bright,
+                            ANSIStyles.fg.cyan,
                             `Translating ${i}/${options.outputLanguages.length} languages...`,
+                            ANSIStyles.reset,
                         );
                     }
 
@@ -471,7 +495,10 @@ program
                         });
                     } catch (err) {
                         console.error(
+                            ANSIStyles.bright,
+                            ANSIStyles.fg.red,
                             `Failed to translate directory to ${languageCode}: ${err}`,
+                            ANSIStyles.reset,
                         );
                     }
                 }
@@ -479,7 +506,10 @@ program
         } else {
             if (options.forceLanguageName) {
                 console.error(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.red,
                     "Cannot use both --all-languages and --force-language",
+                    ANSIStyles.reset,
                 );
                 return;
             }
@@ -492,8 +522,11 @@ program
             for (const languageCode of getAllLanguageCodes()) {
                 i++;
                 if (options.verbose) {
-                    console.log(
+                    console.info(
+                        ANSIStyles.bright,
+                        ANSIStyles.fg.cyan,
                         `Translating ${i}/${getAllLanguageCodes().length} languages...`,
+                        ANSIStyles.reset,
                     );
                 }
 
@@ -533,7 +566,10 @@ program
                     });
                 } catch (err) {
                     console.error(
+                        ANSIStyles.bright,
+                        ANSIStyles.fg.red,
                         `Failed to translate to ${languageCode}: ${err}`,
+                        ANSIStyles.reset,
                     );
                 }
             }
@@ -636,7 +672,10 @@ program
             fs.statSync(afterInputPath).isFile()
         ) {
             console.error(
+                ANSIStyles.bright,
+                ANSIStyles.fg.red,
                 "--before and --after arguments must be both files or both directories",
+                ANSIStyles.reset,
             );
             return;
         }
@@ -646,7 +685,12 @@ program
             if (
                 path.dirname(beforeInputPath) !== path.dirname(afterInputPath)
             ) {
-                console.error("Input files are not in the same directory");
+                console.error(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.red,
+                    "Input files are not in the same directory",
+                    ANSIStyles.reset,
+                );
                 return;
             }
 

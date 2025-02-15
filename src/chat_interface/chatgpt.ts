@@ -1,3 +1,4 @@
+import { ANSIStyles } from "../print_styles";
 import { zodResponseFormat } from "openai/helpers/zod";
 import ChatInterface from "./chat_interface";
 import Role from "../enums/role";
@@ -66,7 +67,12 @@ export default class ChatGPT extends ChatInterface {
             this.history.push({ content: responseText, role: Role.Assistant });
             return responseText;
         } catch (err) {
-            console.error(err);
+            console.error(
+                ANSIStyles.bright,
+                ANSIStyles.fg.red,
+                err,
+                ANSIStyles.reset,
+            );
             return "";
         }
     }

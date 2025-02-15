@@ -1,3 +1,4 @@
+import { ANSIStyles } from "../print_styles";
 import { isACK, isNAK } from "./utils_csv";
 import { retryJob } from "../utils";
 import {
@@ -96,7 +97,12 @@ const verify = async (
             false,
         );
     } catch (e) {
-        console.error(`Failed to verify: ${e}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Failed to verify: ${e}`,
+            ANSIStyles.reset,
+        );
     }
 
     return verification;

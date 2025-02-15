@@ -21,6 +21,7 @@ import type TranslateDirectoryOptions from "./interfaces/translate_directory_opt
 import type TranslateFileDiffOptions from "./interfaces/translate_file_diff_options";
 import type TranslateFileOptions from "./interfaces/translate_file_options";
 import type TranslateOptions from "./interfaces/translate_options";
+import { ANSIStyles } from "./print_styles";
 
 function getChats(options: TranslateOptions): Chats {
     const rateLimiter = new RateLimiter(
@@ -149,13 +150,23 @@ async function getTranslation(
     switch (options.promptMode) {
         case PromptMode.JSON:
             if (options.verbose) {
-                console.log("Transaltion prompting mode: JSON");
+                console.info(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.orange,
+                    "Transaltion prompting mode: JSON\n",
+                    ANSIStyles.reset,
+                );
             }
 
             return translateJson(flatInput, options, chats, translationStats);
         case PromptMode.CSV:
             if (options.verbose) {
-                console.log("Transaltion prompting mode: CSV");
+                console.info(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.orange,
+                    "Transaltion prompting mode: CSV\n",
+                    ANSIStyles.reset,
+                );
             }
 
             return translateCsv(
@@ -175,8 +186,11 @@ async function getTranslation(
  */
 export async function translate(options: TranslateOptions): Promise<Object> {
     if (options.verbose) {
-        console.log(
+        console.info(
+            ANSIStyles.bright,
+            ANSIStyles.fg.cyan,
             `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
+            ANSIStyles.reset,
         );
     }
 
@@ -219,7 +233,12 @@ export async function translate(options: TranslateOptions): Promise<Object> {
             (endTime - translationStats.translate.batchStartTime) / 1000,
         );
 
-        console.log(`Actual execution time: ${roundedSeconds} seconds`);
+        console.info(
+            ANSIStyles.bright,
+            ANSIStyles.fg.orange,
+            `Actual execution time: ${roundedSeconds} seconds`,
+            ANSIStyles.reset,
+        );
     }
 
     return unflattenedOutput as Object;
@@ -280,9 +299,26 @@ export async function translateDiff(
     }
 
     if (options.verbose) {
-        console.log(`Added keys: ${addedKeys.join("\n")}\n`);
-        console.log(`Modified keys: ${modifiedKeys.join("\n")}\n`);
-        console.log(`Deleted keys: ${deletedKeys.join("\n")}\n`);
+        console.info(
+            ANSIStyles.bright,
+            ANSIStyles.fg.cyan,
+            `Added keys: ${addedKeys.join("\n")}\n`,
+            ANSIStyles.reset,
+        );
+
+        console.info(
+            ANSIStyles.bright,
+            ANSIStyles.fg.cyan,
+            `Modified keys: ${modifiedKeys.join("\n")}\n`,
+            ANSIStyles.reset,
+        );
+
+        console.info(
+            ANSIStyles.bright,
+            ANSIStyles.fg.cyan,
+            `Deleted keys: ${deletedKeys.join("\n")}\n`,
+            ANSIStyles.reset,
+        );
     }
 
     for (const key of deletedKeys) {
@@ -384,7 +420,12 @@ export async function translateFile(
         const inputFile = fs.readFileSync(options.inputFilePath, "utf-8");
         inputJSON = JSON.parse(inputFile);
     } catch (e) {
-        console.error(`Invalid input JSON: ${e}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Invalid input JSON: ${e}`,
+            ANSIStyles.reset,
+        );
         return;
     }
 
@@ -422,7 +463,12 @@ export async function translateFile(
         const outputText = JSON.stringify(outputJSON, null, 4);
         fs.writeFileSync(options.outputFilePath, `${outputText}\n`);
     } catch (err) {
-        console.error(`Failed to translate file to ${outputLanguage}: ${err}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Failed to translate file to ${outputLanguage}: ${err}`,
+            ANSIStyles.reset,
+        );
     }
 }
 
@@ -495,7 +541,12 @@ export async function translateFileDiff(
         inputFile = fs.readFileSync(inputAfterPath, "utf-8");
         inputAfterJSON = JSON.parse(inputFile);
     } catch (e) {
-        console.error(`Invalid input JSON: ${e}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Invalid input JSON: ${e}`,
+            ANSIStyles.reset,
+        );
         return;
     }
 
@@ -517,7 +568,12 @@ export async function translateFileDiff(
             toUpdateJSONs[languageCode] = JSON.parse(outputFile);
             languageCodeToOutputPath[languageCode] = outputPath;
         } catch (e) {
-            console.error(`Invalid output JSON: ${e}`);
+            console.error(
+                ANSIStyles.bright,
+                ANSIStyles.fg.red,
+                `Invalid output JSON: ${e}`,
+                ANSIStyles.reset,
+            );
         }
     }
 
@@ -560,7 +616,12 @@ export async function translateFileDiff(
             }
         }
     } catch (err) {
-        console.error(`Failed to translate file diff: ${err}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Failed to translate file diff: ${err}`,
+            ANSIStyles.reset,
+        );
     }
 }
 
@@ -681,7 +742,10 @@ export async function translateDirectory(
         }
     } catch (err) {
         console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
             `Failed to translate directory to ${outputLanguage}: ${err}`,
+            ANSIStyles.reset,
         );
     }
 }
@@ -920,7 +984,12 @@ export async function translateDirectoryDiff(
             }
         }
     } catch (err) {
-        console.error(`Failed to translate directory diff: ${err}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Failed to translate directory diff: ${err}`,
+            ANSIStyles.reset,
+        );
     }
 
     // Remove any files in before not in after

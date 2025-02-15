@@ -1,3 +1,4 @@
+import { ANSIStyles } from "../print_styles";
 import { toGeminiSchema } from "gemini-zod";
 import ChatInterface from "./chat_interface";
 import Role from "../enums/role";
@@ -76,13 +77,21 @@ export default class Gemini extends ChatInterface {
 
             if (!response) {
                 console.error(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.red,
                     `Gemini exception encountered. err = ${JSON.stringify(generatedContent?.response, null, 4)}`,
+                    ANSIStyles.reset,
                 );
             }
 
             return response.trimEnd();
         } catch (err) {
-            console.error(err);
+            console.error(
+                ANSIStyles.bright,
+                ANSIStyles.fg.red,
+                err,
+                ANSIStyles.reset,
+            );
             return "";
         }
     }

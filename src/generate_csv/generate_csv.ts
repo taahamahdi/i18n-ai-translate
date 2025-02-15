@@ -1,3 +1,4 @@
+import { ANSIStyles } from "../print_styles";
 import { failedTranslationPrompt, generationPrompt } from "./prompts_csv";
 import { isNAK } from "./utils_csv";
 import { retryJob } from "../utils";
@@ -30,8 +31,11 @@ export default async function translateCsv(
 
     for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
         if (i > 0 && options.verbose) {
-            console.log(
+            console.info(
+                ANSIStyles.bright,
+                ANSIStyles.fg.green,
                 `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
+                ANSIStyles.reset,
             );
 
             const roundedEstimatedTimeLeftSeconds = Math.round(
@@ -40,8 +44,11 @@ export default async function translateCsv(
                     1000,
             );
 
-            console.log(
-                `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`,
+            console.info(
+                ANSIStyles.bright,
+                ANSIStyles.fg.green,
+                `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds\n`,
+                ANSIStyles.reset,
             );
         }
 
@@ -67,7 +74,10 @@ export default async function translateCsv(
 
         if (generatedTranslation === "") {
             console.error(
+                ANSIStyles.bright,
+                ANSIStyles.fg.red,
                 `Failed to generate translation for ${options.outputLanguage}`,
+                ANSIStyles.reset,
             );
             break;
         }
@@ -76,8 +86,11 @@ export default async function translateCsv(
             output[keys[j]] = generatedTranslation.split("\n")[j].slice(1, -1);
 
             if (options.verbose)
-                console.log(
+                console.info(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.yellow,
                     `${keys[j].replaceAll("*", ".")}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
+                    ANSIStyles.reset,
                 );
         }
     }
@@ -137,7 +150,12 @@ async function generateTranslation(
             false,
         );
     } catch (e) {
-        console.error(`Failed to translate: ${e}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Failed to translate: ${e}`,
+            ANSIStyles.reset,
+        );
     }
 
     return translated;
@@ -179,7 +197,12 @@ async function generate(
             );
         }
 
-        console.error(`Erroring text = ${input}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Erroring text = ${input}`,
+            ANSIStyles.reset,
+        );
         chats.generateTranslationChat.rollbackLastMessage();
         return Promise.reject(
             new Error("Failed to generate content due to exception."),
@@ -190,7 +213,12 @@ async function generate(
 
     if (text.startsWith("```\n") && text.endsWith("\n```")) {
         if (verboseLogging) {
-            console.log("Response started and ended with triple backticks");
+            console.info(
+                ANSIStyles.bright,
+                ANSIStyles.fg.cyan,
+                "Response started and ended with triple backticks",
+                ANSIStyles.reset,
+            );
         }
 
         text = text.slice(4, -4);
@@ -308,8 +336,11 @@ async function generate(
 
             if (line !== splitInput[i]) {
                 if (verboseLogging) {
-                    console.log(
+                    console.info(
+                        ANSIStyles.bright,
+                        ANSIStyles.fg.yellow,
                         `Successfully translated: ${oldText} => ${line}`,
+                        ANSIStyles.reset,
                     );
                 }
 

@@ -1,3 +1,4 @@
+import { ANSIStyles } from "./print_styles";
 import ISO6391 from "iso-639-1";
 import fs from "fs";
 import path from "path";
@@ -34,9 +35,19 @@ export async function retryJob<Type>(
 
     return job(...jobArgs).catch((err) => {
         if (sendError) {
-            console.error(`err = ${err}`);
+            console.error(
+                ANSIStyles.bright,
+                ANSIStyles.fg.red,
+                `err = ${err}`,
+                ANSIStyles.reset,
+            );
         } else {
-            console.warn(`err = ${err}`);
+            console.warn(
+                ANSIStyles.bright,
+                ANSIStyles.fg.red,
+                `err = ${err}`,
+                ANSIStyles.reset,
+            );
         }
 
         if (maxRetries <= 0) {
