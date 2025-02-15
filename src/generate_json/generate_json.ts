@@ -1,5 +1,5 @@
 import * as cl100k_base from "tiktoken/encoders/cl100k_base.json";
-import { DEFAULT_BATCH_SIZE, MAX_TOKEN } from "../constants";
+import { MAX_TOKEN } from "../constants";
 import { Tiktoken } from "tiktoken";
 import {
     TranslateItemOutputObjectSchema,
@@ -94,8 +94,17 @@ function generateTranslateItem(
 function getBatchTranslateItemArray(
     translateItemArray: TranslateItem[],
     options: TranslateOptions,
-    promptTokens: number,
+    tikToken: Tiktoken,
 ): TranslateItem[] {
+    const promptTokens = tikToken.encode(
+        translationPromptJson(
+            options.inputLanguage,
+            options.outputLanguage,
+            [],
+            options.overridePrompt,
+        ),
+    ).length;
+
     const maxInputTokens = ((MAX_TOKEN - promptTokens) * 0.9) / 2;
 
     let currentTokens = 0;
@@ -108,8 +117,44 @@ function getBatchTranslateItemArray(
         if (
             batchTranslateItemArray.length !== 0 &&
             (currentTokens >= maxInputTokens ||
-                batchTranslateItemArray.length >=
-                    Number(options.batchSize ?? DEFAULT_BATCH_SIZE))
+                batchTranslateItemArray.length >= options.batchSize)
+        ) {
+            break;
+        }
+
+        batchTranslateItemArray.push(translateItem);
+    }
+
+    return batchTranslateItemArray;
+}
+
+function getBatchVerifyItemArray(
+    translateItemArray: TranslateItem[],
+    options: TranslateOptions,
+    tikToken: Tiktoken,
+): TranslateItem[] {
+    const promptTokens = tikToken.encode(
+        verificationPromptJson(
+            options.inputLanguage,
+            options.outputLanguage,
+            [],
+            options.overridePrompt,
+        ),
+    ).length;
+
+    const maxInputTokens = ((MAX_TOKEN - promptTokens) * 0.9) / 2;
+
+    let currentTokens = 0;
+
+    const batchTranslateItemArray: TranslateItem[] = [];
+
+    for (const translateItem of translateItemArray) {
+        currentTokens += translateItem.verificationTokens;
+
+        if (
+            batchTranslateItemArray.length !== 0 &&
+            (currentTokens >= maxInputTokens ||
+                batchTranslateItemArray.length >= options.batchSize)
         ) {
             break;
         }
@@ -121,19 +166,19 @@ function getBatchTranslateItemArray(
 }
 
 function printCompletion(
-    processed: number,
-    total: number,
-    startTime: number,
+    translationStats: TranslationStatsItem,
     step: string,
 ): void {
-    if (processed > 0) {
+    if (translationStats.processedTokens > 0) {
         console.log(
-            `Step ${step}/2 - Completed ${((processed / total) * 100).toFixed(0)}%`,
+            `Step ${step}/2 - Completed ${((translationStats.processedTokens / translationStats.totalTokens) * 100).toFixed(0)}%`,
         );
 
         const roundedEstimatedTimeLeftSeconds = Math.round(
-            (((Date.now() - startTime) / (processed + 1)) *
-                (total - processed)) /
+            (((Date.now() - translationStats.batchStartTime) /
+                (translationStats.processedTokens + 1)) *
+                (translationStats.totalTokens -
+                    translationStats.processedTokens)) /
                 1000,
         );
 
@@ -182,29 +227,15 @@ async function generateTranslationJson(
 
     translationStats.batchStartTime = Date.now();
 
-    const promptTokens = tikToken.encode(
-        translationPromptJson(
-            options.inputLanguage,
-            options.outputLanguage,
-            [],
-            options.overridePrompt,
-        ),
-    ).length;
-
     while (translateItemArray.length > 0) {
         if (options.verbose) {
-            printCompletion(
-                translationStats.processedTokens,
-                translationStats.totalTokens,
-                translationStats.batchStartTime,
-                "1",
-            );
+            printCompletion(translationStats, "1");
         }
 
         const batchTranslateItemArray = getBatchTranslateItemArray(
             translateItemArray,
             options,
-            promptTokens,
+            tikToken,
         );
 
         for (const batchTranslateItem of batchTranslateItemArray) {
@@ -212,7 +243,7 @@ async function generateTranslationJson(
             if (batchTranslateItem.translationAttempts > 10) {
                 return Promise.reject(
                     new Error(
-                        `Item failed to translate too many times: ${JSON.stringify(batchTranslateItem)}`,
+                        `Item failed to translate too many times: ${JSON.stringify(batchTranslateItem)}. If this persists try a different model`,
                     ),
                 );
             }
@@ -287,43 +318,29 @@ async function generateVerificationJson(
     const generatedVerification: TranslateItem[] = [];
     translationStats.totalItems = verifyItemArray.length;
     translationStats.totalTokens = verifyItemArray.reduce(
-        (sum, translateItem) => sum + translateItem.verificationTokens,
+        (sum, verifyItem) => sum + verifyItem.verificationTokens,
         0,
     );
 
     translationStats.batchStartTime = Date.now();
 
-    const promptTokens = tikToken.encode(
-        verificationPromptJson(
-            options.inputLanguage,
-            options.outputLanguage,
-            [],
-            options.overridePrompt,
-        ),
-    ).length;
-
     while (verifyItemArray.length > 0) {
         if (options.verbose) {
-            printCompletion(
-                translationStats.processedTokens,
-                translationStats.totalTokens,
-                translationStats.batchStartTime,
-                "2",
-            );
+            printCompletion(translationStats, "2");
         }
 
-        const batchVerifyItemArray = getBatchTranslateItemArray(
+        const batchVerifyItemArray = getBatchVerifyItemArray(
             verifyItemArray,
             options,
-            promptTokens,
+            tikToken,
         );
 
         for (const batchVerifyItem of batchVerifyItemArray) {
             batchVerifyItem.verificationAttempts++;
-            if (batchVerifyItem.translationAttempts > 10) {
+            if (batchVerifyItem.verificationAttempts > 10) {
                 return Promise.reject(
                     new Error(
-                        `Item failed to verify too many times: ${JSON.stringify(batchVerifyItem)}`,
+                        `Item failed to verify too many times: ${JSON.stringify(batchVerifyItem)}. If this persists try a different model`,
                     ),
                 );
             }
@@ -368,7 +385,7 @@ async function generateVerificationJson(
                 verifyItemArray.splice(index, 1);
                 generatedVerification.push(translatedItem);
                 translationStats.processedTokens +=
-                    translatedItem.translationTokens;
+                    translatedItem.verificationTokens;
             }
 
             translationStats.processedItems++;

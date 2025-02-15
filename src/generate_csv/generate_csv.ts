@@ -1,4 +1,3 @@
-import { DEFAULT_BATCH_SIZE } from "../constants";
 import { failedTranslationPrompt, generationPrompt } from "./prompts_csv";
 import { isNAK } from "./utils_csv";
 import { retryJob } from "../utils";
@@ -25,7 +24,7 @@ export default async function translateCsv(
 
     const allKeys = Object.keys(flatInput);
 
-    const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
+    const batchSize = Number(options.batchSize);
 
     translationStats.batchStartTime = Date.now();
 

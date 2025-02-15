@@ -1,6 +1,5 @@
 import {
     CLI_HELP,
-    DEFAULT_BATCH_SIZE,
     DEFAULT_MODEL,
     DEFAULT_TEMPLATED_STRING_PREFIX,
     DEFAULT_TEMPLATED_STRING_SUFFIX,
@@ -32,6 +31,7 @@ const processModelArgs = (options: any): ModelArgs => {
     let apiKey: string | undefined;
     let host: string | undefined;
     let promptMode: PromptMode;
+    let batchSize: number;
     switch (options.engine) {
         case Engine.Gemini:
             model = options.model || DEFAULT_MODEL[Engine.Gemini];
@@ -54,6 +54,12 @@ const processModelArgs = (options: any): ModelArgs => {
                 if (promptMode === PromptMode.CSV) {
                     console.warn("WARNING: Json mode recommended for Gemini");
                 }
+            }
+
+            if (!options.batchSize) {
+                batchSize = 16;
+            } else {
+                batchSize = options.batchSize;
             }
 
             break;
@@ -83,6 +89,12 @@ const processModelArgs = (options: any): ModelArgs => {
                 promptMode = options.promptMode;
             }
 
+            if (!options.batchSize) {
+                batchSize = 32;
+            } else {
+                batchSize = options.batchSize;
+            }
+
             break;
         case Engine.Ollama:
             model = options.model || DEFAULT_MODEL[Engine.Ollama];
@@ -101,6 +113,12 @@ const processModelArgs = (options: any): ModelArgs => {
                 if (promptMode === PromptMode.CSV) {
                     console.warn("WARNING: Json mode recommended for Ollama");
                 }
+            }
+
+            if (!options.batchSize) {
+                batchSize = 16;
+            } else {
+                batchSize = options.batchSize;
             }
 
             break;
@@ -134,6 +152,12 @@ const processModelArgs = (options: any): ModelArgs => {
                 }
             }
 
+            if (!options.batchSize) {
+                batchSize = 16;
+            } else {
+                batchSize = options.batchSize;
+            }
+
             break;
         default: {
             throw new Error("Invalid engine");
@@ -142,6 +166,7 @@ const processModelArgs = (options: any): ModelArgs => {
 
     return {
         apiKey,
+        batchSize,
         chatParams,
         host,
         model: options.model || DEFAULT_MODEL[options.engine as Engine],
@@ -236,11 +261,7 @@ program
         CLI_HELP.EnsureChangedTranslation,
         false,
     )
-    .option(
-        "-n, --batch-size <batchSize>",
-        CLI_HELP.BatchSize,
-        String(DEFAULT_BATCH_SIZE),
-    )
+    .option("-n, --batch-size <batchSize>", CLI_HELP.BatchSize)
     .option(
         "--skip-translation-verification",
         CLI_HELP.SkipTranslationVerification,
@@ -258,8 +279,15 @@ program
     .option("--verbose", CLI_HELP.Verbose, false)
     .option("--prompt-mode <prompt-mode>", CLI_HELP.PromptMode)
     .action(async (options: any) => {
-        const { model, chatParams, rateLimitMs, apiKey, host, promptMode } =
-            processModelArgs(options);
+        const {
+            model,
+            chatParams,
+            rateLimitMs,
+            apiKey,
+            host,
+            promptMode,
+            batchSize,
+        } = processModelArgs(options);
 
         let overridePrompt: OverridePrompt | undefined;
 
@@ -337,7 +365,7 @@ program
                         // eslint-disable-next-line no-await-in-loop
                         await translateFile({
                             apiKey,
-                            batchSize: options.batchSize,
+                            batchSize,
                             chatParams,
                             engine: options.engine,
                             ensureChangedTranslation:
@@ -515,11 +543,7 @@ program
         "Suffix for templated strings",
         DEFAULT_TEMPLATED_STRING_SUFFIX,
     )
-    .option(
-        "-n, --batch-size <batchSize>",
-        CLI_HELP.BatchSize,
-        String(DEFAULT_BATCH_SIZE),
-    )
+    .option("-n, --batch-size <batchSize>", CLI_HELP.BatchSize)
     .option(
         "--skip-translation-verification",
         CLI_HELP.SkipTranslationVerification,
@@ -537,8 +561,15 @@ program
     .option("--verbose", CLI_HELP.Verbose, false)
     .option("--prompt-mode <prompt-mode>", CLI_HELP.PromptMode)
     .action(async (options: any) => {
-        const { model, chatParams, rateLimitMs, apiKey, host, promptMode } =
-            processModelArgs(options);
+        const {
+            model,
+            chatParams,
+            rateLimitMs,
+            apiKey,
+            host,
+            promptMode,
+            batchSize,
+        } = processModelArgs(options);
 
         let overridePrompt: OverridePrompt | undefined;
 
@@ -588,7 +619,7 @@ program
 
             await translateFileDiff({
                 apiKey,
-                batchSize: options.batchSize,
+                batchSize,
                 chatParams,
                 engine: options.engine,
                 ensureChangedTranslation: options.ensureChangedTranslation,

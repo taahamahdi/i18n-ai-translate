@@ -14,7 +14,7 @@ export default interface Options {
     templatedStringSuffix: string;
     verbose?: boolean;
     ensureChangedTranslation?: boolean;
-    batchSize?: number;
+    batchSize: number;
     skipTranslationVerification?: boolean;
     skipStylingVerification?: boolean;
     overridePrompt?: OverridePrompt;

@@ -24,6 +24,7 @@ export type ModelArgs = {
     apiKey: string | undefined;
     host: string | undefined;
     promptMode: PromptMode;
+    batchSize: number;
 };
 
 export type GenerateStateCsv = {

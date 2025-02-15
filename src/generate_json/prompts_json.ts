@@ -49,7 +49,8 @@ Translate from ${inputLanguage} to ${outputLanguage}.
 - Preserve text formatting, case sensitivity, and whitespace.
 
 Special Instructions:
-- Do not translate or alter variables like {{timeLeft}}, doing so will result in a failed translation, Ignore this if 'original' lacks variables.
+- Treat anything in the format {{variableName}} as a placeholder. Never translate or modify its content.
+- Do not add your own variables
 - The number of variables like {{timeLeft}} must be the same in the translated text.
 - Do not convert {{NEWLINE}} to \\n.
 
@@ -109,7 +110,8 @@ If correct, return 'valid' as 'true' and leave 'fixedTranslation' empty.
 If incorrect, return 'valid' as 'false' and put the fixed translation in 'fixedTranslation'.
 
 Special Instructions:
-- Do not translate or alter variables like {{timeLeft}}, doing so will result in a failed translation, Ignore this if 'original' lacks variables.
+- Treat anything in the format {{variableName}} as a placeholder. Never translate or modify its content.
+- Do not add your own variables
 - The number of variables like {{timeLeft}} must be the same in the translated text.
 - Do not convert {{NEWLINE}} to \\n.
 

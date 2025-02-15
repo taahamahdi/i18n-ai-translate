@@ -122,22 +122,22 @@ function groupSimilarValues(flatInput: { [key: string]: string }): {
     return flatInput;
 }
 
+function startTranslationStatsItem(): TranslationStatsItem {
+    return {
+        batchStartTime: 0,
+        enqueuedItems: 0,
+        processedItems: 0,
+        processedTokens: 0,
+        totalItems: 0,
+        totalTokens: 0,
+    } as TranslationStatsItem;
+}
+
 function startTranslationStats(): TranslationStats {
     return {
         translate: startTranslationStatsItem(),
         verify: startTranslationStatsItem(),
     } as TranslationStats;
-}
-
-function startTranslationStatsItem(): TranslationStatsItem {
-    return {
-        batchStartTime: 0,
-        processedItems: 0,
-        processedTokens: 0,
-        enqueuedItems: 0,
-        totalItems: 0,
-        totalTokens: 0,
-    } as TranslationStatsItem;
 }
 
 async function getTranslation(
