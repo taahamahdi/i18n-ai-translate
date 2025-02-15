@@ -25,6 +25,7 @@ export type ModelArgs = {
     host: string | undefined;
     promptMode: PromptMode;
     batchSize: number;
+    batchMaxTokens: number;
 };
 
 export type GenerateStateCsv = {

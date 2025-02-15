@@ -15,6 +15,7 @@ export default interface Options {
     verbose?: boolean;
     ensureChangedTranslation?: boolean;
     batchSize: number;
+    batchMaxTokens: number;
     skipTranslationVerification?: boolean;
     skipStylingVerification?: boolean;
     overridePrompt?: OverridePrompt;

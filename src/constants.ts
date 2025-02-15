@@ -1,7 +1,6 @@
 import { OVERRIDE_PROMPT_KEYS } from "./interfaces/override_prompt";
 import Engine from "./enums/engine";
 
-export const MAX_TOKEN = 2048;
 export const VERSION = "3.3.3";
 export const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 export const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
@@ -19,6 +18,7 @@ export const CLI_HELP = {
     Engine: "Engine to use (chatgpt, gemini, ollama, or claude)",
     EnsureChangedTranslation:
         "Each generated translation key must differ from the input (for keys longer than 4)",
+    MaxTokens: "The maximum token size of a request",
     Model: `Model to use (e.g. ${Object.values(DEFAULT_MODEL).join(", ")})`,
     OllamaHost:
         "The host and port number serving Ollama. 11434 is the default port number.",

@@ -32,6 +32,7 @@ const processModelArgs = (options: any): ModelArgs => {
     let host: string | undefined;
     let promptMode: PromptMode;
     let batchSize: number;
+    let batchMaxTokens: number;
     switch (options.engine) {
         case Engine.Gemini:
             model = options.model || DEFAULT_MODEL[Engine.Gemini];
@@ -60,6 +61,12 @@ const processModelArgs = (options: any): ModelArgs => {
                 batchSize = 16;
             } else {
                 batchSize = options.batchSize;
+            }
+
+            if (!options.batchMaxTokens) {
+                batchMaxTokens = 2048;
+            } else {
+                batchMaxTokens = options.batchMaxTokens;
             }
 
             break;
@@ -95,6 +102,12 @@ const processModelArgs = (options: any): ModelArgs => {
                 batchSize = options.batchSize;
             }
 
+            if (!options.batchMaxTokens) {
+                batchMaxTokens = 2048;
+            } else {
+                batchMaxTokens = options.batchMaxTokens;
+            }
+
             break;
         case Engine.Ollama:
             model = options.model || DEFAULT_MODEL[Engine.Ollama];
@@ -119,6 +132,12 @@ const processModelArgs = (options: any): ModelArgs => {
                 batchSize = 16;
             } else {
                 batchSize = options.batchSize;
+            }
+
+            if (!options.batchMaxTokens) {
+                batchMaxTokens = 2048;
+            } else {
+                batchMaxTokens = options.batchMaxTokens;
             }
 
             break;
@@ -158,6 +177,12 @@ const processModelArgs = (options: any): ModelArgs => {
                 batchSize = options.batchSize;
             }
 
+            if (!options.batchMaxTokens) {
+                batchMaxTokens = 2048;
+            } else {
+                batchMaxTokens = options.batchMaxTokens;
+            }
+
             break;
         default: {
             throw new Error("Invalid engine");
@@ -166,6 +191,7 @@ const processModelArgs = (options: any): ModelArgs => {
 
     return {
         apiKey,
+        batchMaxTokens,
         batchSize,
         chatParams,
         host,
@@ -278,6 +304,7 @@ program
     )
     .option("--verbose", CLI_HELP.Verbose, false)
     .option("--prompt-mode <prompt-mode>", CLI_HELP.PromptMode)
+    .option("--batch-max-tokens <batch-max-tokens>", CLI_HELP.MaxTokens)
     .action(async (options: any) => {
         const {
             model,
@@ -287,6 +314,7 @@ program
             host,
             promptMode,
             batchSize,
+            batchMaxTokens,
         } = processModelArgs(options);
 
         let overridePrompt: OverridePrompt | undefined;
@@ -365,6 +393,7 @@ program
                         // eslint-disable-next-line no-await-in-loop
                         await translateFile({
                             apiKey,
+                            batchMaxTokens,
                             batchSize,
                             chatParams,
                             engine: options.engine,
@@ -417,6 +446,7 @@ program
                         await translateDirectory({
                             apiKey,
                             baseDirectory: path.resolve(inputPath, ".."),
+                            batchMaxTokens: options.batchMaxTokens,
                             batchSize: options.batchSize,
                             chatParams,
                             engine: options.engine,
@@ -480,6 +510,7 @@ program
                     // eslint-disable-next-line no-await-in-loop
                     await translateFile({
                         apiKey,
+                        batchMaxTokens: options.batchMaxTokens,
                         batchSize: options.batchSize,
                         chatParams,
                         engine: options.engine,
@@ -560,6 +591,7 @@ program
     )
     .option("--verbose", CLI_HELP.Verbose, false)
     .option("--prompt-mode <prompt-mode>", CLI_HELP.PromptMode)
+    .option("--batch-max-tokens <batch-max-tokens>", CLI_HELP.MaxTokens)
     .action(async (options: any) => {
         const {
             model,
@@ -569,6 +601,7 @@ program
             host,
             promptMode,
             batchSize,
+            batchMaxTokens,
         } = processModelArgs(options);
 
         let overridePrompt: OverridePrompt | undefined;
@@ -619,6 +652,7 @@ program
 
             await translateFileDiff({
                 apiKey,
+                batchMaxTokens,
                 batchSize,
                 chatParams,
                 engine: options.engine,
@@ -642,6 +676,7 @@ program
             await translateDirectoryDiff({
                 apiKey,
                 baseDirectory: path.resolve(beforeInputPath, ".."),
+                batchMaxTokens: options.batchMaxTokens,
                 batchSize: options.batchSize,
                 chatParams,
                 engine: options.engine,

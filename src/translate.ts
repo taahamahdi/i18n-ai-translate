@@ -312,6 +312,7 @@ export async function translateDiff(
             // eslint-disable-next-line no-await-in-loop
             const translated = await translate({
                 apiKey: options.apiKey,
+                batchMaxTokens: options.batchMaxTokens,
                 batchSize: options.batchSize,
                 chatParams: options.chatParams,
                 engine: options.engine,
@@ -398,6 +399,7 @@ export async function translateFile(
     try {
         const outputJSON = await translate({
             apiKey: options.apiKey,
+            batchMaxTokens: options.batchMaxTokens,
             batchSize: options.batchSize,
             chatParams: options.chatParams,
             engine: options.engine,
@@ -522,6 +524,7 @@ export async function translateFileDiff(
     try {
         const outputJSON = await translateDiff({
             apiKey: options.apiKey,
+            batchMaxTokens: options.batchMaxTokens,
             batchSize: options.batchSize,
             chatParams: options.chatParams,
             engine: options.engine,
@@ -628,6 +631,7 @@ export async function translateDirectory(
     try {
         const outputJSON = (await translate({
             apiKey: options.apiKey,
+            batchMaxTokens: options.batchMaxTokens,
             batchSize: options.batchSize,
             chatParams: options.chatParams,
             engine: options.engine,
@@ -829,6 +833,7 @@ export async function translateDirectoryDiff(
     try {
         const perLanguageOutputJSON = await translateDiff({
             apiKey: options.apiKey,
+            batchMaxTokens: options.batchMaxTokens,
             batchSize: options.batchSize,
             chatParams: options.chatParams,
             engine: options.engine,

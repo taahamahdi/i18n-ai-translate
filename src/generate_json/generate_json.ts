@@ -1,5 +1,4 @@
 import * as cl100k_base from "tiktoken/encoders/cl100k_base.json";
-import { MAX_TOKEN } from "../constants";
 import { Tiktoken } from "tiktoken";
 import {
     TranslateItemOutputObjectSchema,
@@ -110,7 +109,7 @@ function getBatchTranslateItemArray(
     ).length;
 
     // Remove the tokens used by the prompt and divide the remaining tokens divided by 2 (half for the input/output) with a 10% margin of error
-    const maxInputTokens = ((MAX_TOKEN - promptTokens) * 0.9) / 2;
+    const maxInputTokens = ((options.batchMaxTokens - promptTokens) * 0.9) / 2;
 
     let currentTokens = 0;
 
@@ -151,7 +150,7 @@ function getBatchVerifyItemArray(
         ),
     ).length;
 
-    const maxInputTokens = ((MAX_TOKEN - promptTokens) * 0.9) / 2;
+    const maxInputTokens = ((options.batchMaxTokens - promptTokens) * 0.9) / 2;
 
     let currentTokens = 0;
 
@@ -179,11 +178,14 @@ function getBatchVerifyItemArray(
 
 function printCompletion(
     translationStats: TranslationStatsItem,
-    step: string,
+    title: string,
 ): void {
     if (translationStats.processedTokens > 0) {
-        console.log(
-            `Step ${step}/2 - Completed ${((translationStats.processedTokens / translationStats.totalTokens) * 100).toFixed(0)}%`,
+        console.group(title);
+        console.info(
+            `Completed ${((translationStats.processedTokens / translationStats.totalTokens) * 100).toFixed(0)}%`,
+            // "\x1b[34m",
+            // "\x1b[41m",
         );
 
         const roundedEstimatedTimeLeftSeconds = Math.round(
@@ -194,9 +196,10 @@ function printCompletion(
                 1000,
         );
 
-        console.log(
-            `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`,
+        console.info(
+            `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds\n`,
         );
+        console.groupEnd();
     }
 }
 
@@ -261,7 +264,12 @@ async function generateTranslationJson(
     // this is done to avoid 'losing' items if the model doesn't return one
     while (translateItemArray.length > 0) {
         if (options.verbose) {
-            printCompletion(translationStats, "1");
+            printCompletion(
+                translationStats,
+                options.skipTranslationVerification
+                    ? "Step 1/1 - Translating"
+                    : "Step 1/2 - Translating",
+            );
         }
 
         const batchTranslateItemArray = getBatchTranslateItemArray(
@@ -340,7 +348,7 @@ async function generateTranslationJson(
             (endTime - translationStats.batchStartTime) / 1000,
         );
 
-        console.log(`Translation execution time: ${roundedSeconds} seconds`);
+        console.info(`Translation execution time: ${roundedSeconds} seconds\n`);
     }
 
     return generatedTranslation;
@@ -365,7 +373,7 @@ async function generateVerificationJson(
 
     while (verifyItemArray.length > 0) {
         if (options.verbose) {
-            printCompletion(translationStats, "2");
+            printCompletion(translationStats, "Step 2/2 - Verifying");
         }
 
         const batchVerifyItemArray = getBatchVerifyItemArray(
@@ -437,7 +445,9 @@ async function generateVerificationJson(
             (endTime - translationStats.batchStartTime) / 1000,
         );
 
-        console.log(`Verification execution time: ${roundedSeconds} seconds`);
+        console.info(
+            `Verification execution time: ${roundedSeconds} seconds\n`,
+        );
     }
 
     return generatedVerification;
@@ -496,7 +506,7 @@ export default async function translateJson(
 
     if (!options.skipTranslationVerification) {
         if (options.verbose) {
-            console.log("Starting verification...");
+            console.info("Starting verification...\n");
         }
 
         const generatedVerification = await generateVerificationJson(
@@ -598,11 +608,6 @@ function createTranslateItemsWithTranslation(
                 // Item is updated with a failure message. This message gives the LLM a context to help it fix the translation.
                 // Without this the same error is made over and over again, with the message the new translation is generally accepted.
                 untranslatedItem.failure = `Must add variables, missing from last translation: '${JSON.stringify(missingVariables)}'`;
-                console.log(untranslatedItem.templateStrings, templateStrings);
-                console.log(
-                    untranslatedItem.original,
-                    translatedItem.translated,
-                );
             }
         }
     }
@@ -646,18 +651,8 @@ function createVerifyItemsWithTranslation(
                     translatedItem.translated =
                         verifiedItem.fixedTranslation as string;
                     translatedItem.failure = `Previous issue that should be corrected: '${verifiedItem.issue}'`;
-                    console.log(translatedItem);
                 } else {
                     translatedItem.failure = `Must add variables, missing from last translation: '${JSON.stringify(missingVariables)}'`;
-                    console.log(
-                        translatedItem.templateStrings,
-                        templateStrings,
-                    );
-
-                    console.log(
-                        translatedItem.original,
-                        verifiedItem.fixedTranslation,
-                    );
                 }
             }
         }
