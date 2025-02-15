@@ -27,6 +27,7 @@ function generateTranslateItemsInput(
     return translateItems.map(
         (translateItem) =>
             ({
+                // Only adds 'context' to the object if it's not empty. Makes the prompt shorter and uses less tokens
                 ...(translateItem.context !== ""
                     ? { context: translateItem.context }
                     : {}),
@@ -79,14 +80,17 @@ function generateTranslateItem(
         verificationTokens: 0,
     } as TranslateItem;
 
+    // Maps the 'placeholders' in the translated object to make sure that none are missing
     const match = original.match(templatedStringRegex);
     if (match) {
         translateItem.templateStrings = match;
     }
 
-    translateItem.translationTokens = tikToken.encode(
-        JSON.stringify(generateTranslateItemsInput([translateItem])[0]),
-    ).length;
+    // Tokens here are used to estimate accurately the execution time
+    translateItem.translationTokens = getTranslateItemToken(
+        translateItem,
+        tikToken,
+    );
 
     return translateItem;
 }
@@ -105,6 +109,7 @@ function getBatchTranslateItemArray(
         ),
     ).length;
 
+    // Remove the tokens used by the prompt and divide the remaining tokens divided by 2 (half for the input/output) with a 10% margin of error
     const maxInputTokens = ((MAX_TOKEN - promptTokens) * 0.9) / 2;
 
     let currentTokens = 0;
@@ -112,7 +117,11 @@ function getBatchTranslateItemArray(
     const batchTranslateItemArray: TranslateItem[] = [];
 
     for (const translateItem of translateItemArray) {
-        currentTokens += translateItem.translationTokens;
+        // If a failure message is added the tokens for an item change
+        currentTokens +=
+            translateItem.failure !== ""
+                ? getTranslateItemToken(translateItem, tikToken)
+                : translateItem.translationTokens;
 
         if (
             batchTranslateItemArray.length !== 0 &&
@@ -129,7 +138,7 @@ function getBatchTranslateItemArray(
 }
 
 function getBatchVerifyItemArray(
-    translateItemArray: TranslateItem[],
+    translatedItemArray: TranslateItem[],
     options: TranslateOptions,
     tikToken: Tiktoken,
 ): TranslateItem[] {
@@ -146,23 +155,26 @@ function getBatchVerifyItemArray(
 
     let currentTokens = 0;
 
-    const batchTranslateItemArray: TranslateItem[] = [];
+    const batchVerifyItemArray: TranslateItem[] = [];
 
-    for (const translateItem of translateItemArray) {
-        currentTokens += translateItem.verificationTokens;
+    for (const translatedItem of translatedItemArray) {
+        currentTokens +=
+            translatedItem.failure !== ""
+                ? getVerifyItemToken(translatedItem, tikToken)
+                : translatedItem.verificationTokens;
 
         if (
-            batchTranslateItemArray.length !== 0 &&
+            batchVerifyItemArray.length !== 0 &&
             (currentTokens >= maxInputTokens ||
-                batchTranslateItemArray.length >= options.batchSize)
+                batchVerifyItemArray.length >= options.batchSize)
         ) {
             break;
         }
 
-        batchTranslateItemArray.push(translateItem);
+        batchVerifyItemArray.push(translatedItem);
     }
 
-    return batchTranslateItemArray;
+    return batchVerifyItemArray;
 }
 
 function printCompletion(
@@ -210,6 +222,24 @@ function generateTranslateItemArray(
     }, [] as TranslateItem[]);
 }
 
+function getTranslateItemToken(
+    translatedItem: TranslateItem,
+    tikToken: Tiktoken,
+): number {
+    return tikToken.encode(
+        JSON.stringify(generateTranslateItemsInput([translatedItem])[0]),
+    ).length;
+}
+
+function getVerifyItemToken(
+    translatedItem: TranslateItem,
+    tikToken: Tiktoken,
+): number {
+    return tikToken.encode(
+        JSON.stringify(generateVerifyItemsInput([translatedItem])[0]),
+    ).length;
+}
+
 async function generateTranslationJson(
     translateItemArray: TranslateItem[],
     options: TranslateOptions,
@@ -227,6 +257,8 @@ async function generateTranslationJson(
 
     translationStats.batchStartTime = Date.now();
 
+    // translate items are removed from 'translateItemArray' when one is generated
+    // this is done to avoid 'losing' items if the model doesn't return one
     while (translateItemArray.length > 0) {
         if (options.verbose) {
             printCompletion(translationStats, "1");
@@ -280,12 +312,19 @@ async function generateTranslationJson(
         }
 
         for (const translatedItem of result) {
+            // Check if the translated item exists in the untranslated item array
             const index = translateItemArray.findIndex(
                 (item) => item.id === translatedItem.id,
             );
 
             if (index !== -1) {
+                // If it does remove it from the 'translateItemArray' used to queue items for translation
                 translateItemArray.splice(index, 1);
+                // Prepare the object then add it to results
+                translatedItem.verificationTokens = getVerifyItemToken(
+                    translatedItem,
+                    tikToken,
+                );
                 generatedTranslation.push(translatedItem);
                 translationStats.processedTokens +=
                     translatedItem.translationTokens;
@@ -460,12 +499,6 @@ export default async function translateJson(
             console.log("Starting verification...");
         }
 
-        for (const translatedItem of generatedTranslation) {
-            translatedItem.verificationTokens = tikToken.encode(
-                JSON.stringify(generateVerifyItemsInput([translatedItem])[0]),
-            ).length;
-        }
-
         const generatedVerification = await generateVerificationJson(
             generatedTranslation,
             options,
@@ -513,6 +546,7 @@ function isValidVerificationItem(item: any): item is VerifyItemOutput {
     if (!(typeof item.id === "number")) return false;
     if (!(typeof item.valid === "boolean")) return false;
     if (item.id <= 0) return false;
+    // 'fixedTranslation' should be a translation if valid is false
     if (
         item.valid === false &&
         (!(typeof item.fixedTranslation === "string") ||
@@ -561,6 +595,8 @@ function createTranslateItemsWithTranslation(
                     translated: translatedItem.translated,
                 } as TranslateItem);
             } else {
+                // Item is updated with a failure message. This message gives the LLM a context to help it fix the translation.
+                // Without this the same error is made over and over again, with the message the new translation is generally accepted.
                 untranslatedItem.failure = `Must add variables, missing from last translation: '${JSON.stringify(missingVariables)}'`;
                 console.log(untranslatedItem.templateStrings, templateStrings);
                 console.log(
@@ -606,9 +642,11 @@ function createVerifyItemsWithTranslation(
                 );
 
                 if (missingVariables.length === 0) {
+                    // 'translatedItem' is updated and queued again to check if the new fixed translation is valid
                     translatedItem.translated =
                         verifiedItem.fixedTranslation as string;
-                    translatedItem.failure = "";
+                    translatedItem.failure = `Previous issue that should be corrected: '${verifiedItem.issue}'`;
+                    console.log(translatedItem);
                 } else {
                     translatedItem.failure = `Must add variables, missing from last translation: '${JSON.stringify(missingVariables)}'`;
                     console.log(

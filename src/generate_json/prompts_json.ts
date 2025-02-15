@@ -106,8 +106,8 @@ Check translations from ${inputLanguage} to ${outputLanguage}.
 - 'failure' explains why the previous translation failed.
 - check for Accuracy (meaning, tone, grammar), Formatting (case, whitespace, punctuation).
 
-If correct, return 'valid' as 'true' and leave 'fixedTranslation' empty.
-If incorrect, return 'valid' as 'false' and put the fixed translation in 'fixedTranslation'.
+If correct, return 'valid' as 'true' and leave 'fixedTranslation' and 'issue' empty.
+If incorrect, return 'valid' as 'false' and put the fixed translation in 'fixedTranslation' and explain what is 'issue'.
 
 Special Instructions:
 - Treat anything in the format {{variableName}} as a placeholder. Never translate or modify its content.
