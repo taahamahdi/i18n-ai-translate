@@ -1,7 +1,7 @@
 import type Chats from "./chats";
 import type OverridePrompt from "./override_prompt";
 
-export default interface GenerateTranslationOptions {
+export default interface GenerateTranslationOptionsCsv {
     chats: Chats;
     inputLanguage: string;
     outputLanguage: string;

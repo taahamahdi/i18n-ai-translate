@@ -1,9 +1,4 @@
-import {
-    DEFAULT_BATCH_SIZE,
-    DEFAULT_TEMPLATED_STRING_PREFIX,
-    DEFAULT_TEMPLATED_STRING_SUFFIX,
-    FLATTEN_DELIMITER,
-} from "./constants";
+import { FLATTEN_DELIMITER } from "./constants";
 import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
 import {
@@ -12,10 +7,13 @@ import {
     getTranslationDirectoryKey,
 } from "./utils";
 import ChatFactory from "./chat_interface/chat_factory";
+import PromptMode from "./enums/prompt_mode";
 import RateLimiter from "./rate_limiter";
 import fs from "fs";
-import generateTranslation from "./generate";
 import path, { dirname } from "path";
+import translateCsv from "./generate_csv/generate_csv";
+import translateJson from "./generate_json/generate_json";
+import type { TranslationStats, TranslationStatsItem } from "./types";
 import type Chats from "./interfaces/chats";
 import type TranslateDiffOptions from "./interfaces/translate_diff_options";
 import type TranslateDirectoryDiffOptions from "./interfaces/translate_directory_diff_options";
@@ -23,24 +21,15 @@ import type TranslateDirectoryOptions from "./interfaces/translate_directory_opt
 import type TranslateFileDiffOptions from "./interfaces/translate_file_diff_options";
 import type TranslateFileOptions from "./interfaces/translate_file_options";
 import type TranslateOptions from "./interfaces/translate_options";
+import { ANSIStyles } from "./print_styles";
 
-/**
- * Translate the input JSON to the given language
- * @param options - The options for the translation
- */
-export async function translate(options: TranslateOptions): Promise<Object> {
-    if (options.verbose) {
-        console.log(
-            `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
-        );
-    }
-
+function getChats(options: TranslateOptions): Chats {
     const rateLimiter = new RateLimiter(
         options.rateLimitMs,
         options.verbose ?? false,
     );
 
-    const chats: Chats = {
+    return {
         generateTranslationChat: ChatFactory.newChat(
             options.engine,
             options.model,
@@ -63,30 +52,39 @@ export async function translate(options: TranslateOptions): Promise<Object> {
             options.host,
         ),
     };
+}
 
-    const output: { [key: string]: string } = {};
-
-    const templatedStringPrefix =
-        options.templatedStringPrefix || DEFAULT_TEMPLATED_STRING_PREFIX;
-
-    const templatedStringSuffix =
-        options.templatedStringSuffix || DEFAULT_TEMPLATED_STRING_SUFFIX;
-
-    let flatInput = flatten(options.inputJSON, {
-        delimiter: FLATTEN_DELIMITER,
-    }) as {
-        [key: string]: string;
-    };
-
+function replaceNewlinesWithPlaceholder(
+    options: TranslateOptions,
+    flatInput: { [key: string]: string },
+): void {
     for (const key in flatInput) {
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
             flatInput[key] = flatInput[key].replaceAll(
                 "\n",
-                `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
+                `${options.templatedStringPrefix}NEWLINE${options.templatedStringSuffix}`,
             );
         }
     }
+}
 
+function replacePlaceholderWithNewLines(
+    options: TranslateOptions,
+    sortedOutput: { [key: string]: string },
+): void {
+    for (const key in sortedOutput) {
+        if (Object.prototype.hasOwnProperty.call(sortedOutput, key)) {
+            sortedOutput[key] = sortedOutput[key].replaceAll(
+                `${options.templatedStringPrefix}NEWLINE${options.templatedStringSuffix}`,
+                "\n",
+            );
+        }
+    }
+}
+
+function groupSimilarValues(flatInput: { [key: string]: string }): {
+    [key: string]: string;
+} {
     const groups: Array<{ [key: string]: string }> = [];
     for (const key in flatInput) {
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
@@ -122,63 +120,100 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         }
     }
 
-    const allKeys = Object.keys(flatInput);
+    return flatInput;
+}
 
-    const batchSize = Number(options.batchSize ?? DEFAULT_BATCH_SIZE);
-    const batchStartTime = Date.now();
-    for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
-        if (i > 0 && options.verbose) {
-            console.log(
-                `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
-            );
+function startTranslationStatsItem(): TranslationStatsItem {
+    return {
+        batchStartTime: 0,
+        enqueuedItems: 0,
+        processedItems: 0,
+        processedTokens: 0,
+        totalItems: 0,
+        totalTokens: 0,
+    } as TranslationStatsItem;
+}
 
-            const roundedEstimatedTimeLeftSeconds = Math.round(
-                (((Date.now() - batchStartTime) / (i + 1)) *
-                    (Object.keys(flatInput).length - i)) /
-                    1000,
-            );
+function startTranslationStats(): TranslationStats {
+    return {
+        translate: startTranslationStatsItem(),
+        verify: startTranslationStatsItem(),
+    } as TranslationStats;
+}
 
-            console.log(
-                `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`,
-            );
-        }
-
-        const keys = allKeys.slice(i, i + batchSize);
-        const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
-
-        // eslint-disable-next-line no-await-in-loop
-        const generatedTranslation = await generateTranslation({
-            chats,
-            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
-            input,
-            inputLanguage: `[${options.inputLanguage}]`,
-            keys,
-            outputLanguage: `[${options.outputLanguage}]`,
-            overridePrompt: options.overridePrompt,
-            skipStylingVerification: options.skipStylingVerification ?? false,
-            skipTranslationVerification:
-                options.skipTranslationVerification ?? false,
-            templatedStringPrefix,
-            templatedStringSuffix,
-            verboseLogging: options.verbose ?? false,
-        });
-
-        if (generatedTranslation === "") {
-            console.error(
-                `Failed to generate translation for ${options.outputLanguage}`,
-            );
-            break;
-        }
-
-        for (let j = 0; j < keys.length; j++) {
-            output[keys[j]] = generatedTranslation.split("\n")[j].slice(1, -1);
-
-            if (options.verbose)
-                console.log(
-                    `${keys[j].replaceAll("*", ".")}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
+async function getTranslation(
+    flatInput: { [key: string]: string },
+    options: TranslateOptions,
+    chats: Chats,
+    translationStats: TranslationStats,
+): Promise<{ [key: string]: string }> {
+    switch (options.promptMode) {
+        case PromptMode.JSON:
+            if (options.verbose) {
+                console.info(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.orange,
+                    "Transaltion prompting mode: JSON\n",
+                    ANSIStyles.reset,
                 );
-        }
+            }
+
+            return translateJson(flatInput, options, chats, translationStats);
+        case PromptMode.CSV:
+            if (options.verbose) {
+                console.info(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.orange,
+                    "Transaltion prompting mode: CSV\n",
+                    ANSIStyles.reset,
+                );
+            }
+
+            return translateCsv(
+                flatInput,
+                options,
+                chats,
+                translationStats.translate,
+            );
+        default:
+            throw new Error("Prompt mode is not set");
     }
+}
+
+/**
+ * Translate the input JSON to the given language
+ * @param options - The options for the translation
+ */
+export async function translate(options: TranslateOptions): Promise<Object> {
+    if (options.verbose) {
+        console.info(
+            ANSIStyles.bright,
+            ANSIStyles.fg.cyan,
+            `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
+            ANSIStyles.reset,
+        );
+    }
+
+    const chats: Chats = getChats(options);
+
+    let flatInput = flatten(options.inputJSON, {
+        delimiter: FLATTEN_DELIMITER,
+    }) as {
+        [key: string]: string;
+    };
+
+    replaceNewlinesWithPlaceholder(options, flatInput);
+
+    flatInput = groupSimilarValues(flatInput);
+
+    const translationStats = startTranslationStats();
+
+    const output = await getTranslation(
+        flatInput,
+        options,
+        chats,
+        translationStats,
+    );
 
     // sort the keys
     const sortedOutput: { [key: string]: string } = {};
@@ -186,14 +221,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         sortedOutput[key] = output[key];
     }
 
-    for (const key in sortedOutput) {
-        if (Object.prototype.hasOwnProperty.call(sortedOutput, key)) {
-            sortedOutput[key] = sortedOutput[key].replaceAll(
-                `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
-                "\n",
-            );
-        }
-    }
+    replacePlaceholderWithNewLines(options, sortedOutput);
 
     const unflattenedOutput = unflatten(sortedOutput, {
         delimiter: FLATTEN_DELIMITER,
@@ -201,8 +229,16 @@ export async function translate(options: TranslateOptions): Promise<Object> {
 
     if (options.verbose) {
         const endTime = Date.now();
-        const roundedSeconds = Math.round((endTime - batchStartTime) / 1000);
-        console.log(`Actual execution time: ${roundedSeconds} seconds`);
+        const roundedSeconds = Math.round(
+            (endTime - translationStats.translate.batchStartTime) / 1000,
+        );
+
+        console.info(
+            ANSIStyles.bright,
+            ANSIStyles.fg.orange,
+            `Actual execution time: ${roundedSeconds} seconds`,
+            ANSIStyles.reset,
+        );
     }
 
     return unflattenedOutput as Object;
@@ -263,9 +299,26 @@ export async function translateDiff(
     }
 
     if (options.verbose) {
-        console.log(`Added keys: ${addedKeys.join("\n")}\n`);
-        console.log(`Modified keys: ${modifiedKeys.join("\n")}\n`);
-        console.log(`Deleted keys: ${deletedKeys.join("\n")}\n`);
+        console.info(
+            ANSIStyles.bright,
+            ANSIStyles.fg.cyan,
+            `Added keys: ${addedKeys.join("\n")}\n`,
+            ANSIStyles.reset,
+        );
+
+        console.info(
+            ANSIStyles.bright,
+            ANSIStyles.fg.cyan,
+            `Modified keys: ${modifiedKeys.join("\n")}\n`,
+            ANSIStyles.reset,
+        );
+
+        console.info(
+            ANSIStyles.bright,
+            ANSIStyles.fg.cyan,
+            `Deleted keys: ${deletedKeys.join("\n")}\n`,
+            ANSIStyles.reset,
+        );
     }
 
     for (const key of deletedKeys) {
@@ -295,6 +348,7 @@ export async function translateDiff(
             // eslint-disable-next-line no-await-in-loop
             const translated = await translate({
                 apiKey: options.apiKey,
+                batchMaxTokens: options.batchMaxTokens,
                 batchSize: options.batchSize,
                 chatParams: options.chatParams,
                 engine: options.engine,
@@ -305,6 +359,7 @@ export async function translateDiff(
                 model: options.model,
                 outputLanguage: languageCode,
                 overridePrompt: options.overridePrompt,
+                promptMode: options.promptMode,
                 rateLimitMs: options.rateLimitMs,
                 skipStylingVerification: options.skipStylingVerification,
                 skipTranslationVerification:
@@ -365,7 +420,12 @@ export async function translateFile(
         const inputFile = fs.readFileSync(options.inputFilePath, "utf-8");
         inputJSON = JSON.parse(inputFile);
     } catch (e) {
-        console.error(`Invalid input JSON: ${e}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Invalid input JSON: ${e}`,
+            ANSIStyles.reset,
+        );
         return;
     }
 
@@ -380,6 +440,7 @@ export async function translateFile(
     try {
         const outputJSON = await translate({
             apiKey: options.apiKey,
+            batchMaxTokens: options.batchMaxTokens,
             batchSize: options.batchSize,
             chatParams: options.chatParams,
             engine: options.engine,
@@ -390,6 +451,7 @@ export async function translateFile(
             model: options.model,
             outputLanguage,
             overridePrompt: options.overridePrompt,
+            promptMode: options.promptMode,
             rateLimitMs: options.rateLimitMs,
             skipStylingVerification: options.skipStylingVerification,
             skipTranslationVerification: options.skipTranslationVerification,
@@ -401,7 +463,12 @@ export async function translateFile(
         const outputText = JSON.stringify(outputJSON, null, 4);
         fs.writeFileSync(options.outputFilePath, `${outputText}\n`);
     } catch (err) {
-        console.error(`Failed to translate file to ${outputLanguage}: ${err}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Failed to translate file to ${outputLanguage}: ${err}`,
+            ANSIStyles.reset,
+        );
     }
 }
 
@@ -474,7 +541,12 @@ export async function translateFileDiff(
         inputFile = fs.readFileSync(inputAfterPath, "utf-8");
         inputAfterJSON = JSON.parse(inputFile);
     } catch (e) {
-        console.error(`Invalid input JSON: ${e}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Invalid input JSON: ${e}`,
+            ANSIStyles.reset,
+        );
         return;
     }
 
@@ -496,13 +568,19 @@ export async function translateFileDiff(
             toUpdateJSONs[languageCode] = JSON.parse(outputFile);
             languageCodeToOutputPath[languageCode] = outputPath;
         } catch (e) {
-            console.error(`Invalid output JSON: ${e}`);
+            console.error(
+                ANSIStyles.bright,
+                ANSIStyles.fg.red,
+                `Invalid output JSON: ${e}`,
+                ANSIStyles.reset,
+            );
         }
     }
 
     try {
         const outputJSON = await translateDiff({
             apiKey: options.apiKey,
+            batchMaxTokens: options.batchMaxTokens,
             batchSize: options.batchSize,
             chatParams: options.chatParams,
             engine: options.engine,
@@ -513,6 +591,7 @@ export async function translateFileDiff(
             inputLanguage: options.inputLanguageCode,
             model: options.model,
             overridePrompt: options.overridePrompt,
+            promptMode: options.promptMode,
             rateLimitMs: options.rateLimitMs,
             skipStylingVerification: options.skipStylingVerification,
             skipTranslationVerification: options.skipTranslationVerification,
@@ -537,7 +616,12 @@ export async function translateFileDiff(
             }
         }
     } catch (err) {
-        console.error(`Failed to translate file diff: ${err}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Failed to translate file diff: ${err}`,
+            ANSIStyles.reset,
+        );
     }
 }
 
@@ -608,6 +692,7 @@ export async function translateDirectory(
     try {
         const outputJSON = (await translate({
             apiKey: options.apiKey,
+            batchMaxTokens: options.batchMaxTokens,
             batchSize: options.batchSize,
             chatParams: options.chatParams,
             engine: options.engine,
@@ -618,6 +703,7 @@ export async function translateDirectory(
             model: options.model,
             outputLanguage,
             overridePrompt: options.overridePrompt,
+            promptMode: options.promptMode,
             rateLimitMs: options.rateLimitMs,
             skipStylingVerification: options.skipStylingVerification,
             skipTranslationVerification: options.skipTranslationVerification,
@@ -656,7 +742,10 @@ export async function translateDirectory(
         }
     } catch (err) {
         console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
             `Failed to translate directory to ${outputLanguage}: ${err}`,
+            ANSIStyles.reset,
         );
     }
 }
@@ -808,6 +897,7 @@ export async function translateDirectoryDiff(
     try {
         const perLanguageOutputJSON = await translateDiff({
             apiKey: options.apiKey,
+            batchMaxTokens: options.batchMaxTokens,
             batchSize: options.batchSize,
             chatParams: options.chatParams,
             engine: options.engine,
@@ -818,6 +908,7 @@ export async function translateDirectoryDiff(
             inputLanguage: options.inputLanguageCode,
             model: options.model,
             overridePrompt: options.overridePrompt,
+            promptMode: options.promptMode,
             rateLimitMs: options.rateLimitMs,
             skipStylingVerification: options.skipStylingVerification,
             skipTranslationVerification: options.skipTranslationVerification,
@@ -893,7 +984,12 @@ export async function translateDirectoryDiff(
             }
         }
     } catch (err) {
-        console.error(`Failed to translate directory diff: ${err}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Failed to translate directory diff: ${err}`,
+            ANSIStyles.reset,
+        );
     }
 
     // Remove any files in before not in after

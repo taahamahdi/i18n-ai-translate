@@ -1,3 +1,4 @@
+import { ANSIStyles } from "./print_styles";
 import ISO6391 from "iso-639-1";
 import fs from "fs";
 import path from "path";
@@ -34,9 +35,19 @@ export async function retryJob<Type>(
 
     return job(...jobArgs).catch((err) => {
         if (sendError) {
-            console.error(`err = ${err}`);
+            console.error(
+                ANSIStyles.bright,
+                ANSIStyles.fg.red,
+                `err = ${err}`,
+                ANSIStyles.reset,
+            );
         } else {
-            console.warn(`err = ${err}`);
+            console.warn(
+                ANSIStyles.bright,
+                ANSIStyles.fg.red,
+                `err = ${err}`,
+                ANSIStyles.reset,
+            );
         }
 
         if (maxRetries <= 0) {
@@ -103,20 +114,4 @@ export function getTranslationDirectoryKey(
     );
 
     return `${outputPath}:${key}`;
-}
-
-/**
- * @param response - the message from the LLM
- * @returns whether the response includes NAK
- */
-export function isNAK(response: string): boolean {
-    return response.includes("NAK") && !response.includes("ACK");
-}
-
-/**
- * @param response - the message from the LLM
- * @returns whether the response only contains ACK and not NAK
- */
-export function isACK(response: string): boolean {
-    return response.includes("ACK") && !response.includes("NAK");
 }

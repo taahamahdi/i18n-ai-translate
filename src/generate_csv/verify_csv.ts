@@ -1,10 +1,12 @@
-import { isACK, isNAK, retryJob } from "./utils";
+import { ANSIStyles } from "../print_styles";
+import { isACK, isNAK } from "./utils_csv";
+import { retryJob } from "../utils";
 import {
     stylingVerificationPrompt,
     translationVerificationPrompt,
-} from "./prompts";
-import type ChatInterface from "./chat_interface/chat_interface";
-import type OverridePrompt from "./interfaces/override_prompt";
+} from "./prompts_csv";
+import type ChatInterface from "../chat_interface/chat_interface";
+import type OverridePrompt from "../interfaces/override_prompt";
 
 /**
  * Confirm whether a given translation is valid
@@ -95,7 +97,12 @@ const verify = async (
             false,
         );
     } catch (e) {
-        console.error(`Failed to verify: ${e}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Failed to verify: ${e}`,
+            ANSIStyles.reset,
+        );
     }
 
     return verification;

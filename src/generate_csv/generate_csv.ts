@@ -1,22 +1,105 @@
-import { failedTranslationPrompt, generationPrompt } from "./prompts";
-import { isNAK, retryJob } from "./utils";
-import { verifyStyling, verifyTranslation } from "./verify";
-import type GenerateTranslationOptions from "./interfaces/generate_translation_options";
-
-type GenerateState = {
-    fixedTranslationMappings: { [input: string]: string };
-    translationToRetryAttempts: { [translation: string]: number };
-    inputLineToTemplatedString: { [index: number]: Array<string> };
-    splitInput: Array<string>;
-    generationRetries: number;
-};
+import { ANSIStyles } from "../print_styles";
+import { failedTranslationPrompt, generationPrompt } from "./prompts_csv";
+import { isNAK } from "./utils_csv";
+import { retryJob } from "../utils";
+import { verifyStyling, verifyTranslation } from "./verify_csv";
+import type { GenerateStateCsv, TranslationStatsItem } from "../types";
+import type Chats from "../interfaces/chats";
+import type GenerateTranslationOptionsCsv from "../interfaces/generate_translation_options_csv";
+import type TranslateOptions from "../interfaces/translate_options";
 
 /**
  * Complete the initial translation of the input text.
+ * @param flatInput - The flatinput object containing the json to translate
  * @param options - The options to generate the translation
+ * @param chats - The options to generate the translation
+ * @param translationStats - The translation statictics
  */
-export default async function generateTranslation(
-    options: GenerateTranslationOptions,
+export default async function translateCsv(
+    flatInput: { [key: string]: string },
+    options: TranslateOptions,
+    chats: Chats,
+    translationStats: TranslationStatsItem,
+): Promise<{ [key: string]: string }> {
+    const output: { [key: string]: string } = {};
+
+    const allKeys = Object.keys(flatInput);
+
+    const batchSize = Number(options.batchSize);
+
+    translationStats.batchStartTime = Date.now();
+
+    for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
+        if (i > 0 && options.verbose) {
+            console.info(
+                ANSIStyles.bright,
+                ANSIStyles.fg.green,
+                `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
+                ANSIStyles.reset,
+            );
+
+            const roundedEstimatedTimeLeftSeconds = Math.round(
+                (((Date.now() - translationStats.batchStartTime) / (i + 1)) *
+                    (Object.keys(flatInput).length - i)) /
+                    1000,
+            );
+
+            console.info(
+                ANSIStyles.bright,
+                ANSIStyles.fg.green,
+                `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds\n`,
+                ANSIStyles.reset,
+            );
+        }
+
+        const keys = allKeys.slice(i, i + batchSize);
+        const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
+
+        // eslint-disable-next-line no-await-in-loop
+        const generatedTranslation = await generateTranslation({
+            chats,
+            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
+            input,
+            inputLanguage: `[${options.inputLanguage}]`,
+            keys,
+            outputLanguage: `[${options.outputLanguage}]`,
+            overridePrompt: options.overridePrompt,
+            skipStylingVerification: options.skipStylingVerification ?? false,
+            skipTranslationVerification:
+                options.skipTranslationVerification ?? false,
+            templatedStringPrefix: options.templatedStringPrefix,
+            templatedStringSuffix: options.templatedStringSuffix,
+            verboseLogging: options.verbose ?? false,
+        });
+
+        if (generatedTranslation === "") {
+            console.error(
+                ANSIStyles.bright,
+                ANSIStyles.fg.red,
+                `Failed to generate translation for ${options.outputLanguage}`,
+                ANSIStyles.reset,
+            );
+            break;
+        }
+
+        for (let j = 0; j < keys.length; j++) {
+            output[keys[j]] = generatedTranslation.split("\n")[j].slice(1, -1);
+
+            if (options.verbose)
+                console.info(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.yellow,
+                    `${keys[j].replaceAll("*", ".")}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
+                    ANSIStyles.reset,
+                );
+        }
+    }
+
+    return output;
+}
+
+async function generateTranslation(
+    options: GenerateTranslationOptionsCsv,
 ): Promise<string> {
     const {
         input,
@@ -40,7 +123,7 @@ export default async function generateTranslation(
 
     const splitInput = input.split("\n");
 
-    const generateState: GenerateState = {
+    const generateState: GenerateStateCsv = {
         fixedTranslationMappings: {},
         generationRetries: 0,
         inputLineToTemplatedString: {},
@@ -67,16 +150,21 @@ export default async function generateTranslation(
             false,
         );
     } catch (e) {
-        console.error(`Failed to translate: ${e}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Failed to translate: ${e}`,
+            ANSIStyles.reset,
+        );
     }
 
     return translated;
 }
 
 async function generate(
-    options: GenerateTranslationOptions,
+    options: GenerateTranslationOptionsCsv,
     generationPromptText: string,
-    generateState: GenerateState,
+    generateState: GenerateStateCsv,
 ): Promise<string> {
     const {
         chats,
@@ -109,7 +197,12 @@ async function generate(
             );
         }
 
-        console.error(`Erroring text = ${input}`);
+        console.error(
+            ANSIStyles.bright,
+            ANSIStyles.fg.red,
+            `Erroring text = ${input}`,
+            ANSIStyles.reset,
+        );
         chats.generateTranslationChat.rollbackLastMessage();
         return Promise.reject(
             new Error("Failed to generate content due to exception."),
@@ -120,7 +213,12 @@ async function generate(
 
     if (text.startsWith("```\n") && text.endsWith("\n```")) {
         if (verboseLogging) {
-            console.log("Response started and ended with triple backticks");
+            console.info(
+                ANSIStyles.bright,
+                ANSIStyles.fg.cyan,
+                "Response started and ended with triple backticks",
+                ANSIStyles.reset,
+            );
         }
 
         text = text.slice(4, -4);
@@ -156,11 +254,11 @@ async function generate(
     // Trim extra quotes if they exist
     for (let i = 0; i < splitText.length; i++) {
         let line = splitText[i];
-        while (line.startsWith("\"\"")) {
+        while (line.startsWith('""')) {
             line = line.slice(1);
         }
 
-        while (line.endsWith("\"\"")) {
+        while (line.endsWith('""')) {
             line = line.slice(0, -1);
         }
 
@@ -173,9 +271,9 @@ async function generate(
     for (let i = 0; i < splitText.length; i++) {
         let line = splitText[i];
         if (
-            !line.startsWith("\"") ||
-            !line.endsWith("\"") ||
-            line.endsWith("\\\"")
+            !line.startsWith('"') ||
+            !line.endsWith('"') ||
+            line.endsWith('\\"')
         ) {
             chats.generateTranslationChat.rollbackLastMessage();
             return Promise.reject(new Error(`Invalid line: ${line}`));
@@ -227,19 +325,22 @@ async function generate(
             }
 
             // TODO: Move to helper
-            if (!line.startsWith("\"") || !line.endsWith("\"")) {
+            if (!line.startsWith('"') || !line.endsWith('"')) {
                 chats.generateTranslationChat.rollbackLastMessage();
                 return Promise.reject(new Error(`Invalid line: ${line}`));
             }
 
-            while (line.startsWith("\"\"") && line.endsWith("\"\"")) {
+            while (line.startsWith('""') && line.endsWith('""')) {
                 line = line.slice(1, -1);
             }
 
             if (line !== splitInput[i]) {
                 if (verboseLogging) {
-                    console.log(
+                    console.info(
+                        ANSIStyles.bright,
+                        ANSIStyles.fg.yellow,
                         `Successfully translated: ${oldText} => ${line}`,
+                        ANSIStyles.reset,
                     );
                 }
 

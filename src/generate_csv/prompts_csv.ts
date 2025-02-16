@@ -1,4 +1,4 @@
-import type OverridePrompt from "./interfaces/override_prompt";
+import type OverridePrompt from "../interfaces/override_prompt";
 
 /**
  * Prompt an AI to convert a given input from one language to another

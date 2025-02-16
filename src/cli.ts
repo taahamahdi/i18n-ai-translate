@@ -1,6 +1,5 @@
 import {
     CLI_HELP,
-    DEFAULT_BATCH_SIZE,
     DEFAULT_MODEL,
     DEFAULT_TEMPLATED_STRING_PREFIX,
     DEFAULT_TEMPLATED_STRING_SUFFIX,
@@ -17,10 +16,12 @@ import {
     translateFileDiff,
 } from "./translate";
 import Engine from "./enums/engine";
+import PromptMode from "./enums/prompt_mode";
 import fs from "fs";
 import path from "path";
 import type { ChatParams, Model, ModelArgs } from "./types";
 import type OverridePrompt from "./interfaces/override_prompt";
+import { ANSIStyles } from "./print_styles";
 
 config({ path: path.resolve(process.cwd(), ".env") });
 
@@ -30,6 +31,9 @@ const processModelArgs = (options: any): ModelArgs => {
     let rateLimitMs = Number(options.rateLimitMs);
     let apiKey: string | undefined;
     let host: string | undefined;
+    let promptMode: PromptMode;
+    let batchSize: number;
+    let batchMaxTokens: number;
     switch (options.engine) {
         case Engine.Gemini:
             model = options.model || DEFAULT_MODEL[Engine.Gemini];
@@ -43,6 +47,27 @@ const processModelArgs = (options: any): ModelArgs => {
                 throw new Error("GEMINI_API_KEY not found in .env file");
             } else {
                 apiKey = options.apiKey || process.env.GEMINI_API_KEY;
+            }
+
+            if (!options.promptMode) {
+                promptMode = PromptMode.JSON;
+            } else {
+                promptMode = options.promptMode;
+                if (promptMode === PromptMode.CSV) {
+                    console.warn("WARNING: Json mode recommended for Gemini");
+                }
+            }
+
+            if (!options.batchSize) {
+                batchSize = 16;
+            } else {
+                batchSize = options.batchSize;
+            }
+
+            if (!options.batchMaxTokens) {
+                batchMaxTokens = 2048;
+            } else {
+                batchMaxTokens = options.batchMaxTokens;
             }
 
             break;
@@ -66,6 +91,24 @@ const processModelArgs = (options: any): ModelArgs => {
                 apiKey = options.apiKey || process.env.OPENAI_API_KEY;
             }
 
+            if (!options.promptMode) {
+                promptMode = PromptMode.CSV;
+            } else {
+                promptMode = options.promptMode;
+            }
+
+            if (!options.batchSize) {
+                batchSize = 32;
+            } else {
+                batchSize = options.batchSize;
+            }
+
+            if (!options.batchMaxTokens) {
+                batchMaxTokens = 2048;
+            } else {
+                batchMaxTokens = options.batchMaxTokens;
+            }
+
             break;
         case Engine.Ollama:
             model = options.model || DEFAULT_MODEL[Engine.Ollama];
@@ -76,6 +119,27 @@ const processModelArgs = (options: any): ModelArgs => {
             };
 
             host = options.host || process.env.OLLAMA_HOSTNAME;
+
+            if (!options.promptMode) {
+                promptMode = PromptMode.JSON;
+            } else {
+                promptMode = options.promptMode;
+                if (promptMode === PromptMode.CSV) {
+                    console.warn("WARNING: Json mode recommended for Ollama");
+                }
+            }
+
+            if (!options.batchSize) {
+                batchSize = 16;
+            } else {
+                batchSize = options.batchSize;
+            }
+
+            if (!options.batchMaxTokens) {
+                batchMaxTokens = 2048;
+            } else {
+                batchMaxTokens = options.batchMaxTokens;
+            }
 
             break;
         case Engine.Claude:
@@ -97,6 +161,29 @@ const processModelArgs = (options: any): ModelArgs => {
                 apiKey = options.apiKey || process.env.ANTHROPIC_API_KEY;
             }
 
+            if (!options.promptMode) {
+                promptMode = PromptMode.CSV;
+            } else {
+                promptMode = options.promptMode;
+                if (promptMode === PromptMode.JSON) {
+                    throw new Error(
+                        "JSON mode is not compatible with Anthropic",
+                    );
+                }
+            }
+
+            if (!options.batchSize) {
+                batchSize = 16;
+            } else {
+                batchSize = options.batchSize;
+            }
+
+            if (!options.batchMaxTokens) {
+                batchMaxTokens = 2048;
+            } else {
+                batchMaxTokens = options.batchMaxTokens;
+            }
+
             break;
         default: {
             throw new Error("Invalid engine");
@@ -105,9 +192,12 @@ const processModelArgs = (options: any): ModelArgs => {
 
     return {
         apiKey,
+        batchMaxTokens,
+        batchSize,
         chatParams,
         host,
         model: options.model || DEFAULT_MODEL[options.engine as Engine],
+        promptMode,
         rateLimitMs,
     };
 };
@@ -198,11 +288,7 @@ program
         CLI_HELP.EnsureChangedTranslation,
         false,
     )
-    .option(
-        "-n, --batch-size <batchSize>",
-        CLI_HELP.BatchSize,
-        String(DEFAULT_BATCH_SIZE),
-    )
+    .option("-n, --batch-size <batchSize>", CLI_HELP.BatchSize)
     .option(
         "--skip-translation-verification",
         CLI_HELP.SkipTranslationVerification,
@@ -218,9 +304,19 @@ program
         CLI_HELP.OverridePromptFile,
     )
     .option("--verbose", CLI_HELP.Verbose, false)
+    .option("--prompt-mode <prompt-mode>", CLI_HELP.PromptMode)
+    .option("--batch-max-tokens <batch-max-tokens>", CLI_HELP.MaxTokens)
     .action(async (options: any) => {
-        const { model, chatParams, rateLimitMs, apiKey, host } =
-            processModelArgs(options);
+        const {
+            model,
+            chatParams,
+            rateLimitMs,
+            apiKey,
+            host,
+            promptMode,
+            batchSize,
+            batchMaxTokens,
+        } = processModelArgs(options);
 
         let overridePrompt: OverridePrompt | undefined;
 
@@ -231,26 +327,40 @@ program
         if (options.outputLanguages) {
             if (options.forceLanguageName) {
                 console.error(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.red,
                     "Cannot use both --output-languages and --force-language",
+                    ANSIStyles.reset,
                 );
                 return;
             }
 
             if (options.allLanguages) {
                 console.error(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.red,
                     "Cannot use both --all-languages and --output-languages",
+                    ANSIStyles.reset,
                 );
                 return;
             }
 
             if (options.outputLanguages.length === 0) {
-                console.error("No languages specified");
+                console.error(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.red,
+                    "No languages specified",
+                    ANSIStyles.reset,
+                );
                 return;
             }
 
             if (options.verbose) {
-                console.log(
+                console.info(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.cyan,
                     `Translating to ${options.outputLanguages.join(", ")}...`,
+                    ANSIStyles.reset,
                 );
             }
 
@@ -270,8 +380,11 @@ program
                 for (const languageCode of options.outputLanguages) {
                     i++;
                     if (options.verbose) {
-                        console.log(
+                        console.info(
+                            ANSIStyles.bright,
+                            ANSIStyles.fg.cyan,
                             `Translating ${i}/${options.outputLanguages.length} languages...`,
+                            ANSIStyles.reset,
                         );
                     }
 
@@ -298,7 +411,8 @@ program
                         // eslint-disable-next-line no-await-in-loop
                         await translateFile({
                             apiKey,
-                            batchSize: options.batchSize,
+                            batchMaxTokens,
+                            batchSize,
                             chatParams,
                             engine: options.engine,
                             ensureChangedTranslation:
@@ -308,6 +422,7 @@ program
                             model,
                             outputFilePath: outputPath,
                             overridePrompt,
+                            promptMode,
                             rateLimitMs,
                             skipStylingVerification:
                                 options.skipStylingVerification,
@@ -321,7 +436,10 @@ program
                         });
                     } catch (err) {
                         console.error(
+                            ANSIStyles.bright,
+                            ANSIStyles.fg.red,
                             `Failed to translate file to ${languageCode}: ${err}`,
+                            ANSIStyles.reset,
                         );
                     }
                 }
@@ -330,8 +448,11 @@ program
                 for (const languageCode of options.outputLanguages) {
                     i++;
                     if (options.verbose) {
-                        console.log(
+                        console.info(
+                            ANSIStyles.bright,
+                            ANSIStyles.fg.cyan,
                             `Translating ${i}/${options.outputLanguages.length} languages...`,
+                            ANSIStyles.reset,
                         );
                     }
 
@@ -349,6 +470,7 @@ program
                         await translateDirectory({
                             apiKey,
                             baseDirectory: path.resolve(inputPath, ".."),
+                            batchMaxTokens: options.batchMaxTokens,
                             batchSize: options.batchSize,
                             chatParams,
                             engine: options.engine,
@@ -359,6 +481,7 @@ program
                             model,
                             outputLanguage: languageCode,
                             overridePrompt,
+                            promptMode,
                             rateLimitMs,
                             skipStylingVerification:
                                 options.skipStylingVerification,
@@ -372,7 +495,10 @@ program
                         });
                     } catch (err) {
                         console.error(
+                            ANSIStyles.bright,
+                            ANSIStyles.fg.red,
                             `Failed to translate directory to ${languageCode}: ${err}`,
+                            ANSIStyles.reset,
                         );
                     }
                 }
@@ -380,7 +506,10 @@ program
         } else {
             if (options.forceLanguageName) {
                 console.error(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.red,
                     "Cannot use both --all-languages and --force-language",
+                    ANSIStyles.reset,
                 );
                 return;
             }
@@ -393,8 +522,11 @@ program
             for (const languageCode of getAllLanguageCodes()) {
                 i++;
                 if (options.verbose) {
-                    console.log(
+                    console.info(
+                        ANSIStyles.bright,
+                        ANSIStyles.fg.cyan,
                         `Translating ${i}/${getAllLanguageCodes().length} languages...`,
+                        ANSIStyles.reset,
                     );
                 }
 
@@ -411,6 +543,7 @@ program
                     // eslint-disable-next-line no-await-in-loop
                     await translateFile({
                         apiKey,
+                        batchMaxTokens: options.batchMaxTokens,
                         batchSize: options.batchSize,
                         chatParams,
                         engine: options.engine,
@@ -421,6 +554,7 @@ program
                         model,
                         outputFilePath: output,
                         overridePrompt,
+                        promptMode,
                         rateLimitMs,
                         skipStylingVerification:
                             options.skipStylingVerification,
@@ -432,7 +566,10 @@ program
                     });
                 } catch (err) {
                     console.error(
+                        ANSIStyles.bright,
+                        ANSIStyles.fg.red,
                         `Failed to translate to ${languageCode}: ${err}`,
+                        ANSIStyles.reset,
                     );
                 }
             }
@@ -473,11 +610,7 @@ program
         "Suffix for templated strings",
         DEFAULT_TEMPLATED_STRING_SUFFIX,
     )
-    .option(
-        "-n, --batch-size <batchSize>",
-        CLI_HELP.BatchSize,
-        String(DEFAULT_BATCH_SIZE),
-    )
+    .option("-n, --batch-size <batchSize>", CLI_HELP.BatchSize)
     .option(
         "--skip-translation-verification",
         CLI_HELP.SkipTranslationVerification,
@@ -493,9 +626,19 @@ program
         CLI_HELP.OverridePromptFile,
     )
     .option("--verbose", CLI_HELP.Verbose, false)
+    .option("--prompt-mode <prompt-mode>", CLI_HELP.PromptMode)
+    .option("--batch-max-tokens <batch-max-tokens>", CLI_HELP.MaxTokens)
     .action(async (options: any) => {
-        const { model, chatParams, rateLimitMs, apiKey, host } =
-            processModelArgs(options);
+        const {
+            model,
+            chatParams,
+            rateLimitMs,
+            apiKey,
+            host,
+            promptMode,
+            batchSize,
+            batchMaxTokens,
+        } = processModelArgs(options);
 
         let overridePrompt: OverridePrompt | undefined;
 
@@ -529,7 +672,10 @@ program
             fs.statSync(afterInputPath).isFile()
         ) {
             console.error(
+                ANSIStyles.bright,
+                ANSIStyles.fg.red,
                 "--before and --after arguments must be both files or both directories",
+                ANSIStyles.reset,
             );
             return;
         }
@@ -539,13 +685,19 @@ program
             if (
                 path.dirname(beforeInputPath) !== path.dirname(afterInputPath)
             ) {
-                console.error("Input files are not in the same directory");
+                console.error(
+                    ANSIStyles.bright,
+                    ANSIStyles.fg.red,
+                    "Input files are not in the same directory",
+                    ANSIStyles.reset,
+                );
                 return;
             }
 
             await translateFileDiff({
                 apiKey,
-                batchSize: options.batchSize,
+                batchMaxTokens,
+                batchSize,
                 chatParams,
                 engine: options.engine,
                 ensureChangedTranslation: options.ensureChangedTranslation,
@@ -555,6 +707,7 @@ program
                 inputLanguageCode: options.inputLanguage,
                 model,
                 overridePrompt,
+                promptMode,
                 rateLimitMs,
                 skipStylingVerification: options.skipStylingVerification,
                 skipTranslationVerification:
@@ -567,6 +720,7 @@ program
             await translateDirectoryDiff({
                 apiKey,
                 baseDirectory: path.resolve(beforeInputPath, ".."),
+                batchMaxTokens: options.batchMaxTokens,
                 batchSize: options.batchSize,
                 chatParams,
                 engine: options.engine,
@@ -577,6 +731,7 @@ program
                 inputLanguageCode: options.inputLanguage,
                 model,
                 overridePrompt,
+                promptMode,
                 rateLimitMs,
                 skipStylingVerification: options.skipStylingVerification,
                 skipTranslationVerification:
