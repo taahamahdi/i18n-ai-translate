@@ -20,6 +20,10 @@ import type { ZodType, ZodTypeDef } from "zod";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsJson from "../interfaces/generate_translation_options_json";
 import type TranslateOptions from "../interfaces/translate_options";
+import {
+    DEFAULT_TEMPLATED_STRING_PREFIX,
+    DEFAULT_TEMPLATED_STRING_SUFFIX,
+} from "../constants";
 
 function generateTranslateItemsInput(
     translateItems: TranslateItem[],
@@ -110,7 +114,8 @@ function getBatchTranslateItemArray(
     ).length;
 
     // Remove the tokens used by the prompt and divide the remaining tokens divided by 2 (half for the input/output) with a 10% margin of error
-    const maxInputTokens = ((options.batchMaxTokens - promptTokens) * 0.9) / 2;
+    const maxInputTokens =
+        ((Number(options.batchMaxTokens) - promptTokens) * 0.9) / 2;
 
     let currentTokens = 0;
 
@@ -126,7 +131,7 @@ function getBatchTranslateItemArray(
         if (
             batchTranslateItemArray.length !== 0 &&
             (currentTokens >= maxInputTokens ||
-                batchTranslateItemArray.length >= options.batchSize)
+                batchTranslateItemArray.length >= Number(options.batchSize))
         ) {
             break;
         }
@@ -151,7 +156,8 @@ function getBatchVerifyItemArray(
         ),
     ).length;
 
-    const maxInputTokens = ((options.batchMaxTokens - promptTokens) * 0.9) / 2;
+    const maxInputTokens =
+        ((Number(options.batchMaxTokens) - promptTokens) * 0.9) / 2;
 
     let currentTokens = 0;
 
@@ -166,7 +172,7 @@ function getBatchVerifyItemArray(
         if (
             batchVerifyItemArray.length !== 0 &&
             (currentTokens >= maxInputTokens ||
-                batchVerifyItemArray.length >= options.batchSize)
+                batchVerifyItemArray.length >= Number(options.batchSize))
         ) {
             break;
         }
@@ -345,8 +351,12 @@ async function generateTranslationJson(
                     options.skipStylingVerification ?? false,
                 skipTranslationVerification:
                     options.skipTranslationVerification ?? false,
-                templatedStringPrefix: options.templatedStringPrefix,
-                templatedStringSuffix: options.templatedStringSuffix,
+                templatedStringPrefix:
+                    options.templatedStringPrefix ??
+                    DEFAULT_TEMPLATED_STRING_PREFIX,
+                templatedStringSuffix:
+                    options.templatedStringSuffix ??
+                    DEFAULT_TEMPLATED_STRING_SUFFIX,
                 translateItems: batchTranslateItemArray,
                 verboseLogging: options.verbose ?? false,
             },
@@ -473,8 +483,12 @@ async function generateVerificationJson(
                     options.skipStylingVerification ?? false,
                 skipTranslationVerification:
                     options.skipTranslationVerification ?? false,
-                templatedStringPrefix: options.templatedStringPrefix,
-                templatedStringSuffix: options.templatedStringSuffix,
+                templatedStringPrefix:
+                    options.templatedStringPrefix ??
+                    DEFAULT_TEMPLATED_STRING_PREFIX,
+                templatedStringSuffix:
+                    options.templatedStringSuffix ??
+                    DEFAULT_TEMPLATED_STRING_SUFFIX,
                 translateItems: batchVerifyItemArray,
                 verboseLogging: options.verbose ?? false,
             },

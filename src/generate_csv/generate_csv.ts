@@ -7,6 +7,10 @@ import type { GenerateStateCsv, TranslationStatsItem } from "../types";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsCsv from "../interfaces/generate_translation_options_csv";
 import type TranslateOptions from "../interfaces/translate_options";
+import {
+    DEFAULT_TEMPLATED_STRING_PREFIX,
+    DEFAULT_TEMPLATED_STRING_SUFFIX,
+} from "../constants";
 
 /**
  * Complete the initial translation of the input text.
@@ -67,8 +71,12 @@ export default async function translateCsv(
             skipStylingVerification: options.skipStylingVerification ?? false,
             skipTranslationVerification:
                 options.skipTranslationVerification ?? false,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
+            templatedStringPrefix:
+                options.templatedStringPrefix ??
+                DEFAULT_TEMPLATED_STRING_PREFIX,
+            templatedStringSuffix:
+                options.templatedStringSuffix ??
+                DEFAULT_TEMPLATED_STRING_SUFFIX,
             verboseLogging: options.verbose ?? false,
         });
 
