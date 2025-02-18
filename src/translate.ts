@@ -1,3 +1,4 @@
+import { ANSIStyles } from "./print_styles";
 import { FLATTEN_DELIMITER } from "./constants";
 import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
@@ -21,7 +22,6 @@ import type TranslateDirectoryOptions from "./interfaces/translate_directory_opt
 import type TranslateFileDiffOptions from "./interfaces/translate_file_diff_options";
 import type TranslateFileOptions from "./interfaces/translate_file_options";
 import type TranslateOptions from "./interfaces/translate_options";
-import { ANSIStyles } from "./print_styles";
 
 function getChats(options: TranslateOptions): Chats {
     const rateLimiter = new RateLimiter(
