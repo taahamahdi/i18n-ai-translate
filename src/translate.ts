@@ -1,5 +1,11 @@
 import { ANSIStyles } from "./print_styles";
-import { FLATTEN_DELIMITER } from "./constants";
+import {
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_REQUEST_TOKENS,
+    DEFAULT_TEMPLATED_STRING_PREFIX,
+    DEFAULT_TEMPLATED_STRING_SUFFIX,
+    FLATTEN_DELIMITER,
+} from "./constants";
 import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
 import {
@@ -180,11 +186,30 @@ async function getTranslation(
     }
 }
 
+function setDefaults(options: TranslateOptions): void {
+    if (!options.templatedStringPrefix)
+        options.templatedStringPrefix = DEFAULT_TEMPLATED_STRING_PREFIX;
+    if (!options.templatedStringSuffix)
+        options.templatedStringSuffix = DEFAULT_TEMPLATED_STRING_SUFFIX;
+    if (!options.batchMaxTokens)
+        options.batchMaxTokens = DEFAULT_REQUEST_TOKENS;
+    if (!options.batchSize) options.batchSize = DEFAULT_BATCH_SIZE;
+    if (!options.verbose) options.verbose = false;
+    if (!options.ensureChangedTranslation)
+        options.ensureChangedTranslation = false;
+    if (!options.skipTranslationVerification)
+        options.skipTranslationVerification = false;
+    if (!options.skipStylingVerification)
+        options.skipStylingVerification = false;
+}
+
 /**
  * Translate the input JSON to the given language
  * @param options - The options for the translation
  */
 export async function translate(options: TranslateOptions): Promise<Object> {
+    setDefaults(options);
+
     if (options.verbose) {
         console.info(
             ANSIStyles.bright,
