@@ -1,5 +1,4 @@
 import {
-    ANSIStyles,
     DEFAULT_TEMPLATED_STRING_PREFIX,
     DEFAULT_TEMPLATED_STRING_SUFFIX,
 } from "../constants";

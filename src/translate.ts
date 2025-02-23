@@ -1,5 +1,4 @@
 import {
-    ANSIStyles,
     DEFAULT_BATCH_SIZE,
     DEFAULT_REQUEST_TOKENS,
     DEFAULT_TEMPLATED_STRING_PREFIX,
@@ -63,27 +62,29 @@ function getChats(options: TranslateOptions): Chats {
 }
 
 function replaceNewlinesWithPlaceholder(
-    options: TranslateOptions,
+    templatedStringPrefix: string,
+    templatedStringSuffix: string,
     flatInput: { [key: string]: string },
 ): void {
     for (const key in flatInput) {
         if (Object.prototype.hasOwnProperty.call(flatInput, key)) {
             flatInput[key] = flatInput[key].replaceAll(
                 "\n",
-                `${options.templatedStringPrefix}NEWLINE${options.templatedStringSuffix}`,
+                `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
             );
         }
     }
 }
 
 function replacePlaceholderWithNewLines(
-    options: TranslateOptions,
+    templatedStringPrefix: string,
+    templatedStringSuffix: string,
     sortedOutput: { [key: string]: string },
 ): void {
     for (const key in sortedOutput) {
         if (Object.prototype.hasOwnProperty.call(sortedOutput, key)) {
             sortedOutput[key] = sortedOutput[key].replaceAll(
-                `${options.templatedStringPrefix}NEWLINE${options.templatedStringSuffix}`,
+                `${templatedStringPrefix}NEWLINE${templatedStringSuffix}`,
                 "\n",
             );
         }
@@ -216,7 +217,11 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         [key: string]: string;
     };
 
-    replaceNewlinesWithPlaceholder(options, flatInput);
+    replaceNewlinesWithPlaceholder(
+        options.templatedStringPrefix ?? DEFAULT_TEMPLATED_STRING_PREFIX,
+        options.templatedStringSuffix ?? DEFAULT_TEMPLATED_STRING_SUFFIX,
+        flatInput,
+    );
 
     flatInput = groupSimilarValues(flatInput);
 
@@ -235,7 +240,11 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         sortedOutput[key] = output[key];
     }
 
-    replacePlaceholderWithNewLines(options, sortedOutput);
+    replacePlaceholderWithNewLines(
+        options.templatedStringPrefix ?? DEFAULT_TEMPLATED_STRING_PREFIX,
+        options.templatedStringSuffix ?? DEFAULT_TEMPLATED_STRING_SUFFIX,
+        sortedOutput,
+    );
 
     const unflattenedOutput = unflatten(sortedOutput, {
         delimiter: FLATTEN_DELIMITER,
