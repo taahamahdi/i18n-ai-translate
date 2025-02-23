@@ -337,22 +337,18 @@ async function generateTranslationJson(
             {
                 chats,
                 ensureChangedTranslation:
-                    options.ensureChangedTranslation ?? false,
+                    options.ensureChangedTranslation as boolean,
                 inputLanguage: `[${options.inputLanguage}]`,
                 outputLanguage: `[${options.outputLanguage}]`,
                 overridePrompt: options.overridePrompt,
                 skipStylingVerification:
-                    options.skipStylingVerification ?? false,
+                    options.skipStylingVerification as boolean,
                 skipTranslationVerification:
-                    options.skipTranslationVerification ?? false,
-                templatedStringPrefix:
-                    options.templatedStringPrefix ??
-                    DEFAULT_TEMPLATED_STRING_PREFIX,
-                templatedStringSuffix:
-                    options.templatedStringSuffix ??
-                    DEFAULT_TEMPLATED_STRING_SUFFIX,
+                    options.skipTranslationVerification as boolean,
+                templatedStringPrefix: options.templatedStringPrefix as string,
+                templatedStringSuffix: options.templatedStringSuffix as string,
                 translateItems: batchTranslateItemArray,
-                verboseLogging: options.verbose ?? false,
+                verboseLogging: options.verbose as boolean,
             },
             templatedStringRegex,
         );
@@ -457,22 +453,18 @@ async function generateVerificationJson(
             {
                 chats,
                 ensureChangedTranslation:
-                    options.ensureChangedTranslation ?? false,
+                    options.ensureChangedTranslation as boolean,
                 inputLanguage: `[${options.inputLanguage}]`,
                 outputLanguage: `[${options.outputLanguage}]`,
                 overridePrompt: options.overridePrompt,
                 skipStylingVerification:
-                    options.skipStylingVerification ?? false,
+                    options.skipStylingVerification as boolean,
                 skipTranslationVerification:
-                    options.skipTranslationVerification ?? false,
-                templatedStringPrefix:
-                    options.templatedStringPrefix ??
-                    DEFAULT_TEMPLATED_STRING_PREFIX,
-                templatedStringSuffix:
-                    options.templatedStringSuffix ??
-                    DEFAULT_TEMPLATED_STRING_SUFFIX,
+                    options.skipTranslationVerification as boolean,
+                templatedStringPrefix: options.templatedStringPrefix as string,
+                templatedStringSuffix: options.templatedStringSuffix as string,
                 translateItems: batchVerifyItemArray,
-                verboseLogging: options.verbose ?? false,
+                verboseLogging: options.verbose as boolean,
             },
             templatedStringRegex,
         );
@@ -549,8 +541,8 @@ export default async function translateJson(
     );
 
     const templatedStringRegex = getTemplatedStringRegex(
-        options.templatedStringPrefix ?? DEFAULT_TEMPLATED_STRING_PREFIX,
-        options.templatedStringSuffix ?? DEFAULT_TEMPLATED_STRING_SUFFIX,
+        options.templatedStringPrefix as string,
+        options.templatedStringSuffix as string,
     );
 
     const translateItemArray = generateTranslateItemArray(

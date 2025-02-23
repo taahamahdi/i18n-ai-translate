@@ -4,7 +4,6 @@ import {
 } from "../constants";
 import { failedTranslationPrompt, generationPrompt } from "./prompts";
 import {
-    getMissingVariables,
     getTemplatedStringRegex,
     isNAK,
     printCompletion,
@@ -62,22 +61,19 @@ export default async function translateCsv(
         // eslint-disable-next-line no-await-in-loop
         const generatedTranslation = await generateTranslation({
             chats,
-            ensureChangedTranslation: options.ensureChangedTranslation ?? false,
+            ensureChangedTranslation:
+                options.ensureChangedTranslation as boolean,
             input,
             inputLanguage: `[${options.inputLanguage}]`,
             keys,
             outputLanguage: `[${options.outputLanguage}]`,
             overridePrompt: options.overridePrompt,
-            skipStylingVerification: options.skipStylingVerification ?? false,
+            skipStylingVerification: options.skipStylingVerification as boolean,
             skipTranslationVerification:
-                options.skipTranslationVerification ?? false,
-            templatedStringPrefix:
-                options.templatedStringPrefix ??
-                DEFAULT_TEMPLATED_STRING_PREFIX,
-            templatedStringSuffix:
-                options.templatedStringSuffix ??
-                DEFAULT_TEMPLATED_STRING_SUFFIX,
-            verboseLogging: options.verbose ?? false,
+                options.skipTranslationVerification as boolean,
+            templatedStringPrefix: options.templatedStringPrefix as string,
+            templatedStringSuffix: options.templatedStringSuffix as string,
+            verboseLogging: options.verbose as boolean,
         });
 
         if (generatedTranslation === "") {
