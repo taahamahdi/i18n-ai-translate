@@ -1,12 +1,7 @@
-import {
-    DEFAULT_TEMPLATED_STRING_PREFIX,
-    DEFAULT_TEMPLATED_STRING_SUFFIX,
-} from "../constants";
 import { failedTranslationPrompt, generationPrompt } from "./prompts";
 import {
     getTemplatedStringRegex,
     isNAK,
-    printCompletion,
     printError,
     printInfo,
     retryJob,
@@ -40,7 +35,7 @@ export default async function translateCsv(
 
     for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
         if (i > 0 && options.verbose) {
-            printCompletion(
+            console.log(
                 `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
             );
 
@@ -50,7 +45,7 @@ export default async function translateCsv(
                     1000,
             );
 
-            printCompletion(
+            console.log(
                 `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds\n`,
             );
         }

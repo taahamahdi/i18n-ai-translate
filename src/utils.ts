@@ -1,5 +1,6 @@
-import { ANSIStyles } from "./constants";
 import ISO6391 from "iso-639-1";
+import ansiColors from "ansi-colors";
+import cliProgress, { Bar } from "cli-progress";
 import fs from "fs";
 import path from "path";
 
@@ -16,55 +17,21 @@ export function delay(delayDuration: number): Promise<void> {
  * @param error - the error message
  */
 export function printError(error: string): void {
-    console.error(
-        ANSIStyles.bright,
-        ANSIStyles.fg.red,
-        error,
-        ANSIStyles.reset,
-    );
+    console.error(ansiColors.redBright(error));
 }
 
 /**
  * @param warn - the warning message
  */
 export function printWarn(warn: string): void {
-    console.warn(
-        ANSIStyles.bright,
-        ANSIStyles.fg.orange,
-        warn,
-        ANSIStyles.reset,
-    );
+    console.warn(ansiColors.yellowBright(warn));
 }
 
 /**
  * @param info - the message
  */
 export function printInfo(info: string): void {
-    console.info(ANSIStyles.bright, ANSIStyles.fg.cyan, info, ANSIStyles.reset);
-}
-
-/**
- * @param message - the message
- */
-export function printCompletion(message: string): void {
-    console.info(
-        ANSIStyles.bright,
-        ANSIStyles.fg.green,
-        message,
-        ANSIStyles.reset,
-    );
-}
-
-/**
- * @param title - the message
- */
-export function printTitle(title: string): void {
-    console.info(
-        ANSIStyles.bright,
-        ANSIStyles.fg.blue,
-        title,
-        ANSIStyles.reset,
-    );
+    console.log(ansiColors.cyanBright(info));
 }
 
 /**
@@ -210,4 +177,31 @@ export function getTemplatedStringRegex(
         `${templatedStringPrefix}[^{}]+${templatedStringSuffix}`,
         "g",
     );
+}
+
+/**
+ * @param startTime - the startTime
+ * @param prefix - the prefix of the Execution Time
+ */
+export function printExecutionTime(startTime: number, prefix?: string): void {
+    const endTime = Date.now();
+    const roundedSeconds = Math.round((endTime - startTime) / 1000);
+
+    console.log(); // avoids printing on top of the progress bar
+    printInfo(`${prefix}${roundedSeconds} seconds\n`);
+}
+
+/**
+ * @param title - the title
+ * @returns the Progress Bar
+ */
+export function getProgressBar(title: string): Bar {
+    return new cliProgress.Bar({
+        barCompleteChar: "\u2588",
+        barIncompleteChar: "\u2591",
+        etaBuffer: 3,
+        format: `${title} |${ansiColors.cyan(
+            "{bar}",
+        )}| {percentage}% || ETA: {eta_formatted}`,
+    });
 }

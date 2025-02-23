@@ -1,4 +1,3 @@
-import { ANSIStyles } from "../constants";
 import { isACK, isNAK, printError, retryJob } from "../utils";
 import {
     stylingVerificationPrompt,

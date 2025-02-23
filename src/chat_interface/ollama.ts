@@ -46,7 +46,7 @@ export default class Ollama extends ChatInterface {
         this.chatParams = {
             ...this.chatParams,
             format: formatSchema,
-            messages: this.history,
+            messages: [{ content: message, role: Role.User }],
         };
 
         try {

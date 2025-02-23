@@ -1,8 +1,4 @@
 import * as cl100k_base from "tiktoken/encoders/cl100k_base.json";
-import {
-    DEFAULT_TEMPLATED_STRING_PREFIX,
-    DEFAULT_TEMPLATED_STRING_SUFFIX,
-} from "../constants";
 import { Tiktoken } from "tiktoken";
 import {
     TranslateItemOutputObjectSchema,
@@ -10,14 +6,16 @@ import {
 } from "./types";
 import {
     getMissingVariables,
+    getProgressBar,
     getTemplatedStringRegex,
-    printCompletion,
     printError,
+    printExecutionTime,
     printInfo,
-    printTitle,
     retryJob,
 } from "../utils";
 import { translationPromptJson, verificationPromptJson } from "./prompts";
+import ansiColors from "ansi-colors";
+import cliProgress from "cli-progress";
 import type {
     GenerateStateJson,
     TranslateItem,
@@ -202,45 +200,6 @@ function getBatchVerifyItemArray(
     return batchVerifyItemArray;
 }
 
-function removeLine(): void {
-    process.stdout.write("\x1b[A");
-    process.stdout.write("\x1b[2K");
-}
-
-function removeLastPrintCompletion(firstPrint: boolean): void {
-    if (!firstPrint) {
-        removeLine();
-        removeLine();
-        removeLine();
-        removeLine();
-    }
-}
-
-function printProgress(
-    translationStats: TranslationStatsItem,
-    title: string,
-    firstPrint: boolean,
-): void {
-    removeLastPrintCompletion(firstPrint);
-
-    printTitle(`\n ${title}`);
-
-    printCompletion(
-        `Completed ${((translationStats.processedTokens / translationStats.totalTokens) * 100).toFixed(0)}%`,
-    );
-
-    const roundedEstimatedTimeLeftSeconds = Math.round(
-        (((Date.now() - translationStats.batchStartTime) /
-            (translationStats.processedTokens + 1)) *
-            (translationStats.totalTokens - translationStats.processedTokens)) /
-            1000,
-    );
-
-    printCompletion(
-        `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`,
-    );
-}
-
 function generateTranslateItemArray(
     flatInput: any,
     tikToken: Tiktoken,
@@ -298,21 +257,19 @@ async function generateTranslationJson(
 
     translationStats.batchStartTime = Date.now();
 
+    const progressBar = getProgressBar(
+        options.skipTranslationVerification
+            ? "Translating"
+            : "Step 1/2 - Translating",
+    );
+
+    if (options.verbose) {
+        progressBar.start(translationStats.totalTokens, 0);
+    }
+
     // translate items are removed from 'translateItemArray' when one is generated
     // this is done to avoid 'losing' items if the model doesn't return one
-    let firstPrint = true;
     while (translateItemArray.length > 0) {
-        if (options.verbose && translationStats.processedTokens > 0) {
-            printProgress(
-                translationStats,
-                options.skipTranslationVerification
-                    ? "Step 1/1 - Translating"
-                    : "Step 1/2 - Translating",
-                firstPrint,
-            );
-            firstPrint = false;
-        }
-
         const batchTranslateItemArray = getBatchTranslateItemArray(
             translateItemArray,
             options,
@@ -321,7 +278,8 @@ async function generateTranslationJson(
 
         for (const batchTranslateItem of batchTranslateItemArray) {
             batchTranslateItem.translationAttempts++;
-            if (batchTranslateItem.translationAttempts > 10) {
+            if (batchTranslateItem.translationAttempts > 15) {
+                progressBar.stop();
                 return Promise.reject(
                     new Error(
                         `Item failed to translate too many times: ${JSON.stringify(batchTranslateItem)}. If this persists try a different model`,
@@ -354,8 +312,9 @@ async function generateTranslationJson(
         );
 
         if (!result) {
+            progressBar.stop();
             printError(
-                `Failed to generate translation for ${options.outputLanguage}\n`,
+                `\nFailed to generate translation for ${options.outputLanguage}\n`,
             );
             break;
         }
@@ -381,25 +340,17 @@ async function generateTranslationJson(
 
             translationStats.processedItems++;
         }
+
+        progressBar.update(translationStats.processedTokens);
     }
 
+    progressBar.stop();
+
     if (options.verbose) {
-        printProgress(
-            translationStats,
-            options.skipTranslationVerification
-                ? "Step 1/1 - Translating"
-                : "Step 1/2 - Translating",
-            firstPrint,
+        printExecutionTime(
+            translationStats.batchStartTime,
+            "Translation execution time: ",
         );
-
-        const endTime = Date.now();
-        const roundedSeconds = Math.round(
-            (endTime - translationStats.batchStartTime) / 1000,
-        );
-
-        removeLine();
-        removeLine();
-        printInfo(`\nTranslation execution time: ${roundedSeconds} seconds\n`);
     }
 
     return generatedTranslation;
@@ -422,13 +373,13 @@ async function generateVerificationJson(
 
     translationStats.batchStartTime = Date.now();
 
-    let firstPrint = true;
-    while (verifyItemArray.length > 0) {
-        if (options.verbose && translationStats.processedTokens > 0) {
-            printProgress(translationStats, "Step 2/2 - Verifying", firstPrint);
-            firstPrint = false;
-        }
+    const progressBar = getProgressBar("Step 2/2 - Verifying");
 
+    if (options.verbose) {
+        progressBar.start(translationStats.totalTokens, 0);
+    }
+
+    while (verifyItemArray.length > 0) {
         const batchVerifyItemArray = getBatchVerifyItemArray(
             verifyItemArray,
             options,
@@ -438,6 +389,7 @@ async function generateVerificationJson(
         for (const batchVerifyItem of batchVerifyItemArray) {
             batchVerifyItem.verificationAttempts++;
             if (batchVerifyItem.verificationAttempts > 10) {
+                progressBar.stop();
                 return Promise.reject(
                     new Error(
                         `Item failed to verify too many times: ${JSON.stringify(batchVerifyItem)}. If this persists try a different model`,
@@ -470,8 +422,9 @@ async function generateVerificationJson(
         );
 
         if (!result) {
+            progressBar.stop();
             printError(
-                `Failed to generate translation for ${options.outputLanguage}`,
+                `\nFailed to generate translation for ${options.outputLanguage}`,
             );
             break;
         }
@@ -490,20 +443,17 @@ async function generateVerificationJson(
 
             translationStats.processedItems++;
         }
+
+        progressBar.update(translationStats.processedTokens);
     }
 
+    progressBar.stop();
+
     if (options.verbose) {
-        printProgress(translationStats, "Step 2/2 - Verifying", firstPrint);
-
-        const endTime = Date.now();
-        const roundedSeconds = Math.round(
-            (endTime - translationStats.batchStartTime) / 1000,
+        printExecutionTime(
+            translationStats.batchStartTime,
+            "Verification execution time: ",
         );
-
-        removeLine();
-        removeLine();
-
-        printInfo(`\nVerification execution time: ${roundedSeconds} seconds\n`);
     }
 
     return generatedVerification;
@@ -562,7 +512,7 @@ export default async function translateJson(
 
     if (!options.skipTranslationVerification) {
         if (options.verbose) {
-            printInfo("Starting verification...");
+            printInfo("Starting verification...\n");
         }
 
         const generatedVerification = await generateVerificationJson(
@@ -585,7 +535,7 @@ function parseTranslationToJson(outputText: string): TranslateItemOutput[] {
         return TranslateItemOutputObjectSchema.parse(JSON.parse(outputText))
             .items;
     } catch (error) {
-        printError(`Error parsing JSON: '${error}', output: '${outputText}'`);
+        printError(`\nError parsing JSON: '${error}', output: '${outputText}'`);
         return [];
     }
 }
@@ -594,7 +544,7 @@ function parseVerificationToJson(outputText: string): VerifyItemOutput[] {
     try {
         return VerifyItemOutputObjectSchema.parse(JSON.parse(outputText)).items;
     } catch (error) {
-        printError(`Error parsing JSON: '${error}', output: '${outputText}'`);
+        printError(`\nError parsing JSON: '${error}', output: '${outputText}'`);
         return [];
     }
 }
@@ -750,7 +700,7 @@ async function runTranslationJob(
             false,
         );
     } catch (e) {
-        printError(`Failed to translate: ${e}`);
+        printError(`\nFailed to translate: ${e}`);
     }
 
     const parsedOutput = parseTranslationToJson(translated);
@@ -797,7 +747,7 @@ async function runVerificationJob(
             false,
         );
     } catch (e) {
-        printError(`Failed to translate: ${e}`);
+        printError(`\nFailed to translate: ${e}`);
     }
 
     const parsedOutput = parseVerificationToJson(verified);
@@ -827,7 +777,7 @@ function verifyGenerationAndRetry(
         );
     }
 
-    printError(`Erroring text = ${generationPromptText}`);
+    printError(`\nErroring text = ${generationPromptText}`);
 
     options.chats.generateTranslationChat.rollbackLastMessage();
     return Promise.reject(

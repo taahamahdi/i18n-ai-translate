@@ -12,6 +12,7 @@ import {
     getLanguageCodeFromFilename,
     getTranslationDirectoryKey,
     printError,
+    printExecutionTime,
     printInfo,
 } from "./utils";
 import ChatFactory from "./chat_interface/chat_factory";
@@ -251,12 +252,10 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     });
 
     if (options.verbose) {
-        const endTime = Date.now();
-        const roundedSeconds = Math.round(
-            (endTime - translationStats.translate.batchStartTime) / 1000,
+        printExecutionTime(
+            translationStats.translate.batchStartTime,
+            "\nTranslation execution time: ",
         );
-
-        printInfo(`Actual execution time: ${roundedSeconds} seconds`);
     }
 
     return unflattenedOutput as Object;
