@@ -1,4 +1,4 @@
-import { ANSIStyles } from "../print_styles";
+import { ANSIStyles } from "../constants";
 import { zodResponseFormat } from "openai/helpers/zod";
 import ChatInterface from "./chat_interface";
 import Role from "../enums/role";

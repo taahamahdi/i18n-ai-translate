@@ -1,4 +1,4 @@
-import { ANSIStyles } from "./print_styles";
+import { ANSIStyles } from "./constants";
 import { delay } from "./utils";
 
 export default class RateLimiter {

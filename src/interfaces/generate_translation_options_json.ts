@@ -1,4 +1,4 @@
-import type { TranslateItem } from "../generate_json/types_json";
+import type { TranslateItem } from "../generate_json/types";
 import type Chats from "./chats";
 import type OverridePrompt from "./override_prompt";
 

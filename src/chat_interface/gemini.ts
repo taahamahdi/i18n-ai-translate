@@ -1,4 +1,4 @@
-import { ANSIStyles } from "../print_styles";
+import { ANSIStyles } from "../constants";
 import { toGeminiSchema } from "gemini-zod";
 import ChatInterface from "./chat_interface";
 import Role from "../enums/role";

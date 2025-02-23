@@ -1,4 +1,4 @@
-import type { TranslateItemInput, VerifyItemInput } from "./types_json";
+import type { TranslateItemInput, VerifyItemInput } from "./types";
 import type OverridePrompt from "../interfaces/override_prompt";
 
 /**

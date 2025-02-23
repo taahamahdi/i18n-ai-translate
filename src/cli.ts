@@ -1,4 +1,5 @@
 import {
+    ANSIStyles,
     CLI_HELP,
     DEFAULT_MODEL,
     DEFAULT_TEMPLATED_STRING_PREFIX,
@@ -21,7 +22,6 @@ import fs from "fs";
 import path from "path";
 import type { ChatParams, Model, ModelArgs } from "./types";
 import type OverridePrompt from "./interfaces/override_prompt";
-import { ANSIStyles } from "./print_styles";
 
 config({ path: path.resolve(process.cwd(), ".env") });
 
@@ -54,7 +54,7 @@ const processModelArgs = (options: any): ModelArgs => {
             } else {
                 promptMode = options.promptMode;
                 if (promptMode === PromptMode.CSV) {
-                    console.warn("WARNING: Json mode recommended for Gemini");
+                    console.warn("Json mode recommended for Gemini");
                 }
             }
 
@@ -125,12 +125,12 @@ const processModelArgs = (options: any): ModelArgs => {
             } else {
                 promptMode = options.promptMode;
                 if (promptMode === PromptMode.CSV) {
-                    console.warn("WARNING: Json mode recommended for Ollama");
+                    console.warn("Json mode recommended for Ollama");
                 }
             }
 
             if (!options.batchSize) {
-                batchSize = 16;
+                batchSize = 32;
             } else {
                 batchSize = options.batchSize;
             }

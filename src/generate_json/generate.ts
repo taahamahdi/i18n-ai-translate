@@ -1,12 +1,16 @@
 import * as cl100k_base from "tiktoken/encoders/cl100k_base.json";
-import { ANSIStyles } from "../print_styles";
+import {
+    ANSIStyles,
+    DEFAULT_TEMPLATED_STRING_PREFIX,
+    DEFAULT_TEMPLATED_STRING_SUFFIX,
+} from "../constants";
 import { Tiktoken } from "tiktoken";
 import {
     TranslateItemOutputObjectSchema,
     VerifyItemOutputObjectSchema,
-} from "./types_json";
+} from "./types";
 import { retryJob } from "../utils";
-import { translationPromptJson, verificationPromptJson } from "./prompts_json";
+import { translationPromptJson, verificationPromptJson } from "./prompts";
 import type {
     GenerateStateJson,
     TranslateItem,
@@ -14,16 +18,12 @@ import type {
     TranslateItemOutput,
     VerifyItemInput,
     VerifyItemOutput,
-} from "./types_json";
+} from "./types";
 import type { TranslationStats, TranslationStatsItem } from "../types";
 import type { ZodType, ZodTypeDef } from "zod";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsJson from "../interfaces/generate_translation_options_json";
 import type TranslateOptions from "../interfaces/translate_options";
-import {
-    DEFAULT_TEMPLATED_STRING_PREFIX,
-    DEFAULT_TEMPLATED_STRING_SUFFIX,
-} from "../constants";
 
 function generateTranslateItemsInput(
     translateItems: TranslateItem[],
@@ -137,6 +137,12 @@ function getBatchTranslateItemArray(
         }
 
         batchTranslateItemArray.push(translateItem);
+
+        if (translateItem.translationAttempts > 5) {
+            // Add a minimum of one items if the item has been tried many times
+            // Too many items can cause translations to fail
+            break;
+        }
     }
 
     return batchTranslateItemArray;
@@ -178,6 +184,12 @@ function getBatchVerifyItemArray(
         }
 
         batchVerifyItemArray.push(translatedItem);
+
+        if (translatedItem.verificationAttempts > 5) {
+            // Add a minimum of one items if the item has been tried many times
+            // Too many items can cause translations to fail
+            break;
+        }
     }
 
     return batchVerifyItemArray;
@@ -204,7 +216,7 @@ function printCompletion(
     title: string,
     firstPrint: boolean,
 ): void {
-    removeLastPrintCompletion(firstPrint);
+    // removeLastPrintCompletion(firstPrint);
 
     console.group(
         "\n",
@@ -416,6 +428,7 @@ async function generateTranslationJson(
             ANSIStyles.bright,
             ANSIStyles.fg.cyan,
             `\nTranslation execution time: ${roundedSeconds} seconds\n`,
+            `${translationStats.enqueuedItems} : ${translationStats.totalItems}`,
             ANSIStyles.reset,
         );
     }
@@ -715,7 +728,7 @@ function createTranslateItemsWithTranslation(
             } else {
                 // Item is updated with a failure message. This message gives the LLM a context to help it fix the translation.
                 // Without this the same error is made over and over again, with the message the new translation is generally accepted.
-                untranslatedItem.failure = `Must add variables, missing from last translation: '${JSON.stringify(missingVariables)}'`;
+                untranslatedItem.failure = `Ensure all variables are included. The following variables are missing from the previous translation and must be added: '${JSON.stringify(missingVariables)}'`;
             }
         }
     }

@@ -1,4 +1,4 @@
-import { ANSIStyles } from "../print_styles";
+import { ANSIStyles } from "../constants";
 import ChatInterface from "./chat_interface";
 import Role from "../enums/role";
 import type { Anthropic as InternalAnthropic } from "@anthropic-ai/sdk";

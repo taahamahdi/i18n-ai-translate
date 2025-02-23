@@ -1,16 +1,15 @@
-import { ANSIStyles } from "../print_styles";
-import { failedTranslationPrompt, generationPrompt } from "./prompts_csv";
-import { isNAK } from "./utils_csv";
-import { retryJob } from "../utils";
-import { verifyStyling, verifyTranslation } from "./verify_csv";
+import {
+    ANSIStyles,
+    DEFAULT_TEMPLATED_STRING_PREFIX,
+    DEFAULT_TEMPLATED_STRING_SUFFIX,
+} from "../constants";
+import { failedTranslationPrompt, generationPrompt } from "./prompts";
+import { isNAK, retryJob } from "../utils";
+import { verifyStyling, verifyTranslation } from "./verify";
 import type { GenerateStateCsv, TranslationStatsItem } from "../types";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsCsv from "../interfaces/generate_translation_options_csv";
 import type TranslateOptions from "../interfaces/translate_options";
-import {
-    DEFAULT_TEMPLATED_STRING_PREFIX,
-    DEFAULT_TEMPLATED_STRING_SUFFIX,
-} from "../constants";
 
 /**
  * Complete the initial translation of the input text.
