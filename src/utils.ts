@@ -13,6 +13,61 @@ export function delay(delayDuration: number): Promise<void> {
 }
 
 /**
+ * @param error - the error message
+ */
+export function printError(error: string): void {
+    console.error(
+        ANSIStyles.bright,
+        ANSIStyles.fg.red,
+        error,
+        ANSIStyles.reset,
+    );
+}
+
+/**
+ * @param warn - the warning message
+ */
+export function printWarn(warn: string): void {
+    console.warn(
+        ANSIStyles.bright,
+        ANSIStyles.fg.orange,
+        warn,
+        ANSIStyles.reset,
+    );
+}
+
+/**
+ * @param info - the message
+ */
+export function printInfo(info: string): void {
+    console.info(ANSIStyles.bright, ANSIStyles.fg.cyan, info, ANSIStyles.reset);
+}
+
+/**
+ * @param message - the message
+ */
+export function printCompletion(message: string): void {
+    console.info(
+        ANSIStyles.bright,
+        ANSIStyles.fg.green,
+        message,
+        ANSIStyles.reset,
+    );
+}
+
+/**
+ * @param title - the message
+ */
+export function printTitle(title: string): void {
+    console.info(
+        ANSIStyles.bright,
+        ANSIStyles.fg.blue,
+        title,
+        ANSIStyles.reset,
+    );
+}
+
+/**
  * @param job - the function to retry
  * @param jobArgs - arguments to pass to job
  * @param maxRetries - retries of job before throwing
@@ -35,19 +90,9 @@ export async function retryJob<Type>(
 
     return job(...jobArgs).catch((err) => {
         if (sendError) {
-            console.error(
-                ANSIStyles.bright,
-                ANSIStyles.fg.red,
-                `err = ${err}`,
-                ANSIStyles.reset,
-            );
+            printError(`err = ${err}`);
         } else {
-            console.warn(
-                ANSIStyles.bright,
-                ANSIStyles.fg.red,
-                `err = ${err}`,
-                ANSIStyles.reset,
-            );
+            printWarn(`err = ${err}`);
         }
 
         if (maxRetries <= 0) {

@@ -1,5 +1,4 @@
-import { ANSIStyles } from "./constants";
-import { delay } from "./utils";
+import { delay, printInfo } from "./utils";
 
 export default class RateLimiter {
     lastAPICall: number | null;
@@ -25,11 +24,8 @@ export default class RateLimiter {
 
             if (timeToWait > 0) {
                 if (this.verboseLogging) {
-                    console.info(
-                        ANSIStyles.bright,
-                        ANSIStyles.fg.cyan,
+                    printInfo(
                         `RateLimiter | Waiting ${timeToWait}ms before next API call`,
-                        ANSIStyles.reset,
                     );
                 }
 

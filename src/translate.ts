@@ -12,6 +12,8 @@ import {
     getAllFilesInPath,
     getLanguageCodeFromFilename,
     getTranslationDirectoryKey,
+    printError,
+    printInfo,
 } from "./utils";
 import ChatFactory from "./chat_interface/chat_factory";
 import PromptMode from "./enums/prompt_mode";
@@ -156,23 +158,13 @@ async function getTranslation(
     switch (options.promptMode) {
         case PromptMode.JSON:
             if (options.verbose) {
-                console.info(
-                    ANSIStyles.bright,
-                    ANSIStyles.fg.orange,
-                    "Transaltion prompting mode: JSON\n",
-                    ANSIStyles.reset,
-                );
+                printInfo("Transaltion prompting mode: JSON\n");
             }
 
             return translateJson(flatInput, options, chats, translationStats);
         case PromptMode.CSV:
             if (options.verbose) {
-                console.info(
-                    ANSIStyles.bright,
-                    ANSIStyles.fg.orange,
-                    "Transaltion prompting mode: CSV\n",
-                    ANSIStyles.reset,
-                );
+                printInfo("Transaltion prompting mode: CSV\n");
             }
 
             return translateCsv(
@@ -211,11 +203,8 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     setDefaults(options);
 
     if (options.verbose) {
-        console.info(
-            ANSIStyles.bright,
-            ANSIStyles.fg.cyan,
+        printInfo(
             `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
-            ANSIStyles.reset,
         );
     }
 
@@ -258,12 +247,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
             (endTime - translationStats.translate.batchStartTime) / 1000,
         );
 
-        console.info(
-            ANSIStyles.bright,
-            ANSIStyles.fg.orange,
-            `Actual execution time: ${roundedSeconds} seconds`,
-            ANSIStyles.reset,
-        );
+        printInfo(`Actual execution time: ${roundedSeconds} seconds`);
     }
 
     return unflattenedOutput as Object;
@@ -324,26 +308,9 @@ export async function translateDiff(
     }
 
     if (options.verbose) {
-        console.info(
-            ANSIStyles.bright,
-            ANSIStyles.fg.cyan,
-            `Added keys: ${addedKeys.join("\n")}\n`,
-            ANSIStyles.reset,
-        );
-
-        console.info(
-            ANSIStyles.bright,
-            ANSIStyles.fg.cyan,
-            `Modified keys: ${modifiedKeys.join("\n")}\n`,
-            ANSIStyles.reset,
-        );
-
-        console.info(
-            ANSIStyles.bright,
-            ANSIStyles.fg.cyan,
-            `Deleted keys: ${deletedKeys.join("\n")}\n`,
-            ANSIStyles.reset,
-        );
+        printInfo(`Added keys: ${addedKeys.join("\n")}\n`);
+        printInfo(`Modified keys: ${modifiedKeys.join("\n")}\n`);
+        printInfo(`Deleted keys: ${deletedKeys.join("\n")}\n`);
     }
 
     for (const key of deletedKeys) {
@@ -445,12 +412,7 @@ export async function translateFile(
         const inputFile = fs.readFileSync(options.inputFilePath, "utf-8");
         inputJSON = JSON.parse(inputFile);
     } catch (e) {
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
-            `Invalid input JSON: ${e}`,
-            ANSIStyles.reset,
-        );
+        printError(`Invalid input JSON: ${e}`);
         return;
     }
 
@@ -488,12 +450,7 @@ export async function translateFile(
         const outputText = JSON.stringify(outputJSON, null, 4);
         fs.writeFileSync(options.outputFilePath, `${outputText}\n`);
     } catch (err) {
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
-            `Failed to translate file to ${outputLanguage}: ${err}`,
-            ANSIStyles.reset,
-        );
+        printError(`Failed to translate file to ${outputLanguage}: ${err}`);
     }
 }
 
@@ -566,12 +523,7 @@ export async function translateFileDiff(
         inputFile = fs.readFileSync(inputAfterPath, "utf-8");
         inputAfterJSON = JSON.parse(inputFile);
     } catch (e) {
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
-            `Invalid input JSON: ${e}`,
-            ANSIStyles.reset,
-        );
+        printError(`Invalid input JSON: ${e}`);
         return;
     }
 
@@ -593,12 +545,7 @@ export async function translateFileDiff(
             toUpdateJSONs[languageCode] = JSON.parse(outputFile);
             languageCodeToOutputPath[languageCode] = outputPath;
         } catch (e) {
-            console.error(
-                ANSIStyles.bright,
-                ANSIStyles.fg.red,
-                `Invalid output JSON: ${e}`,
-                ANSIStyles.reset,
-            );
+            printError(`Invalid output JSON: ${e}`);
         }
     }
 
@@ -641,12 +588,7 @@ export async function translateFileDiff(
             }
         }
     } catch (err) {
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
-            `Failed to translate file diff: ${err}`,
-            ANSIStyles.reset,
-        );
+        printError(`Failed to translate file diff: ${err}`);
     }
 }
 
@@ -766,11 +708,8 @@ export async function translateDirectory(
             }
         }
     } catch (err) {
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
+        printError(
             `Failed to translate directory to ${outputLanguage}: ${err}`,
-            ANSIStyles.reset,
         );
     }
 }
@@ -1009,12 +948,7 @@ export async function translateDirectoryDiff(
             }
         }
     } catch (err) {
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
-            `Failed to translate directory diff: ${err}`,
-            ANSIStyles.reset,
-        );
+        printError(`Failed to translate directory diff: ${err}`);
     }
 
     // Remove any files in before not in after

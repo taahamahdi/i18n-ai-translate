@@ -1,4 +1,4 @@
-import { ANSIStyles } from "../constants";
+import { printError } from "../utils";
 import ChatInterface from "./chat_interface";
 import Role from "../enums/role";
 import zodToJsonSchema from "zod-to-json-schema";
@@ -60,12 +60,7 @@ export default class Ollama extends ChatInterface {
             this.history.push({ content: responseText, role: Role.Assistant });
             return responseText;
         } catch (err) {
-            console.error(
-                ANSIStyles.bright,
-                ANSIStyles.fg.red,
-                err,
-                ANSIStyles.reset,
-            );
+            printError(err);
             return "";
         }
     }

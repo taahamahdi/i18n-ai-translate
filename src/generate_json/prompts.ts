@@ -115,6 +115,9 @@ Special Instructions:
 - The number of variables like {{timeLeft}} must be the same in the translated text.
 - Do not convert {{NEWLINE}} to \\n.
 
+Allow minor grammar, phrasing, and formatting differences if meaning is clear.
+Flag only significant issues affecting accuracy or readability.
+
 Return the verified as JSON.
 \`\`\`json
 ${input} 

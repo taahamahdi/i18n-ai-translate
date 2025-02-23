@@ -1,5 +1,5 @@
 import { ANSIStyles } from "../constants";
-import { isACK, isNAK, retryJob } from "../utils";
+import { isACK, isNAK, printError, retryJob } from "../utils";
 import {
     stylingVerificationPrompt,
     translationVerificationPrompt,
@@ -96,12 +96,7 @@ const verify = async (
             false,
         );
     } catch (e) {
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
-            `Failed to verify: ${e}`,
-            ANSIStyles.reset,
-        );
+        printError(`Failed to verify: ${e}`);
     }
 
     return verification;

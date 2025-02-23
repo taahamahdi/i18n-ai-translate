@@ -9,7 +9,13 @@ import {
     TranslateItemOutputObjectSchema,
     VerifyItemOutputObjectSchema,
 } from "./types";
-import { retryJob } from "../utils";
+import {
+    printCompletion,
+    printError,
+    printInfo,
+    printTitle,
+    retryJob,
+} from "../utils";
 import { translationPromptJson, verificationPromptJson } from "./prompts";
 import type {
     GenerateStateJson,
@@ -206,32 +212,20 @@ function removeLastPrintCompletion(firstPrint: boolean): void {
         removeLine();
         removeLine();
         removeLine();
-        removeLine();
-        removeLine();
     }
 }
 
-function printCompletion(
+function printProgress(
     translationStats: TranslationStatsItem,
     title: string,
     firstPrint: boolean,
 ): void {
-    // removeLastPrintCompletion(firstPrint);
+    removeLastPrintCompletion(firstPrint);
 
-    console.group(
-        "\n",
-        ANSIStyles.bright,
-        ANSIStyles.fg.blue,
-        ANSIStyles.underscore,
-        title,
-        ANSIStyles.reset,
-    );
+    printTitle(`\n ${title}`);
 
-    console.info(
-        ANSIStyles.bright,
-        ANSIStyles.fg.green,
+    printCompletion(
         `Completed ${((translationStats.processedTokens / translationStats.totalTokens) * 100).toFixed(0)}%`,
-        ANSIStyles.reset,
     );
 
     const roundedEstimatedTimeLeftSeconds = Math.round(
@@ -241,22 +235,9 @@ function printCompletion(
             1000,
     );
 
-    console.info(
-        ANSIStyles.bright,
-        ANSIStyles.fg.green,
+    printCompletion(
         `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds`,
-        ANSIStyles.reset,
     );
-
-    console.info(
-        ANSIStyles.bright,
-        ANSIStyles.fg.green,
-        ANSIStyles.blink,
-        "Processing...\n",
-        ANSIStyles.reset,
-    );
-
-    console.groupEnd();
 }
 
 function generateTranslateItemArray(
@@ -321,7 +302,7 @@ async function generateTranslationJson(
     let firstPrint = true;
     while (translateItemArray.length > 0) {
         if (options.verbose && translationStats.processedTokens > 0) {
-            printCompletion(
+            printProgress(
                 translationStats,
                 options.skipTranslationVerification
                     ? "Step 1/1 - Translating"
@@ -376,11 +357,8 @@ async function generateTranslationJson(
         );
 
         if (!result) {
-            console.error(
-                ANSIStyles.bright,
-                ANSIStyles.fg.red,
+            printError(
                 `Failed to generate translation for ${options.outputLanguage}\n`,
-                ANSIStyles.reset,
             );
             break;
         }
@@ -409,7 +387,7 @@ async function generateTranslationJson(
     }
 
     if (options.verbose) {
-        printCompletion(
+        printProgress(
             translationStats,
             options.skipTranslationVerification
                 ? "Step 1/1 - Translating"
@@ -424,13 +402,7 @@ async function generateTranslationJson(
 
         removeLine();
         removeLine();
-        console.info(
-            ANSIStyles.bright,
-            ANSIStyles.fg.cyan,
-            `\nTranslation execution time: ${roundedSeconds} seconds\n`,
-            `${translationStats.enqueuedItems} : ${translationStats.totalItems}`,
-            ANSIStyles.reset,
-        );
+        printInfo(`\nTranslation execution time: ${roundedSeconds} seconds\n`);
     }
 
     return generatedTranslation;
@@ -456,11 +428,7 @@ async function generateVerificationJson(
     let firstPrint = true;
     while (verifyItemArray.length > 0) {
         if (options.verbose && translationStats.processedTokens > 0) {
-            printCompletion(
-                translationStats,
-                "Step 2/2 - Verifying",
-                firstPrint,
-            );
+            printProgress(translationStats, "Step 2/2 - Verifying", firstPrint);
             firstPrint = false;
         }
 
@@ -509,11 +477,8 @@ async function generateVerificationJson(
         );
 
         if (!result) {
-            console.error(
-                ANSIStyles.bright,
-                ANSIStyles.fg.red,
+            printError(
                 `Failed to generate translation for ${options.outputLanguage}`,
-                ANSIStyles.reset,
             );
             break;
         }
@@ -535,7 +500,7 @@ async function generateVerificationJson(
     }
 
     if (options.verbose) {
-        printCompletion(translationStats, "Step 2/2 - Verifying", firstPrint);
+        printProgress(translationStats, "Step 2/2 - Verifying", firstPrint);
 
         const endTime = Date.now();
         const roundedSeconds = Math.round(
@@ -544,12 +509,8 @@ async function generateVerificationJson(
 
         removeLine();
         removeLine();
-        console.info(
-            ANSIStyles.bright,
-            ANSIStyles.fg.cyan,
-            `\nVerification execution time: ${roundedSeconds} seconds\n`,
-            ANSIStyles.reset,
-        );
+
+        printInfo(`\nVerification execution time: ${roundedSeconds} seconds\n`);
     }
 
     return generatedVerification;
@@ -608,12 +569,7 @@ export default async function translateJson(
 
     if (!options.skipTranslationVerification) {
         if (options.verbose) {
-            console.info(
-                ANSIStyles.bright,
-                ANSIStyles.fg.cyan,
-                "Starting verification...",
-                ANSIStyles.reset,
-            );
+            printInfo("Starting verification...");
         }
 
         const generatedVerification = await generateVerificationJson(
@@ -636,14 +592,7 @@ function parseTranslationToJson(outputText: string): TranslateItemOutput[] {
         return TranslateItemOutputObjectSchema.parse(JSON.parse(outputText))
             .items;
     } catch (error) {
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
-            "Error parsing JSON:",
-            error,
-            outputText,
-            ANSIStyles.reset,
-        );
+        printError(`Error parsing JSON: '${error}', output: '${outputText}'`);
         return [];
     }
 }
@@ -652,14 +601,7 @@ function parseVerificationToJson(outputText: string): VerifyItemOutput[] {
     try {
         return VerifyItemOutputObjectSchema.parse(JSON.parse(outputText)).items;
     } catch (error) {
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
-            "Error parsing JSON:",
-            error,
-            outputText,
-            ANSIStyles.reset,
-        );
+        printError(`Error parsing JSON: '${error}', output: '${outputText}'`);
         return [];
     }
 }
@@ -668,8 +610,7 @@ function isValidTranslateItem(item: any): item is TranslateItemOutput {
     return (
         typeof item.id === "number" &&
         typeof item.translated === "string" &&
-        item.id > 0 &&
-        item.translated !== ""
+        item.id > 0
     );
 }
 
@@ -678,11 +619,7 @@ function isValidVerificationItem(item: any): item is VerifyItemOutput {
     if (!(typeof item.valid === "boolean")) return false;
     if (item.id <= 0) return false;
     // 'fixedTranslation' should be a translation if valid is false
-    if (
-        item.valid === false &&
-        (!(typeof item.fixedTranslation === "string") ||
-            item.fixedTranslation === "")
-    )
+    if (item.valid === false && !(typeof item.fixedTranslation === "string"))
         return false;
 
     return true;
@@ -711,6 +648,14 @@ function createTranslateItemsWithTranslation(
         );
 
         if (translatedItem) {
+            untranslatedItem.translated = translatedItem.translated;
+
+            if (translatedItem.translated === "") {
+                untranslatedItem.failure =
+                    "The translated value cannot be an empty string";
+                continue;
+            }
+
             const templateStrings =
                 translatedItem.translated.match(templatedStringRegex) ?? [];
 
@@ -719,17 +664,17 @@ function createTranslateItemsWithTranslation(
                 templateStrings,
             );
 
-            if (missingVariables.length === 0) {
-                output.push({
-                    ...untranslatedItem,
-                    failure: "",
-                    translated: translatedItem.translated,
-                } as TranslateItem);
-            } else {
+            if (missingVariables.length !== 0) {
                 // Item is updated with a failure message. This message gives the LLM a context to help it fix the translation.
                 // Without this the same error is made over and over again, with the message the new translation is generally accepted.
                 untranslatedItem.failure = `Ensure all variables are included. The following variables are missing from the previous translation and must be added: '${JSON.stringify(missingVariables)}'`;
+                continue;
             }
+
+            output.push({
+                ...untranslatedItem,
+                failure: "",
+            } as TranslateItem);
         }
     }
 
@@ -754,10 +699,16 @@ function createVerifyItemsWithTranslation(
                     ...translatedItem,
                     failure: "",
                 } as TranslateItem);
-            } else if (
-                verifiedItem.fixedTranslation &&
-                verifiedItem.fixedTranslation !== ""
-            ) {
+            } else {
+                translatedItem.translated =
+                    verifiedItem.fixedTranslation as string;
+
+                if (verifiedItem.fixedTranslation === "") {
+                    translatedItem.failure =
+                        "The translated value cannot be an empty string";
+                    continue;
+                }
+
                 const templateStrings =
                     verifiedItem.fixedTranslation.match(templatedStringRegex) ??
                     [];
@@ -767,14 +718,13 @@ function createVerifyItemsWithTranslation(
                     templateStrings,
                 );
 
-                if (missingVariables.length === 0) {
-                    // 'translatedItem' is updated and queued again to check if the new fixed translation is valid
-                    translatedItem.translated =
-                        verifiedItem.fixedTranslation as string;
-                    translatedItem.failure = `Previous issue that should be corrected: '${verifiedItem.issue}'`;
-                } else {
+                if (missingVariables.length !== 0) {
                     translatedItem.failure = `Must add variables, missing from last translation: '${JSON.stringify(missingVariables)}'`;
+                    continue;
                 }
+
+                // 'translatedItem' is updated and queued again to check if the new fixed translation is valid
+                translatedItem.failure = `Previous issue that should be corrected: '${verifiedItem.issue}'`;
             }
         }
     }
@@ -816,12 +766,7 @@ async function runTranslationJob(
             false,
         );
     } catch (e) {
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
-            `Failed to translate: ${e}`,
-            ANSIStyles.reset,
-        );
+        printError(`Failed to translate: ${e}`);
     }
 
     const parsedOutput = parseTranslationToJson(translated);
@@ -868,12 +813,7 @@ async function runVerificationJob(
             false,
         );
     } catch (e) {
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
-            `Failed to translate: ${e}`,
-            ANSIStyles.reset,
-        );
+        printError(`Failed to translate: ${e}`);
     }
 
     const parsedOutput = parseVerificationToJson(verified);
@@ -903,12 +843,8 @@ function verifyGenerationAndRetry(
         );
     }
 
-    console.error(
-        ANSIStyles.bright,
-        ANSIStyles.fg.red,
-        `Erroring text = ${generationPromptText}`,
-        ANSIStyles.reset,
-    );
+    printError(`Erroring text = ${generationPromptText}`);
+
     options.chats.generateTranslationChat.rollbackLastMessage();
     return Promise.reject(
         new Error("Failed to generate content due to exception."),

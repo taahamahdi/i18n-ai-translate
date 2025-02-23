@@ -1,4 +1,4 @@
-import { ANSIStyles } from "../constants";
+import { printError } from "../utils";
 import ChatInterface from "./chat_interface";
 import Role from "../enums/role";
 import type { Anthropic as InternalAnthropic } from "@anthropic-ai/sdk";
@@ -72,12 +72,7 @@ export default class Anthropic extends ChatInterface {
             this.history.push({ content: responseText, role: Role.Assistant });
             return responseText;
         } catch (err) {
-            console.error(
-                ANSIStyles.bright,
-                ANSIStyles.fg.red,
-                err,
-                ANSIStyles.reset,
-            );
+            printError(err);
             return "";
         }
     }

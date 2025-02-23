@@ -1,5 +1,4 @@
 import {
-    ANSIStyles,
     CLI_HELP,
     DEFAULT_MODEL,
     DEFAULT_TEMPLATED_STRING_PREFIX,
@@ -8,7 +7,13 @@ import {
 } from "./constants";
 import { OVERRIDE_PROMPT_KEYS } from "./interfaces/override_prompt";
 import { config } from "dotenv";
-import { getAllLanguageCodes, getLanguageCodeFromFilename } from "./utils";
+import {
+    getAllLanguageCodes,
+    getLanguageCodeFromFilename,
+    printError,
+    printInfo,
+    printWarn,
+} from "./utils";
 import { program } from "commander";
 import {
     translateDirectory,
@@ -54,7 +59,7 @@ const processModelArgs = (options: any): ModelArgs => {
             } else {
                 promptMode = options.promptMode;
                 if (promptMode === PromptMode.CSV) {
-                    console.warn("Json mode recommended for Gemini");
+                    printWarn("Json mode recommended for Gemini");
                 }
             }
 
@@ -125,12 +130,12 @@ const processModelArgs = (options: any): ModelArgs => {
             } else {
                 promptMode = options.promptMode;
                 if (promptMode === PromptMode.CSV) {
-                    console.warn("Json mode recommended for Ollama");
+                    printWarn("Json mode recommended for Ollama");
                 }
             }
 
             if (!options.batchSize) {
-                batchSize = 32;
+                batchSize = 16;
             } else {
                 batchSize = options.batchSize;
             }
@@ -326,41 +331,27 @@ program
 
         if (options.outputLanguages) {
             if (options.forceLanguageName) {
-                console.error(
-                    ANSIStyles.bright,
-                    ANSIStyles.fg.red,
+                printError(
                     "Cannot use both --output-languages and --force-language",
-                    ANSIStyles.reset,
                 );
                 return;
             }
 
             if (options.allLanguages) {
-                console.error(
-                    ANSIStyles.bright,
-                    ANSIStyles.fg.red,
+                printError(
                     "Cannot use both --all-languages and --output-languages",
-                    ANSIStyles.reset,
                 );
                 return;
             }
 
             if (options.outputLanguages.length === 0) {
-                console.error(
-                    ANSIStyles.bright,
-                    ANSIStyles.fg.red,
-                    "No languages specified",
-                    ANSIStyles.reset,
-                );
+                printError("No languages specified");
                 return;
             }
 
             if (options.verbose) {
-                console.info(
-                    ANSIStyles.bright,
-                    ANSIStyles.fg.cyan,
+                printInfo(
                     `Translating to ${options.outputLanguages.join(", ")}...`,
-                    ANSIStyles.reset,
                 );
             }
 
@@ -380,11 +371,8 @@ program
                 for (const languageCode of options.outputLanguages) {
                     i++;
                     if (options.verbose) {
-                        console.info(
-                            ANSIStyles.bright,
-                            ANSIStyles.fg.cyan,
+                        printInfo(
                             `Translating ${i}/${options.outputLanguages.length} languages...`,
-                            ANSIStyles.reset,
                         );
                     }
 
@@ -435,11 +423,8 @@ program
                             verbose: options.verbose,
                         });
                     } catch (err) {
-                        console.error(
-                            ANSIStyles.bright,
-                            ANSIStyles.fg.red,
+                        printError(
                             `Failed to translate file to ${languageCode}: ${err}`,
-                            ANSIStyles.reset,
                         );
                     }
                 }
@@ -448,11 +433,8 @@ program
                 for (const languageCode of options.outputLanguages) {
                     i++;
                     if (options.verbose) {
-                        console.info(
-                            ANSIStyles.bright,
-                            ANSIStyles.fg.cyan,
+                        printInfo(
                             `Translating ${i}/${options.outputLanguages.length} languages...`,
-                            ANSIStyles.reset,
                         );
                     }
 
@@ -494,27 +476,21 @@ program
                             verbose: options.verbose,
                         });
                     } catch (err) {
-                        console.error(
-                            ANSIStyles.bright,
-                            ANSIStyles.fg.red,
+                        printError(
                             `Failed to translate directory to ${languageCode}: ${err}`,
-                            ANSIStyles.reset,
                         );
                     }
                 }
             }
         } else {
             if (options.forceLanguageName) {
-                console.error(
-                    ANSIStyles.bright,
-                    ANSIStyles.fg.red,
+                printError(
                     "Cannot use both --all-languages and --force-language",
-                    ANSIStyles.reset,
                 );
                 return;
             }
 
-            console.warn(
+            printWarn(
                 "Some languages may fail to translate due to the model's limitations",
             );
 
@@ -522,11 +498,8 @@ program
             for (const languageCode of getAllLanguageCodes()) {
                 i++;
                 if (options.verbose) {
-                    console.info(
-                        ANSIStyles.bright,
-                        ANSIStyles.fg.cyan,
+                    printInfo(
                         `Translating ${i}/${getAllLanguageCodes().length} languages...`,
-                        ANSIStyles.reset,
                     );
                 }
 
@@ -565,11 +538,8 @@ program
                         verbose: options.verbose,
                     });
                 } catch (err) {
-                    console.error(
-                        ANSIStyles.bright,
-                        ANSIStyles.fg.red,
+                    printError(
                         `Failed to translate to ${languageCode}: ${err}`,
-                        ANSIStyles.reset,
                     );
                 }
             }
@@ -671,11 +641,8 @@ program
             fs.statSync(beforeInputPath).isFile() !==
             fs.statSync(afterInputPath).isFile()
         ) {
-            console.error(
-                ANSIStyles.bright,
-                ANSIStyles.fg.red,
+            printError(
                 "--before and --after arguments must be both files or both directories",
-                ANSIStyles.reset,
             );
             return;
         }
@@ -685,12 +652,7 @@ program
             if (
                 path.dirname(beforeInputPath) !== path.dirname(afterInputPath)
             ) {
-                console.error(
-                    ANSIStyles.bright,
-                    ANSIStyles.fg.red,
-                    "Input files are not in the same directory",
-                    ANSIStyles.reset,
-                );
+                printError("Input files are not in the same directory");
                 return;
             }
 

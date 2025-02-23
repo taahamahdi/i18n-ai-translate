@@ -4,7 +4,13 @@ import {
     DEFAULT_TEMPLATED_STRING_SUFFIX,
 } from "../constants";
 import { failedTranslationPrompt, generationPrompt } from "./prompts";
-import { isNAK, retryJob } from "../utils";
+import {
+    isNAK,
+    printCompletion,
+    printError,
+    printInfo,
+    retryJob,
+} from "../utils";
 import { verifyStyling, verifyTranslation } from "./verify";
 import type { GenerateStateCsv, TranslationStatsItem } from "../types";
 import type Chats from "../interfaces/chats";
@@ -34,11 +40,8 @@ export default async function translateCsv(
 
     for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
         if (i > 0 && options.verbose) {
-            console.info(
-                ANSIStyles.bright,
-                ANSIStyles.fg.green,
+            printCompletion(
                 `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
-                ANSIStyles.reset,
             );
 
             const roundedEstimatedTimeLeftSeconds = Math.round(
@@ -47,11 +50,8 @@ export default async function translateCsv(
                     1000,
             );
 
-            console.info(
-                ANSIStyles.bright,
-                ANSIStyles.fg.green,
+            printCompletion(
                 `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds\n`,
-                ANSIStyles.reset,
             );
         }
 
@@ -80,11 +80,8 @@ export default async function translateCsv(
         });
 
         if (generatedTranslation === "") {
-            console.error(
-                ANSIStyles.bright,
-                ANSIStyles.fg.red,
+            printError(
                 `Failed to generate translation for ${options.outputLanguage}`,
-                ANSIStyles.reset,
             );
             break;
         }
@@ -93,11 +90,8 @@ export default async function translateCsv(
             output[keys[j]] = generatedTranslation.split("\n")[j].slice(1, -1);
 
             if (options.verbose)
-                console.info(
-                    ANSIStyles.bright,
-                    ANSIStyles.fg.yellow,
+                printInfo(
                     `${keys[j].replaceAll("*", ".")}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
-                    ANSIStyles.reset,
                 );
         }
     }
@@ -157,12 +151,7 @@ async function generateTranslation(
             false,
         );
     } catch (e) {
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
-            `Failed to translate: ${e}`,
-            ANSIStyles.reset,
-        );
+        printError(`Failed to translate: ${e}`);
     }
 
     return translated;
@@ -204,12 +193,7 @@ async function generate(
             );
         }
 
-        console.error(
-            ANSIStyles.bright,
-            ANSIStyles.fg.red,
-            `Erroring text = ${input}`,
-            ANSIStyles.reset,
-        );
+        printError(`Erroring text = ${input}`);
         chats.generateTranslationChat.rollbackLastMessage();
         return Promise.reject(
             new Error("Failed to generate content due to exception."),
@@ -220,12 +204,7 @@ async function generate(
 
     if (text.startsWith("```\n") && text.endsWith("\n```")) {
         if (verboseLogging) {
-            console.info(
-                ANSIStyles.bright,
-                ANSIStyles.fg.cyan,
-                "Response started and ended with triple backticks",
-                ANSIStyles.reset,
-            );
+            printInfo("Response started and ended with triple backticks");
         }
 
         text = text.slice(4, -4);
@@ -343,12 +322,7 @@ async function generate(
 
             if (line !== splitInput[i]) {
                 if (verboseLogging) {
-                    console.info(
-                        ANSIStyles.bright,
-                        ANSIStyles.fg.yellow,
-                        `Successfully translated: ${oldText} => ${line}`,
-                        ANSIStyles.reset,
-                    );
+                    printInfo(`Successfully translated: ${oldText} => ${line}`);
                 }
 
                 text = splitText.join("\n");
