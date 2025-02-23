@@ -33,7 +33,7 @@ import type TranslateOptions from "./interfaces/translate_options";
 function getChats(options: TranslateOptions): Chats {
     const rateLimiter = new RateLimiter(
         options.rateLimitMs,
-        options.verbose ?? false,
+        options.verbose as boolean,
     );
 
     return {
@@ -218,8 +218,8 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     };
 
     replaceNewlinesWithPlaceholder(
-        options.templatedStringPrefix ?? DEFAULT_TEMPLATED_STRING_PREFIX,
-        options.templatedStringSuffix ?? DEFAULT_TEMPLATED_STRING_SUFFIX,
+        options.templatedStringPrefix as string,
+        options.templatedStringSuffix as string,
         flatInput,
     );
 
@@ -241,8 +241,8 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     }
 
     replacePlaceholderWithNewLines(
-        options.templatedStringPrefix ?? DEFAULT_TEMPLATED_STRING_PREFIX,
-        options.templatedStringSuffix ?? DEFAULT_TEMPLATED_STRING_SUFFIX,
+        options.templatedStringPrefix as string,
+        options.templatedStringSuffix as string,
         sortedOutput,
     );
 
