@@ -36,9 +36,10 @@ const processModelArgs = (options: any): ModelArgs => {
     let rateLimitMs = Number(options.rateLimitMs);
     let apiKey: string | undefined;
     let host: string | undefined;
-    let promptMode: PromptMode;
-    let batchSize: number;
-    let batchMaxTokens: number;
+    let promptMode = options.promptMode as PromptMode;
+    let batchSize = Number(options.batchSize);
+    let batchMaxTokens = Number(options.batchMaxTokens);
+
     switch (options.engine) {
         case Engine.Gemini:
             model = options.model || DEFAULT_MODEL[Engine.Gemini];
@@ -56,23 +57,16 @@ const processModelArgs = (options: any): ModelArgs => {
 
             if (!options.promptMode) {
                 promptMode = PromptMode.JSON;
-            } else {
-                promptMode = options.promptMode;
-                if (promptMode === PromptMode.CSV) {
-                    printWarn("Json mode recommended for Gemini");
-                }
+            } else if (promptMode === PromptMode.CSV) {
+                printWarn("Json mode recommended for Gemini");
             }
 
             if (!options.batchSize) {
-                batchSize = 16;
-            } else {
-                batchSize = options.batchSize;
+                batchSize = 32;
             }
 
             if (!options.batchMaxTokens) {
-                batchMaxTokens = 2048;
-            } else {
-                batchMaxTokens = options.batchMaxTokens;
+                batchMaxTokens = 4096;
             }
 
             break;
@@ -98,20 +92,14 @@ const processModelArgs = (options: any): ModelArgs => {
 
             if (!options.promptMode) {
                 promptMode = PromptMode.CSV;
-            } else {
-                promptMode = options.promptMode;
             }
 
             if (!options.batchSize) {
                 batchSize = 32;
-            } else {
-                batchSize = options.batchSize;
             }
 
             if (!options.batchMaxTokens) {
-                batchMaxTokens = 2048;
-            } else {
-                batchMaxTokens = options.batchMaxTokens;
+                batchMaxTokens = 4096;
             }
 
             break;
@@ -127,23 +115,18 @@ const processModelArgs = (options: any): ModelArgs => {
 
             if (!options.promptMode) {
                 promptMode = PromptMode.JSON;
-            } else {
-                promptMode = options.promptMode;
-                if (promptMode === PromptMode.CSV) {
-                    printWarn("Json mode recommended for Ollama");
-                }
+            } else if (promptMode === PromptMode.CSV) {
+                printWarn("Json mode recommended for Ollama");
             }
 
             if (!options.batchSize) {
+                // Ollama's error rate is high if large batches
                 batchSize = 16;
-            } else {
-                batchSize = options.batchSize;
             }
 
             if (!options.batchMaxTokens) {
+                // Ollama's default amount of tokens per request
                 batchMaxTokens = 2048;
-            } else {
-                batchMaxTokens = options.batchMaxTokens;
             }
 
             break;
@@ -168,31 +151,22 @@ const processModelArgs = (options: any): ModelArgs => {
 
             if (!options.promptMode) {
                 promptMode = PromptMode.CSV;
-            } else {
-                promptMode = options.promptMode;
-                if (promptMode === PromptMode.JSON) {
-                    throw new Error(
-                        "JSON mode is not compatible with Anthropic",
-                    );
-                }
+            } else if (promptMode === PromptMode.JSON) {
+                throw new Error("JSON mode is not compatible with Anthropic");
             }
 
             if (!options.batchSize) {
-                batchSize = 16;
-            } else {
-                batchSize = options.batchSize;
-            }
-
-            if (!options.batchMaxTokens) {
-                batchMaxTokens = 2048;
-            } else {
-                batchMaxTokens = options.batchMaxTokens;
+                batchSize = 32;
             }
 
             break;
         default: {
             throw new Error("Invalid engine");
         }
+    }
+
+    if (promptMode === PromptMode.CSV && options.batchMaxTokens) {
+        throw new Error("'--batch-max-tokens' is not used in CSV mode");
     }
 
     return {
