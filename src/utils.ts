@@ -176,3 +176,38 @@ export function isNAK(response: string): boolean {
 export function isACK(response: string): boolean {
     return response.includes("ACK") && !response.includes("NAK");
 }
+
+/**
+ * @param originalTemplateStrings - the template strings in the original text
+ * @param translatedTemplateStrings - the template strings in the translated text
+ * @returns the missing template string from the original
+ */
+export function getMissingVariables(
+    originalTemplateStrings: string[],
+    translatedTemplateStrings: string[],
+): string[] {
+    if (originalTemplateStrings.length === 0) return [];
+
+    const translatedTemplateStringsSet = new Set(translatedTemplateStrings);
+    const missingTemplateStrings = originalTemplateStrings.filter(
+        (originalTemplateString) =>
+            !translatedTemplateStringsSet.has(originalTemplateString),
+    );
+
+    return missingTemplateStrings;
+}
+
+/**
+ * @param templatedStringPrefix - templated String Prefix
+ * @param templatedStringSuffix - templated String Suffix
+ * @returns the regex needed to get the templated Strings
+ */
+export function getTemplatedStringRegex(
+    templatedStringPrefix: string,
+    templatedStringSuffix: string,
+): RegExp {
+    return new RegExp(
+        `${templatedStringPrefix}[^{}]+${templatedStringSuffix}`,
+        "g",
+    );
+}

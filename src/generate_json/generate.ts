@@ -1,6 +1,5 @@
 import * as cl100k_base from "tiktoken/encoders/cl100k_base.json";
 import {
-    ANSIStyles,
     DEFAULT_TEMPLATED_STRING_PREFIX,
     DEFAULT_TEMPLATED_STRING_SUFFIX,
 } from "../constants";
@@ -10,6 +9,8 @@ import {
     VerifyItemOutputObjectSchema,
 } from "./types";
 import {
+    getMissingVariables,
+    getTemplatedStringRegex,
     printCompletion,
     printError,
     printInfo,
@@ -547,9 +548,9 @@ export default async function translateJson(
         cl100k_base.pat_str,
     );
 
-    const templatedStringRegex = new RegExp(
-        `${options.templatedStringPrefix}[^{}]+${options.templatedStringSuffix}`,
-        "g",
+    const templatedStringRegex = getTemplatedStringRegex(
+        options.templatedStringPrefix ?? DEFAULT_TEMPLATED_STRING_PREFIX,
+        options.templatedStringSuffix ?? DEFAULT_TEMPLATED_STRING_SUFFIX,
     );
 
     const translateItemArray = generateTranslateItemArray(
@@ -623,15 +624,6 @@ function isValidVerificationItem(item: any): item is VerifyItemOutput {
         return false;
 
     return true;
-}
-
-function getMissingVariables(arr1: string[], arr2: string[]): string[] {
-    if (arr1.length === 0) return [];
-
-    const set2 = new Set(arr2);
-    const missing = arr1.filter((item) => !set2.has(item));
-
-    return missing;
 }
 
 function createTranslateItemsWithTranslation(

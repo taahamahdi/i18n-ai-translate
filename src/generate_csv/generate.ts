@@ -4,6 +4,8 @@ import {
 } from "../constants";
 import { failedTranslationPrompt, generationPrompt } from "./prompts";
 import {
+    getMissingVariables,
+    getTemplatedStringRegex,
     isNAK,
     printCompletion,
     printError,
@@ -116,9 +118,9 @@ async function generateTranslation(
         options.overridePrompt,
     );
 
-    const templatedStringRegex = new RegExp(
-        `${templatedStringPrefix}[^{}]+${templatedStringSuffix}`,
-        "g",
+    const templatedStringRegex = getTemplatedStringRegex(
+        templatedStringPrefix,
+        templatedStringSuffix,
     );
 
     const splitInput = input.split("\n");
