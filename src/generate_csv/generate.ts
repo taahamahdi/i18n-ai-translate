@@ -1,11 +1,11 @@
 import { RETRY_ATTEMPTS } from "../constants";
 import { failedTranslationPrompt, generationPrompt } from "./prompts";
 import {
-    getProgressBar,
     getTemplatedStringRegex,
     isNAK,
     printError,
     printInfo,
+    printProgress,
     retryJob,
 } from "../utils";
 import { verifyStyling, verifyTranslation } from "./verify";
@@ -35,17 +35,7 @@ export default async function translateCsv(
 
     translationStats.batchStartTime = Date.now();
 
-    const multibar = getProgressBar();
-
-    const progressBar = multibar.create(Object.keys(flatInput).length, 0);
-
-    if (options.verbose) {
-        progressBar.update(0);
-    }
-
     for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
-        progressBar.update(i);
-
         const keys = allKeys.slice(i, i + batchSize);
         const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
 
@@ -68,7 +58,6 @@ export default async function translateCsv(
         });
 
         if (generatedTranslation === "") {
-            progressBar.stop();
             printError(
                 `Failed to generate translation for ${options.outputLanguage}`,
             );
@@ -83,9 +72,16 @@ export default async function translateCsv(
                     `${keys[j].replaceAll("*", ".")}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
                 );
         }
-    }
 
-    progressBar.stop();
+        if (options.verbose) {
+            printProgress(
+                "Completed",
+                translationStats.batchStartTime,
+                Object.keys(flatInput).length,
+                i,
+            );
+        }
+    }
 
     return output;
 }

@@ -9,12 +9,10 @@ import {
     VerifyItemOutputObjectSchema,
 } from "./types";
 import {
-    barPrintError,
-    barPrintInfo,
     getMissingVariables,
-    getProgressBar,
     getTemplatedStringRegex,
-    printExecutionTime,
+    printError,
+    printProgress,
     retryJob,
 } from "../utils";
 import { translationPromptJson, verificationPromptJson } from "./prompts";
@@ -27,7 +25,6 @@ import type {
     VerifyItemInput,
     VerifyItemOutput,
 } from "./types";
-import type { MultiBar } from "cli-progress";
 import type { TranslationStats, TranslationStatsItem } from "../types";
 import type { ZodType, ZodTypeDef } from "zod";
 import type Chats from "../interfaces/chats";
@@ -37,7 +34,6 @@ import type TranslateOptions from "../interfaces/translate_options";
 export default class GenerateTranslationJson {
     tikToken: Tiktoken;
     templatedStringRegex: RegExp;
-    multibar: MultiBar;
 
     constructor() {
         this.tikToken = new Tiktoken(
@@ -50,8 +46,6 @@ export default class GenerateTranslationJson {
             DEFAULT_TEMPLATED_STRING_PREFIX,
             DEFAULT_TEMPLATED_STRING_SUFFIX,
         );
-
-        this.multibar = getProgressBar();
     }
 
     /**
@@ -77,10 +71,6 @@ export default class GenerateTranslationJson {
         );
 
         if (!options.skipTranslationVerification) {
-            if (options.verbose) {
-                barPrintInfo(this.multibar, "Starting verification...\n");
-            }
-
             const generatedVerification = await this.generateVerificationJson(
                 generatedTranslation,
                 options,
@@ -88,12 +78,8 @@ export default class GenerateTranslationJson {
                 translationStats.verify,
             );
 
-            this.multibar.stop();
-
             return this.convertTranslateItemToIndex(generatedVerification);
         }
-
-        this.multibar.stop();
 
         return this.convertTranslateItemToIndex(generatedTranslation);
     }
@@ -307,21 +293,6 @@ export default class GenerateTranslationJson {
 
         translationStats.batchStartTime = Date.now();
 
-        // const multibar = getProgressBar(
-        //     options.skipTranslationVerification
-        //         ? "Translating"
-        //         : "Step 1/2 - Translating",
-        // );
-
-        const progressBar = this.multibar.create(
-            translationStats.totalTokens,
-            0,
-        );
-
-        if (options.verbose) {
-            progressBar.update(0);
-        }
-
         // translate items are removed from 'translateItemArray' when one is generated
         // this is done to avoid 'losing' items if the model doesn't return one
         while (translateItemArray.length > 0) {
@@ -333,7 +304,6 @@ export default class GenerateTranslationJson {
             for (const batchTranslateItem of batchTranslateItemArray) {
                 batchTranslateItem.translationAttempts++;
                 if (batchTranslateItem.translationAttempts > RETRY_ATTEMPTS) {
-                    progressBar.stop();
                     return Promise.reject(
                         new Error(
                             `Item failed to translate too many times: ${JSON.stringify(batchTranslateItem)}. If this persists try a different model`,
@@ -363,7 +333,6 @@ export default class GenerateTranslationJson {
             });
 
             if (!result) {
-                progressBar.stop();
                 return Promise.reject(new Error("Translation job failed"));
             }
 
@@ -387,17 +356,16 @@ export default class GenerateTranslationJson {
                 translationStats.processedItems++;
             }
 
-            progressBar.update(translationStats.processedTokens);
-        }
-
-        progressBar.stop();
-
-        if (options.verbose) {
-            printExecutionTime(
-                translationStats.batchStartTime,
-                this.multibar,
-                "Translation execution time: \n",
-            );
+            if (options.verbose) {
+                printProgress(
+                    options.skipTranslationVerification
+                        ? "Translating"
+                        : "Step 1/2 - Translating",
+                    translationStats.batchStartTime,
+                    translationStats.totalTokens,
+                    translationStats.processedItems,
+                );
+            }
         }
 
         return generatedTranslation;
@@ -418,17 +386,6 @@ export default class GenerateTranslationJson {
 
         translationStats.batchStartTime = Date.now();
 
-        // const multibar = getProgressBar("Step 2/2 - Verifying");
-
-        const progressBar = this.multibar.create(
-            translationStats.totalTokens,
-            0,
-        );
-
-        if (options.verbose) {
-            progressBar.update(0);
-        }
-
         while (verifyItemArray.length > 0) {
             const batchVerifyItemArray = this.getBatchVerifyItemArray(
                 verifyItemArray,
@@ -438,7 +395,6 @@ export default class GenerateTranslationJson {
             for (const batchVerifyItem of batchVerifyItemArray) {
                 batchVerifyItem.verificationAttempts++;
                 if (batchVerifyItem.verificationAttempts > RETRY_ATTEMPTS) {
-                    progressBar.stop();
                     return Promise.reject(
                         new Error(
                             `Item failed to verify too many times: ${JSON.stringify(batchVerifyItem)}. If this persists try a different model`,
@@ -468,7 +424,6 @@ export default class GenerateTranslationJson {
             });
 
             if (!result) {
-                progressBar.stop();
                 return Promise.reject(new Error("Verification job failed"));
             }
 
@@ -487,17 +442,14 @@ export default class GenerateTranslationJson {
                 translationStats.processedItems++;
             }
 
-            progressBar.update(translationStats.processedTokens);
-        }
-
-        progressBar.stop();
-
-        if (options.verbose) {
-            printExecutionTime(
-                translationStats.batchStartTime,
-                this.multibar,
-                "Verification execution time: \n",
-            );
+            if (options.verbose) {
+                printProgress(
+                    "Step 2/2 - Verifying",
+                    translationStats.batchStartTime,
+                    translationStats.totalTokens,
+                    translationStats.processedItems,
+                );
+            }
         }
 
         return generatedVerification;
@@ -522,8 +474,7 @@ export default class GenerateTranslationJson {
             return TranslateItemOutputObjectSchema.parse(JSON.parse(outputText))
                 .items;
         } catch (error) {
-            barPrintError(
-                this.multibar,
+            printError(
                 `Error parsing JSON: '${error}', output: '${outputText}'\n`,
             );
             return [];
@@ -535,8 +486,7 @@ export default class GenerateTranslationJson {
             return VerifyItemOutputObjectSchema.parse(JSON.parse(outputText))
                 .items;
         } catch (error) {
-            barPrintError(
-                this.multibar,
+            printError(
                 `Error parsing JSON: '${error}', output: '${outputText}'\n`,
             );
             return [];
@@ -698,7 +648,7 @@ export default class GenerateTranslationJson {
                 false,
             );
         } catch (e) {
-            barPrintError(this.multibar, `Failed to translate: ${e}\n`);
+            printError(`Failed to translate: ${e}\n`);
         }
 
         const parsedOutput = this.parseTranslationToJson(translated);
@@ -745,7 +695,7 @@ export default class GenerateTranslationJson {
                 false,
             );
         } catch (e) {
-            barPrintError(this.multibar, `Failed to translate: ${e}\n`);
+            printError(`Failed to translate: ${e}\n`);
         }
 
         const parsedOutput = this.parseVerificationToJson(verified);
@@ -774,10 +724,7 @@ export default class GenerateTranslationJson {
             );
         }
 
-        barPrintError(
-            this.multibar,
-            `Erroring text = ${generationPromptText}\n`,
-        );
+        printError(`Erroring text = ${generationPromptText}\n`);
 
         options.chats.generateTranslationChat.rollbackLastMessage();
         return Promise.reject(

@@ -1,9 +1,7 @@
 import ISO6391 from "iso-639-1";
 import ansiColors from "ansi-colors";
-import cliProgress from "cli-progress";
 import fs from "fs";
 import path from "path";
-import type { MultiBar } from "cli-progress";
 
 /**
  * @param delayDuration - time (in ms) to delay
@@ -33,30 +31,6 @@ export function printWarn(warn: string): void {
  */
 export function printInfo(info: string): void {
     console.log(ansiColors.cyanBright(info));
-}
-
-/**
- * @param multibar - MultiBar
- * @param error - the error message
- */
-export function barPrintError(multibar: MultiBar, error: string): void {
-    multibar.log(ansiColors.redBright(error));
-}
-
-/**
- * @param multibar - MultiBar
- * @param warn - the warn message
- */
-export function barPrintWarn(multibar: MultiBar, warn: string): void {
-    multibar.log(ansiColors.yellowBright(warn));
-}
-
-/**
- * @param multibar - MultiBar
- * @param info - the info message
- */
-export function barPrintInfo(multibar: MultiBar, info: string): void {
-    multibar.log(ansiColors.cyanBright(info));
 }
 
 /**
@@ -206,39 +180,36 @@ export function getTemplatedStringRegex(
 
 /**
  * @param startTime - the startTime
- * @param multibar - MultiBar
  * @param prefix - the prefix of the Execution Time
  */
-export function printExecutionTime(
-    startTime: number,
-    multibar?: MultiBar,
-    prefix?: string,
-): void {
+export function printExecutionTime(startTime: number, prefix?: string): void {
     const endTime = Date.now();
     const roundedSeconds = Math.round((endTime - startTime) / 1000);
 
-    if (multibar) {
-        barPrintInfo(multibar, `${prefix}${roundedSeconds} seconds\n`);
-    } else {
-        printInfo(`${prefix}${roundedSeconds} seconds\n`);
-    }
+    printInfo(`${prefix}${roundedSeconds} seconds\n`);
 }
 
 /**
- * @returns the Progress Bar
+ * @param title - the title
+ * @param startTime - the startTime
+ * @param totalItems - the totalItems
+ * @param processedItems - the processedItems
  */
-export function getProgressBar(): MultiBar {
-    return new cliProgress.MultiBar(
-        {
-            clearOnComplete: false,
-            // barCompleteChar: "\u2588",
-            // barIncompleteChar: "\u2591",
-            etaBuffer: 3,
-            format: `${ansiColors.cyan(
-                "{bar}",
-            )}| {percentage}% || ETA: {eta_formatted}`,
-            // linewrap: true,
-        },
-        cliProgress.Presets.shades_grey,
+export function printProgress(
+    title: string,
+    startTime: number,
+    totalItems: number,
+    processedItems: number,
+): void {
+    const roundedEstimatedTimeLeftSeconds = Math.round(
+        (((Date.now() - startTime) / (processedItems + 1)) *
+            (totalItems - processedItems)) /
+            1000,
+    );
+
+    const percentage = ((processedItems / totalItems) * 100).toFixed(0);
+
+    process.stdout.write(
+        `\r${ansiColors.blueBright(title)} | ${ansiColors.greenBright(`Completed ${percentage}%`)} | ${ansiColors.yellowBright(`ETA: ${roundedEstimatedTimeLeftSeconds}s`)}`,
     );
 }

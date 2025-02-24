@@ -50,7 +50,7 @@ Translate from ${inputLanguage} to ${outputLanguage}.
 
 Special Instructions:
 - Treat anything in the format {{variableName}} as a placeholder. Never translate or modify its content.
-- Do not add your own variables
+- Do not add variables that are not in the original.
 - The number of variables like {{timeLeft}} must be the same in the translated text.
 - Do not convert {{NEWLINE}} to \\n.
 
@@ -111,7 +111,7 @@ If incorrect, return 'valid' as 'false' and put the fixed translation in 'fixedT
 
 Special Instructions:
 - Treat anything in the format {{variableName}} as a placeholder. Never translate or modify its content.
-- Do not add your own variables
+- Do not add variables that are not in the original.
 - The number of variables like {{timeLeft}} must be the same in the translated text.
 - Do not convert {{NEWLINE}} to \\n.
 
