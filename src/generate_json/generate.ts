@@ -647,8 +647,6 @@ export default class GenerateTranslationJson {
             printError(`Failed to translate: ${e}\n`);
         }
 
-        console.log(translated);
-
         const parsedOutput = this.parseTranslationToJson(translated);
         const validTranslationObjects = parsedOutput.filter(
             this.isValidTranslateItem,
