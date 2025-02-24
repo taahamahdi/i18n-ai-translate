@@ -359,7 +359,7 @@ export default class GenerateTranslationJson {
                         : "Step 1/2 - Translating",
                     translationStats.batchStartTime,
                     translationStats.totalTokens,
-                    translationStats.processedItems,
+                    translationStats.processedTokens,
                 );
             }
         }
@@ -443,7 +443,7 @@ export default class GenerateTranslationJson {
                     "Step 2/2 - Verifying",
                     translationStats.batchStartTime,
                     translationStats.totalTokens,
-                    translationStats.processedItems,
+                    translationStats.processedTokens,
                 );
             }
         }
