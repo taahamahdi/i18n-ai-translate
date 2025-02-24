@@ -1,4 +1,5 @@
 import * as cl100k_base from "tiktoken/encoders/cl100k_base.json";
+import { RETRY_ATTEMPTS } from "../constants";
 import { Tiktoken } from "tiktoken";
 import {
     TranslateItemOutputObjectSchema,
@@ -14,8 +15,6 @@ import {
     retryJob,
 } from "../utils";
 import { translationPromptJson, verificationPromptJson } from "./prompts";
-import ansiColors from "ansi-colors";
-import cliProgress from "cli-progress";
 import type {
     GenerateStateJson,
     TranslateItem,
@@ -265,6 +264,7 @@ async function generateTranslationJson(
 
     if (options.verbose) {
         progressBar.start(translationStats.totalTokens, 0);
+        progressBar.update(0);
     }
 
     // translate items are removed from 'translateItemArray' when one is generated
@@ -278,7 +278,7 @@ async function generateTranslationJson(
 
         for (const batchTranslateItem of batchTranslateItemArray) {
             batchTranslateItem.translationAttempts++;
-            if (batchTranslateItem.translationAttempts > 15) {
+            if (batchTranslateItem.translationAttempts > RETRY_ATTEMPTS) {
                 progressBar.stop();
                 return Promise.reject(
                     new Error(
@@ -313,10 +313,7 @@ async function generateTranslationJson(
 
         if (!result) {
             progressBar.stop();
-            printError(
-                `\nFailed to generate translation for ${options.outputLanguage}\n`,
-            );
-            break;
+            return Promise.reject(new Error("Translation job failed"));
         }
 
         for (const translatedItem of result) {
@@ -349,7 +346,7 @@ async function generateTranslationJson(
     if (options.verbose) {
         printExecutionTime(
             translationStats.batchStartTime,
-            "Translation execution time: ",
+            "\n\n\nTranslation execution time: ",
         );
     }
 
@@ -377,6 +374,7 @@ async function generateVerificationJson(
 
     if (options.verbose) {
         progressBar.start(translationStats.totalTokens, 0);
+        progressBar.update(0);
     }
 
     while (verifyItemArray.length > 0) {
@@ -388,7 +386,7 @@ async function generateVerificationJson(
 
         for (const batchVerifyItem of batchVerifyItemArray) {
             batchVerifyItem.verificationAttempts++;
-            if (batchVerifyItem.verificationAttempts > 10) {
+            if (batchVerifyItem.verificationAttempts > RETRY_ATTEMPTS) {
                 progressBar.stop();
                 return Promise.reject(
                     new Error(
@@ -423,10 +421,7 @@ async function generateVerificationJson(
 
         if (!result) {
             progressBar.stop();
-            printError(
-                `\nFailed to generate translation for ${options.outputLanguage}`,
-            );
-            break;
+            return Promise.reject(new Error("Verification job failed"));
         }
 
         for (const translatedItem of result) {
@@ -452,7 +447,7 @@ async function generateVerificationJson(
     if (options.verbose) {
         printExecutionTime(
             translationStats.batchStartTime,
-            "Verification execution time: ",
+            "\nVerification execution time: ",
         );
     }
 
@@ -694,7 +689,7 @@ async function runTranslationJob(
                 generateState,
                 TranslateItemOutputObjectSchema,
             ],
-            25,
+            RETRY_ATTEMPTS,
             true,
             0,
             false,
@@ -741,7 +736,7 @@ async function runVerificationJob(
                 generateState,
                 VerifyItemOutputObjectSchema,
             ],
-            25,
+            RETRY_ATTEMPTS,
             true,
             0,
             false,

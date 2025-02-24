@@ -187,7 +187,6 @@ export function printExecutionTime(startTime: number, prefix?: string): void {
     const endTime = Date.now();
     const roundedSeconds = Math.round((endTime - startTime) / 1000);
 
-    console.log(); // avoids printing on top of the progress bar
     printInfo(`${prefix}${roundedSeconds} seconds\n`);
 }
 

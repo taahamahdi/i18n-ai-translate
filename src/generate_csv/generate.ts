@@ -1,5 +1,7 @@
+import { RETRY_ATTEMPTS } from "../constants";
 import { failedTranslationPrompt, generationPrompt } from "./prompts";
 import {
+    getProgressBar,
     getTemplatedStringRegex,
     isNAK,
     printError,
@@ -33,22 +35,14 @@ export default async function translateCsv(
 
     translationStats.batchStartTime = Date.now();
 
+    const progressBar = getProgressBar("Completed");
+
+    if (options.verbose) {
+        progressBar.start(Object.keys(flatInput).length, 0);
+    }
+
     for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
-        if (i > 0 && options.verbose) {
-            console.log(
-                `Completed ${((i / Object.keys(flatInput).length) * 100).toFixed(0)}%`,
-            );
-
-            const roundedEstimatedTimeLeftSeconds = Math.round(
-                (((Date.now() - translationStats.batchStartTime) / (i + 1)) *
-                    (Object.keys(flatInput).length - i)) /
-                    1000,
-            );
-
-            console.log(
-                `Estimated time left: ${roundedEstimatedTimeLeftSeconds} seconds\n`,
-            );
-        }
+        progressBar.update(i);
 
         const keys = allKeys.slice(i, i + batchSize);
         const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
@@ -72,6 +66,7 @@ export default async function translateCsv(
         });
 
         if (generatedTranslation === "") {
+            progressBar.stop();
             printError(
                 `Failed to generate translation for ${options.outputLanguage}`,
             );
@@ -87,6 +82,8 @@ export default async function translateCsv(
                 );
         }
     }
+
+    progressBar.stop();
 
     return output;
 }
@@ -137,7 +134,7 @@ async function generateTranslation(
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             generate,
             [options, generationPromptText, generateState],
-            25,
+            RETRY_ATTEMPTS,
             true,
             0,
             false,
@@ -196,7 +193,7 @@ async function generate(
 
     if (text.startsWith("```\n") && text.endsWith("\n```")) {
         if (verboseLogging) {
-            printInfo("Response started and ended with triple backticks");
+            printInfo("\nResponse started and ended with triple backticks");
         }
 
         text = text.slice(4, -4);
@@ -232,11 +229,11 @@ async function generate(
     // Trim extra quotes if they exist
     for (let i = 0; i < splitText.length; i++) {
         let line = splitText[i];
-        while (line.startsWith('\"\"')) {
+        while (line.startsWith('""')) {
             line = line.slice(1);
         }
 
-        while (line.endsWith('\"\"')) {
+        while (line.endsWith('""')) {
             line = line.slice(0, -1);
         }
 
@@ -249,9 +246,9 @@ async function generate(
     for (let i = 0; i < splitText.length; i++) {
         let line = splitText[i];
         if (
-            !line.startsWith('\"') ||
-            !line.endsWith('\"') ||
-            line.endsWith('\\\"')
+            !line.startsWith('"') ||
+            !line.endsWith('"') ||
+            line.endsWith('\\"')
         ) {
             chats.generateTranslationChat.rollbackLastMessage();
             return Promise.reject(new Error(`Invalid line: ${line}`));
@@ -303,12 +300,12 @@ async function generate(
             }
 
             // TODO: Move to helper
-            if (!line.startsWith('\"') || !line.endsWith('\"')) {
+            if (!line.startsWith('"') || !line.endsWith('"')) {
                 chats.generateTranslationChat.rollbackLastMessage();
                 return Promise.reject(new Error(`Invalid line: ${line}`));
             }
 
-            while (line.startsWith('\"\"') && line.endsWith('\"\"')) {
+            while (line.startsWith('""') && line.endsWith('""')) {
                 line = line.slice(1, -1);
             }
 

@@ -254,7 +254,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     if (options.verbose) {
         printExecutionTime(
             translationStats.translate.batchStartTime,
-            "\nTranslation execution time: ",
+            "Total execution time: ",
         );
     }
 

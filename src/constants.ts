@@ -13,6 +13,7 @@ export const DEFAULT_MODEL = {
     [Engine.Ollama]: "llama3.3",
     [Engine.Claude]: "claude-3-5-sonnet-latest",
 };
+export const RETRY_ATTEMPTS = 25;
 
 export const CLI_HELP = {
     BatchSize:
