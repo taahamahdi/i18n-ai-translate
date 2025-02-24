@@ -47,6 +47,8 @@ export default class Ollama extends ChatInterface {
             ...this.chatParams,
             format: formatSchema,
             messages: [{ content: message, role: Role.User }],
+            // message history breaks small models, they translate the previous message over and over instead of translating the new lines
+            // we should add a way to enable/disable message history
         };
 
         try {

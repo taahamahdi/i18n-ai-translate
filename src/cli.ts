@@ -120,7 +120,7 @@ const processModelArgs = (options: any): ModelArgs => {
             }
 
             if (!options.batchSize) {
-                // Ollama's error rate is high if large batches
+                // Ollama's error rate is high with large batches
                 batchSize = 16;
             }
 
@@ -151,8 +151,6 @@ const processModelArgs = (options: any): ModelArgs => {
 
             if (!options.promptMode) {
                 promptMode = PromptMode.CSV;
-            } else if (promptMode === PromptMode.JSON) {
-                throw new Error("JSON mode is not compatible with Anthropic");
             }
 
             if (!options.batchSize) {
@@ -165,8 +163,28 @@ const processModelArgs = (options: any): ModelArgs => {
         }
     }
 
-    if (promptMode === PromptMode.CSV && options.batchMaxTokens) {
-        throw new Error("'--batch-max-tokens' is not used in CSV mode");
+    switch (promptMode) {
+        case PromptMode.CSV:
+            if (options.batchMaxTokens) {
+                throw new Error("'--batch-max-tokens' is not used in CSV mode");
+            }
+
+            break;
+        case PromptMode.JSON:
+            if (options.skipStylingVerification) {
+                throw new Error(
+                    "'--skip-styling-verification' is not used in CSV mode",
+                );
+            }
+
+            if (options.engine === Engine.Claude) {
+                throw new Error("JSON mode is not compatible with Anthropic");
+            }
+
+            break;
+        default: {
+            throw new Error("Invalid prompt mode");
+        }
     }
 
     return {
