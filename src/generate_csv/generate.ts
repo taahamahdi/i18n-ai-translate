@@ -73,7 +73,7 @@ export default async function translateCsv(
                 );
         }
 
-        if (options.verbose) {
+        if (options.verbose && i > 0) {
             printProgress(
                 "Completed",
                 translationStats.batchStartTime,
