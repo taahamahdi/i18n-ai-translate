@@ -35,10 +35,12 @@ export default async function translateCsv(
 
     translationStats.batchStartTime = Date.now();
 
-    const progressBar = getProgressBar("Completed");
+    const multibar = getProgressBar();
+
+    const progressBar = multibar.create(Object.keys(flatInput).length, 0);
 
     if (options.verbose) {
-        progressBar.start(Object.keys(flatInput).length, 0);
+        progressBar.update(0);
     }
 
     for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {

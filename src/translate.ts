@@ -30,6 +30,7 @@ import type TranslateDirectoryOptions from "./interfaces/translate_directory_opt
 import type TranslateFileDiffOptions from "./interfaces/translate_file_diff_options";
 import type TranslateFileOptions from "./interfaces/translate_file_options";
 import type TranslateOptions from "./interfaces/translate_options";
+import GenerateTranslationJson from "./generate_json/generate";
 
 function getChats(options: TranslateOptions): Chats {
     const rateLimiter = new RateLimiter(
@@ -163,7 +164,14 @@ async function getTranslation(
                 printInfo("Transaltion prompting mode: JSON\n");
             }
 
-            return translateJson(flatInput, options, chats, translationStats);
+            const test = new GenerateTranslationJson();
+
+            return test.translateJson(
+                flatInput,
+                options,
+                chats,
+                translationStats,
+            );
         case PromptMode.CSV:
             if (options.verbose) {
                 printInfo("Transaltion prompting mode: CSV\n");
@@ -254,6 +262,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     if (options.verbose) {
         printExecutionTime(
             translationStats.translate.batchStartTime,
+            undefined,
             "Total execution time: ",
         );
     }
