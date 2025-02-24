@@ -1,8 +1,4 @@
-import {
-    DEFAULT_TEMPLATED_STRING_PREFIX,
-    DEFAULT_TEMPLATED_STRING_SUFFIX,
-    RETRY_ATTEMPTS,
-} from "../constants";
+import { RETRY_ATTEMPTS } from "../constants";
 import { Tiktoken } from "tiktoken";
 import {
     TranslateItemOutputObjectSchema,
@@ -35,7 +31,7 @@ export default class GenerateTranslationJson {
     tikToken: Tiktoken;
     templatedStringRegex: RegExp;
 
-    constructor() {
+    constructor(options: TranslateOptions) {
         this.tikToken = new Tiktoken(
             cl100k_base.bpe_ranks,
             cl100k_base.special_tokens,
@@ -43,8 +39,8 @@ export default class GenerateTranslationJson {
         );
 
         this.templatedStringRegex = getTemplatedStringRegex(
-            DEFAULT_TEMPLATED_STRING_PREFIX,
-            DEFAULT_TEMPLATED_STRING_SUFFIX,
+            options.templatedStringPrefix as string,
+            options.templatedStringPrefix as string,
         );
     }
 
@@ -650,6 +646,8 @@ export default class GenerateTranslationJson {
         } catch (e) {
             printError(`Failed to translate: ${e}\n`);
         }
+
+        console.log(translated);
 
         const parsedOutput = this.parseTranslationToJson(translated);
         const validTranslationObjects = parsedOutput.filter(
