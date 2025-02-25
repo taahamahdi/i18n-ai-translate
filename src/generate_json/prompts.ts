@@ -46,7 +46,7 @@ Translate from ${inputLanguage} to ${outputLanguage}.
 - 'translated' must not be empty. 
 - 'context' is additional info if needed.
 - 'failure' explains why the previous translation failed.
-- Preserve text formatting, case sensitivity, and whitespace.
+- Preserve text formatting, case sensitivity, whitespace, and keep roughly the same length.
 
 Special Instructions:
 - Treat anything in the format {{variableName}} as a placeholder. Never translate or modify its content.
@@ -115,7 +115,7 @@ Special Instructions:
 - The number of variables like {{timeLeft}} must be the same in the translated text.
 - Do not convert {{NEWLINE}} to \\n.
 
-Allow minor grammar, phrasing, and formatting differences if meaning is clear.
+Allow minor grammar, phrasing, and formatting differences if the meaning is clear.
 Flag only significant issues affecting accuracy or readability.
 
 Return the verified as JSON.
