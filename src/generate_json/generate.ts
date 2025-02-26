@@ -504,7 +504,9 @@ export default class GenerateTranslationJson {
         }
     }
 
-    private isValidTranslateItem(item: any): item is TranslateItemOutput {
+    private isValidTranslateItem(
+        item: TranslateItemOutput,
+    ): item is TranslateItemOutput {
         return (
             typeof item.id === "number" &&
             typeof item.translated === "string" &&
@@ -512,7 +514,9 @@ export default class GenerateTranslationJson {
         );
     }
 
-    private isValidVerificationItem(item: any): item is VerifyItemOutput {
+    private isValidVerificationItem(
+        item: VerifyItemOutput,
+    ): item is VerifyItemOutput {
         if (!(typeof item.id === "number")) return false;
         if (!(typeof item.valid === "boolean")) return false;
         if (item.id <= 0) return false;
@@ -693,7 +697,7 @@ export default class GenerateTranslationJson {
         try {
             verified = await retryJob(
                 // eslint-disable-next-line @typescript-eslint/no-use-before-define
-                this.generateJob,
+                this.generateJob.bind(this),
                 [
                     generationPromptText,
                     options,
