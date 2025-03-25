@@ -1,3 +1,4 @@
+import { printError } from "../utils";
 import ChatInterface from "./chat_interface";
 import Role from "../enums/role";
 import type { Anthropic as InternalAnthropic } from "@anthropic-ai/sdk";
@@ -5,6 +6,7 @@ import type {
     MessageCreateParams,
     MessageParam,
 } from "@anthropic-ai/sdk/resources";
+import type { ZodType, ZodTypeDef } from "zod";
 import type RateLimiter from "../rate_limiter";
 
 export default class Anthropic extends ChatInterface {
@@ -31,7 +33,10 @@ export default class Anthropic extends ChatInterface {
         }
     }
 
-    async sendMessage(message: string): Promise<string> {
+    async sendMessage(
+        message: string,
+        format?: ZodType<any, ZodTypeDef, any>,
+    ): Promise<string> {
         if (!this.chatParams) {
             console.trace("Chat not started");
             return "";
@@ -67,7 +72,7 @@ export default class Anthropic extends ChatInterface {
             this.history.push({ content: responseText, role: Role.Assistant });
             return responseText;
         } catch (err) {
-            console.error(err);
+            printError(err);
             return "";
         }
     }

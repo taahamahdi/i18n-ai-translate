@@ -1,6 +1,5 @@
 import {
     CLI_HELP,
-    DEFAULT_BATCH_SIZE,
     DEFAULT_MODEL,
     DEFAULT_TEMPLATED_STRING_PREFIX,
     DEFAULT_TEMPLATED_STRING_SUFFIX,
@@ -8,7 +7,13 @@ import {
 } from "./constants";
 import { OVERRIDE_PROMPT_KEYS } from "./interfaces/override_prompt";
 import { config } from "dotenv";
-import { getAllLanguageCodes, getLanguageCodeFromFilename } from "./utils";
+import {
+    getAllLanguageCodes,
+    getLanguageCodeFromFilename,
+    printError,
+    printInfo,
+    printWarn,
+} from "./utils";
 import { program } from "commander";
 import {
     translateDirectory,
@@ -17,6 +22,7 @@ import {
     translateFileDiff,
 } from "./translate";
 import Engine from "./enums/engine";
+import PromptMode from "./enums/prompt_mode";
 import fs from "fs";
 import path from "path";
 import type { ChatParams, Model, ModelArgs } from "./types";
@@ -30,6 +36,10 @@ const processModelArgs = (options: any): ModelArgs => {
     let rateLimitMs = Number(options.rateLimitMs);
     let apiKey: string | undefined;
     let host: string | undefined;
+    let promptMode = options.promptMode as PromptMode;
+    let batchSize = Number(options.batchSize);
+    let batchMaxTokens = Number(options.batchMaxTokens);
+
     switch (options.engine) {
         case Engine.Gemini:
             model = options.model || DEFAULT_MODEL[Engine.Gemini];
@@ -43,6 +53,20 @@ const processModelArgs = (options: any): ModelArgs => {
                 throw new Error("GEMINI_API_KEY not found in .env file");
             } else {
                 apiKey = options.apiKey || process.env.GEMINI_API_KEY;
+            }
+
+            if (!options.promptMode) {
+                promptMode = PromptMode.JSON;
+            } else if (promptMode === PromptMode.CSV) {
+                printWarn("Json mode recommended for Gemini");
+            }
+
+            if (!options.batchSize) {
+                batchSize = 32;
+            }
+
+            if (!options.batchMaxTokens) {
+                batchMaxTokens = 4096;
             }
 
             break;
@@ -66,6 +90,18 @@ const processModelArgs = (options: any): ModelArgs => {
                 apiKey = options.apiKey || process.env.OPENAI_API_KEY;
             }
 
+            if (!options.promptMode) {
+                promptMode = PromptMode.CSV;
+            }
+
+            if (!options.batchSize) {
+                batchSize = 32;
+            }
+
+            if (!options.batchMaxTokens) {
+                batchMaxTokens = 4096;
+            }
+
             break;
         case Engine.Ollama:
             model = options.model || DEFAULT_MODEL[Engine.Ollama];
@@ -76,6 +112,22 @@ const processModelArgs = (options: any): ModelArgs => {
             };
 
             host = options.host || process.env.OLLAMA_HOSTNAME;
+
+            if (!options.promptMode) {
+                promptMode = PromptMode.JSON;
+            } else if (promptMode === PromptMode.CSV) {
+                printWarn("Json mode recommended for Ollama");
+            }
+
+            if (!options.batchSize) {
+                // Ollama's error rate is high with large batches
+                batchSize = 16;
+            }
+
+            if (!options.batchMaxTokens) {
+                // Ollama's default amount of tokens per request
+                batchMaxTokens = 2048;
+            }
 
             break;
         case Engine.Claude:
@@ -97,17 +149,52 @@ const processModelArgs = (options: any): ModelArgs => {
                 apiKey = options.apiKey || process.env.ANTHROPIC_API_KEY;
             }
 
+            if (!options.promptMode) {
+                promptMode = PromptMode.CSV;
+            }
+
+            if (!options.batchSize) {
+                batchSize = 32;
+            }
+
             break;
         default: {
             throw new Error("Invalid engine");
         }
     }
 
+    switch (promptMode) {
+        case PromptMode.CSV:
+            if (options.batchMaxTokens) {
+                throw new Error("'--batch-max-tokens' is not used in CSV mode");
+            }
+
+            break;
+        case PromptMode.JSON:
+            if (options.skipStylingVerification) {
+                throw new Error(
+                    "'--skip-styling-verification' is not used in CSV mode",
+                );
+            }
+
+            if (options.engine === Engine.Claude) {
+                throw new Error("JSON mode is not compatible with Anthropic");
+            }
+
+            break;
+        default: {
+            throw new Error("Invalid prompt mode");
+        }
+    }
+
     return {
         apiKey,
+        batchMaxTokens,
+        batchSize,
         chatParams,
         host,
         model: options.model || DEFAULT_MODEL[options.engine as Engine],
+        promptMode,
         rateLimitMs,
     };
 };
@@ -198,11 +285,7 @@ program
         CLI_HELP.EnsureChangedTranslation,
         false,
     )
-    .option(
-        "-n, --batch-size <batchSize>",
-        CLI_HELP.BatchSize,
-        String(DEFAULT_BATCH_SIZE),
-    )
+    .option("-n, --batch-size <batchSize>", CLI_HELP.BatchSize)
     .option(
         "--skip-translation-verification",
         CLI_HELP.SkipTranslationVerification,
@@ -218,9 +301,19 @@ program
         CLI_HELP.OverridePromptFile,
     )
     .option("--verbose", CLI_HELP.Verbose, false)
+    .option("--prompt-mode <prompt-mode>", CLI_HELP.PromptMode)
+    .option("--batch-max-tokens <batch-max-tokens>", CLI_HELP.MaxTokens)
     .action(async (options: any) => {
-        const { model, chatParams, rateLimitMs, apiKey, host } =
-            processModelArgs(options);
+        const {
+            model,
+            chatParams,
+            rateLimitMs,
+            apiKey,
+            host,
+            promptMode,
+            batchSize,
+            batchMaxTokens,
+        } = processModelArgs(options);
 
         let overridePrompt: OverridePrompt | undefined;
 
@@ -230,26 +323,26 @@ program
 
         if (options.outputLanguages) {
             if (options.forceLanguageName) {
-                console.error(
+                printError(
                     "Cannot use both --output-languages and --force-language",
                 );
                 return;
             }
 
             if (options.allLanguages) {
-                console.error(
+                printError(
                     "Cannot use both --all-languages and --output-languages",
                 );
                 return;
             }
 
             if (options.outputLanguages.length === 0) {
-                console.error("No languages specified");
+                printError("No languages specified");
                 return;
             }
 
             if (options.verbose) {
-                console.log(
+                printInfo(
                     `Translating to ${options.outputLanguages.join(", ")}...`,
                 );
             }
@@ -270,7 +363,7 @@ program
                 for (const languageCode of options.outputLanguages) {
                     i++;
                     if (options.verbose) {
-                        console.log(
+                        printInfo(
                             `Translating ${i}/${options.outputLanguages.length} languages...`,
                         );
                     }
@@ -298,7 +391,8 @@ program
                         // eslint-disable-next-line no-await-in-loop
                         await translateFile({
                             apiKey,
-                            batchSize: options.batchSize,
+                            batchMaxTokens,
+                            batchSize,
                             chatParams,
                             engine: options.engine,
                             ensureChangedTranslation:
@@ -308,6 +402,7 @@ program
                             model,
                             outputFilePath: outputPath,
                             overridePrompt,
+                            promptMode,
                             rateLimitMs,
                             skipStylingVerification:
                                 options.skipStylingVerification,
@@ -320,7 +415,7 @@ program
                             verbose: options.verbose,
                         });
                     } catch (err) {
-                        console.error(
+                        printError(
                             `Failed to translate file to ${languageCode}: ${err}`,
                         );
                     }
@@ -330,7 +425,7 @@ program
                 for (const languageCode of options.outputLanguages) {
                     i++;
                     if (options.verbose) {
-                        console.log(
+                        printInfo(
                             `Translating ${i}/${options.outputLanguages.length} languages...`,
                         );
                     }
@@ -349,6 +444,7 @@ program
                         await translateDirectory({
                             apiKey,
                             baseDirectory: path.resolve(inputPath, ".."),
+                            batchMaxTokens: options.batchMaxTokens,
                             batchSize: options.batchSize,
                             chatParams,
                             engine: options.engine,
@@ -359,6 +455,7 @@ program
                             model,
                             outputLanguage: languageCode,
                             overridePrompt,
+                            promptMode,
                             rateLimitMs,
                             skipStylingVerification:
                                 options.skipStylingVerification,
@@ -371,7 +468,7 @@ program
                             verbose: options.verbose,
                         });
                     } catch (err) {
-                        console.error(
+                        printError(
                             `Failed to translate directory to ${languageCode}: ${err}`,
                         );
                     }
@@ -379,13 +476,13 @@ program
             }
         } else {
             if (options.forceLanguageName) {
-                console.error(
+                printError(
                     "Cannot use both --all-languages and --force-language",
                 );
                 return;
             }
 
-            console.warn(
+            printWarn(
                 "Some languages may fail to translate due to the model's limitations",
             );
 
@@ -393,7 +490,7 @@ program
             for (const languageCode of getAllLanguageCodes()) {
                 i++;
                 if (options.verbose) {
-                    console.log(
+                    printInfo(
                         `Translating ${i}/${getAllLanguageCodes().length} languages...`,
                     );
                 }
@@ -411,6 +508,7 @@ program
                     // eslint-disable-next-line no-await-in-loop
                     await translateFile({
                         apiKey,
+                        batchMaxTokens: options.batchMaxTokens,
                         batchSize: options.batchSize,
                         chatParams,
                         engine: options.engine,
@@ -421,6 +519,7 @@ program
                         model,
                         outputFilePath: output,
                         overridePrompt,
+                        promptMode,
                         rateLimitMs,
                         skipStylingVerification:
                             options.skipStylingVerification,
@@ -431,7 +530,7 @@ program
                         verbose: options.verbose,
                     });
                 } catch (err) {
-                    console.error(
+                    printError(
                         `Failed to translate to ${languageCode}: ${err}`,
                     );
                 }
@@ -473,11 +572,7 @@ program
         "Suffix for templated strings",
         DEFAULT_TEMPLATED_STRING_SUFFIX,
     )
-    .option(
-        "-n, --batch-size <batchSize>",
-        CLI_HELP.BatchSize,
-        String(DEFAULT_BATCH_SIZE),
-    )
+    .option("-n, --batch-size <batchSize>", CLI_HELP.BatchSize)
     .option(
         "--skip-translation-verification",
         CLI_HELP.SkipTranslationVerification,
@@ -493,9 +588,19 @@ program
         CLI_HELP.OverridePromptFile,
     )
     .option("--verbose", CLI_HELP.Verbose, false)
+    .option("--prompt-mode <prompt-mode>", CLI_HELP.PromptMode)
+    .option("--batch-max-tokens <batch-max-tokens>", CLI_HELP.MaxTokens)
     .action(async (options: any) => {
-        const { model, chatParams, rateLimitMs, apiKey, host } =
-            processModelArgs(options);
+        const {
+            model,
+            chatParams,
+            rateLimitMs,
+            apiKey,
+            host,
+            promptMode,
+            batchSize,
+            batchMaxTokens,
+        } = processModelArgs(options);
 
         let overridePrompt: OverridePrompt | undefined;
 
@@ -528,7 +633,7 @@ program
             fs.statSync(beforeInputPath).isFile() !==
             fs.statSync(afterInputPath).isFile()
         ) {
-            console.error(
+            printError(
                 "--before and --after arguments must be both files or both directories",
             );
             return;
@@ -539,13 +644,14 @@ program
             if (
                 path.dirname(beforeInputPath) !== path.dirname(afterInputPath)
             ) {
-                console.error("Input files are not in the same directory");
+                printError("Input files are not in the same directory");
                 return;
             }
 
             await translateFileDiff({
                 apiKey,
-                batchSize: options.batchSize,
+                batchMaxTokens,
+                batchSize,
                 chatParams,
                 engine: options.engine,
                 ensureChangedTranslation: options.ensureChangedTranslation,
@@ -555,6 +661,7 @@ program
                 inputLanguageCode: options.inputLanguage,
                 model,
                 overridePrompt,
+                promptMode,
                 rateLimitMs,
                 skipStylingVerification: options.skipStylingVerification,
                 skipTranslationVerification:
@@ -567,6 +674,7 @@ program
             await translateDirectoryDiff({
                 apiKey,
                 baseDirectory: path.resolve(beforeInputPath, ".."),
+                batchMaxTokens: options.batchMaxTokens,
                 batchSize: options.batchSize,
                 chatParams,
                 engine: options.engine,
@@ -577,6 +685,7 @@ program
                 inputLanguageCode: options.inputLanguage,
                 model,
                 overridePrompt,
+                promptMode,
                 rateLimitMs,
                 skipStylingVerification: options.skipStylingVerification,
                 skipTranslationVerification:

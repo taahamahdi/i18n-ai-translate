@@ -1,22 +1,93 @@
+import { RETRY_ATTEMPTS } from "../constants";
 import { failedTranslationPrompt, generationPrompt } from "./prompts";
-import { isNAK, retryJob } from "./utils";
+import {
+    getTemplatedStringRegex,
+    isNAK,
+    printError,
+    printInfo,
+    printProgress,
+    retryJob,
+} from "../utils";
 import { verifyStyling, verifyTranslation } from "./verify";
-import type GenerateTranslationOptions from "./interfaces/generate_translation_options";
-
-type GenerateState = {
-    fixedTranslationMappings: { [input: string]: string };
-    translationToRetryAttempts: { [translation: string]: number };
-    inputLineToTemplatedString: { [index: number]: Array<string> };
-    splitInput: Array<string>;
-    generationRetries: number;
-};
+import type { GenerateStateCsv, TranslationStatsItem } from "../types";
+import type Chats from "../interfaces/chats";
+import type GenerateTranslationOptionsCsv from "../interfaces/generate_translation_options_csv";
+import type TranslateOptions from "../interfaces/translate_options";
 
 /**
  * Complete the initial translation of the input text.
+ * @param flatInput - The flatinput object containing the json to translate
  * @param options - The options to generate the translation
+ * @param chats - The options to generate the translation
+ * @param translationStats - The translation statictics
  */
-export default async function generateTranslation(
-    options: GenerateTranslationOptions,
+export default async function translateCsv(
+    flatInput: { [key: string]: string },
+    options: TranslateOptions,
+    chats: Chats,
+    translationStats: TranslationStatsItem,
+): Promise<{ [key: string]: string }> {
+    const output: { [key: string]: string } = {};
+
+    const allKeys = Object.keys(flatInput);
+
+    const batchSize = Number(options.batchSize);
+
+    translationStats.batchStartTime = Date.now();
+
+    for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
+        const keys = allKeys.slice(i, i + batchSize);
+        const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
+
+        // eslint-disable-next-line no-await-in-loop
+        const generatedTranslation = await generateTranslation({
+            chats,
+            ensureChangedTranslation:
+                options.ensureChangedTranslation as boolean,
+            input,
+            inputLanguage: `[${options.inputLanguage}]`,
+            keys,
+            outputLanguage: `[${options.outputLanguage}]`,
+            overridePrompt: options.overridePrompt,
+            skipStylingVerification: options.skipStylingVerification as boolean,
+            skipTranslationVerification:
+                options.skipTranslationVerification as boolean,
+            templatedStringPrefix: options.templatedStringPrefix as string,
+            templatedStringSuffix: options.templatedStringSuffix as string,
+            verboseLogging: options.verbose as boolean,
+        });
+
+        if (generatedTranslation === "") {
+            printError(
+                `Failed to generate translation for ${options.outputLanguage}`,
+            );
+            break;
+        }
+
+        for (let j = 0; j < keys.length; j++) {
+            output[keys[j]] = generatedTranslation.split("\n")[j].slice(1, -1);
+
+            if (options.verbose)
+                printInfo(
+                    `${keys[j].replaceAll("*", ".")}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
+                );
+        }
+
+        if (options.verbose && i > 0) {
+            printProgress(
+                "Completed",
+                translationStats.batchStartTime,
+                Object.keys(flatInput).length,
+                i,
+            );
+        }
+    }
+
+    return output;
+}
+
+async function generateTranslation(
+    options: GenerateTranslationOptionsCsv,
 ): Promise<string> {
     const {
         input,
@@ -33,14 +104,14 @@ export default async function generateTranslation(
         options.overridePrompt,
     );
 
-    const templatedStringRegex = new RegExp(
-        `${templatedStringPrefix}[^{}]+${templatedStringSuffix}`,
-        "g",
+    const templatedStringRegex = getTemplatedStringRegex(
+        templatedStringPrefix,
+        templatedStringSuffix,
     );
 
     const splitInput = input.split("\n");
 
-    const generateState: GenerateState = {
+    const generateState: GenerateStateCsv = {
         fixedTranslationMappings: {},
         generationRetries: 0,
         inputLineToTemplatedString: {},
@@ -61,22 +132,22 @@ export default async function generateTranslation(
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             generate,
             [options, generationPromptText, generateState],
-            25,
+            RETRY_ATTEMPTS,
             true,
             0,
             false,
         );
     } catch (e) {
-        console.error(`Failed to translate: ${e}`);
+        printError(`Failed to translate: ${e}`);
     }
 
     return translated;
 }
 
 async function generate(
-    options: GenerateTranslationOptions,
+    options: GenerateTranslationOptionsCsv,
     generationPromptText: string,
-    generateState: GenerateState,
+    generateState: GenerateStateCsv,
 ): Promise<string> {
     const {
         chats,
@@ -109,7 +180,7 @@ async function generate(
             );
         }
 
-        console.error(`Erroring text = ${input}`);
+        printError(`Erroring text = ${input}`);
         chats.generateTranslationChat.rollbackLastMessage();
         return Promise.reject(
             new Error("Failed to generate content due to exception."),
@@ -120,7 +191,7 @@ async function generate(
 
     if (text.startsWith("```\n") && text.endsWith("\n```")) {
         if (verboseLogging) {
-            console.log("Response started and ended with triple backticks");
+            printInfo("\nResponse started and ended with triple backticks");
         }
 
         text = text.slice(4, -4);
@@ -156,11 +227,11 @@ async function generate(
     // Trim extra quotes if they exist
     for (let i = 0; i < splitText.length; i++) {
         let line = splitText[i];
-        while (line.startsWith("\"\"")) {
+        while (line.startsWith('""')) {
             line = line.slice(1);
         }
 
-        while (line.endsWith("\"\"")) {
+        while (line.endsWith('""')) {
             line = line.slice(0, -1);
         }
 
@@ -173,9 +244,9 @@ async function generate(
     for (let i = 0; i < splitText.length; i++) {
         let line = splitText[i];
         if (
-            !line.startsWith("\"") ||
-            !line.endsWith("\"") ||
-            line.endsWith("\\\"")
+            !line.startsWith('"') ||
+            !line.endsWith('"') ||
+            line.endsWith('\\"')
         ) {
             chats.generateTranslationChat.rollbackLastMessage();
             return Promise.reject(new Error(`Invalid line: ${line}`));
@@ -227,20 +298,18 @@ async function generate(
             }
 
             // TODO: Move to helper
-            if (!line.startsWith("\"") || !line.endsWith("\"")) {
+            if (!line.startsWith('"') || !line.endsWith('"')) {
                 chats.generateTranslationChat.rollbackLastMessage();
                 return Promise.reject(new Error(`Invalid line: ${line}`));
             }
 
-            while (line.startsWith("\"\"") && line.endsWith("\"\"")) {
+            while (line.startsWith('""') && line.endsWith('""')) {
                 line = line.slice(1, -1);
             }
 
             if (line !== splitInput[i]) {
                 if (verboseLogging) {
-                    console.log(
-                        `Successfully translated: ${oldText} => ${line}`,
-                    );
+                    printInfo(`Successfully translated: ${oldText} => ${line}`);
                 }
 
                 text = splitText.join("\n");

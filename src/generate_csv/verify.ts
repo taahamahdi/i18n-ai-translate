@@ -1,10 +1,10 @@
-import { isACK, isNAK, retryJob } from "./utils";
+import { isACK, isNAK, printError, retryJob } from "../utils";
 import {
     stylingVerificationPrompt,
     translationVerificationPrompt,
 } from "./prompts";
-import type ChatInterface from "./chat_interface/chat_interface";
-import type OverridePrompt from "./interfaces/override_prompt";
+import type ChatInterface from "../chat_interface/chat_interface";
+import type OverridePrompt from "../interfaces/override_prompt";
 
 /**
  * Confirm whether a given translation is valid
@@ -95,7 +95,7 @@ const verify = async (
             false,
         );
     } catch (e) {
-        console.error(`Failed to verify: ${e}`);
+        printError(`Failed to verify: ${e}`);
     }
 
     return verification;

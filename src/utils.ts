@@ -1,4 +1,5 @@
 import ISO6391 from "iso-639-1";
+import ansiColors from "ansi-colors";
 import fs from "fs";
 import path from "path";
 
@@ -9,6 +10,27 @@ import path from "path";
 export function delay(delayDuration: number): Promise<void> {
     // eslint-disable-next-line no-promise-executor-return
     return new Promise((resolve) => setTimeout(resolve, delayDuration));
+}
+
+/**
+ * @param error - the error message
+ */
+export function printError(error: string): void {
+    console.error(ansiColors.redBright(error));
+}
+
+/**
+ * @param warn - the warning message
+ */
+export function printWarn(warn: string): void {
+    console.warn(ansiColors.yellowBright(warn));
+}
+
+/**
+ * @param info - the message
+ */
+export function printInfo(info: string): void {
+    console.log(ansiColors.cyanBright(info));
 }
 
 /**
@@ -34,9 +56,9 @@ export async function retryJob<Type>(
 
     return job(...jobArgs).catch((err) => {
         if (sendError) {
-            console.error(`err = ${err}`);
+            printError(`err = ${err}`);
         } else {
-            console.warn(`err = ${err}`);
+            printWarn(`err = ${err}`);
         }
 
         if (maxRetries <= 0) {
@@ -119,4 +141,75 @@ export function isNAK(response: string): boolean {
  */
 export function isACK(response: string): boolean {
     return response.includes("ACK") && !response.includes("NAK");
+}
+
+/**
+ * @param originalTemplateStrings - the template strings in the original text
+ * @param translatedTemplateStrings - the template strings in the translated text
+ * @returns the missing template string from the original
+ */
+export function getMissingVariables(
+    originalTemplateStrings: string[],
+    translatedTemplateStrings: string[],
+): string[] {
+    if (originalTemplateStrings.length === 0) return [];
+
+    const translatedTemplateStringsSet = new Set(translatedTemplateStrings);
+    const missingTemplateStrings = originalTemplateStrings.filter(
+        (originalTemplateString) =>
+            !translatedTemplateStringsSet.has(originalTemplateString),
+    );
+
+    return missingTemplateStrings;
+}
+
+/**
+ * @param templatedStringPrefix - templated String Prefix
+ * @param templatedStringSuffix - templated String Suffix
+ * @returns the regex needed to get the templated Strings
+ */
+export function getTemplatedStringRegex(
+    templatedStringPrefix: string,
+    templatedStringSuffix: string,
+): RegExp {
+    return new RegExp(
+        `${templatedStringPrefix}[^{}]+${templatedStringSuffix}`,
+        "g",
+    );
+}
+
+/**
+ * @param startTime - the startTime
+ * @param prefix - the prefix of the Execution Time
+ */
+export function printExecutionTime(startTime: number, prefix?: string): void {
+    const endTime = Date.now();
+    const roundedSeconds = Math.round((endTime - startTime) / 1000);
+
+    printInfo(`${prefix}${roundedSeconds} seconds\n`);
+}
+
+/**
+ * @param title - the title
+ * @param startTime - the startTime
+ * @param totalItems - the totalItems
+ * @param processedItems - the processedItems
+ */
+export function printProgress(
+    title: string,
+    startTime: number,
+    totalItems: number,
+    processedItems: number,
+): void {
+    const roundedEstimatedTimeLeftSeconds = Math.round(
+        (((Date.now() - startTime) / (processedItems + 1)) *
+            (totalItems - processedItems)) /
+            1000,
+    );
+
+    const percentage = ((processedItems / totalItems) * 100).toFixed(0);
+
+    process.stdout.write(
+        `\r${ansiColors.blueBright(title)} | ${ansiColors.greenBright(`Completed ${percentage}%`)} | ${ansiColors.yellowBright(`ETA: ${roundedEstimatedTimeLeftSeconds}s`)}`,
+    );
 }

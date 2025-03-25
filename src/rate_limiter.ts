@@ -1,4 +1,4 @@
-import { delay } from "./utils";
+import { delay, printInfo } from "./utils";
 
 export default class RateLimiter {
     lastAPICall: number | null;
@@ -23,12 +23,13 @@ export default class RateLimiter {
                 this.delayBetweenCallsMs - (Date.now() - this.lastAPICall);
 
             if (timeToWait > 0) {
-                await delay(timeToWait);
                 if (this.verboseLogging) {
-                    console.log(
+                    printInfo(
                         `RateLimiter | Waiting ${timeToWait}ms before next API call`,
                     );
                 }
+
+                await delay(timeToWait);
             }
         }
     }
