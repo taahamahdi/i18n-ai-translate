@@ -160,7 +160,7 @@ async function getTranslation(
     switch (options.promptMode) {
         case PromptMode.JSON:
             if (options.verbose) {
-                printInfo("Transaltion prompting mode: JSON\n");
+                printInfo("Translation prompting mode: JSON\n");
             }
 
             const generateTranslationJson = new GenerateTranslationJson(
@@ -175,7 +175,7 @@ async function getTranslation(
             );
         case PromptMode.CSV:
             if (options.verbose) {
-                printInfo("Transaltion prompting mode: CSV\n");
+                printInfo("Translation prompting mode: CSV\n");
             }
 
             return translateCsv(
