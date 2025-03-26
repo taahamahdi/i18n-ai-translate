@@ -44,6 +44,7 @@ function getChats(options: TranslateOptions): Chats {
             rateLimiter,
             options.apiKey,
             options.host,
+            options.chatParams,
         ),
         verifyStylingChat: ChatFactory.newChat(
             options.engine,
@@ -51,6 +52,7 @@ function getChats(options: TranslateOptions): Chats {
             rateLimiter,
             options.apiKey,
             options.host,
+            options.chatParams,
         ),
         verifyTranslationChat: ChatFactory.newChat(
             options.engine,
@@ -58,6 +60,7 @@ function getChats(options: TranslateOptions): Chats {
             rateLimiter,
             options.apiKey,
             options.host,
+            options.chatParams,
         ),
     };
 }
