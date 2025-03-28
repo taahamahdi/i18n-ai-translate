@@ -8,6 +8,9 @@ import Gemini from "./gemini";
 import Ollama from "./ollama";
 import OpenAI from "openai";
 import type { ChatParams, Model } from "../types";
+import type { ChatRequest } from "ollama";
+import type { MessageCreateParams } from "@anthropic-ai/sdk/resources";
+import type { StartChatParams } from "@google/generative-ai";
 import type ChatInterface from "./chat_interface";
 import type RateLimiter from "../rate_limiter";
 
@@ -18,6 +21,7 @@ export default class ChatFactory {
         rateLimiter: RateLimiter,
         apiKey?: string,
         host?: string,
+        chatParams?: ChatParams,
     ): ChatInterface {
         let chat: ChatInterface;
         let params: ChatParams;
@@ -27,7 +31,7 @@ export default class ChatFactory {
                 const geminiModel = genAI.getGenerativeModel({ model });
                 chat = new Gemini(geminiModel, rateLimiter);
                 params = {
-                    history: [],
+                    ...(chatParams as StartChatParams),
                 };
                 break;
             }
@@ -36,7 +40,7 @@ export default class ChatFactory {
                 const openAI = new OpenAI({ apiKey: apiKey! });
                 chat = new ChatGPT(openAI, rateLimiter);
                 params = {
-                    messages: [],
+                    ...(chatParams as OpenAI.ChatCompletionCreateParamsNonStreaming),
                     model,
                 };
                 break;
@@ -46,7 +50,7 @@ export default class ChatFactory {
                 const llama = new InternalOllama({ host });
                 chat = new Ollama(llama);
                 params = {
-                    messages: [],
+                    ...(chatParams as ChatRequest),
                     model,
                 };
 
@@ -57,7 +61,7 @@ export default class ChatFactory {
                 const anthropic = new InternalAnthropic({ apiKey: apiKey! });
                 chat = new Anthropic(anthropic, rateLimiter);
                 params = {
-                    messages: [],
+                    ...(chatParams as MessageCreateParams),
                     model,
                 };
 
