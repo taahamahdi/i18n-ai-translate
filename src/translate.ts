@@ -160,12 +160,12 @@ async function getTranslation(
     chats: Chats,
     translationStats: TranslationStats,
 ): Promise<{ [key: string]: string }> {
+    if (options.verbose) {
+        printInfo(`Translation prompting mode: ${options.promptMode}\n`);
+    }
+
     switch (options.promptMode) {
         case PromptMode.JSON:
-            if (options.verbose) {
-                printInfo("Translation prompting mode: JSON\n");
-            }
-
             const generateTranslationJson = new GenerateTranslationJson(
                 options,
             );
@@ -177,10 +177,6 @@ async function getTranslation(
                 translationStats,
             );
         case PromptMode.CSV:
-            if (options.verbose) {
-                printInfo("Translation prompting mode: CSV\n");
-            }
-
             return translateCsv(
                 flatInput,
                 options,

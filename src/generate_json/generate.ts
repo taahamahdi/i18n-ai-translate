@@ -10,6 +10,7 @@ import {
     printError,
     printExecutionTime,
     printProgress,
+    printWarn,
     retryJob,
 } from "../utils";
 import { translationPromptJson, verificationPromptJson } from "./prompts";
@@ -353,24 +354,20 @@ export default class GenerateTranslationJson {
                 translationStats.processedItems++;
             }
 
-            if (options.verbose) {
-                printProgress(
-                    options.skipTranslationVerification
-                        ? "Translating"
-                        : "Step 1/2 - Translating",
-                    translationStats.batchStartTime,
-                    translationStats.totalTokens,
-                    translationStats.processedTokens,
-                );
-            }
-        }
-
-        if (options.verbose) {
-            printExecutionTime(
+            printProgress(
+                options.skipTranslationVerification
+                    ? "Translating"
+                    : "Step 1/2 - Translating",
                 translationStats.batchStartTime,
-                "Translation execution time: ",
+                translationStats.totalTokens,
+                translationStats.processedTokens,
             );
         }
+
+        printExecutionTime(
+            translationStats.batchStartTime,
+            "\nTranslation execution time: ",
+        );
 
         return generatedTranslation;
     }
@@ -446,22 +443,18 @@ export default class GenerateTranslationJson {
                 translationStats.processedItems++;
             }
 
-            if (options.verbose) {
-                printProgress(
-                    "Step 2/2 - Verifying",
-                    translationStats.batchStartTime,
-                    translationStats.totalTokens,
-                    translationStats.processedTokens,
-                );
-            }
-        }
-
-        if (options.verbose) {
-            printExecutionTime(
+            printProgress(
+                "Step 2/2 - Verifying",
                 translationStats.batchStartTime,
-                "Verification execution time: ",
+                translationStats.totalTokens,
+                translationStats.processedTokens,
             );
         }
+
+        printExecutionTime(
+            translationStats.batchStartTime,
+            "Verification execution time: ",
+        );
 
         return generatedVerification;
     }
@@ -766,6 +759,10 @@ export default class GenerateTranslationJson {
             );
         } else {
             generateState.generationRetries = 0;
+        }
+
+        if (options.verboseLogging) {
+            printWarn(text);
         }
 
         return text;
