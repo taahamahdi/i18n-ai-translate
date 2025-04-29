@@ -25,7 +25,7 @@ export default class RateLimiter {
             if (timeToWait > 0) {
                 if (this.verboseLogging) {
                     printInfo(
-                        `RateLimiter | Waiting ${timeToWait}ms before next API call`,
+                        `\nRateLimiter | Waiting ${timeToWait}ms before next API call`,
                     );
                 }
 

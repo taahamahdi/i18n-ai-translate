@@ -173,7 +173,7 @@ const processModelArgs = (options: any): ModelArgs => {
         case PromptMode.JSON:
             if (options.skipStylingVerification) {
                 throw new Error(
-                    "'--skip-styling-verification' is not used in CSV mode",
+                    "'--skip-styling-verification' is not used in JSON mode",
                 );
             }
 
