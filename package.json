@@ -21,6 +21,7 @@
   "name": "i18n-ai-translate",
   "version": "3.3.3",
   "main": "./build/index.js",
+  "types": "./build/types/index.d.ts",
   "bin": {
     "i18n-ai-translate": "./build/i18n-ai-translate.js"
   },
