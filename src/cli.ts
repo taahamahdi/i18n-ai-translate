@@ -58,7 +58,7 @@ const processModelArgs = (options: any): ModelArgs => {
             if (!options.promptMode) {
                 promptMode = PromptMode.JSON;
             } else if (promptMode === PromptMode.CSV) {
-                printWarn("Json mode recommended for Gemini");
+                printWarn("JSON mode recommended for Gemini");
             }
 
             if (!options.batchSize) {
@@ -116,7 +116,7 @@ const processModelArgs = (options: any): ModelArgs => {
             if (!options.promptMode) {
                 promptMode = PromptMode.JSON;
             } else if (promptMode === PromptMode.CSV) {
-                printWarn("Json mode recommended for Ollama");
+                printWarn("JSON mode recommended for Ollama");
             }
 
             if (!options.batchSize) {

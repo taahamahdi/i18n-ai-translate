@@ -16,12 +16,12 @@ import {
     printInfo,
 } from "./utils";
 import ChatFactory from "./chat_interface/chat_factory";
-import GenerateTranslationJson from "./generate_json/generate";
+import GenerateTranslationJSON from "./generate_json/generate";
 import PromptMode from "./enums/prompt_mode";
 import RateLimiter from "./rate_limiter";
 import fs from "fs";
 import path, { dirname } from "path";
-import translateCsv from "./generate_csv/generate";
+import translateCSV from "./generate_csv/generate";
 import type { TranslationStats, TranslationStatsItem } from "./types";
 import type Chats from "./interfaces/chats";
 import type TranslateDiffOptions from "./interfaces/translate_diff_options";
@@ -165,19 +165,22 @@ async function getTranslation(
     }
 
     switch (options.promptMode) {
-        case PromptMode.JSON:
-            const generateTranslationJson = new GenerateTranslationJson(
+        case PromptMode.JSON: {
+
+            const generateTranslationJSON = new GenerateTranslationJSON(
                 options,
             );
 
-            return generateTranslationJson.translateJson(
+            return generateTranslationJSON.translateJSON(
                 flatInput,
                 options,
                 chats,
                 translationStats,
             );
+        }
+
         case PromptMode.CSV:
-            return translateCsv(
+            return translateCSV(
                 flatInput,
                 options,
                 chats,

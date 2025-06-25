@@ -9,7 +9,7 @@ import type OverridePrompt from "../interfaces/override_prompt";
  * @param overridePrompt - An optional custom prompt
  * @returns A prompt for the AI to translate the input
  */
-export function translationPromptJson(
+export function translationPromptJSON(
     inputLanguage: string,
     outputLanguage: string,
     translateItems: TranslateItemInput[],
@@ -42,8 +42,8 @@ export function translationPromptJson(
 Translate from ${inputLanguage} to ${outputLanguage}.
 
 - Translate each object in the array.
-- 'original' is the text to be translated. 
-- 'translated' must not be empty. 
+- 'original' is the text to be translated.
+- 'translated' must not be empty.
 - 'context' is additional info if needed.
 - 'failure' explains why the previous translation failed.
 - Preserve text formatting, case sensitivity, whitespace, and keep roughly the same length.
@@ -69,7 +69,7 @@ ${input}
  * @param overridePrompt - An optional custom prompt
  * @returns A prompt for the AI to verify the translation
  */
-export function verificationPromptJson(
+export function verificationPromptJSON(
     inputLanguage: string,
     outputLanguage: string,
     verificationInput: VerifyItemInput[],
@@ -77,7 +77,7 @@ export function verificationPromptJson(
 ): string {
     const input = JSON.stringify(verificationInput);
     const customPrompt = overridePrompt?.translationVerificationPrompt;
-    const requiredArguments = ["inputLanguage", "outputLanguage", "mergedCsv"];
+    const requiredArguments = ["inputLanguage", "outputLanguage", "mergedCSV"];
     if (customPrompt) {
         for (const arg of requiredArguments) {
             if (!customPrompt.includes(`\${${arg}}`)) {
@@ -100,8 +100,8 @@ export function verificationPromptJson(
 Check translations from ${inputLanguage} to ${outputLanguage}.
 
 - Verify each object in the array.
-- 'original' is the text to be translated. 
-- 'translated' is the translated text. 
+- 'original' is the text to be translated.
+- 'translated' is the translated text.
 - 'context' is additional info if needed.
 - 'failure' explains why the previous translation failed.
 - check for Accuracy (meaning, tone, grammar), Formatting (case, whitespace, punctuation).
@@ -120,7 +120,7 @@ Flag only significant issues affecting accuracy or readability.
 
 Return the verified as JSON.
 \`\`\`json
-${input} 
+${input}
 \`\`\`
 `;
 }

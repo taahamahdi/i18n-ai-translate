@@ -98,12 +98,12 @@ export function translationVerificationPrompt(
 ): string {
     const splitInput = input.split("\n");
     const splitOutput = output.split("\n");
-    const mergedCsv = splitInput
+    const mergedCSV = splitInput
         .map((x, i) => `${x},${splitOutput[i]}`)
         .join("\n");
 
     const customPrompt = overridePrompt?.translationVerificationPrompt;
-    const requiredArguments = ["inputLanguage", "outputLanguage", "mergedCsv"];
+    const requiredArguments = ["inputLanguage", "outputLanguage", "mergedCSV"];
     if (customPrompt) {
         for (const arg of requiredArguments) {
             if (!customPrompt.includes(`\${${arg}}`)) {
@@ -113,7 +113,7 @@ export function translationVerificationPrompt(
 
         const argumentToValue: { [key: string]: string } = {
             inputLanguage,
-            mergedCsv,
+            mergedCSV,
             outputLanguage,
         };
 
@@ -131,7 +131,7 @@ Only reply with ACK/NAK.
 
 \`\`\`
 ${inputLanguage},${outputLanguage}
-${mergedCsv}
+${mergedCSV}
 \`\`\`
 `;
 }
@@ -154,12 +154,12 @@ export function stylingVerificationPrompt(
 ): string {
     const splitInput = input.split("\n");
     const splitOutput = output.split("\n");
-    const mergedCsv = splitInput
+    const mergedCSV = splitInput
         .map((x, i) => `${x},${splitOutput[i]}`)
         .join("\n");
 
     const customPrompt = overridePrompt?.stylingVerificationPrompt;
-    const requiredArguments = ["inputLanguage", "outputLanguage", "mergedCsv"];
+    const requiredArguments = ["inputLanguage", "outputLanguage", "mergedCSV"];
     if (customPrompt) {
         for (const arg of requiredArguments) {
             if (!customPrompt.includes(`\${${arg}}`)) {
@@ -169,7 +169,7 @@ export function stylingVerificationPrompt(
 
         const argumentToValue: { [key: string]: string } = {
             inputLanguage,
-            mergedCsv,
+            mergedCSV,
             outputLanguage,
         };
 
@@ -189,7 +189,7 @@ Only reply with ACK/NAK.
 
 \`\`\`
 ${inputLanguage},${outputLanguage}
-${mergedCsv}
+${mergedCSV}
 \`\`\`
 `;
 }

@@ -76,7 +76,7 @@ export type VerifyItemOutputObject = {
     items: VerifyItemOutput[];
 };
 
-export type GenerateStateJson = {
+export type GenerateStateJSON = {
     fixedTranslationMappings: { [input: string]: string };
     translationToRetryAttempts: { [translation: string]: number };
     generationRetries: number;

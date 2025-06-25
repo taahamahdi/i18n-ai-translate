@@ -28,7 +28,7 @@ export type ModelArgs = {
     batchMaxTokens: number;
 };
 
-export type GenerateStateCsv = {
+export type GenerateStateCSV = {
     fixedTranslationMappings: { [input: string]: string };
     translationToRetryAttempts: { [translation: string]: number };
     inputLineToTemplatedString: { [index: number]: Array<string> };

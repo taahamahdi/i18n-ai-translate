@@ -9,9 +9,9 @@ import {
     retryJob,
 } from "../utils";
 import { verifyStyling, verifyTranslation } from "./verify";
-import type { GenerateStateCsv, TranslationStatsItem } from "../types";
+import type { GenerateStateCSV, TranslationStatsItem } from "../types";
 import type Chats from "../interfaces/chats";
-import type GenerateTranslationOptionsCsv from "../interfaces/generate_translation_options_csv";
+import type GenerateTranslationOptionsCSV from "../interfaces/generate_translation_options_csv";
 import type TranslateOptions from "../interfaces/translate_options";
 
 /**
@@ -19,9 +19,9 @@ import type TranslateOptions from "../interfaces/translate_options";
  * @param flatInput - The flatinput object containing the json to translate
  * @param options - The options to generate the translation
  * @param chats - The options to generate the translation
- * @param translationStats - The translation statictics
+ * @param translationStats - The translation statistics
  */
-export default async function translateCsv(
+export default async function translateCSV(
     flatInput: { [key: string]: string },
     options: TranslateOptions,
     chats: Chats,
@@ -87,7 +87,7 @@ export default async function translateCsv(
 }
 
 async function generateTranslation(
-    options: GenerateTranslationOptionsCsv,
+    options: GenerateTranslationOptionsCSV,
 ): Promise<string> {
     const {
         input,
@@ -111,7 +111,7 @@ async function generateTranslation(
 
     const splitInput = input.split("\n");
 
-    const generateState: GenerateStateCsv = {
+    const generateState: GenerateStateCSV = {
         fixedTranslationMappings: {},
         generationRetries: 0,
         inputLineToTemplatedString: {},
@@ -145,9 +145,9 @@ async function generateTranslation(
 }
 
 async function generate(
-    options: GenerateTranslationOptionsCsv,
+    options: GenerateTranslationOptionsCSV,
     generationPromptText: string,
-    generateState: GenerateStateCsv,
+    generateState: GenerateStateCSV,
 ): Promise<string> {
     const {
         chats,

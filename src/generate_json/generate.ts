@@ -13,10 +13,10 @@ import {
     printWarn,
     retryJob,
 } from "../utils";
-import { translationPromptJson, verificationPromptJson } from "./prompts";
+import { translationPromptJSON, verificationPromptJSON } from "./prompts";
 import cl100k_base from "tiktoken/encoders/cl100k_base.json";
 import type {
-    GenerateStateJson,
+    GenerateStateJSON,
     TranslateItem,
     TranslateItemInput,
     TranslateItemOutput,
@@ -26,10 +26,10 @@ import type {
 import type { TranslationStats, TranslationStatsItem } from "../types";
 import type { ZodType, ZodTypeDef } from "zod";
 import type Chats from "../interfaces/chats";
-import type GenerateTranslationOptionsJson from "../interfaces/generate_translation_options_json";
+import type GenerateTranslationOptionsJSON from "../interfaces/generate_translation_options_json";
 import type TranslateOptions from "../interfaces/translate_options";
 
-export default class GenerateTranslationJson {
+export default class GenerateTranslationJSON {
     tikToken: Tiktoken;
     templatedStringRegex: RegExp;
 
@@ -53,7 +53,7 @@ export default class GenerateTranslationJson {
      * @param chats - The options to generate the translation
      * @param translationStats - The translation statictics
      */
-    public async translateJson(
+    public async translateJSON(
         flatInput: { [key: string]: string },
         options: TranslateOptions,
         chats: Chats,
@@ -61,7 +61,7 @@ export default class GenerateTranslationJson {
     ): Promise<{ [key: string]: string }> {
         const translateItemArray = this.generateTranslateItemArray(flatInput);
 
-        const generatedTranslation = await this.generateTranslationJson(
+        const generatedTranslation = await this.generateTranslationJSON(
             translateItemArray,
             options,
             chats,
@@ -69,7 +69,7 @@ export default class GenerateTranslationJson {
         );
 
         if (!options.skipTranslationVerification) {
-            const generatedVerification = await this.generateVerificationJson(
+            const generatedVerification = await this.generateVerificationJSON(
                 generatedTranslation,
                 options,
                 chats,
@@ -157,7 +157,7 @@ export default class GenerateTranslationJson {
         options: TranslateOptions,
     ): TranslateItem[] {
         const promptTokens = this.tikToken.encode(
-            translationPromptJson(
+            translationPromptJSON(
                 options.inputLanguage,
                 options.outputLanguage,
                 [],
@@ -205,7 +205,7 @@ export default class GenerateTranslationJson {
         options: TranslateOptions,
     ): TranslateItem[] {
         const promptTokens = this.tikToken.encode(
-            verificationPromptJson(
+            verificationPromptJSON(
                 options.inputLanguage,
                 options.outputLanguage,
                 [],
@@ -276,7 +276,7 @@ export default class GenerateTranslationJson {
         ).length;
     }
 
-    private async generateTranslationJson(
+    private async generateTranslationJSON(
         translateItemArray: TranslateItem[],
         options: TranslateOptions,
         chats: Chats,
@@ -372,7 +372,7 @@ export default class GenerateTranslationJson {
         return generatedTranslation;
     }
 
-    private async generateVerificationJson(
+    private async generateVerificationJSON(
         verifyItemArray: TranslateItem[],
         options: TranslateOptions,
         chats: Chats,
@@ -473,7 +473,7 @@ export default class GenerateTranslationJson {
         );
     }
 
-    private parseTranslationToJson(outputText: string): TranslateItemOutput[] {
+    private parseTranslationToJSON(outputText: string): TranslateItemOutput[] {
         try {
             return TranslateItemOutputObjectSchema.parse(JSON.parse(outputText))
                 .items;
@@ -485,7 +485,7 @@ export default class GenerateTranslationJson {
         }
     }
 
-    private parseVerificationToJson(outputText: string): VerifyItemOutput[] {
+    private parseVerificationToJSON(outputText: string): VerifyItemOutput[] {
         try {
             return VerifyItemOutputObjectSchema.parse(JSON.parse(outputText))
                 .items;
@@ -624,15 +624,15 @@ export default class GenerateTranslationJson {
     }
 
     private async runTranslationJob(
-        options: GenerateTranslationOptionsJson,
+        options: GenerateTranslationOptionsJSON,
     ): Promise<TranslateItem[]> {
-        const generateState: GenerateStateJson = {
+        const generateState: GenerateStateJSON = {
             fixedTranslationMappings: {},
             generationRetries: 0,
             translationToRetryAttempts: {},
         };
 
-        const generationPromptText = translationPromptJson(
+        const generationPromptText = translationPromptJSON(
             options.inputLanguage,
             options.outputLanguage,
             this.generateTranslateItemsInput(options.translateItems),
@@ -659,7 +659,7 @@ export default class GenerateTranslationJson {
             printError(`Failed to translate: ${e}\n`);
         }
 
-        const parsedOutput = this.parseTranslationToJson(translated);
+        const parsedOutput = this.parseTranslationToJSON(translated);
         const validTranslationObjects = parsedOutput.filter(
             this.isValidTranslateItem,
         );
@@ -671,15 +671,15 @@ export default class GenerateTranslationJson {
     }
 
     private async runVerificationJob(
-        options: GenerateTranslationOptionsJson,
+        options: GenerateTranslationOptionsJSON,
     ): Promise<TranslateItem[]> {
-        const generateState: GenerateStateJson = {
+        const generateState: GenerateStateJSON = {
             fixedTranslationMappings: {},
             generationRetries: 0,
             translationToRetryAttempts: {},
         };
 
-        const generationPromptText = verificationPromptJson(
+        const generationPromptText = verificationPromptJSON(
             options.inputLanguage,
             options.outputLanguage,
             this.generateVerifyItemsInput(options.translateItems),
@@ -706,7 +706,7 @@ export default class GenerateTranslationJson {
             printError(`Failed to translate: ${e}\n`);
         }
 
-        const parsedOutput = this.parseVerificationToJson(verified);
+        const parsedOutput = this.parseVerificationToJSON(verified);
         const validTranslationObjects = parsedOutput.filter(
             this.isValidVerificationItem,
         );
@@ -719,8 +719,8 @@ export default class GenerateTranslationJson {
 
     private verifyGenerationAndRetry(
         generationPromptText: string,
-        options: GenerateTranslationOptionsJson,
-        generateState: GenerateStateJson,
+        options: GenerateTranslationOptionsJSON,
+        generateState: GenerateStateJSON,
     ): Promise<string> {
         generateState.generationRetries++;
         if (generateState.generationRetries > 10) {
@@ -742,8 +742,8 @@ export default class GenerateTranslationJson {
 
     private async generateJob(
         generationPromptText: string,
-        options: GenerateTranslationOptionsJson,
-        generateState: GenerateStateJson,
+        options: GenerateTranslationOptionsJSON,
+        generateState: GenerateStateJSON,
         format: ZodType<any, ZodTypeDef, any>,
     ): Promise<string> {
         const text = await options.chats.generateTranslationChat.sendMessage(

@@ -2,7 +2,7 @@ import type { TranslateItem } from "../generate_json/types";
 import type Chats from "./chats";
 import type OverridePrompt from "./override_prompt";
 
-export default interface GenerateTranslationOptionsJson {
+export default interface GenerateTranslationOptionsJSON {
     chats: Chats;
     inputLanguage: string;
     outputLanguage: string;
