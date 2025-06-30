@@ -306,7 +306,9 @@ Output only the translations.
 
 All lines should start and end with an ASCII quotation mark (").
 
+\`\`\`
 ${input}
+\`\`\`
 ```
 
 ### Translation verification prompt
@@ -319,6 +321,11 @@ Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, repl
 Otherwise, reply with ACK.
 
 Only reply with ACK/NAK.
+
+\`\`\`
+${inputLanguage},${outputLanguage}
+${mergedCSV}
+\`\`\`
 ```
 
 ### Styling verification prompt
@@ -333,11 +340,16 @@ Check for differing capitalization, punctuation, or whitespaces.
 Otherwise, reply with ACK.
 
 Only reply with ACK/NAK.
+
+\`\`\`
+${inputLanguage},${outputLanguage}
+${mergedCSV}
+\`\`\`
 ```
 
 ## JSON Mode
 
-### Translation prompt json
+### Translation prompt
 
 Batches of the i18n input are passed in. Each call is checked to ensure no keys are lost, all templated strings are retained, and no translations are skipped.
 
@@ -365,7 +377,7 @@ ${input}
 \`\`\`
 ```
 
-### Translation verification prompt json
+### Translation verification prompt
 
 The output of the translation is sent back to ensure the model is okay with the translation/formatting. If this fails, the translation is re-generated.
 
@@ -401,4 +413,4 @@ ${input}
 
 ## Prompt overriding
 
-Replace the aforementioned prompts with your own by creating a JSON file containing keys of at least one of `generationPrompt`, `translationVerificationPrompt`, or `stylingVerificationPrompt`. Then, pass it as an argument with `--override-prompt <path to file>`. Be sure to include templated arguments like `${inputLanguage}` as part of the prompt.
+Replace the aforementioned prompts with your own by creating a JSON file containing keys of at least one of `generationPrompt`, `translationVerificationPrompt`, or `stylingVerificationPrompt` (only used in CSV mode). Then, pass it as an argument with `--override-prompt <path to file>`. Be sure to include templated arguments like `${inputLanguage}` as part of the prompt.

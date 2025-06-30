@@ -227,11 +227,11 @@ async function generate(
     // Trim extra quotes if they exist
     for (let i = 0; i < splitText.length; i++) {
         let line = splitText[i];
-        while (line.startsWith('""')) {
+        while (line.startsWith("\"\"")) {
             line = line.slice(1);
         }
 
-        while (line.endsWith('""')) {
+        while (line.endsWith("\"\"")) {
             line = line.slice(0, -1);
         }
 
@@ -244,9 +244,9 @@ async function generate(
     for (let i = 0; i < splitText.length; i++) {
         let line = splitText[i];
         if (
-            !line.startsWith('"') ||
-            !line.endsWith('"') ||
-            line.endsWith('\\"')
+            !line.startsWith("\"") ||
+            !line.endsWith("\"") ||
+            line.endsWith("\\\"")
         ) {
             chats.generateTranslationChat.rollbackLastMessage();
             return Promise.reject(new Error(`Invalid line: ${line}`));
@@ -298,12 +298,12 @@ async function generate(
             }
 
             // TODO: Move to helper
-            if (!line.startsWith('"') || !line.endsWith('"')) {
+            if (!line.startsWith("\"") || !line.endsWith("\"")) {
                 chats.generateTranslationChat.rollbackLastMessage();
                 return Promise.reject(new Error(`Invalid line: ${line}`));
             }
 
-            while (line.startsWith('""') && line.endsWith('""')) {
+            while (line.startsWith("\"\"") && line.endsWith("\"\"")) {
                 line = line.slice(1, -1);
             }
 

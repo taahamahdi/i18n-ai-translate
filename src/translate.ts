@@ -166,7 +166,6 @@ async function getTranslation(
 
     switch (options.promptMode) {
         case PromptMode.JSON: {
-
             const generateTranslationJSON = new GenerateTranslationJSON(
                 options,
             );
