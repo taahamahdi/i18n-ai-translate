@@ -77,7 +77,7 @@ export function verificationPromptJSON(
 ): string {
     const input = JSON.stringify(verificationInput);
     const customPrompt = overridePrompt?.translationVerificationPrompt;
-    const requiredArguments = ["inputLanguage", "outputLanguage", "mergedCSV"];
+    const requiredArguments = ["inputLanguage", "outputLanguage", "input"];
     if (customPrompt) {
         for (const arg of requiredArguments) {
             if (!customPrompt.includes(`\${${arg}}`)) {
