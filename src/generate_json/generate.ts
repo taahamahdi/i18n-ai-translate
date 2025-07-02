@@ -51,7 +51,7 @@ export default class GenerateTranslationJSON {
      * @param flatInput - The flatinput object containing the json to translate
      * @param options - The options to generate the translation
      * @param chats - The options to generate the translation
-     * @param translationStats - The translation statictics
+     * @param translationStats - The translation statistics
      */
     public async translateJSON(
         flatInput: { [key: string]: string },

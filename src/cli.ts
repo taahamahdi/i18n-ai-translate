@@ -495,44 +495,112 @@ program
                     );
                 }
 
-                const output = options.input.replace(
-                    getLanguageCodeFromFilename(options.input),
-                    languageCode,
-                );
-
-                if (options.input === output) {
-                    continue;
+                const jsonFolder = path.resolve(process.cwd(), "jsons");
+                let inputPath: string;
+                if (path.isAbsolute(options.input)) {
+                    inputPath = path.resolve(options.input);
+                } else {
+                    inputPath = path.resolve(jsonFolder, options.input);
+                    if (!fs.existsSync(inputPath)) {
+                        inputPath = path.resolve(process.cwd(), options.input);
+                    }
                 }
 
-                try {
-                    // eslint-disable-next-line no-await-in-loop
-                    await translateFile({
-                        apiKey,
-                        batchMaxTokens: options.batchMaxTokens,
-                        batchSize: options.batchSize,
-                        chatParams,
-                        engine: options.engine,
-                        ensureChangedTranslation:
-                            options.ensureChangedTranslation,
-                        host,
-                        inputFilePath: options.input,
-                        model,
-                        outputFilePath: output,
-                        overridePrompt,
-                        promptMode,
-                        rateLimitMs,
-                        skipStylingVerification:
-                            options.skipStylingVerification,
-                        skipTranslationVerification:
-                            options.skipTranslationVerification,
-                        templatedStringPrefix: options.templatedStringPrefix,
-                        templatedStringSuffix: options.templatedStringSuffix,
-                        verbose: options.verbose,
-                    });
-                } catch (err) {
-                    printError(
-                        `Failed to translate to ${languageCode}: ${err}`,
+                if (fs.statSync(inputPath).isFile()) {
+                    const output = options.input.replace(
+                        getLanguageCodeFromFilename(options.input),
+                        languageCode,
                     );
+
+                    if (options.input === output) {
+                        continue;
+                    }
+
+                    let outputPath: string;
+                    if (path.isAbsolute(output)) {
+                        outputPath = path.resolve(output);
+                    } else {
+                        outputPath = path.resolve(jsonFolder, output);
+                        if (!fs.existsSync(jsonFolder)) {
+                            outputPath = path.resolve(process.cwd(), output);
+                        }
+                    }
+
+                    try {
+                        // eslint-disable-next-line no-await-in-loop
+                        await translateFile({
+                            apiKey,
+                            batchMaxTokens: options.batchMaxTokens,
+                            batchSize: options.batchSize,
+                            chatParams,
+                            engine: options.engine,
+                            ensureChangedTranslation:
+                                options.ensureChangedTranslation,
+                            host,
+                            inputFilePath: inputPath,
+                            model,
+                            outputFilePath: outputPath,
+                            overridePrompt,
+                            promptMode,
+                            rateLimitMs,
+                            skipStylingVerification:
+                                options.skipStylingVerification,
+                            skipTranslationVerification:
+                                options.skipTranslationVerification,
+                            templatedStringPrefix:
+                                options.templatedStringPrefix,
+                            templatedStringSuffix:
+                                options.templatedStringSuffix,
+                            verbose: options.verbose,
+                        });
+                    } catch (err) {
+                        printError(
+                            `Failed to translate to ${languageCode}: ${err}`,
+                        );
+                    }
+                } else {
+                    const output = options.input.replace(
+                        getLanguageCodeFromFilename(options.input),
+                        languageCode,
+                    );
+
+                    if (options.input === output) {
+                        continue;
+                    }
+
+                    try {
+                        // eslint-disable-next-line no-await-in-loop
+                        await translateDirectory({
+                            apiKey,
+                            baseDirectory: path.resolve(inputPath, ".."),
+                            batchMaxTokens: options.batchMaxTokens,
+                            batchSize: options.batchSize,
+                            chatParams,
+                            engine: options.engine,
+                            ensureChangedTranslation:
+                                options.ensureChangedTranslation,
+                            host,
+                            inputLanguage: path.basename(inputPath),
+                            model,
+                            outputLanguage: languageCode,
+                            overridePrompt,
+                            promptMode,
+                            rateLimitMs,
+                            skipStylingVerification:
+                                options.skipStylingVerification,
+                            skipTranslationVerification:
+                                options.skipTranslationVerification,
+                            templatedStringPrefix:
+                                options.templatedStringPrefix,
+                            templatedStringSuffix:
+                                options.templatedStringSuffix,
+                            verbose: options.verbose,
+                        });
+                    } catch (err) {
+                        printError(
+                            `Failed to translate directory to ${languageCode}: ${err}`,
+                        );
+                    }
                 }
             }
         }
