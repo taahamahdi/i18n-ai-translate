@@ -5,3 +5,4 @@ tsconfig.tsbuildinfo
 jsons/*
 yarn-error.log
 .eslintcache
+coverage/
