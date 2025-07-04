@@ -14,6 +14,64 @@ import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsCSV from "../interfaces/generate_translation_options_csv";
 import type TranslateOptions from "../interfaces/translate_options";
 
+async function generateTranslation(
+    options: GenerateTranslationOptionsCSV,
+): Promise<string> {
+    const {
+        input,
+        inputLanguage,
+        outputLanguage,
+        templatedStringPrefix,
+        templatedStringSuffix,
+    } = options;
+
+    const generationPromptText = generationPrompt(
+        inputLanguage,
+        outputLanguage,
+        input,
+        options.overridePrompt,
+    );
+
+    const templatedStringRegex = getTemplatedStringRegex(
+        templatedStringPrefix,
+        templatedStringSuffix,
+    );
+
+    const splitInput = input.split("\n");
+
+    const generateState: GenerateStateCSV = {
+        fixedTranslationMappings: {},
+        generationRetries: 0,
+        inputLineToTemplatedString: {},
+        splitInput,
+        translationToRetryAttempts: {},
+    };
+
+    for (let i = 0; i < splitInput.length; i++) {
+        const match = splitInput[i].match(templatedStringRegex);
+        if (match) {
+            generateState.inputLineToTemplatedString[i] = match;
+        }
+    }
+
+    let translated = "";
+    try {
+        translated = await retryJob(
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            generate,
+            [options, generationPromptText, generateState],
+            RETRY_ATTEMPTS,
+            true,
+            0,
+            false,
+        );
+    } catch (e) {
+        printError(`Failed to translate: ${e}`);
+    }
+
+    return translated;
+}
+
 /**
  * Complete the initial translation of the input text.
  * @param flatInput - The flatinput object containing the json to translate
@@ -84,64 +142,6 @@ export default async function translateCSV(
     }
 
     return output;
-}
-
-async function generateTranslation(
-    options: GenerateTranslationOptionsCSV,
-): Promise<string> {
-    const {
-        input,
-        inputLanguage,
-        outputLanguage,
-        templatedStringPrefix,
-        templatedStringSuffix,
-    } = options;
-
-    const generationPromptText = generationPrompt(
-        inputLanguage,
-        outputLanguage,
-        input,
-        options.overridePrompt,
-    );
-
-    const templatedStringRegex = getTemplatedStringRegex(
-        templatedStringPrefix,
-        templatedStringSuffix,
-    );
-
-    const splitInput = input.split("\n");
-
-    const generateState: GenerateStateCSV = {
-        fixedTranslationMappings: {},
-        generationRetries: 0,
-        inputLineToTemplatedString: {},
-        splitInput,
-        translationToRetryAttempts: {},
-    };
-
-    for (let i = 0; i < splitInput.length; i++) {
-        const match = splitInput[i].match(templatedStringRegex);
-        if (match) {
-            generateState.inputLineToTemplatedString[i] = match;
-        }
-    }
-
-    let translated = "";
-    try {
-        translated = await retryJob(
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            generate,
-            [options, generationPromptText, generateState],
-            RETRY_ATTEMPTS,
-            true,
-            0,
-            false,
-        );
-    } catch (e) {
-        printError(`Failed to translate: ${e}`);
-    }
-
-    return translated;
 }
 
 async function generate(

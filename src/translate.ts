@@ -863,10 +863,10 @@ export async function translateDirectoryDiff(
                 if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
                     toUpdateJSONs[language][
                         getTranslationDirectoryKey(
-                            file.replace(
+                            `${fullBasePath}/${file.replace(
                                 outputLanguagePath,
                                 options.inputFolderNameBefore,
-                            ),
+                            )}`,
                             key,
                             options.inputLanguageCode,
                         )
@@ -927,7 +927,7 @@ export async function translateDirectoryDiff(
                             .join(":")
                             .replace(
                                 options.inputFolderNameBefore,
-                                `${options.baseDirectory}/${outputLanguage}`,
+                                outputLanguage,
                             );
 
                         if (!filesToJSON[filePath]) {

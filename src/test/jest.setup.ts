@@ -1,0 +1,28 @@
+process.env.OPENAI_API_KEY = "test";
+
+jest.mock("openai", () => function OpenAIMock() {});
+jest.mock("../chat_interface/chat_factory", () => ({
+    __esModule: true,
+    default: { newChat: jest.fn(() => ({ startChat: jest.fn() })) },
+}));
+
+const fr = (value: string): string => `${value}_fr`;
+
+jest.mock("../generate_json/generate", () => ({
+    __esModule: true,
+    default: class GenerateTranslationJSON {
+        translateJSON(flat: Record<string, string>): Object {
+            return Object.fromEntries(
+                Object.entries(flat).map(([k, v]) => [k, fr(v as string)]),
+            );
+        }
+    },
+}));
+
+jest.mock("../generate_csv/generate", () => ({
+    __esModule: true,
+    default: (flat: Record<string, string>) =>
+        Object.fromEntries(
+            Object.entries(flat).map(([k, v]) => [k, fr(v as string)]),
+        ),
+}));

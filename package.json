@@ -26,6 +26,7 @@
     "i18n-ai-translate": "./build/i18n-ai-translate.js"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@typescript-eslint/eslint-plugin": "^7.15.0",
     "@typescript-eslint/parser": "^7.15.0",
     "esbuild": "^0.25.0",
@@ -41,7 +42,9 @@
     "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
     "eslint-plugin-sort-keys-fix": "^1.1.2",
     "eslint-plugin-tsdoc": "^0.4.0",
-    "prettier": "^3.2.5"
+    "jest": "^30.0.4",
+    "prettier": "^3.2.5",
+    "ts-jest": "^29.4.0"
   },
   "scripts": {
     "build": "npx tsc",
@@ -51,7 +54,8 @@
     "clean-build": "npm run clean && npm run build",
     "prettier": "prettier --write '**/*.{js,ts}'",
     "lint": "npx eslint --cache src/ --ext .js,.ts",
-    "lint-fix": "npx eslint --fix --cache src/ --ext .js,.ts"
+    "lint-fix": "npx eslint --fix --cache src/ --ext .js,.ts",
+    "test": "jest"
   },
   "keywords": [
     "i18n",
