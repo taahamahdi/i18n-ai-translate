@@ -3,7 +3,7 @@ import {
     stylingVerificationPrompt,
     translationVerificationPrompt,
 } from "./prompts";
-import type ChatInterface from "../chat_interface/chat_interface";
+import type ChatInterface from "../chats/chat_interface";
 import type OverridePrompt from "../interfaces/override_prompt";
 
 /**

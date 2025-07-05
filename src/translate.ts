@@ -8,7 +8,7 @@ import {
 import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
 import { printExecutionTime, printInfo } from "./utils";
-import ChatFactory from "./chat_interface/chat_factory";
+import ChatFactory from "./chats/chat_factory";
 import GenerateTranslationJSON from "./generate_json/generate";
 import PromptMode from "./enums/prompt_mode";
 import RateLimiter from "./rate_limiter";

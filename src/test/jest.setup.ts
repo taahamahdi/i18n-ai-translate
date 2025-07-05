@@ -4,7 +4,7 @@ import type TranslateOptions from "../interfaces/translate_options";
 process.env.OPENAI_API_KEY = "test";
 
 jest.mock("openai", () => function OpenAIMock() {});
-jest.mock("../chat_interface/chat_factory", () => ({
+jest.mock("../chats/chat_factory", () => ({
     __esModule: true,
     default: { newChat: jest.fn(() => ({ startChat: jest.fn() })) },
 }));
