@@ -1,3 +1,4 @@
+import type * as utils from "../utils";
 import type TranslateOptions from "../interfaces/translate_options";
 
 process.env.OPENAI_API_KEY = "test";
@@ -38,3 +39,14 @@ jest.mock("../generate_csv/generate", () => ({
         );
     },
 }));
+
+jest.mock("../utils", () => {
+    // Pull in the real module once so we can reuse its exports.
+    const actualUtils = jest.requireActual<typeof utils>("../utils");
+
+    return {
+        ...actualUtils,
+        delay: jest.fn(() => Promise.resolve()),
+        printInfo: jest.fn(),
+    };
+});
