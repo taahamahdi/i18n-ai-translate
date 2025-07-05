@@ -940,9 +940,9 @@
     undici-types "~7.8.0"
 
 "@types/node@^24.0.3":
-  version "24.0.3"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-24.0.3.tgz#f935910f3eece3a3a2f8be86b96ba833dc286cab"
-  integrity sha512-R4I/kzCYAdRLzfiCabn9hxWfbuHS573x+r0dJMkkzThEa7pbrcDWK+9zu3e7aBOouf+rQAciqPFMnxwr0aWgKg==
+  version "24.0.8"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-24.0.8.tgz#98f50977fe76ab78d02fc3bcb7f6c3b5f79a363c"
+  integrity sha512-WytNrFSgWO/esSH9NbpWUfTMGQwCGIKfCmNlmFDNiI5gGhgMmEA+V1AEvKLeBNvvtBnailJtkrEa2OIISwrVAA==
   dependencies:
     undici-types "~7.8.0"
 
