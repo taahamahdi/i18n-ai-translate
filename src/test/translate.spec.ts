@@ -12,57 +12,29 @@ const es = (v: string): string => `${v}_es`;
 const mkCaseDir = (): string =>
     fs.mkdtempSync(path.join(os.tmpdir(), "i18n-case-"));
 
-describe("translate", () => {
-    it("translates a flat JSON object for PromptMode.JSON", async () => {
+describe.each(Object.values(PromptMode))("translate (promptMode=%s)", (promptMode) => {
+    it("translates a flat JSON object", async () => {
         const result = await translateModule.translate({
             engine: Engine.ChatGPT,
             inputJSON: { hello: "Hello" },
             inputLanguage: "en",
             model: "gpt-4o",
             outputLanguage: "fr",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
         } as any);
 
         expect(result).toEqual({ hello: fr("Hello") });
     });
 
-    it("translates a nested JSON object for PromptMode.JSON", async () => {
+    it("translates a nested JSON object", async () => {
         const result = await translateModule.translate({
             engine: Engine.ChatGPT,
             inputJSON: { greeting: { text: "Hello" } },
             inputLanguage: "en",
             model: "gpt-4o",
             outputLanguage: "fr",
-            promptMode: PromptMode.JSON,
-            rateLimitMs: 0,
-        } as any);
-
-        expect(result).toEqual({ greeting: { text: fr("Hello") } });
-    });
-
-    it("translates a flat JSON object for PromptMode.CSV", async () => {
-        const result = await translateModule.translate({
-            engine: Engine.ChatGPT,
-            inputJSON: { hello: "Hello" },
-            inputLanguage: "en",
-            model: "gpt-4o",
-            outputLanguage: "fr",
-            promptMode: PromptMode.CSV,
-            rateLimitMs: 0,
-        } as any);
-
-        expect(result).toEqual({ hello: fr("Hello") });
-    });
-
-    it("translates a nested JSON object for PromptMode.CSV", async () => {
-        const result = await translateModule.translate({
-            engine: Engine.ChatGPT,
-            inputJSON: { greeting: { text: "Hello" } },
-            inputLanguage: "en",
-            model: "gpt-4o",
-            outputLanguage: "fr",
-            promptMode: PromptMode.CSV,
+            promptMode,
             rateLimitMs: 0,
         } as any);
 
@@ -70,7 +42,7 @@ describe("translate", () => {
     });
 });
 
-describe("translateDiff", () => {
+describe.each(Object.values(PromptMode))("translateDiff (promptMode=%s)", (promptMode) => {
     it("only touches added / changed keys", async () => {
         const before = { greeting: "Hello", unchanged: "Stay" };
         const after = { added: "New", greeting: "Hi" };
@@ -81,7 +53,7 @@ describe("translateDiff", () => {
             inputJSONBefore: before,
             inputLanguage: "en",
             model: "gpt-4o",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
             toUpdateJSONs: { fr: { greeting: "Bonjour", unchanged: "Rester" } },
         } as any);
@@ -100,7 +72,7 @@ describe("translateDiff", () => {
             inputJSONBefore: before,
             inputLanguage: "en",
             model: "gpt-4o",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
             toUpdateJSONs: {
                 fr: { greeting: { text: "Bonjour" }, unchanged: "Rester" },
@@ -124,7 +96,7 @@ describe("translateDiff", () => {
             inputJSONBefore: before,
             inputLanguage: "en",
             model: "gpt-4o",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
             toUpdateJSONs: { fr: { greeting: "Bonjour", unused: "Obsolete" } },
         } as any);
@@ -140,7 +112,7 @@ describe("translateDiff", () => {
             inputJSONBefore: {},
             inputLanguage: "en",
             model: "gpt-4o",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
             toUpdateJSONs: { fr: {} },
         } as any);
@@ -158,7 +130,7 @@ describe("translateDiff", () => {
             inputJSONBefore: before,
             inputLanguage: "en",
             model: "gpt-4o",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
             toUpdateJSONs: {
                 es: { greeting: "Hola" },
@@ -171,7 +143,7 @@ describe("translateDiff", () => {
     });
 });
 
-describe("translateFile", () => {
+describe.each(Object.values(PromptMode))("translateFile (promptMode=%s)", (promptMode) => {
     it("creates a sibling file with translated JSON", async () => {
         const dir = mkCaseDir();
         const inputPath = path.join(dir, "en.json");
@@ -186,7 +158,7 @@ describe("translateFile", () => {
             inputLanguage: "en",
             model: "gpt-4o",
             outputFilePath: outputPath,
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
         } as any);
 
@@ -208,7 +180,7 @@ describe("translateFile", () => {
             inputLanguage: "en",
             model: "gpt-4o",
             outputFilePath: outputPath,
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
         } as any);
 
@@ -217,7 +189,7 @@ describe("translateFile", () => {
     });
 });
 
-describe("translateFileDiff", () => {
+describe.each(Object.values(PromptMode))("translateFileDiff (promptMode=%s)", (promptMode) => {
     it("updates only the changed keys in-place", async () => {
         const dir = mkCaseDir();
         const beforePath = path.join(dir, "before_en.json");
@@ -237,7 +209,7 @@ describe("translateFileDiff", () => {
             inputBeforeFileOrPath: beforePath,
             inputLanguageCode: "en",
             model: "gpt-4o",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
         } as any);
 
@@ -267,7 +239,7 @@ describe("translateFileDiff", () => {
             inputBeforeFileOrPath: beforePath,
             inputLanguageCode: "en",
             model: "gpt-4o",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
         } as any);
 
@@ -293,7 +265,7 @@ describe("translateFileDiff", () => {
             inputBeforeFileOrPath: beforePath,
             inputLanguageCode: "en",
             model: "gpt-4o",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
         } as any);
 
@@ -305,7 +277,7 @@ describe("translateFileDiff", () => {
     });
 });
 
-describe("translateDirectory", () => {
+describe.each(Object.values(PromptMode))("translateDirectory (promptMode=%s)", (promptMode) => {
     it("replicates the directory hierarchy for the target language", async () => {
         const dir = mkCaseDir();
         const enDir = path.join(dir, "en");
@@ -320,7 +292,7 @@ describe("translateDirectory", () => {
             inputLanguage: "en",
             model: "gpt-4o",
             outputLanguage: "fr",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
         } as any);
 
@@ -343,7 +315,7 @@ describe("translateDirectory", () => {
             inputLanguage: "en",
             model: "gpt-4o",
             outputLanguage: "fr",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
         } as any);
 
@@ -372,7 +344,7 @@ describe("translateDirectory", () => {
             inputLanguage: "en",
             model: "gpt-4o",
             outputLanguage: "fr",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
         } as any);
 
@@ -387,7 +359,7 @@ describe("translateDirectory", () => {
     });
 });
 
-describe("translateDirectoryDiff", () => {
+describe.each(Object.values(PromptMode))("translateDirectoryDiff (promptMode=%s)", (promptMode) => {
     it("writes translations for changed keys and prunes removed keys", async () => {
         const dir = mkCaseDir();
 
@@ -429,7 +401,7 @@ describe("translateDirectoryDiff", () => {
             inputFolderNameBefore: "en_before",
             inputLanguageCode: "en",
             model: "gpt-4o",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
             verbose: true,
         } as any);
@@ -481,7 +453,7 @@ describe("translateDirectoryDiff", () => {
             inputFolderNameBefore: "en_before",
             inputLanguageCode: "en",
             model: "gpt-4o",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
             verbose: true,
         } as any);
@@ -529,7 +501,7 @@ describe("translateDirectoryDiff", () => {
             inputFolderNameBefore: "en_before",
             inputLanguageCode: "en",
             model: "gpt-4o",
-            promptMode: PromptMode.JSON,
+            promptMode,
             rateLimitMs: 0,
             verbose: true,
         } as any);
