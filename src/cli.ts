@@ -18,9 +18,8 @@ import { program } from "commander";
 import {
     translateDirectory,
     translateDirectoryDiff,
-    translateFile,
-    translateFileDiff,
-} from "./translate";
+} from "./translate_directory";
+import { translateFile, translateFileDiff } from "./translate_file";
 import Engine from "./enums/engine";
 import PromptMode from "./enums/prompt_mode";
 import fs from "fs";

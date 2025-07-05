@@ -2,8 +2,13 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-import * as translateModule from "../translate";
 import * as utils from "../utils";
+import { translate, translateDiff } from "../translate";
+import {
+    translateDirectory,
+    translateDirectoryDiff,
+} from "../translate_directory";
+import { translateFile, translateFileDiff } from "../translate_file";
 import Engine from "../enums/engine";
 import PromptMode from "../enums/prompt_mode";
 import RateLimiter from "../rate_limiter";
@@ -18,7 +23,7 @@ describe.each(Object.values(PromptMode))(
     "translate (promptMode=%s)",
     (promptMode) => {
         it("translates a flat JSON object", async () => {
-            const result = await translateModule.translate({
+            const result = await translate({
                 engine: Engine.ChatGPT,
                 inputJSON: { hello: "Hello" },
                 inputLanguage: "en",
@@ -32,7 +37,7 @@ describe.each(Object.values(PromptMode))(
         });
 
         it("translates a nested JSON object", async () => {
-            const result = await translateModule.translate({
+            const result = await translate({
                 engine: Engine.ChatGPT,
                 inputJSON: { greeting: { text: "Hello" } },
                 inputLanguage: "en",
@@ -54,7 +59,7 @@ describe.each(Object.values(PromptMode))(
             const before = { greeting: "Hello", unchanged: "Stay" };
             const after = { added: "New", greeting: "Hi" };
 
-            const out = await translateModule.translateDiff({
+            const out = await translateDiff({
                 engine: Engine.ChatGPT,
                 inputJSONAfter: after,
                 inputJSONBefore: before,
@@ -75,7 +80,7 @@ describe.each(Object.values(PromptMode))(
             const before = { greeting: { text: "Hello" }, unchanged: "Stay" };
             const after = { added: "New", greeting: { text: "Hi" } };
 
-            const out = await translateModule.translateDiff({
+            const out = await translateDiff({
                 engine: Engine.ChatGPT,
                 inputJSONAfter: after,
                 inputJSONBefore: before,
@@ -99,7 +104,7 @@ describe.each(Object.values(PromptMode))(
             const before = { greeting: "Hello", unused: "Unused" };
             const after = { greeting: "Hi" };
 
-            const out = await translateModule.translateDiff({
+            const out = await translateDiff({
                 engine: Engine.ChatGPT,
                 inputJSONAfter: after,
                 inputJSONBefore: before,
@@ -117,7 +122,7 @@ describe.each(Object.values(PromptMode))(
         });
 
         it("handles empty input gracefully", async () => {
-            const out = await translateModule.translateDiff({
+            const out = await translateDiff({
                 engine: Engine.ChatGPT,
                 inputJSONAfter: {},
                 inputJSONBefore: {},
@@ -135,7 +140,7 @@ describe.each(Object.values(PromptMode))(
             const before = { greeting: "Hello" };
             const after = { added: "New", greeting: "Hi" };
 
-            const out = await translateModule.translateDiff({
+            const out = await translateDiff({
                 engine: Engine.ChatGPT,
                 inputJSONAfter: after,
                 inputJSONBefore: before,
@@ -165,7 +170,7 @@ describe.each(Object.values(PromptMode))(
 
             fs.writeFileSync(inputPath, JSON.stringify({ cat: "Cat" }));
 
-            await translateModule.translateFile({
+            await translateFile({
                 engine: Engine.ChatGPT,
                 forceLanguageName: "fr",
                 inputFilePath: inputPath,
@@ -187,7 +192,7 @@ describe.each(Object.values(PromptMode))(
 
             fs.writeFileSync(inputPath, JSON.stringify({}));
 
-            await translateModule.translateFile({
+            await translateFile({
                 engine: Engine.ChatGPT,
                 forceLanguageName: "fr",
                 inputFilePath: inputPath,
@@ -220,7 +225,7 @@ describe.each(Object.values(PromptMode))(
             );
             fs.writeFileSync(frPath, JSON.stringify({ key: "Ancien" }));
 
-            await translateModule.translateFileDiff({
+            await translateFileDiff({
                 engine: Engine.ChatGPT,
                 inputAfterFileOrPath: afterPath,
                 inputBeforeFileOrPath: beforePath,
@@ -250,7 +255,7 @@ describe.each(Object.values(PromptMode))(
                 JSON.stringify({ key: "Ancien", unused: "Obsolete" }),
             );
 
-            await translateModule.translateFileDiff({
+            await translateFileDiff({
                 engine: Engine.ChatGPT,
                 inputAfterFileOrPath: afterPath,
                 inputBeforeFileOrPath: beforePath,
@@ -279,7 +284,7 @@ describe.each(Object.values(PromptMode))(
             fs.writeFileSync(frPath, JSON.stringify({ key: "Ancien" }));
             fs.writeFileSync(esPath, JSON.stringify({ key: "Viejo" }));
 
-            await translateModule.translateFileDiff({
+            await translateFileDiff({
                 engine: Engine.ChatGPT,
                 inputAfterFileOrPath: afterPath,
                 inputBeforeFileOrPath: beforePath,
@@ -309,7 +314,7 @@ describe.each(Object.values(PromptMode))(
             const enFile = path.join(enDir, "app.json");
             fs.writeFileSync(enFile, JSON.stringify({ welcome: "Welcome" }));
 
-            await translateModule.translateDirectory({
+            await translateDirectory({
                 baseDirectory: dir,
                 engine: Engine.ChatGPT,
                 inputLanguage: "en",
@@ -332,7 +337,7 @@ describe.each(Object.values(PromptMode))(
             const enFile = path.join(enDir, "app.json");
             fs.writeFileSync(enFile, JSON.stringify({ greeting: "Hello" }));
 
-            await translateModule.translateDirectory({
+            await translateDirectory({
                 baseDirectory: dir,
                 engine: Engine.ChatGPT,
                 inputLanguage: "en",
@@ -361,7 +366,7 @@ describe.each(Object.values(PromptMode))(
             fs.writeFileSync(enFile1, JSON.stringify({ welcome: "Welcome" }));
             fs.writeFileSync(enFile2, JSON.stringify({ greeting: "Hello" }));
 
-            await translateModule.translateDirectory({
+            await translateDirectory({
                 baseDirectory: dir,
                 engine: Engine.ChatGPT,
                 inputLanguage: "en",
@@ -420,7 +425,7 @@ describe.each(Object.values(PromptMode))(
                 JSON.stringify({ hello: "Bonjour", unused: "Obso" }),
             );
 
-            await translateModule.translateDirectoryDiff({
+            await translateDirectoryDiff({
                 baseDirectory: dir,
                 engine: Engine.ChatGPT,
                 inputFolderNameAfter: "en_after",
@@ -472,7 +477,7 @@ describe.each(Object.values(PromptMode))(
 
             fs.writeFileSync(frFile, JSON.stringify({ welcome: "Bienvenue" }));
 
-            await translateModule.translateDirectoryDiff({
+            await translateDirectoryDiff({
                 baseDirectory: dir,
                 engine: Engine.ChatGPT,
                 inputFolderNameAfter: "en_after",
@@ -522,7 +527,7 @@ describe.each(Object.values(PromptMode))(
             fs.writeFileSync(frFile, JSON.stringify({ hello: "Bonjour" }));
             fs.writeFileSync(esFile, JSON.stringify({ hello: "Hola" }));
 
-            await translateModule.translateDirectoryDiff({
+            await translateDirectoryDiff({
                 baseDirectory: dir,
                 engine: Engine.ChatGPT,
                 inputFolderNameAfter: "en_after",
