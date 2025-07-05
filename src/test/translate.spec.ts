@@ -5,9 +5,9 @@ import path from "path";
 import * as translateModule from "../translate";
 import Engine from "../enums/engine";
 import PromptMode from "../enums/prompt_mode";
-import { info } from "console";
 
 const fr = (v: string): string => `${v}_fr`;
+const es = (v: string): string => `${v}_es`;
 
 const mkCaseDir = (): string =>
     fs.mkdtempSync(path.join(os.tmpdir(), "i18n-case-"));
@@ -108,7 +108,10 @@ describe("translateDiff", () => {
         } as any);
 
         const frOut = out.fr!;
-        expect(frOut).toEqual({ added: fr("New"), greeting: { text: fr("Hi") } });
+        expect(frOut).toEqual({
+            added: fr("New"),
+            greeting: { text: fr("Hi") },
+        });
     });
 
     it("prunes removed keys", async () => {
@@ -143,6 +146,28 @@ describe("translateDiff", () => {
         } as any);
 
         expect(out).toEqual({ fr: {} });
+    });
+
+    it("handles multiple languages", async () => {
+        const before = { greeting: "Hello" };
+        const after = { added: "New", greeting: "Hi" };
+
+        const out = await translateModule.translateDiff({
+            engine: Engine.ChatGPT,
+            inputJSONAfter: after,
+            inputJSONBefore: before,
+            inputLanguage: "en",
+            model: "gpt-4o",
+            promptMode: PromptMode.JSON,
+            rateLimitMs: 0,
+            toUpdateJSONs: {
+                es: { greeting: "Hola" },
+                fr: { greeting: "Bonjour" },
+            },
+        } as any);
+
+        expect(out.fr).toEqual({ added: fr("New"), greeting: fr("Hi") });
+        expect(out.es).toEqual({ added: es("New"), greeting: es("Hi") });
     });
 });
 
@@ -226,9 +251,15 @@ describe("translateFileDiff", () => {
         const afterPath = path.join(dir, "after_en.json");
         const frPath = path.join(dir, "fr.json");
 
-        fs.writeFileSync(beforePath, JSON.stringify({ key: "Old", unused: "Unused" }));
+        fs.writeFileSync(
+            beforePath,
+            JSON.stringify({ key: "Old", unused: "Unused" }),
+        );
         fs.writeFileSync(afterPath, JSON.stringify({ key: "New" }));
-        fs.writeFileSync(frPath, JSON.stringify({ key: "Ancien", unused: "Obsolete" }));
+        fs.writeFileSync(
+            frPath,
+            JSON.stringify({ key: "Ancien", unused: "Obsolete" }),
+        );
 
         await translateModule.translateFileDiff({
             engine: Engine.ChatGPT,
@@ -242,6 +273,35 @@ describe("translateFileDiff", () => {
 
         const out = JSON.parse(fs.readFileSync(frPath, "utf-8"));
         expect(out).toEqual({ key: fr("New") }); // 'unused' pruned
+    });
+
+    it("handles multiple languages", async () => {
+        const dir = mkCaseDir();
+        const beforePath = path.join(dir, "before_en.json");
+        const afterPath = path.join(dir, "after_en.json");
+        const frPath = path.join(dir, "fr.json");
+        const esPath = path.join(dir, "es.json");
+
+        fs.writeFileSync(beforePath, JSON.stringify({ key: "Old" }));
+        fs.writeFileSync(afterPath, JSON.stringify({ added: "Yes", key: "New" }));
+        fs.writeFileSync(frPath, JSON.stringify({ key: "Ancien" }));
+        fs.writeFileSync(esPath, JSON.stringify({ key: "Viejo" }));
+
+        await translateModule.translateFileDiff({
+            engine: Engine.ChatGPT,
+            inputAfterFileOrPath: afterPath,
+            inputBeforeFileOrPath: beforePath,
+            inputLanguageCode: "en",
+            model: "gpt-4o",
+            promptMode: PromptMode.JSON,
+            rateLimitMs: 0,
+        } as any);
+
+        const frOut = JSON.parse(fs.readFileSync(frPath, "utf-8"));
+        const esOut = JSON.parse(fs.readFileSync(esPath, "utf-8"));
+
+        expect(frOut).toEqual({ added: fr("Yes"), key: fr("New") });
+        expect(esOut).toEqual({ added: es("Yes"), key: es("New") });
     });
 });
 
@@ -376,5 +436,108 @@ describe("translateDirectoryDiff", () => {
 
         const updated = JSON.parse(fs.readFileSync(frFile, "utf-8"));
         expect(updated).toEqual({ bye: fr("Bye"), hello: fr("Hi") }); // 'unused' pruned
+    });
+
+    it("handles nested directories and multiple files", async () => {
+        const dir = mkCaseDir();
+
+        // ── layout ────────────────────────────────────────────
+        // base/en_before/app.json          { welcome: "Welcome" }
+        // base/en_after /app.json          { greeting: "Hello"   }
+        // base/en_after /nested/app.json   { farewell: "Goodbye" }
+        // base/fr       /app.json          { welcome: "Bienvenue" }
+
+        const enBefore = path.join(dir, "en_before");
+        const enAfter = path.join(dir, "en_after");
+        const frDir = path.join(dir, "fr");
+
+        fs.mkdirSync(enBefore, { recursive: true });
+        fs.mkdirSync(enAfter, { recursive: true });
+        fs.mkdirSync(frDir, { recursive: true });
+        fs.mkdirSync(path.join(enAfter, "nested"), { recursive: true });
+
+        const beforeFile = path.join(enBefore, "app.json");
+        const afterFile = path.join(enAfter, "app.json");
+        const afterNestedFile = path.join(enAfter, "nested", "app.json");
+        const frFile = path.join(frDir, "app.json");
+        const frNestedFile = path.join(frDir, "nested", "app.json");
+
+        fs.writeFileSync(beforeFile, JSON.stringify({ welcome: "Welcome" }));
+        fs.writeFileSync(afterFile, JSON.stringify({ greeting: "Hello" }));
+        fs.writeFileSync(
+            afterNestedFile,
+            JSON.stringify({ farewell: "Goodbye" }),
+        );
+
+        fs.writeFileSync(
+            frFile,
+            JSON.stringify({ welcome: "Bienvenue" }),
+        );
+
+        await translateModule.translateDirectoryDiff({
+            baseDirectory: dir,
+            engine: Engine.ChatGPT,
+            inputFolderNameAfter: "en_after",
+            inputFolderNameBefore: "en_before",
+            inputLanguageCode: "en",
+            model: "gpt-4o",
+            promptMode: PromptMode.JSON,
+            rateLimitMs: 0,
+            verbose: true,
+        } as any);
+
+        const updated = JSON.parse(fs.readFileSync(frFile, "utf-8"));
+        const updatedNested = JSON.parse(fs.readFileSync(frNestedFile, "utf-8"));
+
+        expect(updated).toEqual({ greeting: fr("Hello") });
+        expect(updatedNested).toEqual({ farewell: fr("Goodbye") });
+    });
+
+    it("handles multiple languages in the directory", async () => {
+        const dir = mkCaseDir();
+
+        // ── layout ────────────────────────────────────────────
+        // base/en_before/app.json  { hello: "Hello" }
+        // base/en_after /app.json  { hello: "Hi"     }
+        // base/fr       /app.json  { hello: "Bonjour" }
+        // base/es       /app.json  { hello: "Hola"    }
+
+        const enBefore = path.join(dir, "en_before");
+        const enAfter = path.join(dir, "en_after");
+        const frDir = path.join(dir, "fr");
+        const esDir = path.join(dir, "es");
+
+        fs.mkdirSync(enBefore, { recursive: true });
+        fs.mkdirSync(enAfter, { recursive: true });
+        fs.mkdirSync(frDir, { recursive: true });
+        fs.mkdirSync(esDir, { recursive: true });
+
+        const beforeFile = path.join(enBefore, "app.json");
+        const afterFile = path.join(enAfter, "app.json");
+        const frFile = path.join(frDir, "app.json");
+        const esFile = path.join(esDir, "app.json");
+
+        fs.writeFileSync(beforeFile, JSON.stringify({ hello: "Hello" }));
+        fs.writeFileSync(afterFile, JSON.stringify({ hello: "Hi" }));
+        fs.writeFileSync(frFile, JSON.stringify({ hello: "Bonjour" }));
+        fs.writeFileSync(esFile, JSON.stringify({ hello: "Hola" }));
+
+        await translateModule.translateDirectoryDiff({
+            baseDirectory: dir,
+            engine: Engine.ChatGPT,
+            inputFolderNameAfter: "en_after",
+            inputFolderNameBefore: "en_before",
+            inputLanguageCode: "en",
+            model: "gpt-4o",
+            promptMode: PromptMode.JSON,
+            rateLimitMs: 0,
+            verbose: true,
+        } as any);
+
+        const updatedFr = JSON.parse(fs.readFileSync(frFile, "utf-8"));
+        const updatedEs = JSON.parse(fs.readFileSync(esFile, "utf-8"));
+
+        expect(updatedFr).toEqual({ hello: fr("Hi") });
+        expect(updatedEs).toEqual({ hello: es("Hi") });
     });
 });

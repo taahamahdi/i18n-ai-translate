@@ -35,7 +35,7 @@ export default class Anthropic extends ChatInterface {
 
     async sendMessage(
         message: string,
-        format?: ZodType<any, ZodTypeDef, any>,
+        _format?: ZodType<any, ZodTypeDef, any>,
     ): Promise<string> {
         if (!this.chatParams) {
             console.trace("Chat not started");
