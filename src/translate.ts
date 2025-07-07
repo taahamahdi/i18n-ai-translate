@@ -326,6 +326,9 @@ export async function translateDiff(
         }
     }
 
+    const translatedJSONs: { [language: string]: { [key: string]: string } } =
+        {};
+
     for (const languageCode in flatToUpdateJSONs) {
         if (
             Object.prototype.hasOwnProperty.call(
@@ -333,6 +336,7 @@ export async function translateDiff(
                 languageCode,
             )
         ) {
+            translatedJSONs[languageCode] = {};
             const addedAndModifiedTranslations: { [key: string]: string } = {};
             for (const key of addedKeys) {
                 addedAndModifiedTranslations[key] = flatInputAfter[key];
@@ -374,18 +378,18 @@ export async function translateDiff(
 
             for (const key in flatTranslated) {
                 if (Object.prototype.hasOwnProperty.call(flatTranslated, key)) {
-                    flatToUpdateJSONs[languageCode][key] = flatTranslated[key];
+                    translatedJSONs[languageCode][key] = flatTranslated[key];
                 }
             }
 
             // Sort the keys
-            flatToUpdateJSONs[languageCode] = Object.keys(
-                flatToUpdateJSONs[languageCode],
+            translatedJSONs[languageCode] = Object.keys(
+                translatedJSONs[languageCode],
             )
                 .sort()
                 .reduce(
                     (obj, key) => {
-                        obj[key] = flatToUpdateJSONs[languageCode][key];
+                        obj[key] = translatedJSONs[languageCode][key];
                         return obj;
                     },
                     {} as { [key: string]: string },
@@ -394,9 +398,9 @@ export async function translateDiff(
     }
 
     const unflatToUpdateJSONs: { [language: string]: Object } = {};
-    for (const lang in flatToUpdateJSONs) {
-        if (Object.prototype.hasOwnProperty.call(flatToUpdateJSONs, lang)) {
-            unflatToUpdateJSONs[lang] = unflatten(flatToUpdateJSONs[lang], {
+    for (const lang in translatedJSONs) {
+        if (Object.prototype.hasOwnProperty.call(translatedJSONs, lang)) {
+            unflatToUpdateJSONs[lang] = unflatten(translatedJSONs[lang], {
                 delimiter: FLATTEN_DELIMITER,
             });
         }

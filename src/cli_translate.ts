@@ -14,8 +14,9 @@ import {
 import { processModelArgs, processOverridePromptFile } from "./cli_helpers";
 import { translateDirectory } from "./translate_directory";
 import { translateFile } from "./translate_file";
-import fs from "fs";
+import fs, { mkdtempSync } from "fs";
 import path from "path";
+import type DryRun from "./interfaces/dry_run";
 import type OverridePrompt from "./interfaces/override_prompt";
 
 /**
@@ -75,6 +76,7 @@ export default function buildTranslateCommand(): Command {
         .option("--verbose", CLI_HELP.Verbose, false)
         .option("--prompt-mode <prompt-mode>", CLI_HELP.PromptMode)
         .option("--batch-max-tokens <batch-max-tokens>", CLI_HELP.MaxTokens)
+        .option("--dry-run", CLI_HELP.DryRun, false)
         .action(async (options: any) => {
             const {
                 model,
@@ -88,11 +90,19 @@ export default function buildTranslateCommand(): Command {
             } = processModelArgs(options);
 
             let overridePrompt: OverridePrompt | undefined;
-
             if (options.overridePrompt) {
                 overridePrompt = processOverridePromptFile(
                     options.overridePrompt,
                 );
+            }
+
+            let dryRun: DryRun | undefined;
+            if (options.dryRun) {
+                dryRun = {
+                    basePath: mkdtempSync(
+                        `/tmp/i18n-ai-translate-${new Date().toISOString().replace(/[:.]/g, "-")}-`,
+                    ),
+                };
             }
 
             if (options.outputLanguages) {
@@ -171,6 +181,7 @@ export default function buildTranslateCommand(): Command {
                                 batchMaxTokens,
                                 batchSize,
                                 chatParams,
+                                dryRun,
                                 engine: options.engine,
                                 ensureChangedTranslation:
                                     options.ensureChangedTranslation,
@@ -224,6 +235,7 @@ export default function buildTranslateCommand(): Command {
                                 batchMaxTokens: options.batchMaxTokens,
                                 batchSize: options.batchSize,
                                 chatParams,
+                                dryRun,
                                 engine: options.engine,
                                 ensureChangedTranslation:
                                     options.ensureChangedTranslation,
@@ -316,6 +328,7 @@ export default function buildTranslateCommand(): Command {
                                 batchMaxTokens: options.batchMaxTokens,
                                 batchSize: options.batchSize,
                                 chatParams,
+                                dryRun,
                                 engine: options.engine,
                                 ensureChangedTranslation:
                                     options.ensureChangedTranslation,
@@ -359,6 +372,7 @@ export default function buildTranslateCommand(): Command {
                                 batchMaxTokens: options.batchMaxTokens,
                                 batchSize: options.batchSize,
                                 chatParams,
+                                dryRun,
                                 engine: options.engine,
                                 ensureChangedTranslation:
                                     options.ensureChangedTranslation,

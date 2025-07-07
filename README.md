@@ -33,6 +33,7 @@ https://github.com/user-attachments/assets/4909bf01-3e7a-464a-9c6e-2d1b82cc47d0
 - [Translation verification prompt](#translation-verification-prompt)
 - [Styling verification prompt](#styling-verification-prompt)
 - [Prompt overriding](#prompt-overriding)
+- [Dry-run mode](#dry-run-mode)
 
 # Usage
 
@@ -231,6 +232,10 @@ Options:
 
 - Translate the keys that have changed between `en/` and `en-after/` for all JSON files in both directories using Claude
 
+#### `npx i18n-ai-translate translate -i en.json -o fr --engine chatgpt --model gpt-4o --api-key <my_key> --dry-run`
+
+- Show what the translation of `en.json` to French would be, but do not actually write the output to disk. A directory is created in `/tmp` with the completed translations and patches to apply to existing translations.
+
 ## As a library
 
 Alternatively, import this project and use it to convert JSONs on-the-fly with [`translate()`](https://github.com/taahamahdi/i18n-ai-translate/blob/master/src/interfaces/translation_options.ts), or use [`translateDiff()`](https://github.com/taahamahdi/i18n-ai-translate/blob/master/src/interfaces/translation_diff_options.ts) to fetch updates to modified keys when your source i18n file has changed.
@@ -260,7 +265,7 @@ const translation = await translate({
     templatedStringPrefix, // The start of inline variables; defaults to "{{"
     templatedStringSuffix, // The end of inline variables; defaults to "}}"
     verbose, // Print status of conversion to stdout/stderr
-
+    dryRun, // Whether to write the output to disk
 });
 
 const translations = await translateDiff({
@@ -284,6 +289,7 @@ const translations = await translateDiff({
     templatedStringSuffix, // The end of inline variables; defaults to "}}"
     toUpdateJSONs, // An object of language codes to their translations
     verbose, // Print status of conversion to stdout/stderr
+    dryRun, // Whether to write the output to disk
 });
 ```
 
@@ -414,3 +420,7 @@ ${input}
 ## Prompt overriding
 
 Replace the aforementioned prompts with your own by creating a JSON file containing keys of at least one of `generationPrompt`, `translationVerificationPrompt`, or `stylingVerificationPrompt` (only used in CSV mode). Then, pass it as an argument with `--override-prompt <path to file>`. Be sure to include templated arguments like `${inputLanguage}` as part of the prompt.
+
+## Dry-run mode
+
+Add the `--dry-run` flag to see what the translation would be without actually writing any files. A directory is created in `/tmp` with the completed translations and patches to apply to existing translations.
