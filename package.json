@@ -8,7 +8,7 @@
     "colors": "^1.4.0",
     "commander": "^13.0.0",
     "diff": "^8.0.2",
-    "dotenv": "^16.4.1",
+    "dotenv": "^17.0.1",
     "fastest-levenshtein": "^1.0.16",
     "flat": "5.0.2",
     "gemini-zod": "^0.1.2",
