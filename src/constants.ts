@@ -3,7 +3,7 @@ import Engine from "./enums/engine";
 
 export const DEFAULT_BATCH_SIZE = 32;
 export const DEFAULT_REQUEST_TOKENS = 4096;
-export const VERSION = "4.0.2";
+export const VERSION = "4.1.0";
 export const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 export const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 export const FLATTEN_DELIMITER = "*";
@@ -18,6 +18,7 @@ export const RETRY_ATTEMPTS = 25;
 export const CLI_HELP = {
     BatchSize:
         "How many keys to process at a time, 32 by default for chatgpt, 16 otherwise",
+    DryRun: "Show the translations without writing to files, and store them in a temporary directory",
     Engine: "Engine to use (chatgpt, gemini, ollama, or claude)",
     EnsureChangedTranslation:
         "Each generated translation key must differ from the input (for keys longer than 4)",

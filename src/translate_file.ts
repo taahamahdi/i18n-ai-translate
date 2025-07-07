@@ -1,5 +1,7 @@
+import { createPatch, diffJson } from "diff";
 import { getLanguageCodeFromFilename, printError } from "./utils";
 import { translate, translateDiff } from "./translate";
+import colors from "colors/safe";
 import fs from "fs";
 import path from "path";
 import type TranslateFileDiffOptions from "./interfaces/translate_file_diff_options";
@@ -53,9 +55,62 @@ export async function translateFile(
         });
 
         const outputText = JSON.stringify(outputJSON, null, 4);
-        fs.writeFileSync(options.outputFilePath, `${outputText}\n`);
+        if (!options.dryRun) {
+            fs.writeFileSync(options.outputFilePath, `${outputText}\n`);
+        } else {
+            const translationDiff = diffJson(inputJSON, outputJSON);
+            fs.writeFileSync(
+                `${options.dryRun.basePath}/${path.basename(options.outputFilePath)}.new.json`,
+                outputText,
+            );
+
+            const patch = createPatch(
+                options.outputFilePath,
+                JSON.stringify(inputJSON, null, 4),
+                outputText,
+            );
+
+            fs.writeFileSync(
+                `${options.dryRun.basePath}/${path.basename(options.outputFilePath)}.patch`,
+                patch,
+            );
+
+            console.log(
+                `Wrote new JSON to ${options.dryRun.basePath}/${path.basename(options.outputFilePath)}.new.json`,
+            );
+
+            console.log(
+                `Wrote patch to ${options.dryRun.basePath}/${path.basename(options.outputFilePath)}.patch`,
+            );
+            if (options.verbose) {
+                for (const part of translationDiff) {
+                    const colorFns = {
+                        green: colors.green,
+                        grey: colors.grey,
+                        red: colors.red,
+                    } as const;
+
+                    type ColorKey = keyof typeof colorFns;
+
+                    let color: ColorKey;
+
+                    if (part.added) {
+                        color = "green";
+                    } else if (part.removed) {
+                        color = "red";
+                    } else {
+                        color = "grey";
+                    }
+
+                    process.stderr.write(colorFns[color](part.value));
+                }
+            }
+
+            console.log();
+        }
     } catch (err) {
         printError(`Failed to translate file to ${outputLanguage}: ${err}`);
+        throw err;
     }
 }
 
@@ -186,13 +241,70 @@ export async function translateFileDiff(
                     4,
                 );
 
-                fs.writeFileSync(
-                    languageCodeToOutputPath[language],
-                    `${outputText}\n`,
-                );
+                const inputJSON = toUpdateJSONs[language];
+                const outputPath = languageCodeToOutputPath[language];
+
+                if (!options.dryRun) {
+                    fs.writeFileSync(outputPath, `${outputText}\n`);
+                } else {
+                    const translationDiff = diffJson(
+                        inputJSON,
+                        outputJSON[language],
+                    );
+
+                    fs.writeFileSync(
+                        `${options.dryRun.basePath}/${path.basename(outputPath)}.new.json`,
+                        outputText,
+                    );
+
+                    const patch = createPatch(
+                        outputPath,
+                        JSON.stringify(inputJSON, null, 4),
+                        outputText,
+                    );
+
+                    fs.writeFileSync(
+                        `${options.dryRun.basePath}/${path.basename(outputPath)}.patch`,
+                        patch,
+                    );
+
+                    console.log(
+                        `Wrote new JSON to ${options.dryRun.basePath}/${path.basename(outputPath)}.new.json`,
+                    );
+
+                    console.log(
+                        `Wrote patch to ${options.dryRun.basePath}/${path.basename(outputPath)}.patch`,
+                    );
+                    if (options.verbose) {
+                        for (const part of translationDiff) {
+                            const colorFns = {
+                                green: colors.green,
+                                grey: colors.grey,
+                                red: colors.red,
+                            } as const;
+
+                            type ColorKey = keyof typeof colorFns;
+
+                            let color: ColorKey;
+
+                            if (part.added) {
+                                color = "green";
+                            } else if (part.removed) {
+                                color = "red";
+                            } else {
+                                color = "grey";
+                            }
+
+                            process.stderr.write(colorFns[color](part.value));
+                        }
+
+                        console.log();
+                    }
+                }
             }
         }
     } catch (err) {
         printError(`Failed to translate file diff: ${err}`);
+        throw err;
     }
 }

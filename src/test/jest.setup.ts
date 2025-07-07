@@ -47,6 +47,7 @@ jest.mock("../utils", () => {
     return {
         ...actualUtils,
         delay: jest.fn(() => Promise.resolve()),
+        printExecutionTime: jest.fn(),
         printInfo: jest.fn(),
     };
 });
