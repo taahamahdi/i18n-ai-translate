@@ -119,7 +119,6 @@ export function processModelArgs(options: any): ModelArgs {
             chatParams = {
                 messages: [],
                 model,
-                seed: 69420,
             };
 
             if (!options.rateLimitMs) {

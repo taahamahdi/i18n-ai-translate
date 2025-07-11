@@ -3,15 +3,15 @@ import Engine from "./enums/engine";
 
 export const DEFAULT_BATCH_SIZE = 32;
 export const DEFAULT_REQUEST_TOKENS = 4096;
-export const VERSION = "4.1.0";
+export const VERSION = "4.1.1";
 export const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 export const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 export const FLATTEN_DELIMITER = "*";
 export const DEFAULT_MODEL = {
     [Engine.ChatGPT]: "gpt-4o",
-    [Engine.Gemini]: "gemini-2.0-flash-exp",
+    [Engine.Gemini]: "gemini-2.5-flash",
     [Engine.Ollama]: "llama3.3",
-    [Engine.Claude]: "claude-3-5-sonnet-latest",
+    [Engine.Claude]: "claude-opus-4-0",
 };
 export const RETRY_ATTEMPTS = 25;
 
