@@ -3,7 +3,7 @@ import Engine from "./enums/engine";
 
 export const DEFAULT_BATCH_SIZE = 32;
 export const DEFAULT_REQUEST_TOKENS = 4096;
-export const VERSION = "4.1.1";
+export const VERSION = "4.1.2";
 export const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 export const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 export const FLATTEN_DELIMITER = "*";
