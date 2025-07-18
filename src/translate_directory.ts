@@ -402,7 +402,13 @@ export async function translateDirectoryDiff(
                             pathWithKey,
                         )
                     ) {
-                        const beforeBaseName = path.basename(path.resolve(options.baseDirectory, options.inputFolderNameBefore));
+                        const beforeBaseName = path.basename(
+                            path.resolve(
+                                options.baseDirectory,
+                                options.inputFolderNameBefore,
+                            ),
+                        );
+
                         const filePath = pathWithKey
                             .split(":")
                             .slice(0, -1)

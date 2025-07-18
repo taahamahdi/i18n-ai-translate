@@ -6,7 +6,7 @@ import {
 import { Command } from "commander";
 import {
     getAllLanguageCodes,
-    getLanguageCodeFromFilename,
+    getOutputPathFromInputPath,
     printError,
     printInfo,
     printWarn,
@@ -152,8 +152,8 @@ export default function buildTranslateCommand(): Command {
                             );
                         }
 
-                        const output = options.input.replace(
-                            getLanguageCodeFromFilename(options.input),
+                        const output = getOutputPathFromInputPath(
+                            inputPath,
                             languageCode,
                         );
 
@@ -218,8 +218,8 @@ export default function buildTranslateCommand(): Command {
                             );
                         }
 
-                        const output = options.input.replace(
-                            getLanguageCodeFromFilename(options.input),
+                        const output = getOutputPathFromInputPath(
+                            inputPath,
                             languageCode,
                         );
 
@@ -299,8 +299,8 @@ export default function buildTranslateCommand(): Command {
                     }
 
                     if (fs.statSync(inputPath).isFile()) {
-                        const output = options.input.replace(
-                            getLanguageCodeFromFilename(options.input),
+                        const output = getOutputPathFromInputPath(
+                            inputPath,
                             languageCode,
                         );
 
@@ -355,8 +355,8 @@ export default function buildTranslateCommand(): Command {
                             );
                         }
                     } else {
-                        const output = options.input.replace(
-                            getLanguageCodeFromFilename(options.input),
+                        const output = getOutputPathFromInputPath(
+                            inputPath,
                             languageCode,
                         );
 

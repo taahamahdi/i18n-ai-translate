@@ -221,3 +221,17 @@ export function printProgress(
         `\r${ansiColors.blueBright(title)} | ${ansiColors.greenBright(`Completed ${percentage}%`)} | ${ansiColors.yellowBright(`ETA: ${roundedEstimatedTimeLeftSeconds}s`)}`,
     );
 }
+
+/**
+ * @param inputPath - the input path
+ * @param outputLanguageCode - the output language code
+ * @returns the output path based on the input path and output language code
+ */
+export function getOutputPathFromInputPath(
+    inputPath: string,
+    outputLanguageCode: string,
+): string {
+    const dir = path.dirname(inputPath);
+    const filename = `${outputLanguageCode}${path.extname(inputPath)}`;
+    return path.join(dir, filename);
+}

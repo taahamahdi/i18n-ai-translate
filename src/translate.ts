@@ -203,7 +203,9 @@ export async function translate(options: TranslateOptions): Promise<Object> {
 
     // Validate the input and output languages are valid
     if (!isValidLanguageCode(options.inputLanguage)) {
-        throw new Error(`Invalid input language code: ${options.inputLanguage}`);
+        throw new Error(
+            `Invalid input language code: ${options.inputLanguage}`,
+        );
     }
 
     if (!isValidLanguageCode(options.outputLanguage)) {
