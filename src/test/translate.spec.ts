@@ -49,6 +49,22 @@ describe.each(Object.values(PromptMode))(
 
             expect(result).toEqual({ greeting: { text: fr("Hello") } });
         });
+
+        it("de-duplicates identical strings and includes them all in output", async () => {
+            const input = { a: "Hello", b: "Hello", c: { d: "Hello" } };
+
+            const result = await translate({
+                engine: Engine.ChatGPT,
+                inputJSON: input,
+                inputLanguage: "en",
+                model: "gpt-4o",
+                outputLanguage: "fr",
+                promptMode,
+                rateLimitMs: 0,
+            } as any);
+
+            expect(result).toEqual({ a: fr("Hello"), b: fr("Hello"), c: { d: fr("Hello") } });
+        });
     },
 );
 
