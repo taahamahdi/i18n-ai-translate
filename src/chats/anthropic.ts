@@ -43,8 +43,8 @@ export default class Anthropic extends ChatInterface {
         }
 
         // Limit the history to prevent wasting tokens
-        if (this.history.length > 10) {
-            this.history = this.history.slice(this.history.length - 10);
+        if (this.history.length > 2) {
+            this.history = this.history.slice(this.history.length - 2);
         }
 
         await this.rateLimiter.wait();
