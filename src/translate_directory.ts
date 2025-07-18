@@ -5,6 +5,7 @@ import {
     getAllFilesInPath,
     getTranslationDirectoryKey,
     printError,
+    printInfo,
 } from "./utils";
 import { translate, translateDiff } from "./translate";
 import colors from "colors/safe";
@@ -167,11 +168,11 @@ export async function translateDirectory(
                         patch,
                     );
 
-                    console.log(
+                    printInfo(
                         `Wrote new JSON to ${options.dryRun.basePath}/${relativeOutputPath}`,
                     );
 
-                    console.log(
+                    printInfo(
                         `Wrote patch to ${options.dryRun.basePath}/${relativeOutputPath}.patch`,
                     );
                     if (options.verbose) {
@@ -491,11 +492,11 @@ export async function translateDirectoryDiff(
                                 patch,
                             );
 
-                            console.log(
+                            printInfo(
                                 `Wrote new JSON to ${options.dryRun.basePath}/${relativeOutputPath}`,
                             );
 
-                            console.log(
+                            printInfo(
                                 `Wrote patch to ${options.dryRun.basePath}/${relativeOutputPath}.patch`,
                             );
                             if (options.verbose) {

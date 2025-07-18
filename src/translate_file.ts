@@ -1,5 +1,5 @@
 import { createPatch, diffJson } from "diff";
-import { getLanguageCodeFromFilename, printError } from "./utils";
+import { getLanguageCodeFromFilename, printError, printInfo } from "./utils";
 import { translate, translateDiff } from "./translate";
 import colors from "colors/safe";
 import fs from "fs";
@@ -75,11 +75,11 @@ export async function translateFile(
                 patch,
             );
 
-            console.log(
+            printInfo(
                 `Wrote new JSON to ${options.dryRun.basePath}/${path.basename(options.outputFilePath)}.new.json`,
             );
 
-            console.log(
+            printInfo(
                 `Wrote patch to ${options.dryRun.basePath}/${path.basename(options.outputFilePath)}.patch`,
             );
             if (options.verbose) {
@@ -268,11 +268,11 @@ export async function translateFileDiff(
                         patch,
                     );
 
-                    console.log(
+                    printInfo(
                         `Wrote new JSON to ${options.dryRun.basePath}/${path.basename(outputPath)}.new.json`,
                     );
 
-                    console.log(
+                    printInfo(
                         `Wrote patch to ${options.dryRun.basePath}/${path.basename(outputPath)}.patch`,
                     );
                     if (options.verbose) {

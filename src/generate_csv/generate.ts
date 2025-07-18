@@ -133,7 +133,7 @@ export default async function translateCSV(
 
         if (options.verbose && i > 0) {
             printProgress(
-                "Completed",
+                "In Progress",
                 translationStats.batchStartTime,
                 Object.keys(flatInput).length,
                 i,
