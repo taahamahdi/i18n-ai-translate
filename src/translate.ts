@@ -7,7 +7,7 @@ import {
 } from "./constants";
 import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
-import { printExecutionTime, printInfo } from "./utils";
+import { isValidLanguageCode, printExecutionTime, printInfo } from "./utils";
 import ChatFactory from "./chats/chat_factory";
 import GenerateTranslationJSON from "./generate_json/generate";
 import PromptMode from "./enums/prompt_mode";
@@ -200,6 +200,17 @@ function setDefaults(options: TranslateOptions): void {
  */
 export async function translate(options: TranslateOptions): Promise<Object> {
     setDefaults(options);
+
+    // Validate the input and output languages are valid
+    if (!isValidLanguageCode(options.inputLanguage)) {
+        throw new Error(`Invalid input language code: ${options.inputLanguage}`);
+    }
+
+    if (!isValidLanguageCode(options.outputLanguage)) {
+        throw new Error(
+            `Invalid output language code: ${options.outputLanguage}`,
+        );
+    }
 
     if (options.verbose) {
         printInfo(

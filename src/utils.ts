@@ -88,6 +88,14 @@ export function getAllLanguageCodes(): string[] {
 }
 
 /**
+ * @param languageCode - the language code to validate
+ * @returns whether the language code is valid
+ */
+export function isValidLanguageCode(languageCode: string): boolean {
+    return ISO6391.validate(languageCode);
+}
+
+/**
  * @param directory - the directory to list all files for
  * @returns all files with their absolute path that exist within the directory, recursively
  */
