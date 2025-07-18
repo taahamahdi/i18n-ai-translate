@@ -234,6 +234,31 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         flatInput,
     );
 
+    const canonicalToDupes: Record<string, string[]> = {};
+
+    const valueBuckets: Record<string, string[]> = {};
+    for (const [k, v] of Object.entries(flatInput)) {
+        (valueBuckets[v] ??= []).push(k);
+    }
+
+    for (const keys of Object.values(valueBuckets)) {
+        if (keys.length > 1) {
+            const [canonical, ...dupes] = keys;
+            canonicalToDupes[canonical] = dupes;
+            for (const k of dupes) {
+                delete flatInput[k];
+            }
+        }
+    }
+
+    if (options.verbose) {
+        for (const [canonical, dupes] of Object.entries(canonicalToDupes)) {
+            printInfo(
+                `De-duplicating ${canonical}\n=>\n${dupes.join("\n")}\n\n`,
+            );
+        }
+    }
+
     flatInput = groupSimilarValues(flatInput);
 
     const translationStats = startTranslationStats();
@@ -245,9 +270,15 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         translationStats,
     );
 
-    // sort the keys
-    const sortedOutput: { [key: string]: string } = {};
-    for (const key of Object.keys(flatInput).sort()) {
+    for (const [canonical, dupes] of Object.entries(canonicalToDupes)) {
+        const translated = output[canonical];
+        for (const k of dupes) {
+            output[k] = translated;
+        }
+    }
+
+    const sortedOutput: Record<string, string> = {};
+    for (const key of Object.keys(output).sort()) {
         sortedOutput[key] = output[key];
     }
 
