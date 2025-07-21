@@ -35,7 +35,7 @@ export async function translateDirectory(
 
     const sourceLanguagePath = path.resolve(
         fullBasePath,
-        options.inputLanguage,
+        options.inputLanguageCode,
     );
 
     if (!fs.existsSync(sourceLanguagePath)) {
@@ -61,21 +61,21 @@ export async function translateDirectory(
                     getTranslationDirectoryKey(
                         sourceFilePath,
                         key,
-                        options.inputLanguage,
-                        options.outputLanguage,
+                        options.inputLanguageCode,
+                        options.outputLanguageCode,
                     )
                 ] = flatJSON[key];
             }
         }
     }
 
-    const inputLanguage = options.inputLanguage;
+    const inputLanguage = options.inputLanguageCode;
 
     let outputLanguage = "";
     if (options.forceLanguageName) {
         outputLanguage = options.forceLanguageName;
     } else {
-        outputLanguage = options.outputLanguage;
+        outputLanguage = options.outputLanguageCode;
     }
 
     try {
@@ -88,9 +88,9 @@ export async function translateDirectory(
             ensureChangedTranslation: options.ensureChangedTranslation,
             host: options.host,
             inputJSON,
-            inputLanguage,
+            inputLanguageCode: inputLanguage,
             model: options.model,
-            outputLanguage,
+            outputLanguageCode: outputLanguage,
             overridePrompt: options.overridePrompt,
             promptMode: options.promptMode,
             rateLimitMs: options.rateLimitMs,
@@ -368,7 +368,7 @@ export async function translateDirectoryDiff(
             host: options.host,
             inputJSONAfter,
             inputJSONBefore,
-            inputLanguage,
+            inputLanguageCode: inputLanguage,
             model: options.model,
             overridePrompt: options.overridePrompt,
             promptMode: options.promptMode,

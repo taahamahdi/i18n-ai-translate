@@ -4,8 +4,8 @@ import type OverridePrompt from "./override_prompt";
 
 export default interface GenerateTranslationOptionsJSON {
     chats: Chats;
-    inputLanguage: string;
-    outputLanguage: string;
+    inputLanguageCode: string;
+    outputLanguageCode: string;
     translateItems: TranslateItem[];
     templatedStringPrefix: string;
     templatedStringSuffix: string;

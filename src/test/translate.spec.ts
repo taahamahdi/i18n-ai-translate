@@ -26,9 +26,9 @@ describe.each(Object.values(PromptMode))(
             const result = await translate({
                 engine: Engine.ChatGPT,
                 inputJSON: { hello: "Hello" },
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
-                outputLanguage: "fr",
+                outputLanguageCode: "fr",
                 promptMode,
                 rateLimitMs: 0,
             } as any);
@@ -40,9 +40,9 @@ describe.each(Object.values(PromptMode))(
             const result = await translate({
                 engine: Engine.ChatGPT,
                 inputJSON: { greeting: { text: "Hello" } },
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
-                outputLanguage: "fr",
+                outputLanguageCode: "fr",
                 promptMode,
                 rateLimitMs: 0,
             } as any);
@@ -56,14 +56,18 @@ describe.each(Object.values(PromptMode))(
             const result = await translate({
                 engine: Engine.ChatGPT,
                 inputJSON: input,
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
-                outputLanguage: "fr",
+                outputLanguageCode: "fr",
                 promptMode,
                 rateLimitMs: 0,
             } as any);
 
-            expect(result).toEqual({ a: fr("Hello"), b: fr("Hello"), c: { d: fr("Hello") } });
+            expect(result).toEqual({
+                a: fr("Hello"),
+                b: fr("Hello"),
+                c: { d: fr("Hello") },
+            });
         });
     },
 );
@@ -79,7 +83,7 @@ describe.each(Object.values(PromptMode))(
                 engine: Engine.ChatGPT,
                 inputJSONAfter: after,
                 inputJSONBefore: before,
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
                 promptMode,
                 rateLimitMs: 0,
@@ -100,7 +104,7 @@ describe.each(Object.values(PromptMode))(
                 engine: Engine.ChatGPT,
                 inputJSONAfter: after,
                 inputJSONBefore: before,
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
                 promptMode,
                 rateLimitMs: 0,
@@ -124,7 +128,7 @@ describe.each(Object.values(PromptMode))(
                 engine: Engine.ChatGPT,
                 inputJSONAfter: after,
                 inputJSONBefore: before,
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
                 promptMode,
                 rateLimitMs: 0,
@@ -142,7 +146,7 @@ describe.each(Object.values(PromptMode))(
                 engine: Engine.ChatGPT,
                 inputJSONAfter: {},
                 inputJSONBefore: {},
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
                 promptMode,
                 rateLimitMs: 0,
@@ -160,7 +164,7 @@ describe.each(Object.values(PromptMode))(
                 engine: Engine.ChatGPT,
                 inputJSONAfter: after,
                 inputJSONBefore: before,
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
                 promptMode,
                 rateLimitMs: 0,
@@ -190,7 +194,7 @@ describe.each(Object.values(PromptMode))(
                 engine: Engine.ChatGPT,
                 forceLanguageName: "fr",
                 inputFilePath: inputPath,
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
                 outputFilePath: outputPath,
                 promptMode,
@@ -212,7 +216,7 @@ describe.each(Object.values(PromptMode))(
                 engine: Engine.ChatGPT,
                 forceLanguageName: "fr",
                 inputFilePath: inputPath,
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
                 outputFilePath: outputPath,
                 promptMode,
@@ -333,9 +337,9 @@ describe.each(Object.values(PromptMode))(
             await translateDirectory({
                 baseDirectory: dir,
                 engine: Engine.ChatGPT,
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
-                outputLanguage: "fr",
+                outputLanguageCode: "fr",
                 promptMode,
                 rateLimitMs: 0,
             } as any);
@@ -356,9 +360,9 @@ describe.each(Object.values(PromptMode))(
             await translateDirectory({
                 baseDirectory: dir,
                 engine: Engine.ChatGPT,
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
-                outputLanguage: "fr",
+                outputLanguageCode: "fr",
                 promptMode,
                 rateLimitMs: 0,
             } as any);
@@ -385,9 +389,9 @@ describe.each(Object.values(PromptMode))(
             await translateDirectory({
                 baseDirectory: dir,
                 engine: Engine.ChatGPT,
-                inputLanguage: "en",
+                inputLanguageCode: "en",
                 model: "gpt-4o",
-                outputLanguage: "fr",
+                outputLanguageCode: "fr",
                 promptMode,
                 rateLimitMs: 0,
             } as any);

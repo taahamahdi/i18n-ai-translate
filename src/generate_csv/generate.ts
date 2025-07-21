@@ -19,8 +19,8 @@ async function generateTranslation(
 ): Promise<string> {
     const {
         input,
-        inputLanguage,
-        outputLanguage,
+        inputLanguageCode: inputLanguage,
+        outputLanguageCode: outputLanguage,
         templatedStringPrefix,
         templatedStringSuffix,
     } = options;
@@ -103,9 +103,9 @@ export default async function translateCSV(
             ensureChangedTranslation:
                 options.ensureChangedTranslation as boolean,
             input,
-            inputLanguage: `[${options.inputLanguage}]`,
+            inputLanguageCode: `[${options.inputLanguageCode}]`,
             keys,
-            outputLanguage: `[${options.outputLanguage}]`,
+            outputLanguageCode: `[${options.outputLanguageCode}]`,
             overridePrompt: options.overridePrompt,
             skipStylingVerification: options.skipStylingVerification as boolean,
             skipTranslationVerification:
@@ -117,7 +117,7 @@ export default async function translateCSV(
 
         if (generatedTranslation === "") {
             printError(
-                `Failed to generate translation for ${options.outputLanguage}`,
+                `Failed to generate translation for ${options.outputLanguageCode}`,
             );
             break;
         }
@@ -151,8 +151,8 @@ async function generate(
 ): Promise<string> {
     const {
         chats,
-        inputLanguage,
-        outputLanguage,
+        inputLanguageCode: inputLanguage,
+        outputLanguageCode: outputLanguage,
         input,
         keys,
         verboseLogging,

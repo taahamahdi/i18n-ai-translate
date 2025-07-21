@@ -105,8 +105,8 @@ const englishJSON = {
 
 const frenchTranslation = await translate({
   inputJSON: englishJSON,
-  inputLanguage: "en",
-  outputLanguage: "fr",
+  inputLanguageCode: "en",
+  outputLanguageCode: "fr",
   ...
 });
 
@@ -254,9 +254,9 @@ const translation = await translate({
     ensureChangedTranslation, // Every key longer than 4 characters must be different than the input
     host, // The host and port number running Ollama
     inputJSON, // JSON to translate
-    inputLanguage, // Language code of inputJSON (e.g. en, fr, etc.)
+    inputLanguageCode, // Language code of inputJSON (e.g. en, fr, etc.)
     model, // Model to use (e.g. gpt-4o, gemini-2.0-flash-exp, llama3.3, claude-3-5-sonnet-latest)
-    outputLanguage, // Targeted language code (e.g. fr, es, etc.)
+    outputLanguageCode, // Targeted language code (e.g. fr, es, etc.)
     overridePrompt, // Set custom prompts for generation or verification
     promptMode, // Chose between 'csv' mode and 'json' mode
     rateLimitMs, // How many milliseconds between requests
@@ -278,7 +278,7 @@ const translations = await translateDiff({
     host, // The host and port number running Ollama
     inputJSONAfter, // The source translation after a change
     inputJSONBefore, // The source translation before a change
-    inputLanguage, // Language of inputJSONBefore/After
+    inputLanguageCode, // Language of inputJSONBefore/After
     model, // Model to use (e.g. gpt-4o, gemini-2.0-flash-exp, llama3.3, claude-3-5-sonnet-latest)
     overridePrompt, // Set custom prompts for generation or verification
     promptMode, // Chose between 'csv' mode and 'json' mode

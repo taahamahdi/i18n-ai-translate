@@ -3,8 +3,8 @@ import type OverridePrompt from "./override_prompt";
 
 export default interface GenerateTranslationOptionsCSV {
     chats: Chats;
-    inputLanguage: string;
-    outputLanguage: string;
+    inputLanguageCode: string;
+    outputLanguageCode: string;
     input: string;
     keys: Array<string>;
     templatedStringPrefix: string;

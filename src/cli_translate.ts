@@ -240,9 +240,9 @@ export default function buildTranslateCommand(): Command {
                                 ensureChangedTranslation:
                                     options.ensureChangedTranslation,
                                 host,
-                                inputLanguage: path.basename(inputPath),
+                                inputLanguageCode: path.basename(inputPath),
                                 model,
-                                outputLanguage: languageCode,
+                                outputLanguageCode: languageCode,
                                 overridePrompt,
                                 promptMode,
                                 rateLimitMs,
@@ -377,9 +377,9 @@ export default function buildTranslateCommand(): Command {
                                 ensureChangedTranslation:
                                     options.ensureChangedTranslation,
                                 host,
-                                inputLanguage: path.basename(inputPath),
+                                inputLanguageCode: path.basename(inputPath),
                                 model,
-                                outputLanguage: languageCode,
+                                outputLanguageCode: languageCode,
                                 overridePrompt,
                                 promptMode,
                                 rateLimitMs,

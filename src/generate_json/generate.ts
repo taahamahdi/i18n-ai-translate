@@ -158,8 +158,8 @@ export default class GenerateTranslationJSON {
     ): TranslateItem[] {
         const promptTokens = this.tikToken.encode(
             translationPromptJSON(
-                options.inputLanguage,
-                options.outputLanguage,
+                options.inputLanguageCode,
+                options.outputLanguageCode,
                 [],
                 options.overridePrompt,
             ),
@@ -206,8 +206,8 @@ export default class GenerateTranslationJSON {
     ): TranslateItem[] {
         const promptTokens = this.tikToken.encode(
             verificationPromptJSON(
-                options.inputLanguage,
-                options.outputLanguage,
+                options.inputLanguageCode,
+                options.outputLanguageCode,
                 [],
                 options.overridePrompt,
             ),
@@ -317,8 +317,8 @@ export default class GenerateTranslationJSON {
                 chats,
                 ensureChangedTranslation:
                     options.ensureChangedTranslation as boolean,
-                inputLanguage: `[${options.inputLanguage}]`,
-                outputLanguage: `[${options.outputLanguage}]`,
+                inputLanguageCode: `[${options.inputLanguageCode}]`,
+                outputLanguageCode: `[${options.outputLanguageCode}]`,
                 overridePrompt: options.overridePrompt,
                 skipStylingVerification:
                     options.skipStylingVerification as boolean,
@@ -411,8 +411,8 @@ export default class GenerateTranslationJSON {
                 chats,
                 ensureChangedTranslation:
                     options.ensureChangedTranslation as boolean,
-                inputLanguage: `[${options.inputLanguage}]`,
-                outputLanguage: `[${options.outputLanguage}]`,
+                inputLanguageCode: `[${options.inputLanguageCode}]`,
+                outputLanguageCode: `[${options.outputLanguageCode}]`,
                 overridePrompt: options.overridePrompt,
                 skipStylingVerification:
                     options.skipStylingVerification as boolean,
@@ -633,8 +633,8 @@ export default class GenerateTranslationJSON {
         };
 
         const generationPromptText = translationPromptJSON(
-            options.inputLanguage,
-            options.outputLanguage,
+            options.inputLanguageCode,
+            options.outputLanguageCode,
             this.generateTranslateItemsInput(options.translateItems),
             options.overridePrompt,
         );
@@ -680,8 +680,8 @@ export default class GenerateTranslationJSON {
         };
 
         const generationPromptText = verificationPromptJSON(
-            options.inputLanguage,
-            options.outputLanguage,
+            options.inputLanguageCode,
+            options.outputLanguageCode,
             this.generateVerifyItemsInput(options.translateItems),
             options.overridePrompt,
         );

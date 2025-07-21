@@ -202,21 +202,21 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     setDefaults(options);
 
     // Validate the input and output languages are valid
-    if (!isValidLanguageCode(options.inputLanguage)) {
+    if (!isValidLanguageCode(options.inputLanguageCode)) {
         throw new Error(
-            `Invalid input language code: ${options.inputLanguage}`,
+            `Invalid input language code: ${options.inputLanguageCode}`,
         );
     }
 
-    if (!isValidLanguageCode(options.outputLanguage)) {
+    if (!isValidLanguageCode(options.outputLanguageCode)) {
         throw new Error(
-            `Invalid output language code: ${options.outputLanguage}`,
+            `Invalid output language code: ${options.outputLanguageCode}`,
         );
     }
 
     if (options.verbose) {
         printInfo(
-            `Translating from ${options.inputLanguage} to ${options.outputLanguage}...`,
+            `Translating from ${options.inputLanguageCode} to ${options.outputLanguageCode}...`,
         );
     }
 
@@ -400,9 +400,9 @@ export async function translateDiff(
                 ensureChangedTranslation: options.ensureChangedTranslation,
                 host: options.host,
                 inputJSON: addedAndModifiedTranslations,
-                inputLanguage: options.inputLanguage,
+                inputLanguageCode: options.inputLanguageCode,
                 model: options.model,
-                outputLanguage: languageCode,
+                outputLanguageCode: languageCode,
                 overridePrompt: options.overridePrompt,
                 promptMode: options.promptMode,
                 rateLimitMs: options.rateLimitMs,

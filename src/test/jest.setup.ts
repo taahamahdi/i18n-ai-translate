@@ -19,7 +19,7 @@ jest.mock("../generate_json/generate", () => ({
             flat: Record<string, string>,
             options: TranslateOptions,
         ): Object {
-            const translateFn = options.outputLanguage === "fr" ? fr : es;
+            const translateFn = options.outputLanguageCode === "fr" ? fr : es;
             return Object.fromEntries(
                 Object.entries(flat).map(([k, v]) => [
                     k,
@@ -33,7 +33,7 @@ jest.mock("../generate_json/generate", () => ({
 jest.mock("../generate_csv/generate", () => ({
     __esModule: true,
     default: (flat: Record<string, string>, options: TranslateOptions) => {
-        const translateFn = options.outputLanguage === "fr" ? fr : es;
+        const translateFn = options.outputLanguageCode === "fr" ? fr : es;
         return Object.fromEntries(
             Object.entries(flat).map(([k, v]) => [k, translateFn(v as string)]),
         );
