@@ -3893,9 +3893,9 @@ onetime@^5.1.2:
     mimic-fn "^2.1.0"
 
 openai@^5.6.0:
-  version "5.15.0"
-  resolved "https://registry.yarnpkg.com/openai/-/openai-5.15.0.tgz#de3ae6d0914f7a0fcc12d0faa21a2289f9d5cc5d"
-  integrity sha512-kcUdws8K/A8m02I+IqFBwO51gS+87GP89yWEufGbzEi8anBz4FB/bti2QxaJdGwwY4mwJGzx85XO7TuL/Tpu1w==
+  version "5.19.1"
+  resolved "https://registry.yarnpkg.com/openai/-/openai-5.19.1.tgz#093e91e9bd5a7da5525706aefece73ff6bc2781f"
+  integrity sha512-zSqnUF7oR9ksmpusKkpUgkNrj8Sl57U+OyzO8jzc7LUjTMg4DRfR3uCm+EIMA6iw06sRPNp4t7ojp3sCpEUZRQ==
 
 optionator@^0.9.3:
   version "0.9.4"
