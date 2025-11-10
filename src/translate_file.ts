@@ -106,7 +106,7 @@ export async function translateFile(
                 }
             }
 
-            console.log();
+            process.stdout.write("\n");
         }
     } catch (err) {
         printError(`Failed to translate file to ${outputLanguage}: ${err}`);
@@ -298,7 +298,7 @@ export async function translateFileDiff(
                             process.stderr.write(colorFns[color](part.value));
                         }
 
-                        console.log();
+                        process.stdout.write("\n");
                     }
                 }
             }

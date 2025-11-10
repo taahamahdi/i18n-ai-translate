@@ -127,12 +127,54 @@ export function getTranslationDirectoryKey(
     inputLanguageCode: string,
     outputLanguageCode?: string,
 ): string {
-    const outputPath = sourceFilePath.replace(
-        `/${inputLanguageCode}/`,
-        `/${outputLanguageCode ?? inputLanguageCode}/`,
+    const replacedPath = replaceLanguageInPath(
+        sourceFilePath,
+        inputLanguageCode,
+        outputLanguageCode,
     );
 
-    return `${outputPath}:${key}`;
+    return `${replacedPath}:${key}`;
+}
+
+/**
+ * @param sourceFilePath - original path containing the input language directory
+ * @param inputLanguageCode - the language code directory to replace
+ * @param outputLanguageCode - the new language code directory
+ * @returns the source path with the language directory swapped
+ */
+export function replaceLanguageInPath(
+    sourceFilePath: string,
+    inputLanguageCode: string,
+    outputLanguageCode?: string,
+): string {
+    const isWindowsPath =
+        sourceFilePath.includes("\\") ||
+        /^[a-zA-Z]:/.test(sourceFilePath) ||
+        sourceFilePath.startsWith("\\\\");
+    const pathModule = isWindowsPath ? path.win32 : path.posix;
+
+    const normalizedSource = pathModule.normalize(sourceFilePath);
+    const parsed = pathModule.parse(normalizedSource);
+    const withoutRoot = normalizedSource.slice(parsed.root.length);
+    const segments = withoutRoot.length
+        ? withoutRoot.split(pathModule.sep)
+        : [];
+
+    const languageIndex = segments.findIndex(
+        (segment, index) =>
+            segment === inputLanguageCode && index < segments.length - 1,
+    );
+
+    if (languageIndex === -1) {
+        return normalizedSource;
+    }
+
+    const targetSegments = [...segments];
+    targetSegments[languageIndex] = outputLanguageCode ?? inputLanguageCode;
+
+    return parsed.root !== ""
+        ? pathModule.join(parsed.root, ...targetSegments)
+        : pathModule.join(...targetSegments);
 }
 
 /**

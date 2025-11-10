@@ -6,6 +6,7 @@ import {
     getTranslationDirectoryKey,
     printError,
     printInfo,
+    replaceLanguageInPath,
 } from "./utils";
 import { translate, translateDiff } from "./translate";
 import colors from "colors/safe";
@@ -136,13 +137,12 @@ export async function translateDirectory(
                         perFileJSON,
                     );
 
-                    const input = fs.readFileSync(
-                        perFileJSON.replace(
-                            `/${outputLanguage}/`,
-                            `/${inputLanguage}/`,
-                        ),
-                        "utf-8",
+                    const inputFilePath = replaceLanguageInPath(
+                        perFileJSON,
+                        outputLanguage,
+                        inputLanguage,
                     );
+                    const input = fs.readFileSync(inputFilePath, "utf-8");
 
                     const translationDiff = diffJson(input, outputText);
                     fs.mkdirSync(
@@ -199,7 +199,7 @@ export async function translateDirectory(
                         }
                     }
 
-                    console.log();
+                    process.stdout.write("\n");
                 }
             }
         }
@@ -340,12 +340,19 @@ export async function translateDirectoryDiff(
 
             for (const key in flatJSON) {
                 if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+                    const relativeFile = path.relative(
+                        outputLanguagePath,
+                        file,
+                    );
+                    const sourceEquivalentPath = path.resolve(
+                        fullBasePath,
+                        options.inputFolderNameBefore,
+                        relativeFile,
+                    );
+
                     toUpdateJSONs[language][
                         getTranslationDirectoryKey(
-                            `${fullBasePath}/${file.replace(
-                                outputLanguagePath,
-                                options.inputFolderNameBefore,
-                            )}`,
+                            sourceEquivalentPath,
                             key,
                             options.inputLanguageCode,
                         )
@@ -410,14 +417,15 @@ export async function translateDirectoryDiff(
                             ),
                         );
 
-                        const filePath = pathWithKey
+                        const originalPath = pathWithKey
                             .split(":")
                             .slice(0, -1)
-                            .join(":")
-                            .replace(
-                                `/${beforeBaseName}/`,
-                                `/${outputLanguage}/`,
-                            );
+                            .join(":");
+                        const filePath = replaceLanguageInPath(
+                            originalPath,
+                            beforeBaseName,
+                            outputLanguage,
+                        );
 
                         if (!filesToJSON[filePath]) {
                             filesToJSON[filePath] = {};
@@ -456,12 +464,14 @@ export async function translateDirectoryDiff(
                         } else {
                             // TODO: find a cleaner way to get the input file from here
                             // Might lead to a bug if the path has the language code multiple times
+                            const swappedOutputPath = replaceLanguageInPath(
+                                perFileJSON,
+                                inputLanguage,
+                                outputLanguage,
+                            );
                             const relativeOutputPath = path.relative(
                                 options.baseDirectory,
-                                perFileJSON.replace(
-                                    `/${inputLanguage}/`,
-                                    `/${outputLanguage}/`,
-                                ),
+                                swappedOutputPath,
                             );
 
                             const input = fs.readFileSync(perFileJSON, "utf-8");
@@ -479,10 +489,7 @@ export async function translateDirectoryDiff(
                             );
 
                             const patch = createPatch(
-                                perFileJSON.replace(
-                                    `/${inputLanguage}/`,
-                                    `/${outputLanguage}/`,
-                                ), // Use the absolute path for the patch header
+                                swappedOutputPath, // Use the absolute path for the patch header
                                 input,
                                 outputText,
                             );
@@ -526,7 +533,7 @@ export async function translateDirectoryDiff(
                             }
                         }
 
-                        console.log();
+                        process.stdout.write("\n");
                     }
                 }
             }
