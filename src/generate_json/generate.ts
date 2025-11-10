@@ -42,7 +42,7 @@ export default class GenerateTranslationJSON {
 
         this.templatedStringRegex = getTemplatedStringRegex(
             options.templatedStringPrefix as string,
-            options.templatedStringPrefix as string,
+            options.templatedStringSuffix as string,
         );
     }
 
