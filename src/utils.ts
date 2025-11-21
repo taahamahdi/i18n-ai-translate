@@ -74,10 +74,9 @@ export async function retryJob<Type>(
  * @returns the language code from the filename
  */
 export function getLanguageCodeFromFilename(filename: string): string {
-    const splitFilename = filename.split("/");
-    const lastPart = splitFilename[splitFilename.length - 1];
-    const splitLastPart = lastPart.split(".");
-    return splitLastPart[0];
+    const base = path.basename(filename);
+    const [lang] = base.split(".");
+    return lang;
 }
 
 /**
@@ -212,7 +211,7 @@ export function printProgress(
     const roundedEstimatedTimeLeftSeconds = Math.round(
         (((Date.now() - startTime) / (processedItems + 1)) *
             (totalItems - processedItems)) /
-            1000,
+        1000,
     );
 
     const percentage = ((processedItems / totalItems) * 100).toFixed(0);
