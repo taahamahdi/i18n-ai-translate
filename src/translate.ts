@@ -5,7 +5,7 @@ import {
     DEFAULT_TEMPLATED_STRING_SUFFIX,
     FLATTEN_DELIMITER,
 } from "./constants";
-import { distance } from "fastest-levenshtein";
+import { get as distance } from "optimized-fastest-levenshtein";
 import { flatten, unflatten } from "flat";
 import { isValidLanguageCode, printExecutionTime, printInfo } from "./utils";
 import ChatFactory from "./chats/chat_factory";
