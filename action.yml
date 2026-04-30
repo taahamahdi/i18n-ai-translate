@@ -29,9 +29,9 @@ inputs:
     required: false
     default: 'chatgpt'
   model:
-    description: 'Model to use for the translation (e.g., gpt-4o, gpt-4, gpt-3.5-turbo, gemini-pro)'
+    description: 'Model to use for the translation (e.g., gpt-4.1, gpt-4o, gemini-2.5-flash, claude-sonnet-4-6)'
     required: false
-    default: 'gpt-4o'
+    default: 'gpt-4.1'
   templated-string-prefix:
     description: 'Prefix for templated strings'
     required: false
