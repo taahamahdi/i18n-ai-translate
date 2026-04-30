@@ -71,8 +71,11 @@ export function processModelArgs(options: any): ModelArgs {
             };
             if (!options.rateLimitMs) {
                 // Free-tier rate limits are 3 RPM => 1 call every 20 seconds
-                // Tier 1 is a reasonable 500 RPM => 1 call every 120ms
-                // TODO: token limits
+                // Tier 1 is a reasonable 500 RPM => 1 call every 120ms.
+                // A future TokenBucket can layer on top of
+                // RateLimiter.acquire() to add TPM tracking; RPM-only is
+                // fine for now since our batch sizes are tokens-bounded
+                // via batchMaxTokens.
                 rateLimitMs = 120;
             }
 
