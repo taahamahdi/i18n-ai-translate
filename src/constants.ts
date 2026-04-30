@@ -24,6 +24,8 @@ export const CLI_HELP = {
         "Each generated translation key must differ from the input (for keys longer than 4)",
     MaxTokens: "The maximum token size of a request",
     Model: `Model to use (e.g. ${Object.values(DEFAULT_MODEL).join(", ")})`,
+    NoContinueOnError:
+        "Abort the run when a key or batch exhausts retries (default: continue and report skipped keys to stderr)",
     OllamaHost:
         "The host and port number serving Ollama. 11434 is the default port number.",
     OverridePromptFile: `Use the prompts from the given JSON file, containing keys for at least one of ${OVERRIDE_PROMPT_KEYS.join(", ")}`,

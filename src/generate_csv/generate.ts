@@ -116,6 +116,13 @@ export default async function translateCSV(
         });
 
         if (generatedTranslation === "") {
+            if (options.continueOnError) {
+                printError(
+                    `Skipping ${keys.length} key(s) after repeated failures for ${options.outputLanguageCode}: ${keys.join(", ")}`,
+                );
+                continue;
+            }
+
             printError(
                 `Failed to generate translation for ${options.outputLanguageCode}`,
             );
