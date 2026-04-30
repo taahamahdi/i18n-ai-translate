@@ -76,7 +76,7 @@ Common flags:
 | Flag                  | Default         | Description                                         |
 | --------------------- | --------------- | --------------------------------------------------- |
 | `-e, --engine`        | chatgpt         | chatgpt · gemini · claude · ollama                  |
-| `-m, --model`         | gpt-4.1         | e.g. gemini‑2.5‑flash, claude‑sonnet‑4‑6            |
+| `-m, --model`         | gpt-5.2         | e.g. gemini‑2.5‑flash, claude‑sonnet‑4‑6            |
 | `-r, --rate-limit-ms` | engine‑specific | Gap between requests                                |
 | `--dry-run`           | false           | Don’t write files, preview instead                  |
 

@@ -8,7 +8,7 @@ export const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 export const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 export const FLATTEN_DELIMITER = "*";
 export const DEFAULT_MODEL = {
-    [Engine.ChatGPT]: "gpt-4.1",
+    [Engine.ChatGPT]: "gpt-5.2",
     [Engine.Gemini]: "gemini-2.5-flash",
     [Engine.Ollama]: "llama3.3",
     [Engine.Claude]: "claude-sonnet-4-6",
