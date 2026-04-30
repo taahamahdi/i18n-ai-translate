@@ -6,12 +6,13 @@ import {
     printError,
     printInfo,
     printProgress,
-    retryJob,
 } from "../utils";
+import { retryWithBackoff } from "../retry";
 import { verifyStyling, verifyTranslation } from "./verify";
 import type { GenerateStateCSV, TranslationStatsItem } from "../types";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsCSV from "../interfaces/generate_translation_options_csv";
+import type RateLimiter from "../rate_limiter";
 import type TranslateOptions from "../interfaces/translate_options";
 
 async function generateTranslation(
@@ -56,14 +57,14 @@ async function generateTranslation(
 
     let translated = "";
     try {
-        translated = await retryJob(
+        translated = await retryWithBackoff(
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            generate,
-            [options, generationPromptText, generateState],
-            RETRY_ATTEMPTS,
-            true,
-            0,
-            false,
+            () => generate(options, generationPromptText, generateState),
+            {
+                maxRetries: RETRY_ATTEMPTS,
+                rateLimiter: options.rateLimiter,
+                verbose: options.verboseLogging,
+            },
         );
     } catch (e) {
         printError(`Failed to translate: ${e}`);
@@ -84,6 +85,7 @@ export default async function translateCSV(
     options: TranslateOptions,
     chats: Chats,
     translationStats: TranslationStatsItem,
+    rateLimiter?: RateLimiter,
 ): Promise<{ [key: string]: string }> {
     const output: { [key: string]: string } = {};
 
@@ -107,6 +109,7 @@ export default async function translateCSV(
             keys,
             outputLanguageCode: `[${options.outputLanguageCode}]`,
             overridePrompt: options.overridePrompt,
+            rateLimiter,
             skipStylingVerification: options.skipStylingVerification as boolean,
             skipTranslationVerification:
                 options.skipTranslationVerification as boolean,

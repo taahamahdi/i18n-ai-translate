@@ -11,8 +11,8 @@ import {
     printExecutionTime,
     printProgress,
     printWarn,
-    retryJob,
 } from "../utils";
+import { retryWithBackoff } from "../retry";
 import { translationPromptJSON, verificationPromptJSON } from "./prompts";
 import cl100k_base from "tiktoken/encoders/cl100k_base.json";
 import type {
@@ -27,6 +27,7 @@ import type { TranslationStats, TranslationStatsItem } from "../types";
 import type { ZodType, ZodTypeDef } from "zod";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsJSON from "../interfaces/generate_translation_options_json";
+import type RateLimiter from "../rate_limiter";
 import type TranslateOptions from "../interfaces/translate_options";
 
 export default class GenerateTranslationJSON {
@@ -58,6 +59,7 @@ export default class GenerateTranslationJSON {
         options: TranslateOptions,
         chats: Chats,
         translationStats: TranslationStats,
+        rateLimiter?: RateLimiter,
     ): Promise<{ [key: string]: string }> {
         const translateItemArray = this.generateTranslateItemArray(flatInput);
 
@@ -66,6 +68,7 @@ export default class GenerateTranslationJSON {
             options,
             chats,
             translationStats.translate,
+            rateLimiter,
         );
 
         if (!options.skipTranslationVerification) {
@@ -74,6 +77,7 @@ export default class GenerateTranslationJSON {
                 options,
                 chats,
                 translationStats.verify,
+                rateLimiter,
             );
 
             return this.convertTranslateItemToIndex(generatedVerification);
@@ -281,6 +285,7 @@ export default class GenerateTranslationJSON {
         options: TranslateOptions,
         chats: Chats,
         translationStats: TranslationStatsItem,
+        rateLimiter?: RateLimiter,
     ): Promise<TranslateItem[]> {
         const generatedTranslation: TranslateItem[] = [];
         translationStats.totalItems = translateItemArray.length;
@@ -341,6 +346,7 @@ export default class GenerateTranslationJSON {
                 inputLanguageCode: `[${options.inputLanguageCode}]`,
                 outputLanguageCode: `[${options.outputLanguageCode}]`,
                 overridePrompt: options.overridePrompt,
+                rateLimiter,
                 skipStylingVerification:
                     options.skipStylingVerification as boolean,
                 skipTranslationVerification:
@@ -406,6 +412,7 @@ export default class GenerateTranslationJSON {
         options: TranslateOptions,
         chats: Chats,
         translationStats: TranslationStatsItem,
+        rateLimiter?: RateLimiter,
     ): Promise<TranslateItem[]> {
         const generatedVerification: TranslateItem[] = [];
         translationStats.totalItems = verifyItemArray.length;
@@ -462,6 +469,7 @@ export default class GenerateTranslationJSON {
                 inputLanguageCode: `[${options.inputLanguageCode}]`,
                 outputLanguageCode: `[${options.outputLanguageCode}]`,
                 overridePrompt: options.overridePrompt,
+                rateLimiter,
                 skipStylingVerification:
                     options.skipStylingVerification as boolean,
                 skipTranslationVerification:
@@ -689,19 +697,19 @@ export default class GenerateTranslationJSON {
 
         let translated = "";
         try {
-            translated = await retryJob(
-                // eslint-disable-next-line @typescript-eslint/no-use-before-define
-                this.generateJob,
-                [
-                    generationPromptText,
-                    options,
-                    generateState,
-                    TranslateItemOutputObjectSchema,
-                ],
-                RETRY_ATTEMPTS,
-                true,
-                0,
-                false,
+            translated = await retryWithBackoff(
+                () =>
+                    this.generateJob(
+                        generationPromptText,
+                        options,
+                        generateState,
+                        TranslateItemOutputObjectSchema,
+                    ),
+                {
+                    maxRetries: RETRY_ATTEMPTS,
+                    rateLimiter: options.rateLimiter,
+                    verbose: options.verboseLogging,
+                },
             );
         } catch (e) {
             printError(`Failed to translate: ${e}\n`);
@@ -736,19 +744,19 @@ export default class GenerateTranslationJSON {
 
         let verified = "";
         try {
-            verified = await retryJob(
-                // eslint-disable-next-line @typescript-eslint/no-use-before-define
-                this.generateJob.bind(this),
-                [
-                    generationPromptText,
-                    options,
-                    generateState,
-                    VerifyItemOutputObjectSchema,
-                ],
-                RETRY_ATTEMPTS,
-                true,
-                0,
-                false,
+            verified = await retryWithBackoff(
+                () =>
+                    this.generateJob(
+                        generationPromptText,
+                        options,
+                        generateState,
+                        VerifyItemOutputObjectSchema,
+                    ),
+                {
+                    maxRetries: RETRY_ATTEMPTS,
+                    rateLimiter: options.rateLimiter,
+                    verbose: options.verboseLogging,
+                },
             );
         } catch (e) {
             printError(`Failed to translate: ${e}\n`);

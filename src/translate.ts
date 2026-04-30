@@ -149,6 +149,7 @@ async function getTranslation(
                 options,
                 chats,
                 translationStats,
+                pool.rateLimiter,
             );
         }
 
@@ -158,6 +159,7 @@ async function getTranslation(
                 options,
                 chats,
                 translationStats.translate,
+                pool.rateLimiter,
             );
         default:
             throw new Error("Prompt mode is not set");

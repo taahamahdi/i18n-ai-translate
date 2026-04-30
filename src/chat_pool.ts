@@ -15,16 +15,19 @@ type PoolOptions = {
 };
 
 export default class ChatPool {
+    readonly rateLimiter: RateLimiter;
+
     private available: Chats[];
 
     private waiters: Array<(c: Chats) => void>;
 
     private readonly slots: Chats[];
 
-    private constructor(triples: Chats[]) {
+    private constructor(triples: Chats[], rateLimiter: RateLimiter) {
         this.slots = triples;
         this.available = [...triples];
         this.waiters = [];
+        this.rateLimiter = rateLimiter;
     }
 
     static create(options: PoolOptions): ChatPool {
@@ -58,7 +61,7 @@ export default class ChatPool {
             });
         }
 
-        return new ChatPool(triples);
+        return new ChatPool(triples, options.rateLimiter);
     }
 
     get size(): number {
