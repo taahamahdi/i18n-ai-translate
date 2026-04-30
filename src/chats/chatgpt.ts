@@ -1,6 +1,6 @@
 import { printError } from "../utils";
 import { zodResponseFormat } from "openai/helpers/zod";
-import ChatInterface from "./chat_interface";
+import ChatInterface, { type InvalidKind } from "./chat_interface";
 import Role from "../enums/role";
 import type { ZodType, ZodTypeDef } from "zod";
 import type OpenAI from "openai";
@@ -87,16 +87,9 @@ export default class ChatGPT extends ChatInterface {
         }
     }
 
-    invalidTranslation(): void {
+    signalInvalid(kind: InvalidKind): void {
         this.history.push({
-            content: this.invalidTranslationMessage(),
-            role: Role.System,
-        });
-    }
-
-    invalidStyling(): void {
-        this.history.push({
-            content: this.invalidStylingMessage(),
+            content: this.invalidMessage(kind),
             role: Role.System,
         });
     }

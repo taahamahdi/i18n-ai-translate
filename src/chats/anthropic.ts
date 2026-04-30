@@ -1,5 +1,5 @@
 import { printError } from "../utils";
-import ChatInterface from "./chat_interface";
+import ChatInterface, { type InvalidKind } from "./chat_interface";
 import Role from "../enums/role";
 import type { Anthropic as InternalAnthropic } from "@anthropic-ai/sdk";
 import type {
@@ -92,18 +92,12 @@ export default class Anthropic extends ChatInterface {
         }
     }
 
-    invalidTranslation(): void {
+    signalInvalid(kind: InvalidKind): void {
+        // Anthropic's messages.create only accepts alternating user /
+        // assistant messages, so we reuse the user role rather than
+        // tag this as system.
         this.history.push({
-            content: this.invalidTranslationMessage(),
-            // Note: no System role
-            role: Role.User,
-        });
-    }
-
-    invalidStyling(): void {
-        this.history.push({
-            content: this.invalidStylingMessage(),
-            // Note: no System role
+            content: this.invalidMessage(kind),
             role: Role.User,
         });
     }

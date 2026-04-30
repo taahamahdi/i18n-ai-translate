@@ -378,7 +378,7 @@ async function generate(
     }
 
     if (isNAK(translationVerificationResponse)) {
-        chats.generateTranslationChat.invalidTranslation();
+        chats.generateTranslationChat.signalInvalid("translation");
         return Promise.reject(new Error(`Invalid translation. text = ${text}`));
     }
 
@@ -395,7 +395,7 @@ async function generate(
     }
 
     if (isNAK(stylingVerificationResponse)) {
-        chats.generateTranslationChat.invalidStyling();
+        chats.generateTranslationChat.signalInvalid("styling");
         return Promise.reject(new Error(`Invalid styling. text = ${text}`));
     }
 

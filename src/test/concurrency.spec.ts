@@ -67,8 +67,7 @@ function makeFakeChat(): {
     sendMessage: jest.Mock;
     resetChatHistory: jest.Mock;
     rollbackLastMessage: jest.Mock;
-    invalidTranslation: jest.Mock;
-    invalidStyling: jest.Mock;
+    signalInvalid: jest.Mock;
     chatId: number;
 } {
     const chatId = mintChatId();
@@ -148,8 +147,7 @@ function makeFakeChat(): {
 
     return {
         chatId,
-        invalidStyling: jest.fn(),
-        invalidTranslation: jest.fn(),
+        signalInvalid: jest.fn(),
         resetChatHistory: jest.fn(),
         rollbackLastMessage: jest.fn(),
         sendMessage,
