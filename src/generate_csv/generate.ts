@@ -1,5 +1,4 @@
 import { RETRY_ATTEMPTS } from "../constants";
-import { buildGroupShards } from "../sharding";
 import { failedTranslationPrompt, generationPrompt } from "./prompts";
 import {
     getTemplatedStringRegex,
@@ -9,6 +8,7 @@ import {
     printProgress,
 } from "../utils";
 import { retryWithBackoff } from "../retry";
+import { runAcrossShards } from "../shard_runner";
 import { verifyStyling, verifyTranslation } from "./verify";
 import type { GenerateStateCSV } from "../types";
 import type Chats from "../interfaces/chats";
@@ -93,38 +93,29 @@ export default async function translateCSV(
 
     translationStats.batchStartTime = Date.now();
 
-    // Build contiguous shards from similarity groups: at most pool.size
-    // shards, each holding one or more whole groups. Keeps related items
-    // in the same worker's chat history.
-    const groupShards = buildGroupShards(groups, pool.size);
-    const shards = groupShards.length > 0 ? groupShards : [flatInput];
-
     let processed = 0;
-    const chatTriples = pool.all();
 
-    await Promise.all(
-        shards.map((shard, shardIdx) =>
-            runShard(
-                shard,
-                chatTriples[shardIdx % chatTriples.length],
-                options,
-                pool.rateLimiter,
-                batchSize,
-                output,
-                {
-                    onBatchCompleted: (count) => {
-                        processed += count;
-                        if (options.verbose) {
-                            printProgress(
-                                "In Progress",
-                                translationStats.batchStartTime,
-                                totalKeys,
-                                processed,
-                            );
-                        }
-                    },
+    await runAcrossShards(flatInput, groups, pool, (shard, chats) =>
+        runShard(
+            shard,
+            chats,
+            options,
+            pool.rateLimiter,
+            batchSize,
+            output,
+            {
+                onBatchCompleted: (count) => {
+                    processed += count;
+                    if (options.verbose) {
+                        printProgress(
+                            "In Progress",
+                            translationStats.batchStartTime,
+                            totalKeys,
+                            processed,
+                        );
+                    }
                 },
-            ),
+            },
         ),
     );
 

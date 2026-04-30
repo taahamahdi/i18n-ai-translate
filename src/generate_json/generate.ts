@@ -4,7 +4,6 @@ import {
     TranslateItemOutputObjectSchema,
     VerifyItemOutputObjectSchema,
 } from "./types";
-import { buildGroupShards } from "../sharding";
 import {
     getMissingVariables,
     getTemplatedStringRegex,
@@ -14,6 +13,7 @@ import {
     printWarn,
 } from "../utils";
 import { retryWithBackoff } from "../retry";
+import { runAcrossShards } from "../shard_runner";
 import { translationPromptJSON, verificationPromptJSON } from "./prompts";
 import cl100k_base from "tiktoken/encoders/cl100k_base.json";
 import type {
@@ -61,19 +61,9 @@ export default class GenerateTranslationJSON {
     ): Promise<{ [key: string]: string }> {
         const { flatInput, options, pool, groups, stats } = ctx;
 
-        // Similarity-aware sharding: each worker gets whole groups of
-        // related strings so the chat-history context stays coherent.
-        const groupShards = buildGroupShards(groups, pool.size);
-        const shards = groupShards.length > 0 ? groupShards : [flatInput];
-        const triples = pool.all();
-
-        // Build the per-shard item arrays once, then seed the shared
-        // stats counters so parallel shards don't clobber each other.
-        const shardItemArrays = shards.map((s) =>
-            this.generateTranslateItemArray(s),
-        );
-
-        const allItems = shardItemArrays.flat();
+        // Seed stats once up front; per-shard work then just increments
+        // the shared counters.
+        const allItems = this.generateTranslateItemArray(flatInput);
         stats.translate.totalItems = allItems.length;
         stats.translate.totalTokens = allItems.reduce(
             (sum, item) => sum + item.translationTokens,
@@ -82,10 +72,12 @@ export default class GenerateTranslationJSON {
 
         stats.translate.batchStartTime = Date.now();
 
-        const perShardResults = await Promise.all(
-            shardItemArrays.map(async (shardItems, shardIdx) => {
-                const chats = triples[shardIdx % triples.length];
-
+        const perShardResults = await runAcrossShards(
+            flatInput,
+            groups,
+            pool,
+            async (shard, chats) => {
+                const shardItems = this.generateTranslateItemArray(shard);
                 const translated = await this.generateTranslationJSON(
                     shardItems,
                     options,
@@ -105,7 +97,7 @@ export default class GenerateTranslationJSON {
                     stats.verify,
                     pool.rateLimiter,
                 );
-            }),
+            },
         );
 
         const combined: TranslateItem[] = [];
