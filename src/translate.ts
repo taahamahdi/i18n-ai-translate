@@ -142,15 +142,12 @@ async function getTranslation(
                 options,
             );
 
-            // JSON pipeline is not yet sharded; runs against the pool's
-            // first triple.
-            const [chats] = pool.all();
             return generateTranslationJSON.translateJSON(
                 flatInput,
                 options,
-                chats,
+                pool,
                 translationStats,
-                pool.rateLimiter,
+                groups,
             );
         }
 
