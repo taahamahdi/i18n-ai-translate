@@ -171,10 +171,6 @@ jest.mock("../chats/chat_factory", () => ({
     },
 }));
 
-// jest.setup.ts mocks both pipelines wholesale; un-mock them so this file
-// exercises the real translate / shard / pool code paths.
-jest.unmock("../generate_csv/generate");
-jest.unmock("../generate_json/generate");
 
 // delay() in utils.ts is used by the rate limiter and retry code; short-circuit
 // it so tests don't actually sleep.

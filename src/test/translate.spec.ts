@@ -1,20 +1,62 @@
+import type TranslationContext from "../interfaces/translation_context";
+
+const fr = (v: string): string => `${v}_fr`;
+const es = (v: string): string => `${v}_es`;
+
+function fakeTranslateCtx(ctx: TranslationContext): Object {
+    const translateFn =
+        ctx.options.outputLanguageCode === "fr" ? fr : es;
+    return Object.fromEntries(
+        Object.entries(ctx.flatInput).map(([k, v]) => [
+            k,
+            translateFn(v as string),
+        ]),
+    );
+}
+
+// These tests exercise the translate / translateFile / translateDirectory
+// orchestration around the pipelines, not the pipelines themselves.
+// Stubbing the CSV and JSON pipelines keeps the tests fast and
+// deterministic. End-to-end coverage of the real pipelines lives in
+// concurrency.spec.ts.
+jest.mock("../generate_json/generate", () => ({
+    __esModule: true,
+    default: class GenerateTranslationJSON {
+        translateJSON(ctx: TranslationContext): Object {
+            return fakeTranslateCtx(ctx);
+        }
+    },
+}));
+
+jest.mock("../generate_csv/generate", () => ({
+    __esModule: true,
+    default: (ctx: TranslationContext) => fakeTranslateCtx(ctx),
+}));
+
+// eslint-disable-next-line import/first
 import fs from "fs";
+// eslint-disable-next-line import/first
 import os from "os";
+// eslint-disable-next-line import/first
 import path from "path";
 
+// eslint-disable-next-line import/first
 import * as utils from "../utils";
+// eslint-disable-next-line import/first
 import { translate, translateDiff } from "../translate";
+// eslint-disable-next-line import/first
 import {
     translateDirectory,
     translateDirectoryDiff,
 } from "../translate_directory";
+// eslint-disable-next-line import/first
 import { translateFile, translateFileDiff } from "../translate_file";
+// eslint-disable-next-line import/first
 import Engine from "../enums/engine";
+// eslint-disable-next-line import/first
 import PromptMode from "../enums/prompt_mode";
+// eslint-disable-next-line import/first
 import RateLimiter from "../rate_limiter";
-
-const fr = (v: string): string => `${v}_fr`;
-const es = (v: string): string => `${v}_es`;
 
 const mkCaseDir = (): string =>
     fs.mkdtempSync(path.join(os.tmpdir(), "i18n-case-"));
