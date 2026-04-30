@@ -367,28 +367,9 @@ export async function translateDiff(
 
             // eslint-disable-next-line no-await-in-loop
             const translated = await translate({
-                apiKey: options.apiKey,
-                batchMaxTokens: options.batchMaxTokens,
-                batchSize: options.batchSize,
-                chatParams: options.chatParams,
-                concurrency: options.concurrency,
-                continueOnError: options.continueOnError,
-                engine: options.engine,
-                ensureChangedTranslation: options.ensureChangedTranslation,
-                host: options.host,
+                ...options,
                 inputJSON: addedAndModifiedTranslations,
-                inputLanguageCode: options.inputLanguageCode,
-                model: options.model,
                 outputLanguageCode: languageCode,
-                overridePrompt: options.overridePrompt,
-                promptMode: options.promptMode,
-                rateLimitMs: options.rateLimitMs,
-                skipStylingVerification: options.skipStylingVerification,
-                skipTranslationVerification:
-                    options.skipTranslationVerification,
-                templatedStringPrefix: options.templatedStringPrefix,
-                templatedStringSuffix: options.templatedStringSuffix,
-                verbose: options.verbose,
             });
 
             const flatTranslated = flatten(translated, {

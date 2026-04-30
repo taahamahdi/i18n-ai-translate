@@ -80,27 +80,10 @@ export async function translateDirectory(
 
     try {
         const outputJSON = (await translate({
-            apiKey: options.apiKey,
-            batchMaxTokens: options.batchMaxTokens,
-            batchSize: options.batchSize,
-            chatParams: options.chatParams,
-            concurrency: options.concurrency,
-            continueOnError: options.continueOnError,
-            engine: options.engine,
-            ensureChangedTranslation: options.ensureChangedTranslation,
-            host: options.host,
+            ...options,
             inputJSON,
             inputLanguageCode: inputLanguage,
-            model: options.model,
             outputLanguageCode: outputLanguage,
-            overridePrompt: options.overridePrompt,
-            promptMode: options.promptMode,
-            rateLimitMs: options.rateLimitMs,
-            skipStylingVerification: options.skipStylingVerification,
-            skipTranslationVerification: options.skipTranslationVerification,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
-            verbose: options.verbose,
         })) as { [filePathKey: string]: string };
 
         const filesToJSON: { [filePath: string]: { [key: string]: string } } =
@@ -361,28 +344,11 @@ export async function translateDirectoryDiff(
 
     try {
         const perLanguageOutputJSON = await translateDiff({
-            apiKey: options.apiKey,
-            batchMaxTokens: options.batchMaxTokens,
-            batchSize: options.batchSize,
-            chatParams: options.chatParams,
-            concurrency: options.concurrency,
-            continueOnError: options.continueOnError,
-            engine: options.engine,
-            ensureChangedTranslation: options.ensureChangedTranslation,
-            host: options.host,
+            ...options,
             inputJSONAfter,
             inputJSONBefore,
             inputLanguageCode: inputLanguage,
-            model: options.model,
-            overridePrompt: options.overridePrompt,
-            promptMode: options.promptMode,
-            rateLimitMs: options.rateLimitMs,
-            skipStylingVerification: options.skipStylingVerification,
-            skipTranslationVerification: options.skipTranslationVerification,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
             toUpdateJSONs,
-            verbose: options.verbose,
         });
 
         for (const outputLanguage in perLanguageOutputJSON) {
