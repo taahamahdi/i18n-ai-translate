@@ -21,4 +21,5 @@ export default interface Options {
     overridePrompt?: OverridePrompt;
     promptMode: PromptMode;
     continueOnError?: boolean;
+    concurrency?: number;
 }

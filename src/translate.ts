@@ -8,48 +8,30 @@ import {
 import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
 import { isValidLanguageCode, printExecutionTime, printInfo } from "./utils";
-import ChatFactory from "./chats/chat_factory";
+import ChatPool from "./chat_pool";
 import GenerateTranslationJSON from "./generate_json/generate";
 import PromptMode from "./enums/prompt_mode";
 import RateLimiter from "./rate_limiter";
 import translateCSV from "./generate_csv/generate";
 import type { TranslationStats, TranslationStatsItem } from "./types";
-import type Chats from "./interfaces/chats";
 import type TranslateDiffOptions from "./interfaces/translate_diff_options";
 import type TranslateOptions from "./interfaces/translate_options";
 
-function getChats(options: TranslateOptions): Chats {
+function getPool(options: TranslateOptions): ChatPool {
     const rateLimiter = new RateLimiter(
         options.rateLimitMs,
         options.verbose as boolean,
     );
 
-    return {
-        generateTranslationChat: ChatFactory.newChat(
-            options.engine,
-            options.model,
-            rateLimiter,
-            options.apiKey,
-            options.host,
-            options.chatParams,
-        ),
-        verifyStylingChat: ChatFactory.newChat(
-            options.engine,
-            options.model,
-            rateLimiter,
-            options.apiKey,
-            options.host,
-            options.chatParams,
-        ),
-        verifyTranslationChat: ChatFactory.newChat(
-            options.engine,
-            options.model,
-            rateLimiter,
-            options.apiKey,
-            options.host,
-            options.chatParams,
-        ),
-    };
+    return ChatPool.create({
+        apiKey: options.apiKey,
+        chatParams: options.chatParams,
+        concurrency: Math.max(1, options.concurrency ?? 1),
+        engine: options.engine,
+        host: options.host,
+        model: options.model,
+        rateLimiter,
+    });
 }
 
 function replaceNewlinesWithPlaceholder(
@@ -144,12 +126,17 @@ function startTranslationStats(): TranslationStats {
 async function getTranslation(
     flatInput: { [key: string]: string },
     options: TranslateOptions,
-    chats: Chats,
+    pool: ChatPool,
     translationStats: TranslationStats,
 ): Promise<{ [key: string]: string }> {
     if (options.verbose) {
         printInfo(`Translation prompting mode: ${options.promptMode}\n`);
     }
+
+    // For now the pipelines consume a single Chats triple. Parallelisation
+    // is wired in follow-up commits; this pool-of-one keeps behaviour
+    // identical to the pre-pool path.
+    const [chats] = pool.all();
 
     switch (options.promptMode) {
         case PromptMode.JSON: {
@@ -221,7 +208,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         );
     }
 
-    const chats: Chats = getChats(options);
+    const pool = getPool(options);
 
     let flatInput = flatten(options.inputJSON, {
         delimiter: FLATTEN_DELIMITER,
@@ -267,7 +254,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
     const output = await getTranslation(
         flatInput,
         options,
-        chats,
+        pool,
         translationStats,
     );
 
@@ -397,6 +384,7 @@ export async function translateDiff(
                 batchMaxTokens: options.batchMaxTokens,
                 batchSize: options.batchSize,
                 chatParams: options.chatParams,
+                concurrency: options.concurrency,
                 continueOnError: options.continueOnError,
                 engine: options.engine,
                 ensureChangedTranslation: options.ensureChangedTranslation,
