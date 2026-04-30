@@ -65,7 +65,8 @@ function replacePlaceholderWithNewLines(
 }
 
 function groupSimilarValues(flatInput: { [key: string]: string }): {
-    [key: string]: string;
+    flatInput: { [key: string]: string };
+    groups: Array<{ [key: string]: string }>;
 } {
     const groups: Array<{ [key: string]: string }> = [];
     for (const key in flatInput) {
@@ -102,8 +103,9 @@ function groupSimilarValues(flatInput: { [key: string]: string }): {
         }
     }
 
-    return flatInput;
+    return { flatInput, groups };
 }
+
 
 function startTranslationStatsItem(): TranslationStatsItem {
     return {
@@ -128,15 +130,11 @@ async function getTranslation(
     options: TranslateOptions,
     pool: ChatPool,
     translationStats: TranslationStats,
+    groups: Array<{ [key: string]: string }>,
 ): Promise<{ [key: string]: string }> {
     if (options.verbose) {
         printInfo(`Translation prompting mode: ${options.promptMode}\n`);
     }
-
-    // For now the pipelines consume a single Chats triple. Parallelisation
-    // is wired in follow-up commits; this pool-of-one keeps behaviour
-    // identical to the pre-pool path.
-    const [chats] = pool.all();
 
     switch (options.promptMode) {
         case PromptMode.JSON: {
@@ -144,6 +142,9 @@ async function getTranslation(
                 options,
             );
 
+            // JSON pipeline is not yet sharded; runs against the pool's
+            // first triple.
+            const [chats] = pool.all();
             return generateTranslationJSON.translateJSON(
                 flatInput,
                 options,
@@ -157,9 +158,9 @@ async function getTranslation(
             return translateCSV(
                 flatInput,
                 options,
-                chats,
+                pool,
                 translationStats.translate,
-                pool.rateLimiter,
+                groups,
             );
         default:
             throw new Error("Prompt mode is not set");
@@ -249,7 +250,8 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         }
     }
 
-    flatInput = groupSimilarValues(flatInput);
+    const grouped = groupSimilarValues(flatInput);
+    flatInput = grouped.flatInput;
 
     const translationStats = startTranslationStats();
 
@@ -258,6 +260,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         options,
         pool,
         translationStats,
+        grouped.groups,
     );
 
     for (const [canonical, dupes] of Object.entries(canonicalToDupes)) {
