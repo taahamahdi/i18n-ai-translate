@@ -1,4 +1,4 @@
-import { DEFAULT_MODEL } from "./constants";
+import { DEFAULT_CONCURRENCY, DEFAULT_MODEL } from "./constants";
 import { OVERRIDE_PROMPT_KEYS } from "./interfaces/override_prompt";
 import { printWarn } from "./utils";
 import Engine from "./enums/engine";
@@ -23,6 +23,14 @@ export function processModelArgs(options: any): ModelArgs {
     let promptMode = options.promptMode as PromptMode;
     let batchSize = Number(options.batchSize);
     let batchMaxTokens = Number(options.batchMaxTokens);
+    let concurrency = Number(options.concurrency);
+    if (!options.concurrency || !Number.isFinite(concurrency)) {
+        concurrency = DEFAULT_CONCURRENCY;
+    }
+
+    if (!Number.isInteger(concurrency) || concurrency < 1) {
+        throw new Error("--concurrency must be a positive integer");
+    }
 
     switch (options.engine) {
         case Engine.Gemini:
@@ -175,6 +183,7 @@ export function processModelArgs(options: any): ModelArgs {
         batchMaxTokens,
         batchSize,
         chatParams,
+        concurrency,
         host,
         model: options.model || DEFAULT_MODEL[options.engine as Engine],
         promptMode,

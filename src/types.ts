@@ -26,6 +26,7 @@ export type ModelArgs = {
     promptMode: PromptMode;
     batchSize: number;
     batchMaxTokens: number;
+    concurrency: number;
 };
 
 export type GenerateStateCSV = {

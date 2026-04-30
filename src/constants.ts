@@ -14,10 +14,13 @@ export const DEFAULT_MODEL = {
     [Engine.Claude]: "claude-sonnet-4-6",
 };
 export const RETRY_ATTEMPTS = 25;
+export const DEFAULT_CONCURRENCY = 2;
 
 export const CLI_HELP = {
     BatchSize:
         "How many keys to process at a time, 32 by default for chatgpt, 16 otherwise",
+    Concurrency:
+        "How many batches to run in parallel (default: 2). Each worker holds its own chat history, sharing one rate limiter. Tune upward together with --rate-limit-ms to use more of your API tier",
     DryRun: "Show the translations without writing to files, and store them in a temporary directory",
     Engine: "Engine to use (chatgpt, gemini, ollama, or claude)",
     EnsureChangedTranslation:
