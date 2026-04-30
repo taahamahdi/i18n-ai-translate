@@ -1,5 +1,10 @@
 import { createPatch, diffJson } from "diff";
-import { getLanguageCodeFromFilename, printError, printInfo } from "./utils";
+import {
+    getLanguageCodeFromFilename,
+    printError,
+    printInfo,
+    resolveInputPath,
+} from "./utils";
 import { translate, translateDiff } from "./translate";
 import colors from "colors/safe";
 import fs from "fs";
@@ -120,45 +125,10 @@ export async function translateFileDiff(
             path.resolve(path.dirname(options.inputBeforeFileOrPath), file),
         );
 
-    const jsonFolder = path.resolve(process.cwd(), "jsons");
-    let inputBeforePath: string;
-    let inputAfterPath: string;
-    if (path.isAbsolute(options.inputBeforeFileOrPath)) {
-        inputBeforePath = path.resolve(options.inputBeforeFileOrPath);
-    } else {
-        inputBeforePath = path.resolve(
-            jsonFolder,
-            options.inputBeforeFileOrPath,
-        );
+    const inputBeforePath = resolveInputPath(options.inputBeforeFileOrPath);
+    const inputAfterPath = resolveInputPath(options.inputAfterFileOrPath);
 
-        if (!fs.existsSync(inputBeforePath)) {
-            inputBeforePath = path.resolve(
-                process.cwd(),
-                options.inputBeforeFileOrPath,
-            );
-        }
-    }
-
-    if (path.isAbsolute(options.inputAfterFileOrPath)) {
-        inputAfterPath = path.resolve(options.inputAfterFileOrPath);
-    } else {
-        inputAfterPath = path.resolve(jsonFolder, options.inputAfterFileOrPath);
-    }
-
-    const outputPaths: Array<string> = [];
-    for (const outputFileOrPath of outputFilesOrPaths) {
-        let outputPath: string;
-        if (path.isAbsolute(outputFileOrPath)) {
-            outputPath = path.resolve(outputFileOrPath);
-        } else {
-            outputPath = path.resolve(jsonFolder, outputFileOrPath);
-            if (!fs.existsSync(jsonFolder)) {
-                outputPath = path.resolve(process.cwd(), outputFileOrPath);
-            }
-        }
-
-        outputPaths.push(outputPath);
-    }
+    const outputPaths = outputFilesOrPaths.map(resolveInputPath);
 
     let inputBeforeJSON = {};
     let inputAfterJSON = {};

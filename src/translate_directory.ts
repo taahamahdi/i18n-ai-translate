@@ -6,6 +6,7 @@ import {
     getTranslationDirectoryKey,
     printError,
     printInfo,
+    resolveInputPath,
 } from "./utils";
 import { translate, translateDiff } from "./translate";
 import colors from "colors/safe";
@@ -22,16 +23,7 @@ import type TranslateDirectoryOptions from "./interfaces/translate_directory_opt
 export async function translateDirectory(
     options: TranslateDirectoryOptions,
 ): Promise<void> {
-    const jsonFolder = path.resolve(process.cwd(), "jsons");
-    let fullBasePath: string;
-    if (path.isAbsolute(options.baseDirectory)) {
-        fullBasePath = path.resolve(options.baseDirectory);
-    } else {
-        fullBasePath = path.resolve(jsonFolder, options.baseDirectory);
-        if (!fs.existsSync(fullBasePath)) {
-            fullBasePath = path.resolve(process.cwd(), options.baseDirectory);
-        }
-    }
+    const fullBasePath = resolveInputPath(options.baseDirectory);
 
     const sourceLanguagePath = path.resolve(
         fullBasePath,
@@ -204,16 +196,7 @@ export async function translateDirectory(
 export async function translateDirectoryDiff(
     options: TranslateDirectoryDiffOptions,
 ): Promise<void> {
-    const jsonFolder = path.resolve(process.cwd(), "jsons");
-    let fullBasePath: string;
-    if (path.isAbsolute(options.baseDirectory)) {
-        fullBasePath = path.resolve(options.baseDirectory);
-    } else {
-        fullBasePath = path.resolve(jsonFolder, options.baseDirectory);
-        if (!fs.existsSync(fullBasePath)) {
-            fullBasePath = path.resolve(process.cwd(), options.baseDirectory);
-        }
-    }
+    const fullBasePath = resolveInputPath(options.baseDirectory);
 
     const sourceLanguagePathBefore = path.resolve(
         fullBasePath,

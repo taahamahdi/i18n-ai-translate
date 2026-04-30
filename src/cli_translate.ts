@@ -10,6 +10,8 @@ import {
     printError,
     printInfo,
     printWarn,
+    resolveInputPath,
+    resolveOutputPath,
 } from "./utils";
 import { processModelArgs, processOverridePromptFile } from "./cli_helpers";
 import { translateDirectory } from "./translate_directory";
@@ -137,16 +139,7 @@ export default function buildTranslateCommand(): Command {
                     );
                 }
 
-                const jsonFolder = path.resolve(process.cwd(), "jsons");
-                let inputPath: string;
-                if (path.isAbsolute(options.input)) {
-                    inputPath = path.resolve(options.input);
-                } else {
-                    inputPath = path.resolve(jsonFolder, options.input);
-                    if (!fs.existsSync(inputPath)) {
-                        inputPath = path.resolve(process.cwd(), options.input);
-                    }
-                }
+                const inputPath = resolveInputPath(options.input);
 
                 if (fs.statSync(inputPath).isFile()) {
                     let i = 0;
@@ -167,18 +160,7 @@ export default function buildTranslateCommand(): Command {
                             continue;
                         }
 
-                        let outputPath: string;
-                        if (path.isAbsolute(output)) {
-                            outputPath = path.resolve(output);
-                        } else {
-                            outputPath = path.resolve(jsonFolder, output);
-                            if (!fs.existsSync(jsonFolder)) {
-                                outputPath = path.resolve(
-                                    process.cwd(),
-                                    output,
-                                );
-                            }
-                        }
+                        const outputPath = resolveOutputPath(output);
 
                         try {
                             // eslint-disable-next-line no-await-in-loop
@@ -254,19 +236,7 @@ export default function buildTranslateCommand(): Command {
                         );
                     }
 
-                    const jsonFolder = path.resolve(process.cwd(), "jsons");
-                    let inputPath: string;
-                    if (path.isAbsolute(options.input)) {
-                        inputPath = path.resolve(options.input);
-                    } else {
-                        inputPath = path.resolve(jsonFolder, options.input);
-                        if (!fs.existsSync(inputPath)) {
-                            inputPath = path.resolve(
-                                process.cwd(),
-                                options.input,
-                            );
-                        }
-                    }
+                    const inputPath = resolveInputPath(options.input);
 
                     if (fs.statSync(inputPath).isFile()) {
                         const output = getOutputPathFromInputPath(
@@ -278,18 +248,7 @@ export default function buildTranslateCommand(): Command {
                             continue;
                         }
 
-                        let outputPath: string;
-                        if (path.isAbsolute(output)) {
-                            outputPath = path.resolve(output);
-                        } else {
-                            outputPath = path.resolve(jsonFolder, output);
-                            if (!fs.existsSync(jsonFolder)) {
-                                outputPath = path.resolve(
-                                    process.cwd(),
-                                    output,
-                                );
-                            }
-                        }
+                        const outputPath = resolveOutputPath(output);
 
                         try {
                             // eslint-disable-next-line no-await-in-loop

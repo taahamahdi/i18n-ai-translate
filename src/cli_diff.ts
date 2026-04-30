@@ -4,7 +4,7 @@ import {
     DEFAULT_TEMPLATED_STRING_SUFFIX,
 } from "./constants";
 import { Command } from "commander";
-import { printError } from "./utils";
+import { printError, resolveInputPath } from "./utils";
 import { processModelArgs, processOverridePromptFile } from "./cli_helpers";
 import { translateDirectoryDiff } from "./translate_directory";
 import { translateFileDiff } from "./translate_file";
@@ -101,29 +101,8 @@ export default function buildDiffCommand(): Command {
                 };
             }
 
-            const jsonFolder = path.resolve(process.cwd(), "jsons");
-            let beforeInputPath: string;
-            if (path.isAbsolute(options.before)) {
-                beforeInputPath = path.resolve(options.before);
-            } else {
-                beforeInputPath = path.resolve(jsonFolder, options.before);
-                if (!fs.existsSync(beforeInputPath)) {
-                    beforeInputPath = path.resolve(
-                        process.cwd(),
-                        options.before,
-                    );
-                }
-            }
-
-            let afterInputPath: string;
-            if (path.isAbsolute(options.after)) {
-                afterInputPath = path.resolve(options.after);
-            } else {
-                afterInputPath = path.resolve(jsonFolder, options.after);
-                if (!fs.existsSync(afterInputPath)) {
-                    afterInputPath = path.resolve(process.cwd(), options.after);
-                }
-            }
+            const beforeInputPath = resolveInputPath(options.before);
+            const afterInputPath = resolveInputPath(options.after);
 
             if (
                 fs.statSync(beforeInputPath).isFile() !==
