@@ -192,6 +192,7 @@ function setDefaults(options: TranslateOptions): void {
         options.skipTranslationVerification = false;
     if (!options.skipStylingVerification)
         options.skipStylingVerification = false;
+    if (options.continueOnError === undefined) options.continueOnError = true;
 }
 
 /**
@@ -396,6 +397,7 @@ export async function translateDiff(
                 batchMaxTokens: options.batchMaxTokens,
                 batchSize: options.batchSize,
                 chatParams: options.chatParams,
+                continueOnError: options.continueOnError,
                 engine: options.engine,
                 ensureChangedTranslation: options.ensureChangedTranslation,
                 host: options.host,

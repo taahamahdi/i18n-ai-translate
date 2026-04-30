@@ -77,6 +77,7 @@ export default function buildTranslateCommand(): Command {
         .option("--prompt-mode <prompt-mode>", CLI_HELP.PromptMode)
         .option("--batch-max-tokens <batch-max-tokens>", CLI_HELP.MaxTokens)
         .option("--dry-run", CLI_HELP.DryRun, false)
+        .option("--no-continue-on-error", CLI_HELP.NoContinueOnError)
         .action(async (options: any) => {
             const {
                 model,
@@ -181,6 +182,7 @@ export default function buildTranslateCommand(): Command {
                                 batchMaxTokens,
                                 batchSize,
                                 chatParams,
+                                continueOnError: options.continueOnError,
                                 dryRun,
                                 engine: options.engine,
                                 ensureChangedTranslation:
@@ -235,6 +237,7 @@ export default function buildTranslateCommand(): Command {
                                 batchMaxTokens: options.batchMaxTokens,
                                 batchSize: options.batchSize,
                                 chatParams,
+                                continueOnError: options.continueOnError,
                                 dryRun,
                                 engine: options.engine,
                                 ensureChangedTranslation:
@@ -328,6 +331,7 @@ export default function buildTranslateCommand(): Command {
                                 batchMaxTokens: options.batchMaxTokens,
                                 batchSize: options.batchSize,
                                 chatParams,
+                                continueOnError: options.continueOnError,
                                 dryRun,
                                 engine: options.engine,
                                 ensureChangedTranslation:
@@ -372,6 +376,7 @@ export default function buildTranslateCommand(): Command {
                                 batchMaxTokens: options.batchMaxTokens,
                                 batchSize: options.batchSize,
                                 chatParams,
+                                continueOnError: options.continueOnError,
                                 dryRun,
                                 engine: options.engine,
                                 ensureChangedTranslation:

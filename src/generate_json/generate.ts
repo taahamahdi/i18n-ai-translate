@@ -291,6 +291,8 @@ export default class GenerateTranslationJSON {
 
         translationStats.batchStartTime = Date.now();
 
+        const skippedItems: TranslateItem[] = [];
+
         // translate items are removed from 'translateItemArray' when one is generated
         // this is done to avoid 'losing' items if the model doesn't return one
         while (translateItemArray.length > 0) {
@@ -302,6 +304,19 @@ export default class GenerateTranslationJSON {
             for (const batchTranslateItem of batchTranslateItemArray) {
                 batchTranslateItem.translationAttempts++;
                 if (batchTranslateItem.translationAttempts > RETRY_ATTEMPTS) {
+                    if (options.continueOnError) {
+                        printError(
+                            `Skipping key after ${RETRY_ATTEMPTS} failed translation attempts: ${batchTranslateItem.key}`,
+                        );
+                        const idx = translateItemArray.findIndex(
+                            (item) => item.id === batchTranslateItem.id,
+                        );
+
+                        if (idx !== -1) translateItemArray.splice(idx, 1);
+                        skippedItems.push(batchTranslateItem);
+                        continue;
+                    }
+
                     return Promise.reject(
                         new Error(
                             `Item failed to translate too many times: ${JSON.stringify(batchTranslateItem)}. If this persists try a different model`,
@@ -310,7 +325,13 @@ export default class GenerateTranslationJSON {
                 }
             }
 
-            translationStats.enqueuedItems += batchTranslateItemArray.length;
+            const filteredBatch = batchTranslateItemArray.filter(
+                (item) => item.translationAttempts <= RETRY_ATTEMPTS,
+            );
+
+            if (filteredBatch.length === 0) continue;
+
+            translationStats.enqueuedItems += filteredBatch.length;
 
             // eslint-disable-next-line no-await-in-loop
             const result = await this.runTranslationJob({
@@ -326,7 +347,7 @@ export default class GenerateTranslationJSON {
                     options.skipTranslationVerification as boolean,
                 templatedStringPrefix: options.templatedStringPrefix as string,
                 templatedStringSuffix: options.templatedStringSuffix as string,
-                translateItems: batchTranslateItemArray,
+                translateItems: filteredBatch,
                 verboseLogging: options.verbose as boolean,
             });
 
@@ -369,6 +390,14 @@ export default class GenerateTranslationJSON {
             "\nTranslation execution time: ",
         );
 
+        if (skippedItems.length > 0) {
+            printError(
+                `Skipped ${skippedItems.length} key(s) that exhausted retries: ${skippedItems
+                    .map((item) => item.key)
+                    .join(", ")}`,
+            );
+        }
+
         return generatedTranslation;
     }
 
@@ -396,6 +425,19 @@ export default class GenerateTranslationJSON {
             for (const batchVerifyItem of batchVerifyItemArray) {
                 batchVerifyItem.verificationAttempts++;
                 if (batchVerifyItem.verificationAttempts > RETRY_ATTEMPTS) {
+                    if (options.continueOnError) {
+                        printError(
+                            `Skipping key after ${RETRY_ATTEMPTS} failed verification attempts; accepting unverified translation: ${batchVerifyItem.key}`,
+                        );
+                        const idx = verifyItemArray.findIndex(
+                            (item) => item.id === batchVerifyItem.id,
+                        );
+
+                        if (idx !== -1) verifyItemArray.splice(idx, 1);
+                        generatedVerification.push(batchVerifyItem);
+                        continue;
+                    }
+
                     return Promise.reject(
                         new Error(
                             `Item failed to verify too many times: ${JSON.stringify(batchVerifyItem)}. If this persists try a different model`,
@@ -404,7 +446,13 @@ export default class GenerateTranslationJSON {
                 }
             }
 
-            translationStats.enqueuedItems += batchVerifyItemArray.length;
+            const filteredVerifyBatch = batchVerifyItemArray.filter(
+                (item) => item.verificationAttempts <= RETRY_ATTEMPTS,
+            );
+
+            if (filteredVerifyBatch.length === 0) continue;
+
+            translationStats.enqueuedItems += filteredVerifyBatch.length;
 
             // eslint-disable-next-line no-await-in-loop
             const result = await this.runVerificationJob({
@@ -420,7 +468,7 @@ export default class GenerateTranslationJSON {
                     options.skipTranslationVerification as boolean,
                 templatedStringPrefix: options.templatedStringPrefix as string,
                 templatedStringSuffix: options.templatedStringSuffix as string,
-                translateItems: batchVerifyItemArray,
+                translateItems: filteredVerifyBatch,
                 verboseLogging: options.verbose as boolean,
             });
 

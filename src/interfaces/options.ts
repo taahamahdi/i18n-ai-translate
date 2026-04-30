@@ -20,4 +20,5 @@ export default interface Options {
     skipStylingVerification?: boolean;
     overridePrompt?: OverridePrompt;
     promptMode: PromptMode;
+    continueOnError?: boolean;
 }
