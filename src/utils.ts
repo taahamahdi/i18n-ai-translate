@@ -234,3 +234,42 @@ export function getOutputPathFromInputPath(
     const filename = `${outputLanguageCode}${path.extname(inputPath)}`;
     return path.join(dir, filename);
 }
+
+/**
+ * Legacy path-resolution convention: an absolute path resolves as-is,
+ * a relative path is tried first under `./jsons/` and then under cwd.
+ * @param input - the user-supplied path
+ * @returns the resolved absolute path
+ */
+export function resolveInputPath(input: string): string {
+    if (path.isAbsolute(input)) {
+        return path.resolve(input);
+    }
+
+    const jsonFolder = path.resolve(process.cwd(), "jsons");
+    const underJsons = path.resolve(jsonFolder, input);
+    if (fs.existsSync(underJsons)) {
+        return underJsons;
+    }
+
+    return path.resolve(process.cwd(), input);
+}
+
+/**
+ * For output paths — unlike input paths, the file doesn't exist yet, so
+ * we decide based on whether the `./jsons/` directory is present.
+ * @param output - the user-supplied output path
+ * @returns the resolved absolute path
+ */
+export function resolveOutputPath(output: string): string {
+    if (path.isAbsolute(output)) {
+        return path.resolve(output);
+    }
+
+    const jsonFolder = path.resolve(process.cwd(), "jsons");
+    if (fs.existsSync(jsonFolder)) {
+        return path.resolve(jsonFolder, output);
+    }
+
+    return path.resolve(process.cwd(), output);
+}

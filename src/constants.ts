@@ -1,9 +1,10 @@
 import { OVERRIDE_PROMPT_KEYS } from "./interfaces/override_prompt";
+import { version as packageVersion } from "../package.json";
 import Engine from "./enums/engine";
 
 export const DEFAULT_BATCH_SIZE = 32;
 export const DEFAULT_REQUEST_TOKENS = 4096;
-export const VERSION = "4.1.2";
+export const VERSION = packageVersion;
 export const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 export const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 export const FLATTEN_DELIMITER = "*";
@@ -13,7 +14,11 @@ export const DEFAULT_MODEL = {
     [Engine.Ollama]: "llama3.3",
     [Engine.Claude]: "claude-sonnet-4-6",
 };
-export const RETRY_ATTEMPTS = 25;
+// 5 attempts with exponential backoff (1s, 2s, 4s, 8s, 16s base +
+// jitter) gives ~30s of wall-clock retrying before a batch gives up,
+// which is enough to ride out transient 429s without burning an hour
+// on a genuinely bad key.
+export const RETRY_ATTEMPTS = 5;
 export const DEFAULT_CONCURRENCY = 2;
 
 export const CLI_HELP = {

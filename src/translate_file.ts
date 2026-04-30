@@ -1,5 +1,10 @@
 import { createPatch, diffJson } from "diff";
-import { getLanguageCodeFromFilename, printError, printInfo } from "./utils";
+import {
+    getLanguageCodeFromFilename,
+    printError,
+    printInfo,
+    resolveInputPath,
+} from "./utils";
 import { translate, translateDiff } from "./translate";
 import colors from "colors/safe";
 import fs from "fs";
@@ -33,27 +38,10 @@ export async function translateFile(
 
     try {
         const outputJSON = await translate({
-            apiKey: options.apiKey,
-            batchMaxTokens: options.batchMaxTokens,
-            batchSize: options.batchSize,
-            chatParams: options.chatParams,
-            concurrency: options.concurrency,
-            continueOnError: options.continueOnError,
-            engine: options.engine,
-            ensureChangedTranslation: options.ensureChangedTranslation,
-            host: options.host,
+            ...options,
             inputJSON,
             inputLanguageCode: inputLanguage,
-            model: options.model,
             outputLanguageCode: outputLanguage,
-            overridePrompt: options.overridePrompt,
-            promptMode: options.promptMode,
-            rateLimitMs: options.rateLimitMs,
-            skipStylingVerification: options.skipStylingVerification,
-            skipTranslationVerification: options.skipTranslationVerification,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
-            verbose: options.verbose,
         });
 
         const outputText = JSON.stringify(outputJSON, null, 4);
@@ -137,45 +125,10 @@ export async function translateFileDiff(
             path.resolve(path.dirname(options.inputBeforeFileOrPath), file),
         );
 
-    const jsonFolder = path.resolve(process.cwd(), "jsons");
-    let inputBeforePath: string;
-    let inputAfterPath: string;
-    if (path.isAbsolute(options.inputBeforeFileOrPath)) {
-        inputBeforePath = path.resolve(options.inputBeforeFileOrPath);
-    } else {
-        inputBeforePath = path.resolve(
-            jsonFolder,
-            options.inputBeforeFileOrPath,
-        );
+    const inputBeforePath = resolveInputPath(options.inputBeforeFileOrPath);
+    const inputAfterPath = resolveInputPath(options.inputAfterFileOrPath);
 
-        if (!fs.existsSync(inputBeforePath)) {
-            inputBeforePath = path.resolve(
-                process.cwd(),
-                options.inputBeforeFileOrPath,
-            );
-        }
-    }
-
-    if (path.isAbsolute(options.inputAfterFileOrPath)) {
-        inputAfterPath = path.resolve(options.inputAfterFileOrPath);
-    } else {
-        inputAfterPath = path.resolve(jsonFolder, options.inputAfterFileOrPath);
-    }
-
-    const outputPaths: Array<string> = [];
-    for (const outputFileOrPath of outputFilesOrPaths) {
-        let outputPath: string;
-        if (path.isAbsolute(outputFileOrPath)) {
-            outputPath = path.resolve(outputFileOrPath);
-        } else {
-            outputPath = path.resolve(jsonFolder, outputFileOrPath);
-            if (!fs.existsSync(jsonFolder)) {
-                outputPath = path.resolve(process.cwd(), outputFileOrPath);
-            }
-        }
-
-        outputPaths.push(outputPath);
-    }
+    const outputPaths = outputFilesOrPaths.map(resolveInputPath);
 
     let inputBeforeJSON = {};
     let inputAfterJSON = {};
@@ -213,28 +166,10 @@ export async function translateFileDiff(
 
     try {
         const outputJSON = await translateDiff({
-            apiKey: options.apiKey,
-            batchMaxTokens: options.batchMaxTokens,
-            batchSize: options.batchSize,
-            chatParams: options.chatParams,
-            concurrency: options.concurrency,
-            continueOnError: options.continueOnError,
-            engine: options.engine,
-            ensureChangedTranslation: options.ensureChangedTranslation,
-            host: options.host,
+            ...options,
             inputJSONAfter: inputAfterJSON,
             inputJSONBefore: inputBeforeJSON,
-            inputLanguageCode: options.inputLanguageCode,
-            model: options.model,
-            overridePrompt: options.overridePrompt,
-            promptMode: options.promptMode,
-            rateLimitMs: options.rateLimitMs,
-            skipStylingVerification: options.skipStylingVerification,
-            skipTranslationVerification: options.skipTranslationVerification,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
             toUpdateJSONs,
-            verbose: options.verbose,
         });
 
         for (const language in outputJSON) {

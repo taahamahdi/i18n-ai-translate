@@ -4,7 +4,7 @@ import {
     DEFAULT_TEMPLATED_STRING_SUFFIX,
 } from "./constants";
 import { Command } from "commander";
-import { printError } from "./utils";
+import { printError, resolveInputPath } from "./utils";
 import { processModelArgs, processOverridePromptFile } from "./cli_helpers";
 import { translateDirectoryDiff } from "./translate_directory";
 import { translateFileDiff } from "./translate_file";
@@ -73,17 +73,17 @@ export default function buildDiffCommand(): Command {
         .option("--no-continue-on-error", CLI_HELP.NoContinueOnError)
         .option("--concurrency <concurrency>", CLI_HELP.Concurrency)
         .action(async (options: any) => {
-            const {
-                model,
-                chatParams,
-                rateLimitMs,
-                apiKey,
-                host,
-                promptMode,
-                batchSize,
-                batchMaxTokens,
-                concurrency,
-            } = processModelArgs(options);
+            const modelArgs = processModelArgs(options);
+            const sharedOptions = {
+                ...modelArgs,
+                continueOnError: options.continueOnError,
+                ensureChangedTranslation: options.ensureChangedTranslation,
+                skipStylingVerification: options.skipStylingVerification,
+                skipTranslationVerification: options.skipTranslationVerification,
+                templatedStringPrefix: options.templatedStringPrefix,
+                templatedStringSuffix: options.templatedStringSuffix,
+                verbose: options.verbose,
+            };
 
             let overridePrompt: OverridePrompt | undefined;
             if (options.overridePrompt) {
@@ -101,29 +101,8 @@ export default function buildDiffCommand(): Command {
                 };
             }
 
-            const jsonFolder = path.resolve(process.cwd(), "jsons");
-            let beforeInputPath: string;
-            if (path.isAbsolute(options.before)) {
-                beforeInputPath = path.resolve(options.before);
-            } else {
-                beforeInputPath = path.resolve(jsonFolder, options.before);
-                if (!fs.existsSync(beforeInputPath)) {
-                    beforeInputPath = path.resolve(
-                        process.cwd(),
-                        options.before,
-                    );
-                }
-            }
-
-            let afterInputPath: string;
-            if (path.isAbsolute(options.after)) {
-                afterInputPath = path.resolve(options.after);
-            } else {
-                afterInputPath = path.resolve(jsonFolder, options.after);
-                if (!fs.existsSync(afterInputPath)) {
-                    afterInputPath = path.resolve(process.cwd(), options.after);
-                }
-            }
+            const beforeInputPath = resolveInputPath(options.before);
+            const afterInputPath = resolveInputPath(options.after);
 
             if (
                 fs.statSync(beforeInputPath).isFile() !==
@@ -146,56 +125,24 @@ export default function buildDiffCommand(): Command {
                 }
 
                 await translateFileDiff({
-                    apiKey,
-                    batchMaxTokens,
-                    batchSize,
-                    chatParams,
-                    concurrency,
-                    continueOnError: options.continueOnError,
+                    ...sharedOptions,
                     dryRun,
                     engine: options.engine,
-                    ensureChangedTranslation: options.ensureChangedTranslation,
-                    host,
                     inputAfterFileOrPath: afterInputPath,
                     inputBeforeFileOrPath: beforeInputPath,
                     inputLanguageCode: options.inputLanguage,
-                    model,
                     overridePrompt,
-                    promptMode,
-                    rateLimitMs,
-                    skipStylingVerification: options.skipStylingVerification,
-                    skipTranslationVerification:
-                        options.skipTranslationVerification,
-                    templatedStringPrefix: options.templatedStringPrefix,
-                    templatedStringSuffix: options.templatedStringSuffix,
-                    verbose: options.verbose,
                 });
             } else {
                 await translateDirectoryDiff({
-                    apiKey,
+                    ...sharedOptions,
                     baseDirectory: path.resolve(beforeInputPath, ".."),
-                    batchMaxTokens: options.batchMaxTokens,
-                    batchSize: options.batchSize,
-                    chatParams,
-                    concurrency,
-                    continueOnError: options.continueOnError,
                     dryRun,
                     engine: options.engine,
-                    ensureChangedTranslation: options.ensureChangedTranslation,
-                    host,
                     inputFolderNameAfter: afterInputPath,
                     inputFolderNameBefore: beforeInputPath,
                     inputLanguageCode: options.inputLanguage,
-                    model,
                     overridePrompt,
-                    promptMode,
-                    rateLimitMs,
-                    skipStylingVerification: options.skipStylingVerification,
-                    skipTranslationVerification:
-                        options.skipTranslationVerification,
-                    templatedStringPrefix: options.templatedStringPrefix,
-                    templatedStringSuffix: options.templatedStringSuffix,
-                    verbose: options.verbose,
                 });
             }
         });

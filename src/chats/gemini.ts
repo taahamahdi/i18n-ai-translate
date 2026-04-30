@@ -1,6 +1,6 @@
 import { printError } from "../utils";
 import { toGeminiSchema } from "gemini-zod";
-import ChatInterface from "./chat_interface";
+import ChatInterface, { type InvalidKind } from "./chat_interface";
 import Role from "../enums/role";
 import type {
     ChatSession,
@@ -107,16 +107,9 @@ export default class Gemini extends ChatInterface {
         this.startChat(this.params!);
     }
 
-    invalidTranslation(): void {
+    signalInvalid(kind: InvalidKind): void {
         this.history.push({
-            parts: this.invalidTranslationMessage(),
-            role: Role.System,
-        });
-    }
-
-    invalidStyling(): void {
-        this.history.push({
-            parts: this.invalidStylingMessage(),
+            parts: this.invalidMessage(kind),
             role: Role.System,
         });
     }

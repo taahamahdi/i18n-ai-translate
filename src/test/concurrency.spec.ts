@@ -67,8 +67,7 @@ function makeFakeChat(): {
     sendMessage: jest.Mock;
     resetChatHistory: jest.Mock;
     rollbackLastMessage: jest.Mock;
-    invalidTranslation: jest.Mock;
-    invalidStyling: jest.Mock;
+    signalInvalid: jest.Mock;
     chatId: number;
 } {
     const chatId = mintChatId();
@@ -148,8 +147,7 @@ function makeFakeChat(): {
 
     return {
         chatId,
-        invalidStyling: jest.fn(),
-        invalidTranslation: jest.fn(),
+        signalInvalid: jest.fn(),
         resetChatHistory: jest.fn(),
         rollbackLastMessage: jest.fn(),
         sendMessage,
@@ -173,10 +171,6 @@ jest.mock("../chats/chat_factory", () => ({
     },
 }));
 
-// jest.setup.ts mocks both pipelines wholesale; un-mock them so this file
-// exercises the real translate / shard / pool code paths.
-jest.unmock("../generate_csv/generate");
-jest.unmock("../generate_json/generate");
 
 // delay() in utils.ts is used by the rate limiter and retry code; short-circuit
 // it so tests don't actually sleep.

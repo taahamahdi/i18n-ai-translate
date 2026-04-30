@@ -6,6 +6,7 @@ import {
     getTranslationDirectoryKey,
     printError,
     printInfo,
+    resolveInputPath,
 } from "./utils";
 import { translate, translateDiff } from "./translate";
 import colors from "colors/safe";
@@ -22,16 +23,7 @@ import type TranslateDirectoryOptions from "./interfaces/translate_directory_opt
 export async function translateDirectory(
     options: TranslateDirectoryOptions,
 ): Promise<void> {
-    const jsonFolder = path.resolve(process.cwd(), "jsons");
-    let fullBasePath: string;
-    if (path.isAbsolute(options.baseDirectory)) {
-        fullBasePath = path.resolve(options.baseDirectory);
-    } else {
-        fullBasePath = path.resolve(jsonFolder, options.baseDirectory);
-        if (!fs.existsSync(fullBasePath)) {
-            fullBasePath = path.resolve(process.cwd(), options.baseDirectory);
-        }
-    }
+    const fullBasePath = resolveInputPath(options.baseDirectory);
 
     const sourceLanguagePath = path.resolve(
         fullBasePath,
@@ -80,27 +72,10 @@ export async function translateDirectory(
 
     try {
         const outputJSON = (await translate({
-            apiKey: options.apiKey,
-            batchMaxTokens: options.batchMaxTokens,
-            batchSize: options.batchSize,
-            chatParams: options.chatParams,
-            concurrency: options.concurrency,
-            continueOnError: options.continueOnError,
-            engine: options.engine,
-            ensureChangedTranslation: options.ensureChangedTranslation,
-            host: options.host,
+            ...options,
             inputJSON,
             inputLanguageCode: inputLanguage,
-            model: options.model,
             outputLanguageCode: outputLanguage,
-            overridePrompt: options.overridePrompt,
-            promptMode: options.promptMode,
-            rateLimitMs: options.rateLimitMs,
-            skipStylingVerification: options.skipStylingVerification,
-            skipTranslationVerification: options.skipTranslationVerification,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
-            verbose: options.verbose,
         })) as { [filePathKey: string]: string };
 
         const filesToJSON: { [filePath: string]: { [key: string]: string } } =
@@ -221,16 +196,7 @@ export async function translateDirectory(
 export async function translateDirectoryDiff(
     options: TranslateDirectoryDiffOptions,
 ): Promise<void> {
-    const jsonFolder = path.resolve(process.cwd(), "jsons");
-    let fullBasePath: string;
-    if (path.isAbsolute(options.baseDirectory)) {
-        fullBasePath = path.resolve(options.baseDirectory);
-    } else {
-        fullBasePath = path.resolve(jsonFolder, options.baseDirectory);
-        if (!fs.existsSync(fullBasePath)) {
-            fullBasePath = path.resolve(process.cwd(), options.baseDirectory);
-        }
-    }
+    const fullBasePath = resolveInputPath(options.baseDirectory);
 
     const sourceLanguagePathBefore = path.resolve(
         fullBasePath,
@@ -361,28 +327,11 @@ export async function translateDirectoryDiff(
 
     try {
         const perLanguageOutputJSON = await translateDiff({
-            apiKey: options.apiKey,
-            batchMaxTokens: options.batchMaxTokens,
-            batchSize: options.batchSize,
-            chatParams: options.chatParams,
-            concurrency: options.concurrency,
-            continueOnError: options.continueOnError,
-            engine: options.engine,
-            ensureChangedTranslation: options.ensureChangedTranslation,
-            host: options.host,
+            ...options,
             inputJSONAfter,
             inputJSONBefore,
             inputLanguageCode: inputLanguage,
-            model: options.model,
-            overridePrompt: options.overridePrompt,
-            promptMode: options.promptMode,
-            rateLimitMs: options.rateLimitMs,
-            skipStylingVerification: options.skipStylingVerification,
-            skipTranslationVerification: options.skipTranslationVerification,
-            templatedStringPrefix: options.templatedStringPrefix,
-            templatedStringSuffix: options.templatedStringSuffix,
             toUpdateJSONs,
-            verbose: options.verbose,
         });
 
         for (const outputLanguage in perLanguageOutputJSON) {

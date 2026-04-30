@@ -1,5 +1,5 @@
 import { printError } from "../utils";
-import ChatInterface from "./chat_interface";
+import ChatInterface, { type InvalidKind } from "./chat_interface";
 import Role from "../enums/role";
 import zodToJsonSchema from "zod-to-json-schema";
 import type { ChatRequest, Ollama as InternalOllama, Message } from "ollama";
@@ -81,16 +81,9 @@ export default class Ollama extends ChatInterface {
         }
     }
 
-    invalidTranslation(): void {
+    signalInvalid(kind: InvalidKind): void {
         this.history.push({
-            content: this.invalidTranslationMessage(),
-            role: Role.System,
-        });
-    }
-
-    invalidStyling(): void {
-        this.history.push({
-            content: this.invalidStylingMessage(),
+            content: this.invalidMessage(kind),
             role: Role.System,
         });
     }

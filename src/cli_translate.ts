@@ -10,6 +10,8 @@ import {
     printError,
     printInfo,
     printWarn,
+    resolveInputPath,
+    resolveOutputPath,
 } from "./utils";
 import { processModelArgs, processOverridePromptFile } from "./cli_helpers";
 import { translateDirectory } from "./translate_directory";
@@ -80,17 +82,20 @@ export default function buildTranslateCommand(): Command {
         .option("--no-continue-on-error", CLI_HELP.NoContinueOnError)
         .option("--concurrency <concurrency>", CLI_HELP.Concurrency)
         .action(async (options: any) => {
-            const {
-                model,
-                chatParams,
-                rateLimitMs,
-                apiKey,
-                host,
-                promptMode,
-                batchSize,
-                batchMaxTokens,
-                concurrency,
-            } = processModelArgs(options);
+            const modelArgs = processModelArgs(options);
+            // The commander options object carries CLI-only booleans that
+            // processModelArgs doesn't re-expose; forward them by spreading
+            // the subset the translate*() wrappers actually consume.
+            const sharedOptions = {
+                ...modelArgs,
+                continueOnError: options.continueOnError,
+                ensureChangedTranslation: options.ensureChangedTranslation,
+                skipStylingVerification: options.skipStylingVerification,
+                skipTranslationVerification: options.skipTranslationVerification,
+                templatedStringPrefix: options.templatedStringPrefix,
+                templatedStringSuffix: options.templatedStringSuffix,
+                verbose: options.verbose,
+            };
 
             let overridePrompt: OverridePrompt | undefined;
             if (options.overridePrompt) {
@@ -134,16 +139,7 @@ export default function buildTranslateCommand(): Command {
                     );
                 }
 
-                const jsonFolder = path.resolve(process.cwd(), "jsons");
-                let inputPath: string;
-                if (path.isAbsolute(options.input)) {
-                    inputPath = path.resolve(options.input);
-                } else {
-                    inputPath = path.resolve(jsonFolder, options.input);
-                    if (!fs.existsSync(inputPath)) {
-                        inputPath = path.resolve(process.cwd(), options.input);
-                    }
-                }
+                const inputPath = resolveInputPath(options.input);
 
                 if (fs.statSync(inputPath).isFile()) {
                     let i = 0;
@@ -164,48 +160,17 @@ export default function buildTranslateCommand(): Command {
                             continue;
                         }
 
-                        let outputPath: string;
-                        if (path.isAbsolute(output)) {
-                            outputPath = path.resolve(output);
-                        } else {
-                            outputPath = path.resolve(jsonFolder, output);
-                            if (!fs.existsSync(jsonFolder)) {
-                                outputPath = path.resolve(
-                                    process.cwd(),
-                                    output,
-                                );
-                            }
-                        }
+                        const outputPath = resolveOutputPath(output);
 
                         try {
                             // eslint-disable-next-line no-await-in-loop
                             await translateFile({
-                                apiKey,
-                                batchMaxTokens,
-                                batchSize,
-                                chatParams,
-                                concurrency,
-                                continueOnError: options.continueOnError,
+                                ...sharedOptions,
                                 dryRun,
                                 engine: options.engine,
-                                ensureChangedTranslation:
-                                    options.ensureChangedTranslation,
-                                host,
                                 inputFilePath: inputPath,
-                                model,
                                 outputFilePath: outputPath,
                                 overridePrompt,
-                                promptMode,
-                                rateLimitMs,
-                                skipStylingVerification:
-                                    options.skipStylingVerification,
-                                skipTranslationVerification:
-                                    options.skipTranslationVerification,
-                                templatedStringPrefix:
-                                    options.templatedStringPrefix,
-                                templatedStringSuffix:
-                                    options.templatedStringSuffix,
-                                verbose: options.verbose,
                             });
                         } catch (err) {
                             printError(
@@ -235,33 +200,13 @@ export default function buildTranslateCommand(): Command {
                         try {
                             // eslint-disable-next-line no-await-in-loop
                             await translateDirectory({
-                                apiKey,
+                                ...sharedOptions,
                                 baseDirectory: path.resolve(inputPath, ".."),
-                                batchMaxTokens: options.batchMaxTokens,
-                                batchSize: options.batchSize,
-                                chatParams,
-                                concurrency,
-                                continueOnError: options.continueOnError,
                                 dryRun,
                                 engine: options.engine,
-                                ensureChangedTranslation:
-                                    options.ensureChangedTranslation,
-                                host,
                                 inputLanguageCode: path.basename(inputPath),
-                                model,
                                 outputLanguageCode: languageCode,
                                 overridePrompt,
-                                promptMode,
-                                rateLimitMs,
-                                skipStylingVerification:
-                                    options.skipStylingVerification,
-                                skipTranslationVerification:
-                                    options.skipTranslationVerification,
-                                templatedStringPrefix:
-                                    options.templatedStringPrefix,
-                                templatedStringSuffix:
-                                    options.templatedStringSuffix,
-                                verbose: options.verbose,
                             });
                         } catch (err) {
                             printError(
@@ -291,19 +236,7 @@ export default function buildTranslateCommand(): Command {
                         );
                     }
 
-                    const jsonFolder = path.resolve(process.cwd(), "jsons");
-                    let inputPath: string;
-                    if (path.isAbsolute(options.input)) {
-                        inputPath = path.resolve(options.input);
-                    } else {
-                        inputPath = path.resolve(jsonFolder, options.input);
-                        if (!fs.existsSync(inputPath)) {
-                            inputPath = path.resolve(
-                                process.cwd(),
-                                options.input,
-                            );
-                        }
-                    }
+                    const inputPath = resolveInputPath(options.input);
 
                     if (fs.statSync(inputPath).isFile()) {
                         const output = getOutputPathFromInputPath(
@@ -315,48 +248,17 @@ export default function buildTranslateCommand(): Command {
                             continue;
                         }
 
-                        let outputPath: string;
-                        if (path.isAbsolute(output)) {
-                            outputPath = path.resolve(output);
-                        } else {
-                            outputPath = path.resolve(jsonFolder, output);
-                            if (!fs.existsSync(jsonFolder)) {
-                                outputPath = path.resolve(
-                                    process.cwd(),
-                                    output,
-                                );
-                            }
-                        }
+                        const outputPath = resolveOutputPath(output);
 
                         try {
                             // eslint-disable-next-line no-await-in-loop
                             await translateFile({
-                                apiKey,
-                                batchMaxTokens: options.batchMaxTokens,
-                                batchSize: options.batchSize,
-                                chatParams,
-                                concurrency,
-                                continueOnError: options.continueOnError,
+                                ...sharedOptions,
                                 dryRun,
                                 engine: options.engine,
-                                ensureChangedTranslation:
-                                    options.ensureChangedTranslation,
-                                host,
                                 inputFilePath: inputPath,
-                                model,
                                 outputFilePath: outputPath,
                                 overridePrompt,
-                                promptMode,
-                                rateLimitMs,
-                                skipStylingVerification:
-                                    options.skipStylingVerification,
-                                skipTranslationVerification:
-                                    options.skipTranslationVerification,
-                                templatedStringPrefix:
-                                    options.templatedStringPrefix,
-                                templatedStringSuffix:
-                                    options.templatedStringSuffix,
-                                verbose: options.verbose,
                             });
                         } catch (err) {
                             printError(
@@ -376,33 +278,13 @@ export default function buildTranslateCommand(): Command {
                         try {
                             // eslint-disable-next-line no-await-in-loop
                             await translateDirectory({
-                                apiKey,
+                                ...sharedOptions,
                                 baseDirectory: path.resolve(inputPath, ".."),
-                                batchMaxTokens: options.batchMaxTokens,
-                                batchSize: options.batchSize,
-                                chatParams,
-                                concurrency,
-                                continueOnError: options.continueOnError,
                                 dryRun,
                                 engine: options.engine,
-                                ensureChangedTranslation:
-                                    options.ensureChangedTranslation,
-                                host,
                                 inputLanguageCode: path.basename(inputPath),
-                                model,
                                 outputLanguageCode: languageCode,
                                 overridePrompt,
-                                promptMode,
-                                rateLimitMs,
-                                skipStylingVerification:
-                                    options.skipStylingVerification,
-                                skipTranslationVerification:
-                                    options.skipTranslationVerification,
-                                templatedStringPrefix:
-                                    options.templatedStringPrefix,
-                                templatedStringSuffix:
-                                    options.templatedStringSuffix,
-                                verbose: options.verbose,
                             });
                         } catch (err) {
                             printError(

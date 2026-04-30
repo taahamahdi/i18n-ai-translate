@@ -4,7 +4,6 @@ import {
     TranslateItemOutputObjectSchema,
     VerifyItemOutputObjectSchema,
 } from "./types";
-import { buildGroupShards } from "../sharding";
 import {
     getMissingVariables,
     getTemplatedStringRegex,
@@ -14,6 +13,7 @@ import {
     printWarn,
 } from "../utils";
 import { retryWithBackoff } from "../retry";
+import { runAcrossShards } from "../shard_runner";
 import { translationPromptJSON, verificationPromptJSON } from "./prompts";
 import cl100k_base from "tiktoken/encoders/cl100k_base.json";
 import type {
@@ -24,13 +24,13 @@ import type {
     VerifyItemInput,
     VerifyItemOutput,
 } from "./types";
-import type { TranslationStats, TranslationStatsItem } from "../types";
+import type { TranslationStatsItem } from "../types";
 import type { ZodType, ZodTypeDef } from "zod";
-import type ChatPool from "../chat_pool";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsJSON from "../interfaces/generate_translation_options_json";
 import type RateLimiter from "../rate_limiter";
 import type TranslateOptions from "../interfaces/translate_options";
+import type TranslationContext from "../interfaces/translation_context";
 
 export default class GenerateTranslationJSON {
     tikToken: Tiktoken;
@@ -57,42 +57,32 @@ export default class GenerateTranslationJSON {
      * @param translationStats - The translation statistics
      */
     public async translateJSON(
-        flatInput: { [key: string]: string },
-        options: TranslateOptions,
-        pool: ChatPool,
-        translationStats: TranslationStats,
-        groups: Array<{ [key: string]: string }>,
+        ctx: TranslationContext,
     ): Promise<{ [key: string]: string }> {
-        // Similarity-aware sharding: each worker gets whole groups of
-        // related strings so the chat-history context stays coherent.
-        const groupShards = buildGroupShards(groups, pool.size);
-        const shards = groupShards.length > 0 ? groupShards : [flatInput];
-        const triples = pool.all();
+        const { flatInput, options, pool, groups, stats } = ctx;
 
-        // Build the per-shard item arrays once, then seed the shared
-        // stats counters so parallel shards don't clobber each other.
-        const shardItemArrays = shards.map((s) =>
-            this.generateTranslateItemArray(s),
-        );
-
-        const allItems = shardItemArrays.flat();
-        translationStats.translate.totalItems = allItems.length;
-        translationStats.translate.totalTokens = allItems.reduce(
+        // Seed stats once up front; per-shard work then just increments
+        // the shared counters.
+        const allItems = this.generateTranslateItemArray(flatInput);
+        stats.translate.totalItems = allItems.length;
+        stats.translate.totalTokens = allItems.reduce(
             (sum, item) => sum + item.translationTokens,
             0,
         );
 
-        translationStats.translate.batchStartTime = Date.now();
+        stats.translate.batchStartTime = Date.now();
 
-        const perShardResults = await Promise.all(
-            shardItemArrays.map(async (shardItems, shardIdx) => {
-                const chats = triples[shardIdx % triples.length];
-
+        const perShardResults = await runAcrossShards(
+            flatInput,
+            groups,
+            pool,
+            async (shard, chats) => {
+                const shardItems = this.generateTranslateItemArray(shard);
                 const translated = await this.generateTranslationJSON(
                     shardItems,
                     options,
                     chats,
-                    translationStats.translate,
+                    stats.translate,
                     pool.rateLimiter,
                 );
 
@@ -104,10 +94,10 @@ export default class GenerateTranslationJSON {
                     translated,
                     options,
                     chats,
-                    translationStats.verify,
+                    stats.verify,
                     pool.rateLimiter,
                 );
-            }),
+            },
         );
 
         const combined: TranslateItem[] = [];
