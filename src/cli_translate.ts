@@ -78,6 +78,7 @@ export default function buildTranslateCommand(): Command {
         .option("--batch-max-tokens <batch-max-tokens>", CLI_HELP.MaxTokens)
         .option("--dry-run", CLI_HELP.DryRun, false)
         .option("--no-continue-on-error", CLI_HELP.NoContinueOnError)
+        .option("--concurrency <concurrency>", CLI_HELP.Concurrency)
         .action(async (options: any) => {
             const {
                 model,
@@ -88,6 +89,7 @@ export default function buildTranslateCommand(): Command {
                 promptMode,
                 batchSize,
                 batchMaxTokens,
+                concurrency,
             } = processModelArgs(options);
 
             let overridePrompt: OverridePrompt | undefined;
@@ -182,6 +184,7 @@ export default function buildTranslateCommand(): Command {
                                 batchMaxTokens,
                                 batchSize,
                                 chatParams,
+                                concurrency,
                                 continueOnError: options.continueOnError,
                                 dryRun,
                                 engine: options.engine,
@@ -237,6 +240,7 @@ export default function buildTranslateCommand(): Command {
                                 batchMaxTokens: options.batchMaxTokens,
                                 batchSize: options.batchSize,
                                 chatParams,
+                                concurrency,
                                 continueOnError: options.continueOnError,
                                 dryRun,
                                 engine: options.engine,
@@ -331,6 +335,7 @@ export default function buildTranslateCommand(): Command {
                                 batchMaxTokens: options.batchMaxTokens,
                                 batchSize: options.batchSize,
                                 chatParams,
+                                concurrency,
                                 continueOnError: options.continueOnError,
                                 dryRun,
                                 engine: options.engine,
@@ -376,6 +381,7 @@ export default function buildTranslateCommand(): Command {
                                 batchMaxTokens: options.batchMaxTokens,
                                 batchSize: options.batchSize,
                                 chatParams,
+                                concurrency,
                                 continueOnError: options.continueOnError,
                                 dryRun,
                                 engine: options.engine,

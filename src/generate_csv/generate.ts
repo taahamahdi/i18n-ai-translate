@@ -1,4 +1,5 @@
 import { RETRY_ATTEMPTS } from "../constants";
+import { buildGroupShards } from "../sharding";
 import { failedTranslationPrompt, generationPrompt } from "./prompts";
 import {
     getTemplatedStringRegex,
@@ -6,12 +7,14 @@ import {
     printError,
     printInfo,
     printProgress,
-    retryJob,
 } from "../utils";
+import { retryWithBackoff } from "../retry";
 import { verifyStyling, verifyTranslation } from "./verify";
 import type { GenerateStateCSV, TranslationStatsItem } from "../types";
+import type ChatPool from "../chat_pool";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsCSV from "../interfaces/generate_translation_options_csv";
+import type RateLimiter from "../rate_limiter";
 import type TranslateOptions from "../interfaces/translate_options";
 
 async function generateTranslation(
@@ -56,14 +59,14 @@ async function generateTranslation(
 
     let translated = "";
     try {
-        translated = await retryJob(
+        translated = await retryWithBackoff(
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            generate,
-            [options, generationPromptText, generateState],
-            RETRY_ATTEMPTS,
-            true,
-            0,
-            false,
+            () => generate(options, generationPromptText, generateState),
+            {
+                maxRetries: RETRY_ATTEMPTS,
+                rateLimiter: options.rateLimiter,
+                verbose: options.verboseLogging,
+            },
         );
     } catch (e) {
         printError(`Failed to translate: ${e}`);
@@ -82,20 +85,71 @@ async function generateTranslation(
 export default async function translateCSV(
     flatInput: { [key: string]: string },
     options: TranslateOptions,
-    chats: Chats,
+    pool: ChatPool,
     translationStats: TranslationStatsItem,
+    groups: Array<{ [key: string]: string }>,
 ): Promise<{ [key: string]: string }> {
     const output: { [key: string]: string } = {};
-
-    const allKeys = Object.keys(flatInput);
-
+    const totalKeys = Object.keys(flatInput).length;
     const batchSize = Number(options.batchSize);
 
     translationStats.batchStartTime = Date.now();
 
-    for (let i = 0; i < Object.keys(flatInput).length; i += batchSize) {
-        const keys = allKeys.slice(i, i + batchSize);
-        const input = keys.map((x) => `"${flatInput[x]}"`).join("\n");
+    // Build contiguous shards from similarity groups: at most pool.size
+    // shards, each holding one or more whole groups. Keeps related items
+    // in the same worker's chat history.
+    const groupShards = buildGroupShards(groups, pool.size);
+    const shards = groupShards.length > 0 ? groupShards : [flatInput];
+
+    let processed = 0;
+
+    // Assign each shard to a pool triple. Workers run in parallel but each
+    // worker's batches run serially so chat context accumulates.
+    const chatTriples = pool.all();
+
+    await Promise.all(
+        shards.map((shard, shardIdx) =>
+            runShard(
+                shard,
+                chatTriples[shardIdx % chatTriples.length],
+                options,
+                pool.rateLimiter,
+                batchSize,
+                output,
+                {
+                    onBatchCompleted: (count) => {
+                        processed += count;
+                        if (options.verbose) {
+                            printProgress(
+                                "In Progress",
+                                translationStats.batchStartTime,
+                                totalKeys,
+                                processed,
+                            );
+                        }
+                    },
+                },
+            ),
+        ),
+    );
+
+    return output;
+}
+
+async function runShard(
+    shardInput: { [key: string]: string },
+    chats: Chats,
+    options: TranslateOptions,
+    rateLimiter: RateLimiter,
+    batchSize: number,
+    output: { [key: string]: string },
+    callbacks: { onBatchCompleted: (count: number) => void },
+): Promise<void> {
+    const shardKeys = Object.keys(shardInput);
+
+    for (let i = 0; i < shardKeys.length; i += batchSize) {
+        const keys = shardKeys.slice(i, i + batchSize);
+        const input = keys.map((x) => `"${shardInput[x]}"`).join("\n");
 
         // eslint-disable-next-line no-await-in-loop
         const generatedTranslation = await generateTranslation({
@@ -107,6 +161,7 @@ export default async function translateCSV(
             keys,
             outputLanguageCode: `[${options.outputLanguageCode}]`,
             overridePrompt: options.overridePrompt,
+            rateLimiter,
             skipStylingVerification: options.skipStylingVerification as boolean,
             skipTranslationVerification:
                 options.skipTranslationVerification as boolean,
@@ -126,29 +181,21 @@ export default async function translateCSV(
             printError(
                 `Failed to generate translation for ${options.outputLanguageCode}`,
             );
-            break;
+            return;
         }
 
+        const splitLines = generatedTranslation.split("\n");
         for (let j = 0; j < keys.length; j++) {
-            output[keys[j]] = generatedTranslation.split("\n")[j].slice(1, -1);
+            output[keys[j]] = splitLines[j].slice(1, -1);
 
             if (options.verbose)
                 printInfo(
-                    `${keys[j].replaceAll("*", ".")}:\n${flatInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
+                    `${keys[j].replaceAll("*", ".")}:\n${shardInput[keys[j]]}\n=>\n${output[keys[j]]}\n`,
                 );
         }
 
-        if (options.verbose && i > 0) {
-            printProgress(
-                "In Progress",
-                translationStats.batchStartTime,
-                Object.keys(flatInput).length,
-                i,
-            );
-        }
+        callbacks.onBatchCompleted(keys.length);
     }
-
-    return output;
 }
 
 async function generate(

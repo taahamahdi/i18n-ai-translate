@@ -47,8 +47,7 @@ export default class Anthropic extends ChatInterface {
             this.history = this.history.slice(this.history.length - 2);
         }
 
-        await this.rateLimiter.wait();
-        this.rateLimiter.apiCalled();
+        await this.rateLimiter.acquire();
         this.history.push({ content: message, role: Role.User });
 
         try {

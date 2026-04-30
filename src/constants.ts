@@ -8,16 +8,19 @@ export const DEFAULT_TEMPLATED_STRING_PREFIX = "{{";
 export const DEFAULT_TEMPLATED_STRING_SUFFIX = "}}";
 export const FLATTEN_DELIMITER = "*";
 export const DEFAULT_MODEL = {
-    [Engine.ChatGPT]: "gpt-4o",
+    [Engine.ChatGPT]: "gpt-5.2",
     [Engine.Gemini]: "gemini-2.5-flash",
     [Engine.Ollama]: "llama3.3",
-    [Engine.Claude]: "claude-opus-4-0",
+    [Engine.Claude]: "claude-sonnet-4-6",
 };
 export const RETRY_ATTEMPTS = 25;
+export const DEFAULT_CONCURRENCY = 2;
 
 export const CLI_HELP = {
     BatchSize:
         "How many keys to process at a time, 32 by default for chatgpt, 16 otherwise",
+    Concurrency:
+        "How many batches to run in parallel (default: 2). Each worker holds its own chat history, sharing one rate limiter. Tune upward together with --rate-limit-ms to use more of your API tier",
     DryRun: "Show the translations without writing to files, and store them in a temporary directory",
     Engine: "Engine to use (chatgpt, gemini, ollama, or claude)",
     EnsureChangedTranslation:

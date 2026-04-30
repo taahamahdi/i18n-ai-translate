@@ -1,5 +1,6 @@
 import type Chats from "./chats";
 import type OverridePrompt from "./override_prompt";
+import type RateLimiter from "../rate_limiter";
 
 export default interface GenerateTranslationOptionsCSV {
     chats: Chats;
@@ -14,4 +15,5 @@ export default interface GenerateTranslationOptionsCSV {
     skipTranslationVerification: boolean;
     skipStylingVerification: boolean;
     overridePrompt?: OverridePrompt;
+    rateLimiter?: RateLimiter;
 }

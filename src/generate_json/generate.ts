@@ -4,6 +4,7 @@ import {
     TranslateItemOutputObjectSchema,
     VerifyItemOutputObjectSchema,
 } from "./types";
+import { buildGroupShards } from "../sharding";
 import {
     getMissingVariables,
     getTemplatedStringRegex,
@@ -11,8 +12,8 @@ import {
     printExecutionTime,
     printProgress,
     printWarn,
-    retryJob,
 } from "../utils";
+import { retryWithBackoff } from "../retry";
 import { translationPromptJSON, verificationPromptJSON } from "./prompts";
 import cl100k_base from "tiktoken/encoders/cl100k_base.json";
 import type {
@@ -25,8 +26,10 @@ import type {
 } from "./types";
 import type { TranslationStats, TranslationStatsItem } from "../types";
 import type { ZodType, ZodTypeDef } from "zod";
+import type ChatPool from "../chat_pool";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsJSON from "../interfaces/generate_translation_options_json";
+import type RateLimiter from "../rate_limiter";
 import type TranslateOptions from "../interfaces/translate_options";
 
 export default class GenerateTranslationJSON {
@@ -56,30 +59,63 @@ export default class GenerateTranslationJSON {
     public async translateJSON(
         flatInput: { [key: string]: string },
         options: TranslateOptions,
-        chats: Chats,
+        pool: ChatPool,
         translationStats: TranslationStats,
+        groups: Array<{ [key: string]: string }>,
     ): Promise<{ [key: string]: string }> {
-        const translateItemArray = this.generateTranslateItemArray(flatInput);
+        // Similarity-aware sharding: each worker gets whole groups of
+        // related strings so the chat-history context stays coherent.
+        const groupShards = buildGroupShards(groups, pool.size);
+        const shards = groupShards.length > 0 ? groupShards : [flatInput];
+        const triples = pool.all();
 
-        const generatedTranslation = await this.generateTranslationJSON(
-            translateItemArray,
-            options,
-            chats,
-            translationStats.translate,
+        // Build the per-shard item arrays once, then seed the shared
+        // stats counters so parallel shards don't clobber each other.
+        const shardItemArrays = shards.map((s) =>
+            this.generateTranslateItemArray(s),
         );
 
-        if (!options.skipTranslationVerification) {
-            const generatedVerification = await this.generateVerificationJSON(
-                generatedTranslation,
-                options,
-                chats,
-                translationStats.verify,
-            );
+        const allItems = shardItemArrays.flat();
+        translationStats.translate.totalItems = allItems.length;
+        translationStats.translate.totalTokens = allItems.reduce(
+            (sum, item) => sum + item.translationTokens,
+            0,
+        );
 
-            return this.convertTranslateItemToIndex(generatedVerification);
+        translationStats.translate.batchStartTime = Date.now();
+
+        const perShardResults = await Promise.all(
+            shardItemArrays.map(async (shardItems, shardIdx) => {
+                const chats = triples[shardIdx % triples.length];
+
+                const translated = await this.generateTranslationJSON(
+                    shardItems,
+                    options,
+                    chats,
+                    translationStats.translate,
+                    pool.rateLimiter,
+                );
+
+                if (options.skipTranslationVerification) {
+                    return translated;
+                }
+
+                return this.generateVerificationJSON(
+                    translated,
+                    options,
+                    chats,
+                    translationStats.verify,
+                    pool.rateLimiter,
+                );
+            }),
+        );
+
+        const combined: TranslateItem[] = [];
+        for (const shardResult of perShardResults) {
+            combined.push(...shardResult);
         }
 
-        return this.convertTranslateItemToIndex(generatedTranslation);
+        return this.convertTranslateItemToIndex(combined);
     }
 
     private generateTranslateItemsInput(
@@ -281,15 +317,12 @@ export default class GenerateTranslationJSON {
         options: TranslateOptions,
         chats: Chats,
         translationStats: TranslationStatsItem,
+        rateLimiter?: RateLimiter,
     ): Promise<TranslateItem[]> {
         const generatedTranslation: TranslateItem[] = [];
-        translationStats.totalItems = translateItemArray.length;
-        translationStats.totalTokens = translateItemArray.reduce(
-            (sum, translateItem) => sum + translateItem.translationTokens,
-            0,
-        );
-
-        translationStats.batchStartTime = Date.now();
+        // totalItems / totalTokens / batchStartTime are set once by the
+        // public translateJSON entry point so parallel shards don't
+        // clobber one another's stats.
 
         const skippedItems: TranslateItem[] = [];
 
@@ -341,6 +374,7 @@ export default class GenerateTranslationJSON {
                 inputLanguageCode: `[${options.inputLanguageCode}]`,
                 outputLanguageCode: `[${options.outputLanguageCode}]`,
                 overridePrompt: options.overridePrompt,
+                rateLimiter,
                 skipStylingVerification:
                     options.skipStylingVerification as boolean,
                 skipTranslationVerification:
@@ -406,15 +440,20 @@ export default class GenerateTranslationJSON {
         options: TranslateOptions,
         chats: Chats,
         translationStats: TranslationStatsItem,
+        rateLimiter?: RateLimiter,
     ): Promise<TranslateItem[]> {
         const generatedVerification: TranslateItem[] = [];
-        translationStats.totalItems = verifyItemArray.length;
-        translationStats.totalTokens = verifyItemArray.reduce(
+        // Stats counters are set centrally in translateJSON so concurrent
+        // shards don't clobber each other.
+        if (translationStats.batchStartTime === 0) {
+            translationStats.batchStartTime = Date.now();
+        }
+
+        translationStats.totalItems += verifyItemArray.length;
+        translationStats.totalTokens += verifyItemArray.reduce(
             (sum, verifyItem) => sum + verifyItem.verificationTokens,
             0,
         );
-
-        translationStats.batchStartTime = Date.now();
 
         while (verifyItemArray.length > 0) {
             const batchVerifyItemArray = this.getBatchVerifyItemArray(
@@ -462,6 +501,7 @@ export default class GenerateTranslationJSON {
                 inputLanguageCode: `[${options.inputLanguageCode}]`,
                 outputLanguageCode: `[${options.outputLanguageCode}]`,
                 overridePrompt: options.overridePrompt,
+                rateLimiter,
                 skipStylingVerification:
                     options.skipStylingVerification as boolean,
                 skipTranslationVerification:
@@ -689,19 +729,19 @@ export default class GenerateTranslationJSON {
 
         let translated = "";
         try {
-            translated = await retryJob(
-                // eslint-disable-next-line @typescript-eslint/no-use-before-define
-                this.generateJob,
-                [
-                    generationPromptText,
-                    options,
-                    generateState,
-                    TranslateItemOutputObjectSchema,
-                ],
-                RETRY_ATTEMPTS,
-                true,
-                0,
-                false,
+            translated = await retryWithBackoff(
+                () =>
+                    this.generateJob(
+                        generationPromptText,
+                        options,
+                        generateState,
+                        TranslateItemOutputObjectSchema,
+                    ),
+                {
+                    maxRetries: RETRY_ATTEMPTS,
+                    rateLimiter: options.rateLimiter,
+                    verbose: options.verboseLogging,
+                },
             );
         } catch (e) {
             printError(`Failed to translate: ${e}\n`);
@@ -736,19 +776,19 @@ export default class GenerateTranslationJSON {
 
         let verified = "";
         try {
-            verified = await retryJob(
-                // eslint-disable-next-line @typescript-eslint/no-use-before-define
-                this.generateJob.bind(this),
-                [
-                    generationPromptText,
-                    options,
-                    generateState,
-                    VerifyItemOutputObjectSchema,
-                ],
-                RETRY_ATTEMPTS,
-                true,
-                0,
-                false,
+            verified = await retryWithBackoff(
+                () =>
+                    this.generateJob(
+                        generationPromptText,
+                        options,
+                        generateState,
+                        VerifyItemOutputObjectSchema,
+                    ),
+                {
+                    maxRetries: RETRY_ATTEMPTS,
+                    rateLimiter: options.rateLimiter,
+                    verbose: options.verboseLogging,
+                },
             );
         } catch (e) {
             printError(`Failed to translate: ${e}\n`);

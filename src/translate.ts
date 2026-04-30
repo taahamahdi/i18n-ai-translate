@@ -8,48 +8,30 @@ import {
 import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
 import { isValidLanguageCode, printExecutionTime, printInfo } from "./utils";
-import ChatFactory from "./chats/chat_factory";
+import ChatPool from "./chat_pool";
 import GenerateTranslationJSON from "./generate_json/generate";
 import PromptMode from "./enums/prompt_mode";
 import RateLimiter from "./rate_limiter";
 import translateCSV from "./generate_csv/generate";
 import type { TranslationStats, TranslationStatsItem } from "./types";
-import type Chats from "./interfaces/chats";
 import type TranslateDiffOptions from "./interfaces/translate_diff_options";
 import type TranslateOptions from "./interfaces/translate_options";
 
-function getChats(options: TranslateOptions): Chats {
+function getPool(options: TranslateOptions): ChatPool {
     const rateLimiter = new RateLimiter(
         options.rateLimitMs,
         options.verbose as boolean,
     );
 
-    return {
-        generateTranslationChat: ChatFactory.newChat(
-            options.engine,
-            options.model,
-            rateLimiter,
-            options.apiKey,
-            options.host,
-            options.chatParams,
-        ),
-        verifyStylingChat: ChatFactory.newChat(
-            options.engine,
-            options.model,
-            rateLimiter,
-            options.apiKey,
-            options.host,
-            options.chatParams,
-        ),
-        verifyTranslationChat: ChatFactory.newChat(
-            options.engine,
-            options.model,
-            rateLimiter,
-            options.apiKey,
-            options.host,
-            options.chatParams,
-        ),
-    };
+    return ChatPool.create({
+        apiKey: options.apiKey,
+        chatParams: options.chatParams,
+        concurrency: Math.max(1, options.concurrency ?? 1),
+        engine: options.engine,
+        host: options.host,
+        model: options.model,
+        rateLimiter,
+    });
 }
 
 function replaceNewlinesWithPlaceholder(
@@ -83,7 +65,8 @@ function replacePlaceholderWithNewLines(
 }
 
 function groupSimilarValues(flatInput: { [key: string]: string }): {
-    [key: string]: string;
+    flatInput: { [key: string]: string };
+    groups: Array<{ [key: string]: string }>;
 } {
     const groups: Array<{ [key: string]: string }> = [];
     for (const key in flatInput) {
@@ -120,8 +103,9 @@ function groupSimilarValues(flatInput: { [key: string]: string }): {
         }
     }
 
-    return flatInput;
+    return { flatInput, groups };
 }
+
 
 function startTranslationStatsItem(): TranslationStatsItem {
     return {
@@ -144,8 +128,9 @@ function startTranslationStats(): TranslationStats {
 async function getTranslation(
     flatInput: { [key: string]: string },
     options: TranslateOptions,
-    chats: Chats,
+    pool: ChatPool,
     translationStats: TranslationStats,
+    groups: Array<{ [key: string]: string }>,
 ): Promise<{ [key: string]: string }> {
     if (options.verbose) {
         printInfo(`Translation prompting mode: ${options.promptMode}\n`);
@@ -160,8 +145,9 @@ async function getTranslation(
             return generateTranslationJSON.translateJSON(
                 flatInput,
                 options,
-                chats,
+                pool,
                 translationStats,
+                groups,
             );
         }
 
@@ -169,8 +155,9 @@ async function getTranslation(
             return translateCSV(
                 flatInput,
                 options,
-                chats,
+                pool,
                 translationStats.translate,
+                groups,
             );
         default:
             throw new Error("Prompt mode is not set");
@@ -221,7 +208,7 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         );
     }
 
-    const chats: Chats = getChats(options);
+    const pool = getPool(options);
 
     let flatInput = flatten(options.inputJSON, {
         delimiter: FLATTEN_DELIMITER,
@@ -260,15 +247,17 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         }
     }
 
-    flatInput = groupSimilarValues(flatInput);
+    const grouped = groupSimilarValues(flatInput);
+    flatInput = grouped.flatInput;
 
     const translationStats = startTranslationStats();
 
     const output = await getTranslation(
         flatInput,
         options,
-        chats,
+        pool,
         translationStats,
+        grouped.groups,
     );
 
     for (const [canonical, dupes] of Object.entries(canonicalToDupes)) {
@@ -397,6 +386,7 @@ export async function translateDiff(
                 batchMaxTokens: options.batchMaxTokens,
                 batchSize: options.batchSize,
                 chatParams: options.chatParams,
+                concurrency: options.concurrency,
                 continueOnError: options.continueOnError,
                 engine: options.engine,
                 ensureChangedTranslation: options.ensureChangedTranslation,

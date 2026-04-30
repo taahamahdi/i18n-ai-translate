@@ -44,8 +44,7 @@ export default class ChatGPT extends ChatInterface {
             this.history = this.history.slice(this.history.length - 2);
         }
 
-        await this.rateLimiter.wait();
-        this.rateLimiter.apiCalled();
+        await this.rateLimiter.acquire();
         this.history.push({ content: message, role: Role.User });
 
         const formatSchema = format
