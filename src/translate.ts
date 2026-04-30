@@ -16,6 +16,7 @@ import translateCSV from "./generate_csv/generate";
 import type { TranslationStats, TranslationStatsItem } from "./types";
 import type TranslateDiffOptions from "./interfaces/translate_diff_options";
 import type TranslateOptions from "./interfaces/translate_options";
+import type TranslationContext from "./interfaces/translation_context";
 
 function getPool(options: TranslateOptions): ChatPool {
     const rateLimiter = new RateLimiter(
@@ -126,39 +127,23 @@ function startTranslationStats(): TranslationStats {
 }
 
 async function getTranslation(
-    flatInput: { [key: string]: string },
-    options: TranslateOptions,
-    pool: ChatPool,
-    translationStats: TranslationStats,
-    groups: Array<{ [key: string]: string }>,
+    ctx: TranslationContext,
 ): Promise<{ [key: string]: string }> {
-    if (options.verbose) {
-        printInfo(`Translation prompting mode: ${options.promptMode}\n`);
+    if (ctx.options.verbose) {
+        printInfo(`Translation prompting mode: ${ctx.options.promptMode}\n`);
     }
 
-    switch (options.promptMode) {
+    switch (ctx.options.promptMode) {
         case PromptMode.JSON: {
             const generateTranslationJSON = new GenerateTranslationJSON(
-                options,
+                ctx.options,
             );
 
-            return generateTranslationJSON.translateJSON(
-                flatInput,
-                options,
-                pool,
-                translationStats,
-                groups,
-            );
+            return generateTranslationJSON.translateJSON(ctx);
         }
 
         case PromptMode.CSV:
-            return translateCSV(
-                flatInput,
-                options,
-                pool,
-                translationStats.translate,
-                groups,
-            );
+            return translateCSV(ctx);
         default:
             throw new Error("Prompt mode is not set");
     }
@@ -252,13 +237,13 @@ export async function translate(options: TranslateOptions): Promise<Object> {
 
     const translationStats = startTranslationStats();
 
-    const output = await getTranslation(
+    const output = await getTranslation({
         flatInput,
+        groups: grouped.groups,
         options,
         pool,
-        translationStats,
-        grouped.groups,
-    );
+        stats: translationStats,
+    });
 
     for (const [canonical, dupes] of Object.entries(canonicalToDupes)) {
         const translated = output[canonical];

@@ -10,12 +10,12 @@ import {
 } from "../utils";
 import { retryWithBackoff } from "../retry";
 import { verifyStyling, verifyTranslation } from "./verify";
-import type { GenerateStateCSV, TranslationStatsItem } from "../types";
-import type ChatPool from "../chat_pool";
+import type { GenerateStateCSV } from "../types";
 import type Chats from "../interfaces/chats";
 import type GenerateTranslationOptionsCSV from "../interfaces/generate_translation_options_csv";
 import type RateLimiter from "../rate_limiter";
 import type TranslateOptions from "../interfaces/translate_options";
+import type TranslationContext from "../interfaces/translation_context";
 
 async function generateTranslation(
     options: GenerateTranslationOptionsCSV,
@@ -83,12 +83,10 @@ async function generateTranslation(
  * @param translationStats - The translation statistics
  */
 export default async function translateCSV(
-    flatInput: { [key: string]: string },
-    options: TranslateOptions,
-    pool: ChatPool,
-    translationStats: TranslationStatsItem,
-    groups: Array<{ [key: string]: string }>,
+    ctx: TranslationContext,
 ): Promise<{ [key: string]: string }> {
+    const { flatInput, options, pool, groups } = ctx;
+    const translationStats = ctx.stats.translate;
     const output: { [key: string]: string } = {};
     const totalKeys = Object.keys(flatInput).length;
     const batchSize = Number(options.batchSize);
@@ -102,9 +100,6 @@ export default async function translateCSV(
     const shards = groupShards.length > 0 ? groupShards : [flatInput];
 
     let processed = 0;
-
-    // Assign each shard to a pool triple. Workers run in parallel but each
-    // worker's batches run serially so chat context accumulates.
     const chatTriples = pool.all();
 
     await Promise.all(

@@ -1,5 +1,5 @@
 import type * as utils from "../utils";
-import type TranslateOptions from "../interfaces/translate_options";
+import type TranslationContext from "../interfaces/translation_context";
 
 process.env.OPENAI_API_KEY = "test";
 
@@ -12,32 +12,29 @@ jest.mock("../chats/chat_factory", () => ({
 const fr = (value: string): string => `${value}_fr`;
 const es = (value: string): string => `${value}_es`;
 
+function fakeTranslateCtx(ctx: TranslationContext): Object {
+    const translateFn =
+        ctx.options.outputLanguageCode === "fr" ? fr : es;
+    return Object.fromEntries(
+        Object.entries(ctx.flatInput).map(([k, v]) => [
+            k,
+            translateFn(v as string),
+        ]),
+    );
+}
+
 jest.mock("../generate_json/generate", () => ({
     __esModule: true,
     default: class GenerateTranslationJSON {
-        translateJSON(
-            flat: Record<string, string>,
-            options: TranslateOptions,
-        ): Object {
-            const translateFn = options.outputLanguageCode === "fr" ? fr : es;
-            return Object.fromEntries(
-                Object.entries(flat).map(([k, v]) => [
-                    k,
-                    translateFn(v as string),
-                ]),
-            );
+        translateJSON(ctx: TranslationContext): Object {
+            return fakeTranslateCtx(ctx);
         }
     },
 }));
 
 jest.mock("../generate_csv/generate", () => ({
     __esModule: true,
-    default: (flat: Record<string, string>, options: TranslateOptions) => {
-        const translateFn = options.outputLanguageCode === "fr" ? fr : es;
-        return Object.fromEntries(
-            Object.entries(flat).map(([k, v]) => [k, translateFn(v as string)]),
-        );
-    },
+    default: (ctx: TranslationContext) => fakeTranslateCtx(ctx),
 }));
 
 jest.mock("../utils", () => {
