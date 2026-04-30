@@ -630,4 +630,59 @@ describe("RateLimiter", () => {
 
         expect(mockedDelay).toHaveBeenCalledWith(timeRemaining);
     });
+
+    it("acquire() spaces concurrent callers by delayBetweenCallsMs", async () => {
+        const start = 100_000;
+        jest.spyOn(Date, "now").mockReturnValue(start);
+
+        const rl = new RateLimiter(delayBetweenCallsMs, false);
+        const callers = 5;
+
+        // Kick off N acquires in the same synchronous turn.
+        await Promise.all(
+            Array.from({ length: callers }, () => rl.acquire()),
+        );
+
+        // Caller 0 fires immediately; callers 1..N-1 each wait delayBetweenCallsMs
+        // more than the previous one.
+        expect(mockedDelay).toHaveBeenCalledTimes(callers - 1);
+        for (let i = 1; i < callers; i++) {
+            expect(mockedDelay).toHaveBeenNthCalledWith(
+                i,
+                delayBetweenCallsMs * i,
+            );
+        }
+    });
+
+    it("penalize() pushes every subsequent acquire forward", async () => {
+        const start = 200_000;
+        jest.spyOn(Date, "now").mockReturnValue(start);
+
+        const rl = new RateLimiter(delayBetweenCallsMs, false);
+        const penalty = 3_000;
+
+        rl.penalize(penalty);
+        await rl.acquire();
+
+        expect(mockedDelay).toHaveBeenCalledTimes(1);
+        expect(mockedDelay).toHaveBeenCalledWith(penalty);
+    });
+
+    it("penalize() is a no-op if the proposed slot is already further out", async () => {
+        const start = 300_000;
+        jest.spyOn(Date, "now").mockReturnValue(start);
+
+        const rl = new RateLimiter(delayBetweenCallsMs, false);
+
+        // Reserve a slot far in the future.
+        await Promise.all([rl.acquire(), rl.acquire(), rl.acquire()]);
+        mockedDelay.mockClear();
+
+        // A small penalty should not override the larger existing reservation.
+        rl.penalize(10);
+        await rl.acquire();
+
+        // Next caller should still wait the full 3 * delayBetweenCallsMs gap.
+        expect(mockedDelay).toHaveBeenCalledWith(delayBetweenCallsMs * 3);
+    });
 });
