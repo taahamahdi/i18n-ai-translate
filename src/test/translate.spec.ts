@@ -138,6 +138,32 @@ describe.each(Object.values(PromptMode))(
             expect(frOut).toEqual({ added: fr("New"), greeting: fr("Hi") });
         });
 
+        it("preserves existing translations for keys that were not added/modified/deleted", async () => {
+            // Regression test for the data-loss bug where translateDiff
+            // wiped existing target keys on any diff run.
+            const before = { keepA: "A", keepB: "B" };
+            const after = { added: "New", keepA: "A", keepB: "B" };
+
+            const out = await translateDiff({
+                engine: Engine.ChatGPT,
+                inputJSONAfter: after,
+                inputJSONBefore: before,
+                inputLanguageCode: "en",
+                model: "gpt-4o",
+                promptMode,
+                rateLimitMs: 0,
+                toUpdateJSONs: {
+                    fr: { keepA: "Pre-existing A", keepB: "Pre-existing B" },
+                },
+            } as any);
+
+            expect(out.fr).toEqual({
+                added: fr("New"),
+                keepA: "Pre-existing A",
+                keepB: "Pre-existing B",
+            });
+        });
+
         it("only touches added / changed keys with nested objects", async () => {
             const before = { greeting: { text: "Hello" }, unchanged: "Stay" };
             const after = { added: "New", greeting: { text: "Hi" } };

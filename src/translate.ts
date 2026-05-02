@@ -355,7 +355,11 @@ export async function translateDiff(
                 languageCode,
             )
         ) {
-            translatedJSONs[languageCode] = {};
+            // Seed with the existing per-language map (minus the keys
+            // deleted upstream) so unchanged translations are preserved.
+            // Without this the accumulator would hold only the delta and
+            // writing it to disk would wipe every pre-existing key.
+            translatedJSONs[languageCode] = { ...flatToUpdateJSONs[languageCode] };
             const addedAndModifiedTranslations: { [key: string]: string } = {};
             for (const key of addedKeys) {
                 addedAndModifiedTranslations[key] = flatInputAfter[key];
