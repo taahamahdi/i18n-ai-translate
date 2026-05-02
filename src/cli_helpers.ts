@@ -32,6 +32,19 @@ export function processModelArgs(options: any): ModelArgs {
         throw new Error("--concurrency must be a positive integer");
     }
 
+    // User-supplied --tokens-per-minute overrides the engine default.
+    // 0 explicitly disables the cap; undefined defers to the per-engine
+    // default assigned in the switch below.
+    let tokensPerMinute: number | undefined;
+    if (options.tokensPerMinute !== undefined) {
+        const parsed = Number(options.tokensPerMinute);
+        if (!Number.isFinite(parsed) || parsed < 0) {
+            throw new Error("--tokens-per-minute must be a non-negative number");
+        }
+
+        tokensPerMinute = parsed === 0 ? undefined : parsed;
+    }
+
     switch (options.engine) {
         case Engine.Gemini:
             model = options.model || DEFAULT_MODEL[Engine.Gemini];
@@ -61,6 +74,12 @@ export function processModelArgs(options: any): ModelArgs {
                 batchMaxTokens = 4096;
             }
 
+            // No default TPM cap for Gemini — the existing --rate-limit-ms
+            // default (6s, matching ~10 RPM free tier) already prevents
+            // bursts. Paid-tier users can opt in via --tokens-per-minute.
+            // Published Gemini 2.5 Flash paid tier is ~250k TPM; use that
+            // as a user-facing hint in docs rather than a default.
+
             break;
         case Engine.ChatGPT:
             model = options.model || DEFAULT_MODEL[Engine.ChatGPT];
@@ -72,10 +91,6 @@ export function processModelArgs(options: any): ModelArgs {
             if (!options.rateLimitMs) {
                 // Free-tier rate limits are 3 RPM => 1 call every 20 seconds
                 // Tier 1 is a reasonable 500 RPM => 1 call every 120ms.
-                // A future TokenBucket can layer on top of
-                // RateLimiter.acquire() to add TPM tracking; RPM-only is
-                // fine for now since our batch sizes are tokens-bounded
-                // via batchMaxTokens.
                 rateLimitMs = 120;
             }
 
@@ -96,6 +111,13 @@ export function processModelArgs(options: any): ModelArgs {
             if (!options.batchMaxTokens) {
                 batchMaxTokens = 4096;
             }
+
+            // No default TPM cap. The free tier publishes no TPM and
+            // Tier-1 is ~200k TPM for GPT-5.x — a silent default risks
+            // mysteriously throttling paid-tier users whose limits are
+            // higher, while also risking undercounting on the free tier
+            // where only the RPM gate matters. Users opt in via
+            // --tokens-per-minute once they know their tier.
 
             break;
         case Engine.Ollama:
@@ -151,6 +173,12 @@ export function processModelArgs(options: any): ModelArgs {
                 batchSize = 32;
             }
 
+            // No default TPM cap. Claude's free tier is 5 RPM / 20k TPM;
+            // Tier-1 is 50 RPM / 40k TPM; higher tiers go up from there.
+            // The RPM gate (1200ms default) paces calls enough that most
+            // users won't blow TPM without concurrency > 1. Opt in via
+            // --tokens-per-minute 20000 on free tier, 40000 on Tier-1.
+
             break;
         default: {
             throw new Error("Invalid engine");
@@ -191,6 +219,7 @@ export function processModelArgs(options: any): ModelArgs {
         model: options.model || DEFAULT_MODEL[options.engine as Engine],
         promptMode,
         rateLimitMs,
+        tokensPerMinute,
     };
 }
 

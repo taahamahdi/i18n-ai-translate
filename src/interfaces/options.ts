@@ -34,4 +34,10 @@ export default interface Options {
      * manually and shouldn't be machine-translated over.
      */
     excludeLanguages?: string[];
+    /**
+     * Cap on tokens-per-minute across all concurrent workers. When
+     * set, RateLimiter holds each call until both the RPM slot and
+     * the TPM budget are available. 0 / undefined disables the check.
+     */
+    tokensPerMinute?: number;
 }

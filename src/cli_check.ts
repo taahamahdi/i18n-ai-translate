@@ -58,6 +58,7 @@ export default function buildCheckCommand(): Command {
         .option("--batch-max-tokens <batch-max-tokens>", CLI_HELP.MaxTokens)
         .option("--concurrency <concurrency>", CLI_HELP.Concurrency)
         .option("--context <context>", CLI_HELP.Context)
+        .option("--tokens-per-minute <tpm>", CLI_HELP.TokensPerMinute)
         .option(
             "--format <format>",
             "Output format: 'table' (default, human-readable) or 'json' (for CI consumption)",

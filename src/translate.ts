@@ -27,6 +27,7 @@ function getPool(options: TranslateOptions): ChatPool {
     const rateLimiter = new RateLimiter(
         options.rateLimitMs,
         options.verbose as boolean,
+        options.tokensPerMinute,
     );
 
     return ChatPool.create({

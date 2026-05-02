@@ -60,7 +60,7 @@ export default class Gemini extends ChatInterface {
             return "";
         }
 
-        await this.rateLimiter.acquire();
+        await this.rateLimiter.acquire(Math.ceil(message.length / 2));
 
         if (format) {
             this.model.generationConfig.responseMimeType = "application/json";
