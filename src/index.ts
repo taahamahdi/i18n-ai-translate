@@ -1,10 +1,12 @@
 // #!/usr/bin/env node
-// eslint-disable-next-line import/no-import-module-exports
+/* eslint-disable import/no-import-module-exports */
+import { check } from "./check";
 import { translate, translateDiff } from "./translate";
 
-export { translate, translateDiff };
+export { check, translate, translateDiff };
 
 module.exports = {
+    check,
     translate,
     translateDiff,
 };
