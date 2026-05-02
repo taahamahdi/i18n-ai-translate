@@ -137,6 +137,14 @@ export function getAllFilesInPath(directory: string): Array<string> {
 }
 
 /**
+ * ASCII Unit Separator (0x1F). Used to join a file path with an i18n
+ * key into a single compound key string. Chosen because no legal file
+ * path on any platform can contain it — unlike `:`, which is a drive
+ * letter separator on Windows and broke directory mode on that OS.
+ */
+export const DIRECTORY_KEY_DELIMITER = "\x1f";
+
+/**
  * @param sourceFilePath - the source file's path
  * @param key - the key associated with the translation
  * @param inputLanguageCode - the language code of the source language
@@ -150,12 +158,18 @@ export function getTranslationDirectoryKey(
     inputLanguageCode: string,
     outputLanguageCode?: string,
 ): string {
-    const outputPath = sourceFilePath.replace(
+    // Normalize to forward slashes for the language-segment match so
+    // the swap works on Windows (where path.resolve returns backslash
+    // paths) and POSIX alike. Callers treat the returned string as an
+    // opaque compound key; consumers that split on DIRECTORY_KEY_DELIMITER
+    // use path utilities rather than depending on separator style.
+    const normalized = sourceFilePath.replace(/\\/g, "/");
+    const outputPath = normalized.replace(
         `/${inputLanguageCode}/`,
         `/${outputLanguageCode ?? inputLanguageCode}/`,
     );
 
-    return `${outputPath}:${key}`;
+    return `${outputPath}${DIRECTORY_KEY_DELIMITER}${key}`;
 }
 
 /**

@@ -1,4 +1,9 @@
-import { getLanguageCodeFromFilename, getLanguageName } from "../utils";
+import {
+    DIRECTORY_KEY_DELIMITER,
+    getLanguageCodeFromFilename,
+    getLanguageName,
+    getTranslationDirectoryKey,
+} from "../utils";
 
 describe("getLanguageCodeFromFilename", () => {
     it("returns a plain ISO-639-1 code as-is", () => {
@@ -33,5 +38,68 @@ describe("getLanguageName", () => {
     it("returns the raw code when the lookup fails", () => {
         expect(getLanguageName("xx")).toBe("xx");
         expect(getLanguageName("klingon")).toBe("klingon");
+    });
+});
+
+describe("getTranslationDirectoryKey", () => {
+    it("survives Windows-style paths that contain a drive-letter colon", () => {
+        // Before the delimiter fix this would have produced a compound
+        // key with two colons and split() would have shredded the path.
+        // Paths are normalised to forward slashes so the language-swap
+        // replace works on both platforms.
+        const key = getTranslationDirectoryKey(
+            "C:\\repo\\i18n\\en\\app.json",
+            "welcome",
+            "en",
+            "fr",
+        );
+
+        expect(key).toBe(
+            `C:/repo/i18n/fr/app.json${DIRECTORY_KEY_DELIMITER}welcome`,
+        );
+
+        // Round-trip: the key part should come back out intact.
+        const [pathPart, keyPart] = key.split(DIRECTORY_KEY_DELIMITER);
+        expect(pathPart).toBe("C:/repo/i18n/fr/app.json");
+        expect(keyPart).toBe("welcome");
+    });
+
+    it("swaps the input language segment for the output language", () => {
+        const key = getTranslationDirectoryKey(
+            "/base/en/app.json",
+            "hello",
+            "en",
+            "fr",
+        );
+
+        expect(key.startsWith("/base/fr/app.json")).toBe(true);
+    });
+
+    it("swaps the language segment on Windows-style backslash paths", () => {
+        // Before the normalisation fix the replace looked for '/en/'
+        // against a path containing '\\en\\', found nothing, and
+        // silently left the language segment unchanged.
+        const key = getTranslationDirectoryKey(
+            "C:\\repo\\i18n\\en\\app.json",
+            "welcome",
+            "en",
+            "fr",
+        );
+
+        expect(key.startsWith("C:/repo/i18n/fr/app.json")).toBe(true);
+        expect(key.includes("/en/")).toBe(false);
+    });
+
+    it("handles mixed separators on the same path", () => {
+        // Happens when users join via path.posix on Windows or build
+        // paths via concatenation rather than path.join.
+        const key = getTranslationDirectoryKey(
+            "C:\\repo/i18n/en\\app.json",
+            "hello",
+            "en",
+            "fr",
+        );
+
+        expect(key.startsWith("C:/repo/i18n/fr/app.json")).toBe(true);
     });
 });

@@ -2,6 +2,7 @@ import { FLATTEN_DELIMITER } from "./constants";
 import { createPatch, diffJson } from "diff";
 import { flatten, unflatten } from "flat";
 import {
+    DIRECTORY_KEY_DELIMITER,
     getAllFilesInPath,
     getTranslationDirectoryKey,
     printError,
@@ -83,12 +84,15 @@ export async function translateDirectory(
 
         for (const pathWithKey in outputJSON) {
             if (Object.prototype.hasOwnProperty.call(outputJSON, pathWithKey)) {
-                const filePath = pathWithKey.split(":").slice(0, -1).join(":");
+                const filePath = pathWithKey
+                    .split(DIRECTORY_KEY_DELIMITER)
+                    .slice(0, -1)
+                    .join(DIRECTORY_KEY_DELIMITER);
                 if (!filesToJSON[filePath]) {
                     filesToJSON[filePath] = {};
                 }
 
-                const key = pathWithKey.split(":").pop()!;
+                const key = pathWithKey.split(DIRECTORY_KEY_DELIMITER).pop()!;
                 filesToJSON[filePath][key] = outputJSON[pathWithKey];
             }
         }
@@ -356,13 +360,13 @@ export async function translateDirectoryDiff(
             }
 
             const filePath = pathWithKey
-                .split(":")
+                .split(DIRECTORY_KEY_DELIMITER)
                 .slice(0, -1)
-                .join(":")
+                .join(DIRECTORY_KEY_DELIMITER)
                 .replace(`/${beforeBaseName}/`, `/${outputLanguage}/`);
 
             if (!filesToJSON[filePath]) filesToJSON[filePath] = {};
-            const key = pathWithKey.split(":").pop()!;
+            const key = pathWithKey.split(DIRECTORY_KEY_DELIMITER).pop()!;
             filesToJSON[filePath][key] = flatOutputJSON[pathWithKey];
         }
 
