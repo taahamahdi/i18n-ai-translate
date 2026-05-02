@@ -70,13 +70,24 @@ export async function retryJob<Type>(
 }
 
 /**
+ * Extract the language code from a filename like `fr.json` or
+ * `es-ES.json`. If the full prefix (e.g. `es-ES`) is not a valid
+ * ISO-639-1 code, fall back to the portion before the first hyphen —
+ * BCP-47 locale tags like `es-ES` / `pt-BR` / `zh-CN` are common in
+ * i18next projects and should be accepted. If neither form is valid,
+ * the raw prefix is returned so the caller can surface a clear error.
  * @param filename - the filename to get the language from
  * @returns the language code from the filename
  */
 export function getLanguageCodeFromFilename(filename: string): string {
     const base = path.basename(filename);
-    const [lang] = base.split(".");
-    return lang;
+    const [prefix] = base.split(".");
+    if (ISO6391.validate(prefix)) return prefix;
+
+    const [baseTag] = prefix.split("-");
+    if (ISO6391.validate(baseTag)) return baseTag;
+
+    return prefix;
 }
 
 /**
