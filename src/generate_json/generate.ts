@@ -1,5 +1,5 @@
 import { RETRY_ATTEMPTS } from "../constants";
-import { Tiktoken } from "tiktoken";
+import { Tiktoken, getEncoding } from "js-tiktoken";
 import {
     TranslateItemOutputObjectSchema,
     VerifyItemOutputObjectSchema,
@@ -15,7 +15,6 @@ import {
 import { retryWithBackoff } from "../retry";
 import { runAcrossShards } from "../shard_runner";
 import { translationPromptJSON, verificationPromptJSON } from "./prompts";
-import cl100k_base from "tiktoken/encoders/cl100k_base.json";
 import type {
     GenerateStateJSON,
     TranslateItem,
@@ -37,11 +36,10 @@ export default class GenerateTranslationJSON {
     templatedStringRegex: RegExp;
 
     constructor(options: TranslateOptions) {
-        this.tikToken = new Tiktoken(
-            cl100k_base.bpe_ranks,
-            cl100k_base.special_tokens,
-            cl100k_base.pat_str,
-        );
+        // js-tiktoken is a pure-JS port — no WASM required, so global
+        // installs work on Windows without the tiktoken_bg.wasm dance
+        // that plagued the native tiktoken package (issue #428).
+        this.tikToken = getEncoding("cl100k_base");
 
         this.templatedStringRegex = getTemplatedStringRegex(
             options.templatedStringPrefix as string,
