@@ -119,6 +119,32 @@ export function getLanguageName(languageCode: string): string {
 }
 
 /**
+ * Accept both ISO-639-1 codes ("en") and English language names
+ * ("English", "english", "ENGLISH") and normalise to the code. Returns
+ * the input unchanged when no match is found so the caller's existing
+ * validation can surface a clear error.
+ *
+ * This covers a common footgun flagged in BUG_REPORT.md and issue #5 —
+ * users passed `-l English` based on older docs and got a cryptic
+ * 'Invalid input language code: English' instead of a hint.
+ * @param raw - the user-supplied language identifier
+ * @returns the resolved ISO-639-1 code, or the raw input if unresolved
+ */
+export function resolveLanguageCode(raw: string): string {
+    if (!raw) return raw;
+    if (ISO6391.validate(raw)) return raw;
+
+    const normalized = raw.trim().toLowerCase();
+    for (const code of ISO6391.getAllCodes()) {
+        if (ISO6391.getName(code).toLowerCase() === normalized) {
+            return code;
+        }
+    }
+
+    return raw;
+}
+
+/**
  * @param directory - the directory to list all files for
  * @returns all files with their absolute path that exist within the directory, recursively
  */
