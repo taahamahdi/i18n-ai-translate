@@ -343,10 +343,7 @@ export async function translateDirectoryDiff(
         } = {};
 
         const beforeBaseName = path.basename(
-            path.resolve(
-                options.baseDirectory,
-                options.inputFolderNameBefore,
-            ),
+            path.resolve(options.baseDirectory, options.inputFolderNameBefore),
         );
 
         for (const pathWithKey in flatOutputJSON) {
@@ -372,10 +369,7 @@ export async function translateDirectoryDiff(
 
         for (const perFileJSON in filesToJSON) {
             if (
-                !Object.prototype.hasOwnProperty.call(
-                    filesToJSON,
-                    perFileJSON,
-                )
+                !Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)
             ) {
                 continue;
             }
@@ -403,9 +397,7 @@ export async function translateDirectoryDiff(
                 const input = fs.readFileSync(perFileJSON, "utf-8");
                 const translationDiff = diffJson(input, outputText);
                 fs.mkdirSync(
-                    dirname(
-                        `${options.dryRun.basePath}/${relativeOutputPath}`,
-                    ),
+                    dirname(`${options.dryRun.basePath}/${relativeOutputPath}`),
                     { recursive: true },
                 );
 

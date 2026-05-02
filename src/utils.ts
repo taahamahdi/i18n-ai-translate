@@ -275,7 +275,7 @@ export function printProgress(
     const roundedEstimatedTimeLeftSeconds = Math.round(
         (((Date.now() - startTime) / (processedItems + 1)) *
             (totalItems - processedItems)) /
-        1000,
+            1000,
     );
 
     const percentage = ((processedItems / totalItems) * 100).toFixed(0);

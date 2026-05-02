@@ -18,9 +18,9 @@ describe("isRateLimitError", () => {
     });
 
     it("matches 'rate limit' in message", () => {
-        expect(
-            isRateLimitError(new Error("You've hit the rate limit")),
-        ).toBe(true);
+        expect(isRateLimitError(new Error("You've hit the rate limit"))).toBe(
+            true,
+        );
     });
 
     it("rejects unrelated errors", () => {
@@ -33,9 +33,9 @@ describe("isRateLimitError", () => {
 
 describe("extractRetryAfterMs", () => {
     it("parses Retry-After seconds", () => {
-        expect(
-            extractRetryAfterMs({ headers: { "retry-after": "3" } }),
-        ).toBe(3_000);
+        expect(extractRetryAfterMs({ headers: { "retry-after": "3" } })).toBe(
+            3_000,
+        );
     });
 
     it("parses HTTP-date Retry-After", () => {

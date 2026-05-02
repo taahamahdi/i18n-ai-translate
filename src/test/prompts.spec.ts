@@ -70,7 +70,14 @@ describe("prompt builders", () => {
         });
 
         it("recognises _zero, _two, _few, _many alongside _one/_other", () => {
-            for (const suffix of ["zero", "one", "two", "few", "many", "other"]) {
+            for (const suffix of [
+                "zero",
+                "one",
+                "two",
+                "few",
+                "many",
+                "other",
+            ]) {
                 const out = translationPromptJSON("en", "fr", [], {
                     keys: [`item_${suffix}`],
                 });

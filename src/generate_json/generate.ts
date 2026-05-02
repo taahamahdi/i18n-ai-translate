@@ -148,11 +148,7 @@ export default class GenerateTranslationJSON {
                 continue;
             }
 
-            const item = this.generateTranslateItem(
-                id,
-                key,
-                flatSource[key],
-            );
+            const item = this.generateTranslateItem(id, key, flatSource[key]);
 
             item.translated = flatTarget[key];
             item.verificationTokens = this.getVerifyItemToken(item);
