@@ -180,6 +180,18 @@ export async function translateFileDiff(
             ...options,
             inputJSONAfter: inputAfterJSON,
             inputJSONBefore: inputBeforeJSON,
+            // Persist each locale as soon as it finishes so a crash
+            // later in the run doesn't discard already-translated work.
+            // Dry-run output is still emitted below in aggregate.
+            onLanguageComplete: options.dryRun
+                ? undefined
+                : (languageCode, translated) => {
+                      const outputPath =
+                          languageCodeToOutputPath[languageCode];
+                      if (!outputPath) return;
+                      const text = JSON.stringify(translated, null, 4);
+                      fs.writeFileSync(outputPath, `${text}\n`);
+                  },
             toUpdateJSONs,
         });
 
@@ -195,7 +207,7 @@ export async function translateFileDiff(
                 const outputPath = languageCodeToOutputPath[language];
 
                 if (!options.dryRun) {
-                    fs.writeFileSync(outputPath, `${outputText}\n`);
+                    // Already persisted in onLanguageComplete above.
                 } else {
                     const translationDiff = diffJson(
                         inputJSON,

@@ -400,6 +400,13 @@ export async function translateDiff(
                     },
                     {} as { [key: string]: string },
                 );
+
+            if (options.onLanguageComplete) {
+                const unflattened = unflatten(translatedJSONs[languageCode], {
+                    delimiter: FLATTEN_DELIMITER,
+                }) as Object;
+                options.onLanguageComplete(languageCode, unflattened);
+            }
         }
     }
 
