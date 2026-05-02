@@ -138,6 +138,32 @@ describe.each(Object.values(PromptMode))(
             expect(frOut).toEqual({ added: fr("New"), greeting: fr("Hi") });
         });
 
+        it("preserves existing translations for keys that were not added/modified/deleted", async () => {
+            // Regression test for the data-loss bug where translateDiff
+            // wiped existing target keys on any diff run.
+            const before = { keepA: "A", keepB: "B" };
+            const after = { added: "New", keepA: "A", keepB: "B" };
+
+            const out = await translateDiff({
+                engine: Engine.ChatGPT,
+                inputJSONAfter: after,
+                inputJSONBefore: before,
+                inputLanguageCode: "en",
+                model: "gpt-4o",
+                promptMode,
+                rateLimitMs: 0,
+                toUpdateJSONs: {
+                    fr: { keepA: "Pre-existing A", keepB: "Pre-existing B" },
+                },
+            } as any);
+
+            expect(out.fr).toEqual({
+                added: fr("New"),
+                keepA: "Pre-existing A",
+                keepB: "Pre-existing B",
+            });
+        });
+
         it("only touches added / changed keys with nested objects", async () => {
             const before = { greeting: { text: "Hello" }, unchanged: "Stay" };
             const after = { added: "New", greeting: { text: "Hi" } };
@@ -453,6 +479,58 @@ describe.each(Object.values(PromptMode))(
 describe.each(Object.values(PromptMode))(
     "translateDirectoryDiff (promptMode=%s)",
     (promptMode) => {
+        it("preserves existing target keys for untouched source entries", async () => {
+            // Regression test for the data-loss bug where directory diff
+            // wiped untouched keys from pre-existing target files.
+            const dir = mkCaseDir();
+            const enBefore = path.join(dir, "en_before");
+            const enAfter = path.join(dir, "en_after");
+            const frDir = path.join(dir, "fr");
+
+            fs.mkdirSync(enBefore, { recursive: true });
+            fs.mkdirSync(enAfter, { recursive: true });
+            fs.mkdirSync(frDir, { recursive: true });
+
+            // keepA + keepB are unchanged; 'added' is new. Existing fr
+            // values for keepA/keepB must survive the diff.
+            fs.writeFileSync(
+                path.join(enBefore, "app.json"),
+                JSON.stringify({ keepA: "A", keepB: "B" }),
+            );
+            fs.writeFileSync(
+                path.join(enAfter, "app.json"),
+                JSON.stringify({ added: "New", keepA: "A", keepB: "B" }),
+            );
+            fs.writeFileSync(
+                path.join(frDir, "app.json"),
+                JSON.stringify({
+                    keepA: "Pre-existing A",
+                    keepB: "Pre-existing B",
+                }),
+            );
+
+            await translateDirectoryDiff({
+                baseDirectory: dir,
+                engine: Engine.ChatGPT,
+                inputFolderNameAfter: "en_after",
+                inputFolderNameBefore: "en_before",
+                inputLanguageCode: "en",
+                model: "gpt-4o",
+                promptMode,
+                rateLimitMs: 0,
+            } as any);
+
+            const updated = JSON.parse(
+                fs.readFileSync(path.join(frDir, "app.json"), "utf-8"),
+            );
+
+            expect(updated).toEqual({
+                added: fr("New"),
+                keepA: "Pre-existing A",
+                keepB: "Pre-existing B",
+            });
+        });
+
         it("writes translations for changed keys and prunes removed keys", async () => {
             const dir = mkCaseDir();
 

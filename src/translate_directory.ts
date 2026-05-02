@@ -325,165 +325,153 @@ export async function translateDirectoryDiff(
 
     const inputLanguage = options.inputLanguageCode;
 
+    // Split one language's flat `filepath:key → value` map into per-file
+    // flat maps, then write each file. The same code path serves the
+    // non-dry-run write case and the dry-run patch-emission case.
+    const writeLanguageOutput = (
+        outputLanguage: string,
+        flatOutputJSON: { [key: string]: string },
+    ): void => {
+        const filesToJSON: {
+            [filePath: string]: { [key: string]: string };
+        } = {};
+
+        const beforeBaseName = path.basename(
+            path.resolve(
+                options.baseDirectory,
+                options.inputFolderNameBefore,
+            ),
+        );
+
+        for (const pathWithKey in flatOutputJSON) {
+            if (
+                !Object.prototype.hasOwnProperty.call(
+                    flatOutputJSON,
+                    pathWithKey,
+                )
+            ) {
+                continue;
+            }
+
+            const filePath = pathWithKey
+                .split(":")
+                .slice(0, -1)
+                .join(":")
+                .replace(`/${beforeBaseName}/`, `/${outputLanguage}/`);
+
+            if (!filesToJSON[filePath]) filesToJSON[filePath] = {};
+            const key = pathWithKey.split(":").pop()!;
+            filesToJSON[filePath][key] = flatOutputJSON[pathWithKey];
+        }
+
+        for (const perFileJSON in filesToJSON) {
+            if (
+                !Object.prototype.hasOwnProperty.call(
+                    filesToJSON,
+                    perFileJSON,
+                )
+            ) {
+                continue;
+            }
+
+            const unflattenedOutput = unflatten(filesToJSON[perFileJSON], {
+                delimiter: FLATTEN_DELIMITER,
+            });
+
+            const outputText = JSON.stringify(unflattenedOutput, null, 4);
+
+            if (!options.dryRun) {
+                fs.mkdirSync(dirname(perFileJSON), { recursive: true });
+                fs.writeFileSync(perFileJSON, `${outputText}\n`);
+            } else {
+                // TODO: find a cleaner way to get the input file from here
+                // Might lead to a bug if the path has the language code multiple times
+                const relativeOutputPath = path.relative(
+                    options.baseDirectory,
+                    perFileJSON.replace(
+                        `/${inputLanguage}/`,
+                        `/${outputLanguage}/`,
+                    ),
+                );
+
+                const input = fs.readFileSync(perFileJSON, "utf-8");
+                const translationDiff = diffJson(input, outputText);
+                fs.mkdirSync(
+                    dirname(
+                        `${options.dryRun.basePath}/${relativeOutputPath}`,
+                    ),
+                    { recursive: true },
+                );
+
+                fs.writeFileSync(
+                    `${options.dryRun.basePath}/${relativeOutputPath}`,
+                    outputText,
+                );
+
+                const patch = createPatch(
+                    perFileJSON.replace(
+                        `/${inputLanguage}/`,
+                        `/${outputLanguage}/`,
+                    ), // Use the absolute path for the patch header
+                    input,
+                    outputText,
+                );
+
+                fs.writeFileSync(
+                    `${options.dryRun.basePath}/${relativeOutputPath}.patch`,
+                    patch,
+                );
+
+                printInfo(
+                    `Wrote new JSON to ${options.dryRun.basePath}/${relativeOutputPath}`,
+                );
+
+                printInfo(
+                    `Wrote patch to ${options.dryRun.basePath}/${relativeOutputPath}.patch`,
+                );
+                if (options.verbose) {
+                    for (const part of translationDiff) {
+                        const colorFns = {
+                            green: colors.green,
+                            grey: colors.grey,
+                            red: colors.red,
+                        } as const;
+
+                        type ColorKey = keyof typeof colorFns;
+
+                        let color: ColorKey;
+
+                        if (part.added) {
+                            color = "green";
+                        } else if (part.removed) {
+                            color = "red";
+                        } else {
+                            color = "grey";
+                        }
+
+                        process.stderr.write(colorFns[color](part.value));
+                    }
+                }
+            }
+
+            console.log();
+        }
+    };
+
     try {
-        const perLanguageOutputJSON = await translateDiff({
+        await translateDiff({
             ...options,
             inputJSONAfter,
             inputJSONBefore,
             inputLanguageCode: inputLanguage,
+            // Persist each language as it finishes so a later crash
+            // doesn't discard earlier work. Dry-run still emits its
+            // patches here — the emission is still streaming, but each
+            // dry-run language's patches land together.
+            onLanguageComplete: (outputLanguage, _unflattened, flat) =>
+                writeLanguageOutput(outputLanguage, flat),
             toUpdateJSONs,
         });
-
-        for (const outputLanguage in perLanguageOutputJSON) {
-            if (
-                Object.prototype.hasOwnProperty.call(
-                    perLanguageOutputJSON,
-                    outputLanguage,
-                )
-            ) {
-                const filesToJSON: {
-                    [filePath: string]: { [key: string]: string };
-                } = {};
-
-                const outputJSON = perLanguageOutputJSON[outputLanguage] as {
-                    [key: string]: string;
-                };
-
-                for (const pathWithKey in outputJSON) {
-                    if (
-                        Object.prototype.hasOwnProperty.call(
-                            outputJSON,
-                            pathWithKey,
-                        )
-                    ) {
-                        const beforeBaseName = path.basename(
-                            path.resolve(
-                                options.baseDirectory,
-                                options.inputFolderNameBefore,
-                            ),
-                        );
-
-                        const filePath = pathWithKey
-                            .split(":")
-                            .slice(0, -1)
-                            .join(":")
-                            .replace(
-                                `/${beforeBaseName}/`,
-                                `/${outputLanguage}/`,
-                            );
-
-                        if (!filesToJSON[filePath]) {
-                            filesToJSON[filePath] = {};
-                        }
-
-                        const key = pathWithKey.split(":").pop()!;
-                        filesToJSON[filePath][key] = outputJSON[pathWithKey];
-                    }
-                }
-
-                for (const perFileJSON in filesToJSON) {
-                    if (
-                        Object.prototype.hasOwnProperty.call(
-                            filesToJSON,
-                            perFileJSON,
-                        )
-                    ) {
-                        const unflattenedOutput = unflatten(
-                            filesToJSON[perFileJSON],
-                            {
-                                delimiter: FLATTEN_DELIMITER,
-                            },
-                        );
-
-                        const outputText = JSON.stringify(
-                            unflattenedOutput,
-                            null,
-                            4,
-                        );
-
-                        if (!options.dryRun) {
-                            fs.mkdirSync(dirname(perFileJSON), {
-                                recursive: true,
-                            });
-                            fs.writeFileSync(perFileJSON, `${outputText}\n`);
-                        } else {
-                            // TODO: find a cleaner way to get the input file from here
-                            // Might lead to a bug if the path has the language code multiple times
-                            const relativeOutputPath = path.relative(
-                                options.baseDirectory,
-                                perFileJSON.replace(
-                                    `/${inputLanguage}/`,
-                                    `/${outputLanguage}/`,
-                                ),
-                            );
-
-                            const input = fs.readFileSync(perFileJSON, "utf-8");
-                            const translationDiff = diffJson(input, outputText);
-                            fs.mkdirSync(
-                                dirname(
-                                    `${options.dryRun.basePath}/${relativeOutputPath}`,
-                                ),
-                                { recursive: true },
-                            );
-
-                            fs.writeFileSync(
-                                `${options.dryRun.basePath}/${relativeOutputPath}`,
-                                outputText,
-                            );
-
-                            const patch = createPatch(
-                                perFileJSON.replace(
-                                    `/${inputLanguage}/`,
-                                    `/${outputLanguage}/`,
-                                ), // Use the absolute path for the patch header
-                                input,
-                                outputText,
-                            );
-
-                            fs.writeFileSync(
-                                `${options.dryRun.basePath}/${relativeOutputPath}.patch`,
-                                patch,
-                            );
-
-                            printInfo(
-                                `Wrote new JSON to ${options.dryRun.basePath}/${relativeOutputPath}`,
-                            );
-
-                            printInfo(
-                                `Wrote patch to ${options.dryRun.basePath}/${relativeOutputPath}.patch`,
-                            );
-                            if (options.verbose) {
-                                for (const part of translationDiff) {
-                                    const colorFns = {
-                                        green: colors.green,
-                                        grey: colors.grey,
-                                        red: colors.red,
-                                    } as const;
-
-                                    type ColorKey = keyof typeof colorFns;
-
-                                    let color: ColorKey;
-
-                                    if (part.added) {
-                                        color = "green";
-                                    } else if (part.removed) {
-                                        color = "red";
-                                    } else {
-                                        color = "grey";
-                                    }
-
-                                    process.stderr.write(
-                                        colorFns[color](part.value),
-                                    );
-                                }
-                            }
-                        }
-
-                        console.log();
-                    }
-                }
-            }
-        }
     } catch (err) {
         printError(`Failed to translate directory diff: ${err}`);
         throw err;
