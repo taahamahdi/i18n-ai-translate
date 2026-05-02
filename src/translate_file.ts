@@ -1,8 +1,10 @@
 import { createPatch, diffJson } from "diff";
 import {
     getLanguageCodeFromFilename,
+    isValidLanguageCode,
     printError,
     printInfo,
+    printWarn,
     resolveInputPath,
 } from "./utils";
 import { translate, translateDiff } from "./translate";
@@ -144,15 +146,18 @@ export async function translateFileDiff(
 
     const toUpdateJSONs: { [language: string]: Object } = {};
     const languageCodeToOutputPath: { [language: string]: string } = {};
+    // Validate every target locale up front so a bad code fails fast
+    // before the first API call, instead of aborting mid-batch after
+    // some locales have already incurred cost.
+    const invalidTargets: string[] = [];
     for (const outputPath of outputPaths) {
         const languageCode = getLanguageCodeFromFilename(
             path.basename(outputPath),
         );
 
-        if (!languageCode) {
-            throw new Error(
-                "Invalid output file name. Use a valid ISO 639-1 language code as the file name.",
-            );
+        if (!languageCode || !isValidLanguageCode(languageCode)) {
+            invalidTargets.push(path.basename(outputPath));
+            continue;
         }
 
         try {
@@ -162,6 +167,12 @@ export async function translateFileDiff(
         } catch (e) {
             printError(`Invalid output JSON: ${e}`);
         }
+    }
+
+    if (invalidTargets.length > 0) {
+        printWarn(
+            `Skipping ${invalidTargets.length} file(s) with unrecognised language codes: ${invalidTargets.join(", ")}`,
+        );
     }
 
     try {
