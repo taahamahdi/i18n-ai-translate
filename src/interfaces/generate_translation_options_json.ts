@@ -16,4 +16,5 @@ export default interface GenerateTranslationOptionsJSON {
     skipStylingVerification: boolean;
     overridePrompt?: OverridePrompt;
     rateLimiter?: RateLimiter;
+    context?: string;
 }

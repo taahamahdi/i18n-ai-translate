@@ -22,4 +22,10 @@ export default interface Options {
     promptMode: PromptMode;
     continueOnError?: boolean;
     concurrency?: number;
+    /**
+     * Optional product/domain context injected into prompts — e.g.
+     * "a music trivia game for Discord" or "a B2B invoicing SaaS".
+     * Helps the model pick domain-specific terminology and tone.
+     */
+    context?: string;
 }

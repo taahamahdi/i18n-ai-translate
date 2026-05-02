@@ -11,7 +11,13 @@ import type RateLimiter from "../rate_limiter";
 // this to prove workers got distinct Chats instances.
 type ChatCall = {
     chatId: number;
-    format: "csv" | "json-translate" | "json-verify" | "unknown";
+    format:
+        | "csv"
+        | "csv-verify"
+        | "csv-styling"
+        | "json-translate"
+        | "json-verify"
+        | "unknown";
     keys: string[];
 };
 
@@ -55,7 +61,14 @@ function detectFormat(
     message: string,
     format?: ZodType<any, ZodTypeDef, any>,
 ): ChatCall["format"] {
-    if (!format) return "csv";
+    if (!format) {
+        // CSV mode: distinguish the three prompt shapes so tests can
+        // count accuracy vs. styling verify calls separately.
+        if (/translation reviewer/.test(message)) return "csv-verify";
+        if (/^Reply with ACK\.$/.test(message.trim())) return "csv-styling";
+        return "csv";
+    }
+
     // Each JSON-mode prompt has a distinct preamble we can match on.
     if (/Check translations from/.test(message)) return "json-verify";
     if (/Translate from/.test(message)) return "json-translate";
@@ -139,6 +152,11 @@ function makeFakeChat(): {
                         valid: true,
                     })),
                 });
+            }
+
+            if (fmt === "csv-verify" || fmt === "csv-styling") {
+                chatCalls.push({ chatId, format: fmt, keys: [] });
+                return "ACK";
             }
 
             return "";
@@ -363,4 +381,28 @@ describe("rate limit penalty propagates through shared limiter", () => {
         // proving here is just that a 429 in one worker doesn't kill
         // translation.
     });
+});
+
+describe("CSV styling verification", () => {
+    it("does NOT fire a standalone styling call when no override is supplied", async () => {
+        // Enable styling verification (it's off in baseOptions). Without
+        // an overridePrompt.stylingVerificationPrompt, the accuracy prompt
+        // already folds in styling, so we should make zero styling-only
+        // calls.
+        await translate({
+            ...baseOptions,
+            concurrency: 1,
+            inputJSON: toyInput(),
+            promptMode: PromptMode.CSV,
+            skipStylingVerification: false,
+            skipTranslationVerification: false,
+        } as any);
+
+        const stylingCalls = chatCalls.filter(
+            (c) => c.format === "csv-styling",
+        );
+
+        expect(stylingCalls).toHaveLength(0);
+    });
+
 });

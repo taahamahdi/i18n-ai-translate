@@ -106,6 +106,19 @@ export function isValidLanguageCode(languageCode: string): boolean {
 }
 
 /**
+ * Expand an ISO-639-1 code to its English display name (e.g. "en" →
+ * "English"). Used in prompts because language names steer the LLM
+ * much better than the two-letter code does. Falls back to the raw
+ * code if the lookup fails so prompts never break.
+ * @param languageCode - the ISO-639-1 code
+ * @returns the English display name, or the raw code if unknown
+ */
+export function getLanguageName(languageCode: string): string {
+    const name = ISO6391.getName(languageCode);
+    return name || languageCode;
+}
+
+/**
  * @param directory - the directory to list all files for
  * @returns all files with their absolute path that exist within the directory, recursively
  */

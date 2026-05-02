@@ -72,10 +72,12 @@ export default function buildDiffCommand(): Command {
         .option("--dry-run", CLI_HELP.DryRun, false)
         .option("--no-continue-on-error", CLI_HELP.NoContinueOnError)
         .option("--concurrency <concurrency>", CLI_HELP.Concurrency)
+        .option("--context <context>", CLI_HELP.Context)
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
             const sharedOptions = {
                 ...modelArgs,
+                context: options.context,
                 continueOnError: options.continueOnError,
                 ensureChangedTranslation: options.ensureChangedTranslation,
                 skipStylingVerification: options.skipStylingVerification,

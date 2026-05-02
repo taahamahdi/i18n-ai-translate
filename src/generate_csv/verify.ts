@@ -21,14 +21,17 @@ export async function verifyTranslation(
     outputLanguage: string,
     input: string,
     outputToVerify: string,
-    overridePrompt?: OverridePrompt,
+    options?: {
+        overridePrompt?: OverridePrompt;
+        context?: string;
+    },
 ): Promise<string> {
     const translationVerificationPromptText = translationVerificationPrompt(
         inputLanguage,
         outputLanguage,
         input,
         outputToVerify,
-        overridePrompt,
+        options,
     );
 
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
@@ -50,14 +53,17 @@ export async function verifyStyling(
     outputLanguage: string,
     input: string,
     outputToVerify: string,
-    overridePrompt?: OverridePrompt,
+    options?: {
+        overridePrompt?: OverridePrompt;
+        context?: string;
+    },
 ): Promise<string> {
     const stylingVerificationPromptText = stylingVerificationPrompt(
         inputLanguage,
         outputLanguage,
         input,
         outputToVerify,
-        overridePrompt,
+        options,
     );
 
     // eslint-disable-next-line @typescript-eslint/no-use-before-define

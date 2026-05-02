@@ -187,7 +187,12 @@ export default class GenerateTranslationJSON {
                 options.inputLanguageCode,
                 options.outputLanguageCode,
                 [],
-                options.overridePrompt,
+                {
+                    context: options.context,
+                    overridePrompt: options.overridePrompt,
+                    templatedStringPrefix: options.templatedStringPrefix,
+                    templatedStringSuffix: options.templatedStringSuffix,
+                },
             ),
         ).length;
 
@@ -235,7 +240,12 @@ export default class GenerateTranslationJSON {
                 options.inputLanguageCode,
                 options.outputLanguageCode,
                 [],
-                options.overridePrompt,
+                {
+                    context: options.context,
+                    overridePrompt: options.overridePrompt,
+                    templatedStringPrefix: options.templatedStringPrefix,
+                    templatedStringSuffix: options.templatedStringSuffix,
+                },
             ),
         ).length;
 
@@ -359,10 +369,11 @@ export default class GenerateTranslationJSON {
             // eslint-disable-next-line no-await-in-loop
             const result = await this.runTranslationJob({
                 chats,
+                context: options.context,
                 ensureChangedTranslation:
                     options.ensureChangedTranslation as boolean,
-                inputLanguageCode: `[${options.inputLanguageCode}]`,
-                outputLanguageCode: `[${options.outputLanguageCode}]`,
+                inputLanguageCode: options.inputLanguageCode,
+                outputLanguageCode: options.outputLanguageCode,
                 overridePrompt: options.overridePrompt,
                 rateLimiter,
                 skipStylingVerification:
@@ -486,10 +497,11 @@ export default class GenerateTranslationJSON {
             // eslint-disable-next-line no-await-in-loop
             const result = await this.runVerificationJob({
                 chats,
+                context: options.context,
                 ensureChangedTranslation:
                     options.ensureChangedTranslation as boolean,
-                inputLanguageCode: `[${options.inputLanguageCode}]`,
-                outputLanguageCode: `[${options.outputLanguageCode}]`,
+                inputLanguageCode: options.inputLanguageCode,
+                outputLanguageCode: options.outputLanguageCode,
                 overridePrompt: options.overridePrompt,
                 rateLimiter,
                 skipStylingVerification:
@@ -714,7 +726,13 @@ export default class GenerateTranslationJSON {
             options.inputLanguageCode,
             options.outputLanguageCode,
             this.generateTranslateItemsInput(options.translateItems),
-            options.overridePrompt,
+            {
+                context: options.context,
+                keys: options.translateItems.map((it) => it.key),
+                overridePrompt: options.overridePrompt,
+                templatedStringPrefix: options.templatedStringPrefix,
+                templatedStringSuffix: options.templatedStringSuffix,
+            },
         );
 
         let translated = "";
@@ -761,7 +779,12 @@ export default class GenerateTranslationJSON {
             options.inputLanguageCode,
             options.outputLanguageCode,
             this.generateVerifyItemsInput(options.translateItems),
-            options.overridePrompt,
+            {
+                context: options.context,
+                overridePrompt: options.overridePrompt,
+                templatedStringPrefix: options.templatedStringPrefix,
+                templatedStringSuffix: options.templatedStringSuffix,
+            },
         );
 
         let verified = "";
