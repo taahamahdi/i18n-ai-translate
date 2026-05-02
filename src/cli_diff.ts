@@ -73,12 +73,17 @@ export default function buildDiffCommand(): Command {
         .option("--no-continue-on-error", CLI_HELP.NoContinueOnError)
         .option("--concurrency <concurrency>", CLI_HELP.Concurrency)
         .option("--context <context>", CLI_HELP.Context)
+        .option(
+            "--exclude-languages [language codes...]",
+            CLI_HELP.ExcludeLanguages,
+        )
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
             const sharedOptions = {
                 ...modelArgs,
                 context: options.context,
                 continueOnError: options.continueOnError,
+                excludeLanguages: options.excludeLanguages,
                 ensureChangedTranslation: options.ensureChangedTranslation,
                 skipStylingVerification: options.skipStylingVerification,
                 skipTranslationVerification: options.skipTranslationVerification,

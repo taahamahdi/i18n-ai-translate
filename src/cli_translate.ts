@@ -82,6 +82,10 @@ export default function buildTranslateCommand(): Command {
         .option("--no-continue-on-error", CLI_HELP.NoContinueOnError)
         .option("--concurrency <concurrency>", CLI_HELP.Concurrency)
         .option("--context <context>", CLI_HELP.Context)
+        .option(
+            "--exclude-languages [language codes...]",
+            CLI_HELP.ExcludeLanguages,
+        )
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
             // The commander options object carries CLI-only booleans that
@@ -91,6 +95,7 @@ export default function buildTranslateCommand(): Command {
                 ...modelArgs,
                 context: options.context,
                 continueOnError: options.continueOnError,
+                excludeLanguages: options.excludeLanguages,
                 ensureChangedTranslation: options.ensureChangedTranslation,
                 skipStylingVerification: options.skipStylingVerification,
                 skipTranslationVerification: options.skipTranslationVerification,
@@ -133,6 +138,21 @@ export default function buildTranslateCommand(): Command {
                 if (options.outputLanguages.length === 0) {
                     printError("No languages specified");
                     return;
+                }
+
+                if (options.excludeLanguages) {
+                    const excluded = new Set<string>(options.excludeLanguages);
+                    options.outputLanguages = options.outputLanguages.filter(
+                        (code: string) => !excluded.has(code),
+                    );
+
+                    if (options.outputLanguages.length === 0) {
+                        printWarn(
+                            "Every requested language was excluded; nothing to translate.",
+                        );
+
+                        return;
+                    }
                 }
 
                 if (options.verbose) {
@@ -229,12 +249,20 @@ export default function buildTranslateCommand(): Command {
                     "Some languages may fail to translate due to the model's limitations",
                 );
 
+                const excludedSet = new Set<string>(
+                    options.excludeLanguages ?? [],
+                );
+
+                const allLanguages = getAllLanguageCodes().filter(
+                    (code) => !excludedSet.has(code),
+                );
+
                 let i = 0;
-                for (const languageCode of getAllLanguageCodes()) {
+                for (const languageCode of allLanguages) {
                     i++;
                     if (options.verbose) {
                         printInfo(
-                            `Translating ${i}/${getAllLanguageCodes().length} languages...`,
+                            `Translating ${i}/${allLanguages.length} languages...`,
                         );
                     }
 

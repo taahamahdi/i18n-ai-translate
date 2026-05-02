@@ -28,4 +28,10 @@ export default interface Options {
      * Helps the model pick domain-specific terminology and tone.
      */
     context?: string;
+    /**
+     * Language codes (or filenames) to skip when translating or
+     * running diff. Useful when certain locales are maintained
+     * manually and shouldn't be machine-translated over.
+     */
+    excludeLanguages?: string[];
 }
