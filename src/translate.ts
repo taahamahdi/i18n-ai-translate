@@ -405,7 +405,11 @@ export async function translateDiff(
                 const unflattened = unflatten(translatedJSONs[languageCode], {
                     delimiter: FLATTEN_DELIMITER,
                 }) as Object;
-                options.onLanguageComplete(languageCode, unflattened);
+                options.onLanguageComplete(
+                    languageCode,
+                    unflattened,
+                    translatedJSONs[languageCode],
+                );
             }
         }
     }
