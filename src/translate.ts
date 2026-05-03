@@ -7,7 +7,12 @@ import {
 } from "./constants";
 import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
-import { isValidLanguageCode, printExecutionTime, printInfo } from "./utils";
+import {
+    isValidLanguageCode,
+    printExecutionTime,
+    printInfo,
+    resolveLanguageCode,
+} from "./utils";
 import ChatPool from "./chat_pool";
 import GenerateTranslationJSON from "./generate_json/generate";
 import PromptMode from "./enums/prompt_mode";
@@ -173,6 +178,31 @@ function setDefaults(options: TranslateOptions): void {
  */
 export async function translate(options: TranslateOptions): Promise<Object> {
     setDefaults(options);
+
+    // Accept both codes and English language names. If a user passed
+    // "English" we normalise to "en" and note the substitution so they
+    // know it happened.
+    const resolvedInput = resolveLanguageCode(options.inputLanguageCode);
+    if (resolvedInput !== options.inputLanguageCode) {
+        if (options.verbose) {
+            printInfo(
+                `Interpreted '${options.inputLanguageCode}' as '${resolvedInput}'`,
+            );
+        }
+
+        options.inputLanguageCode = resolvedInput;
+    }
+
+    const resolvedOutput = resolveLanguageCode(options.outputLanguageCode);
+    if (resolvedOutput !== options.outputLanguageCode) {
+        if (options.verbose) {
+            printInfo(
+                `Interpreted '${options.outputLanguageCode}' as '${resolvedOutput}'`,
+            );
+        }
+
+        options.outputLanguageCode = resolvedOutput;
+    }
 
     // Validate the input and output languages are valid
     if (!isValidLanguageCode(options.inputLanguageCode)) {

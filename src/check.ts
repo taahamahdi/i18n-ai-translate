@@ -6,7 +6,7 @@ import {
     FLATTEN_DELIMITER,
 } from "./constants";
 import { flatten } from "flat";
-import { isValidLanguageCode, printInfo } from "./utils";
+import { isValidLanguageCode, printInfo, resolveLanguageCode } from "./utils";
 import ChatPool from "./chat_pool";
 import GenerateTranslationJSON from "./generate_json/generate";
 import RateLimiter from "./rate_limiter";
@@ -35,6 +35,11 @@ function setDefaults(options: CheckOptions): void {
  */
 export async function check(options: CheckOptions): Promise<CheckReport> {
     setDefaults(options);
+
+    options.inputLanguageCode = resolveLanguageCode(options.inputLanguageCode);
+    options.outputLanguageCode = resolveLanguageCode(
+        options.outputLanguageCode,
+    );
 
     if (!isValidLanguageCode(options.inputLanguageCode)) {
         throw new Error(

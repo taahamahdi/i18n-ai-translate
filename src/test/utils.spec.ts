@@ -3,6 +3,7 @@ import {
     getLanguageCodeFromFilename,
     getLanguageName,
     getTranslationDirectoryKey,
+    resolveLanguageCode,
 } from "../utils";
 
 describe("getLanguageCodeFromFilename", () => {
@@ -38,6 +39,30 @@ describe("getLanguageName", () => {
     it("returns the raw code when the lookup fails", () => {
         expect(getLanguageName("xx")).toBe("xx");
         expect(getLanguageName("klingon")).toBe("klingon");
+    });
+});
+
+describe("resolveLanguageCode", () => {
+    it("returns valid ISO-639-1 codes unchanged", () => {
+        expect(resolveLanguageCode("en")).toBe("en");
+        expect(resolveLanguageCode("fr")).toBe("fr");
+    });
+
+    it("resolves English names to their ISO code", () => {
+        expect(resolveLanguageCode("English")).toBe("en");
+        expect(resolveLanguageCode("French")).toBe("fr");
+        expect(resolveLanguageCode("Japanese")).toBe("ja");
+    });
+
+    it("is case-insensitive and tolerates whitespace", () => {
+        expect(resolveLanguageCode("ENGLISH")).toBe("en");
+        expect(resolveLanguageCode("  english  ")).toBe("en");
+        expect(resolveLanguageCode("EnGlIsH")).toBe("en");
+    });
+
+    it("returns the raw input when no match is found", () => {
+        expect(resolveLanguageCode("Klingon")).toBe("Klingon");
+        expect(resolveLanguageCode("xx")).toBe("xx");
     });
 });
 
