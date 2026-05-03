@@ -115,6 +115,7 @@ export async function translateFileDiff(
     options: TranslateFileDiffOptions,
 ): Promise<void> {
     // Get all the *json files from the same path as beforeInputPath
+    const excludeSet = new Set<string>(options.excludeLanguages ?? []);
     const outputFilesOrPaths = fs
         .readdirSync(path.dirname(options.inputBeforeFileOrPath))
         .filter((file: string) => file.endsWith(".json"))
@@ -123,6 +124,13 @@ export async function translateFileDiff(
                 file !== path.basename(options.inputBeforeFileOrPath) &&
                 file !== path.basename(options.inputAfterFileOrPath),
         )
+        .filter((file) => {
+            // Filter by extracted language code; accept either the
+            // full filename or just the code in --exclude-languages.
+            if (excludeSet.size === 0) return true;
+            const code = getLanguageCodeFromFilename(file);
+            return !excludeSet.has(code) && !excludeSet.has(file);
+        })
         .map((file) =>
             path.resolve(path.dirname(options.inputBeforeFileOrPath), file),
         );

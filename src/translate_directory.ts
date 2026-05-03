@@ -272,6 +272,7 @@ export async function translateDirectoryDiff(
         }
     }
 
+    const excludeSet = new Set<string>(options.excludeLanguages ?? []);
     const outputLanguagePaths = fs
         .readdirSync(options.baseDirectory)
         .filter(
@@ -279,6 +280,7 @@ export async function translateDirectoryDiff(
                 folder !== path.basename(options.inputFolderNameBefore) &&
                 folder !== path.basename(options.inputFolderNameAfter),
         )
+        .filter((folder) => !excludeSet.has(folder))
         .map((folder) => path.resolve(options.baseDirectory, folder));
 
     const toUpdateJSONs: { [languageCode: string]: { [key: string]: string } } =

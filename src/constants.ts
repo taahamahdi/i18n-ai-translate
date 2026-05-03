@@ -28,6 +28,8 @@ export const CLI_HELP = {
         "How many batches to run in parallel (default: 2). Each worker holds its own chat history, sharing one rate limiter. Tune upward together with --rate-limit-ms to use more of your API tier",
     Context:
         "Product or domain context to steer translations (e.g. 'a music trivia game for Discord'). Injected into both the generation and verification prompts",
+    ExcludeLanguages:
+        "Language codes to skip (e.g. 'fr de'). Useful when some locales are maintained manually and shouldn't be machine-translated over",
     DryRun: "Show the translations without writing to files, and store them in a temporary directory",
     Engine: "Engine to use (chatgpt, gemini, ollama, or claude)",
     EnsureChangedTranslation:

@@ -388,6 +388,41 @@ describe.each(Object.values(PromptMode))(
             expect(frOut).toEqual({ added: fr("Yes"), key: fr("New") });
             expect(esOut).toEqual({ added: es("Yes"), key: es("New") });
         });
+
+        it("skips targets listed in --exclude-languages", async () => {
+            const dir = mkCaseDir();
+            const beforePath = path.join(dir, "before_en.json");
+            const afterPath = path.join(dir, "after_en.json");
+            const frPath = path.join(dir, "fr.json");
+            const esPath = path.join(dir, "es.json");
+
+            fs.writeFileSync(beforePath, JSON.stringify({ key: "Old" }));
+            fs.writeFileSync(
+                afterPath,
+                JSON.stringify({ added: "Yes", key: "New" }),
+            );
+            fs.writeFileSync(frPath, JSON.stringify({ key: "Ancien" }));
+            fs.writeFileSync(esPath, JSON.stringify({ key: "Viejo" }));
+
+            await translateFileDiff({
+                engine: Engine.ChatGPT,
+                excludeLanguages: ["fr"],
+                inputAfterFileOrPath: afterPath,
+                inputBeforeFileOrPath: beforePath,
+                inputLanguageCode: "en",
+                model: "gpt-4o",
+                promptMode,
+                rateLimitMs: 0,
+            } as any);
+
+            // fr was excluded, so it retains its original content;
+            // es is still translated.
+            const frOut = JSON.parse(fs.readFileSync(frPath, "utf-8"));
+            const esOut = JSON.parse(fs.readFileSync(esPath, "utf-8"));
+
+            expect(frOut).toEqual({ key: "Ancien" });
+            expect(esOut).toEqual({ added: es("Yes"), key: es("New") });
+        });
     },
 );
 
