@@ -6,6 +6,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Skip for Dependabot PRs: repo secrets (OPENAI_API_KEY) are not
+    # shared with Dependabot-authored workflows by default, so this
+    # would always fail on bump PRs with no real signal. The build.yml
+    # workflow (lint + build + unit tests) runs regardless and is the
+    # authoritative check for dependency updates.
+    if: github.actor != 'dependabot[bot]'
     steps:
       - name: Test i18n-ai-translate action
         uses: taahamahdi/i18n-ai-translate@master
