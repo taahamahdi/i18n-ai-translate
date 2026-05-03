@@ -1,6 +1,7 @@
 import { VERSION } from "./constants";
 import { config } from "dotenv";
 import { program } from "commander";
+import buildCheckCommand from "./cli_check";
 import buildDiffCommand from "./cli_diff";
 import buildTranslateCommand from "./cli_translate";
 import path from "path";
@@ -16,4 +17,5 @@ program
 
 program.addCommand(buildTranslateCommand());
 program.addCommand(buildDiffCommand());
+program.addCommand(buildCheckCommand());
 program.parse();

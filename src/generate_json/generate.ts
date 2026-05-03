@@ -108,6 +108,120 @@ export default class GenerateTranslationJSON {
         return this.convertTranslateItemToIndex(combined);
     }
 
+    /**
+     * Run the verification step against a source/target pair without
+     * writing anything. Returns one entry per invalid key, reporting
+     * what the model thought was wrong and what it would have fixed
+     * the translation to.
+     *
+     * This deliberately does NOT go through generateVerificationJSON —
+     * that path is designed to *fix* failures and re-verify, so
+     * successfully-fixed items come back with failure="" and the check
+     * report would miss every issue. Instead we call the verification
+     * prompt once per batch, parse the raw schema output, and surface
+     * the `valid: false` items directly.
+     */
+    public async checkJSON(ctx: {
+        flatSource: { [key: string]: string };
+        flatTarget: { [key: string]: string };
+        options: TranslateOptions;
+        pool: import("../chat_pool").default;
+    }): Promise<
+        Array<{
+            key: string;
+            original: string;
+            translated: string;
+            issue: string;
+            suggestion: string;
+        }>
+    > {
+        const { flatSource, flatTarget, options, pool } = ctx;
+
+        // Build items pre-populated with the on-disk translation — the
+        // verify prompt expects both `original` and `translated` to be
+        // filled in before it runs.
+        const items: TranslateItem[] = [];
+        let id = 1;
+        for (const key in flatSource) {
+            if (
+                !Object.prototype.hasOwnProperty.call(flatSource, key) ||
+                !(key in flatTarget)
+            ) {
+                continue;
+            }
+
+            const item = this.generateTranslateItem(
+                id,
+                key,
+                flatSource[key],
+            );
+
+            item.translated = flatTarget[key];
+            item.verificationTokens = this.getVerifyItemToken(item);
+            items.push(item);
+            id++;
+        }
+
+        if (items.length === 0) return [];
+
+        const [chats] = pool.all();
+        const issues: Array<{
+            key: string;
+            original: string;
+            translated: string;
+            issue: string;
+            suggestion: string;
+        }> = [];
+
+        // Batch the items to stay within batchSize / batchMaxTokens.
+        // getBatchVerifyItemArray already handles token-aware slicing.
+        let remaining = items.slice();
+        while (remaining.length > 0) {
+            const batch = this.getBatchVerifyItemArray(remaining, options);
+            if (batch.length === 0) break;
+            remaining = remaining.filter((it) => !batch.includes(it));
+
+            const promptText = verificationPromptJSON(
+                options.inputLanguageCode,
+                options.outputLanguageCode,
+                this.generateVerifyItemsInput(batch),
+                {
+                    context: options.context,
+                    overridePrompt: options.overridePrompt,
+                    templatedStringPrefix: options.templatedStringPrefix,
+                    templatedStringSuffix: options.templatedStringSuffix,
+                },
+            );
+
+            // eslint-disable-next-line no-await-in-loop
+            const raw = await chats.verifyTranslationChat.sendMessage(
+                promptText,
+                VerifyItemOutputObjectSchema,
+            );
+
+            const parsed = this.parseVerificationToJSON(raw);
+            const idToItem = new Map(batch.map((i) => [i.id, i]));
+
+            for (const v of parsed) {
+                if (!this.isValidVerificationItem(v)) continue;
+                if (v.valid) continue;
+
+                const item = idToItem.get(v.id);
+                if (!item) continue;
+
+                issues.push({
+                    issue: v.issue || "Flagged by verifier",
+                    key: item.key,
+                    original: item.original,
+                    suggestion: v.fixedTranslation ?? "",
+                    translated: flatTarget[item.key] ?? "",
+                });
+            }
+        }
+
+        return issues;
+    }
+
     private generateTranslateItemsInput(
         translateItems: TranslateItem[],
     ): TranslateItemInput[] {
