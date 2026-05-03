@@ -1,22 +1,34 @@
+import { getLanguageName } from "../utils";
 import type OverridePrompt from "../interfaces/override_prompt";
+
+function buildContextPreamble(context?: string): string {
+    if (!context || context.trim() === "") return "";
+    return `Product context: ${context.trim()}\n\n`;
+}
 
 /**
  * Prompt an AI to convert a given input from one language to another
- * @param inputLanguage - The language of the input
- * @param outputLanguage - The language of the output
+ * @param inputLanguageCode - The ISO-639-1 code of the input
+ * @param outputLanguageCode - The ISO-639-1 code of the output
  * @param input - The input to be translated
- * @param overridePrompt - An optional custom prompt
+ * @param options - Optional override/context knobs
  * @returns A prompt for the AI to translate the input
  */
 export function generationPrompt(
-    inputLanguage: string,
-    outputLanguage: string,
+    inputLanguageCode: string,
+    outputLanguageCode: string,
     input: string,
-    overridePrompt?: OverridePrompt,
+    options?: {
+        overridePrompt?: OverridePrompt;
+        context?: string;
+    },
 ): string {
-    const customPrompt = overridePrompt?.generationPrompt;
-    const requiredArguments = ["inputLanguage", "outputLanguage", "input"];
+    const inputLanguage = getLanguageName(inputLanguageCode);
+    const outputLanguage = getLanguageName(outputLanguageCode);
+    const customPrompt = options?.overridePrompt?.generationPrompt;
+
     if (customPrompt) {
+        const requiredArguments = ["inputLanguage", "outputLanguage", "input"];
         for (const arg of requiredArguments) {
             if (!customPrompt.includes(`\${${arg}}`)) {
                 throw new Error(`Missing required argument: \${${arg}}`);
@@ -24,6 +36,7 @@ export function generationPrompt(
         }
 
         const argumentToValue: { [key: string]: string } = {
+            context: options?.context ?? "",
             input,
             inputLanguage,
             outputLanguage,
@@ -34,7 +47,9 @@ export function generationPrompt(
         );
     }
 
-    return `You are a professional translator.
+    const contextPreamble = buildContextPreamble(options?.context);
+
+    return `${contextPreamble}You are a professional translator.
 
 Translate each line from ${inputLanguage} to ${outputLanguage}.
 
@@ -54,57 +69,81 @@ ${input}
 
 /**
  * Prompt an AI to correct a failed translation
- * @param inputLanguage - The language of the input
- * @param outputLanguage - The language of the output
- * @param input - The input to be translated
- * @returns A prompt for the AI to correct the failed translation
+ * @param inputLanguageCode - The ISO-639-1 code of the input
+ * @param outputLanguageCode - The ISO-639-1 code of the output
+ * @param source - The original source string that should have been translated
+ * @param failedOutput - The previous failed attempt at translating it
+ * @returns A prompt for the AI to retry the translation
  */
 export function failedTranslationPrompt(
-    inputLanguage: string,
-    outputLanguage: string,
-    input: string,
+    inputLanguageCode: string,
+    outputLanguageCode: string,
+    source: string,
+    failedOutput: string,
 ): string {
+    const inputLanguage = getLanguageName(inputLanguageCode);
+    const outputLanguage = getLanguageName(outputLanguageCode);
+
     return `You are a professional translator.
 
-The following translation from ${inputLanguage} to ${outputLanguage} failed.
+A previous attempt to translate the following ${inputLanguage} text into ${outputLanguage} failed.
 
-Attempt to translate it to ${outputLanguage} by considering it as a concatenation of ${inputLanguage} words, or re-interpreting it such that it makes sense in ${outputLanguage}.
-
-Return only the translation with no additional formatting, apart from returning it in quotes.
-
-Maintain case sensitivity and whitespacing.
-
+Source (${inputLanguage}):
 \`\`\`
-${input}
+${source}
 \`\`\`
+
+Failed ${outputLanguage} output:
+\`\`\`
+${failedOutput}
+\`\`\`
+
+Re-translate the source into ${outputLanguage}. If the source reads like a concatenation of ${inputLanguage} words (camelCase, snake_case, or compound), split it mentally before translating. Return only the translation, wrapped in ASCII quotation marks ("). Maintain case sensitivity and whitespacing.
 `;
 }
 
 /**
  * Prompt an AI to ensure a translation is valid
- * @param inputLanguage - The language of the input
- * @param outputLanguage - The language of the output
- * @param input - The input to be translated
- * @param output - The output of the translation
- * @param overridePrompt - An optional custom prompt
+ *
+ * This is a single rubric that replaces the old separate accuracy and
+ * styling ACK/NAK prompts. The response is still text: NAK if any
+ * translation is incorrect on either accuracy or styling grounds,
+ * ACK otherwise. Merging the two prompts halves the round-trip cost
+ * and fixes the line-alignment fragility that showed up when one of
+ * the two prompts disagreed on line counts.
+ *
+ * @param inputLanguageCode - The ISO-639-1 code of the input
+ * @param outputLanguageCode - The ISO-639-1 code of the output
+ * @param input - The original input, one item per line
+ * @param output - The translated output, one item per line
+ * @param options - Optional override/context knobs
  * @returns A prompt for the AI to verify the translation
  */
 export function translationVerificationPrompt(
-    inputLanguage: string,
-    outputLanguage: string,
+    inputLanguageCode: string,
+    outputLanguageCode: string,
     input: string,
     output: string,
-    overridePrompt?: OverridePrompt,
+    options?: {
+        overridePrompt?: OverridePrompt;
+        context?: string;
+    },
 ): string {
+    const inputLanguage = getLanguageName(inputLanguageCode);
+    const outputLanguage = getLanguageName(outputLanguageCode);
     const splitInput = input.split("\n");
     const splitOutput = output.split("\n");
     const mergedCSV = splitInput
-        .map((x, i) => `${x},${splitOutput[i]}`)
+        .map((x, i) => `${x},${splitOutput[i] ?? ""}`)
         .join("\n");
 
-    const customPrompt = overridePrompt?.translationVerificationPrompt;
-    const requiredArguments = ["inputLanguage", "outputLanguage", "mergedCSV"];
+    const customPrompt = options?.overridePrompt?.translationVerificationPrompt;
     if (customPrompt) {
+        const requiredArguments = [
+            "inputLanguage",
+            "outputLanguage",
+            "mergedCSV",
+        ];
         for (const arg of requiredArguments) {
             if (!customPrompt.includes(`\${${arg}}`)) {
                 throw new Error(`Missing required argument: \${${arg}}`);
@@ -112,6 +151,7 @@ export function translationVerificationPrompt(
         }
 
         const argumentToValue: { [key: string]: string } = {
+            context: options?.context ?? "",
             inputLanguage,
             mergedCSV,
             outputLanguage,
@@ -122,12 +162,18 @@ export function translationVerificationPrompt(
         );
     }
 
-    return `
-Given a translation from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations are poorly translated.
+    const contextPreamble = buildContextPreamble(options?.context);
+
+    return `${contextPreamble}You are a translation reviewer checking a ${inputLanguage}-to-${outputLanguage} batch in CSV form.
+
+Reply with NAK if ANY translation has a problem, including:
+- Inaccurate meaning, wrong tone, or grammar errors
+- Mismatched capitalization, punctuation, or whitespace vs. the original
+- Missing or extra placeholders, or altered variable names
 
 Otherwise, reply with ACK.
 
-Only reply with ACK/NAK.
+Reply with ACK or NAK only — no explanation.
 
 \`\`\`
 ${inputLanguage},${outputLanguage}
@@ -137,30 +183,46 @@ ${mergedCSV}
 }
 
 /**
- * Prompt an AI to ensure a translation is styled correctly
- * @param inputLanguage - The language of the input
- * @param outputLanguage - The language of the output
- * @param input - The input to be translated
- * @param output - The output of the translation
- * @param overridePrompt - An optional custom prompt
- * @returns A prompt for the AI to verify the translation
+ * Legacy standalone styling prompt.
+ *
+ * Kept for backwards compatibility with custom override-prompt files
+ * that still reference `stylingVerificationPrompt`. New code should use
+ * `translationVerificationPrompt` above, which checks both accuracy and
+ * styling in a single pass. Calling this function without a matching
+ * override returns an ACK (no-op) — the merged prompt above already
+ * handles styling.
+ * @param inputLanguageCode - The ISO-639-1 code of the input
+ * @param outputLanguageCode - The ISO-639-1 code of the output
+ * @param input - The original input
+ * @param output - The translated output
+ * @param options - Optional override/context knobs
+ * @returns A prompt for the AI, or a sentinel indicating no standalone check
  */
 export function stylingVerificationPrompt(
-    inputLanguage: string,
-    outputLanguage: string,
+    inputLanguageCode: string,
+    outputLanguageCode: string,
     input: string,
     output: string,
-    overridePrompt?: OverridePrompt,
+    options?: {
+        overridePrompt?: OverridePrompt;
+        context?: string;
+    },
 ): string {
+    const inputLanguage = getLanguageName(inputLanguageCode);
+    const outputLanguage = getLanguageName(outputLanguageCode);
     const splitInput = input.split("\n");
     const splitOutput = output.split("\n");
     const mergedCSV = splitInput
-        .map((x, i) => `${x},${splitOutput[i]}`)
+        .map((x, i) => `${x},${splitOutput[i] ?? ""}`)
         .join("\n");
 
-    const customPrompt = overridePrompt?.stylingVerificationPrompt;
-    const requiredArguments = ["inputLanguage", "outputLanguage", "mergedCSV"];
+    const customPrompt = options?.overridePrompt?.stylingVerificationPrompt;
     if (customPrompt) {
+        const requiredArguments = [
+            "inputLanguage",
+            "outputLanguage",
+            "mergedCSV",
+        ];
         for (const arg of requiredArguments) {
             if (!customPrompt.includes(`\${${arg}}`)) {
                 throw new Error(`Missing required argument: \${${arg}}`);
@@ -168,6 +230,7 @@ export function stylingVerificationPrompt(
         }
 
         const argumentToValue: { [key: string]: string } = {
+            context: options?.context ?? "",
             inputLanguage,
             mergedCSV,
             outputLanguage,
@@ -178,18 +241,8 @@ export function stylingVerificationPrompt(
         );
     }
 
-    return `
-Given text from ${inputLanguage} to ${outputLanguage} in CSV form, reply with NAK if _any_ of the translations do not match the formatting of the original.
-
-Check for differing capitalization, punctuation, or whitespaces.
-
-Otherwise, reply with ACK.
-
-Only reply with ACK/NAK.
-
-\`\`\`
-${inputLanguage},${outputLanguage}
-${mergedCSV}
-\`\`\`
-`;
+    // No standalone styling check by default; the accuracy prompt above
+    // already folds in styling. Return a trivial ACK-producing prompt so
+    // callers that still invoke this function get a no-op.
+    return `Reply with ACK.`;
 }

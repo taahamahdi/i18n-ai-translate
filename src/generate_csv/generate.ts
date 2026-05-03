@@ -32,7 +32,10 @@ async function generateTranslation(
         inputLanguage,
         outputLanguage,
         input,
-        options.overridePrompt,
+        {
+            context: options.context,
+            overridePrompt: options.overridePrompt,
+        },
     );
 
     const templatedStringRegex = getTemplatedStringRegex(
@@ -140,12 +143,13 @@ async function runShard(
         // eslint-disable-next-line no-await-in-loop
         const generatedTranslation = await generateTranslation({
             chats,
+            context: options.context,
             ensureChangedTranslation:
                 options.ensureChangedTranslation as boolean,
             input,
-            inputLanguageCode: `[${options.inputLanguageCode}]`,
+            inputLanguageCode: options.inputLanguageCode,
             keys,
-            outputLanguageCode: `[${options.outputLanguageCode}]`,
+            outputLanguageCode: options.outputLanguageCode,
             overridePrompt: options.overridePrompt,
             rateLimiter,
             skipStylingVerification: options.skipStylingVerification as boolean,
@@ -305,6 +309,7 @@ async function generate(
             const retryTranslationPromptText = failedTranslationPrompt(
                 inputLanguage,
                 outputLanguage,
+                splitInput[i],
                 line,
             );
 
@@ -373,7 +378,10 @@ async function generate(
             outputLanguage,
             input,
             text,
-            options.overridePrompt,
+            {
+                context: options.context,
+                overridePrompt: options.overridePrompt,
+            },
         );
     }
 
@@ -382,15 +390,27 @@ async function generate(
         return Promise.reject(new Error(`Invalid translation. text = ${text}`));
     }
 
+    // Styling is folded into the accuracy prompt by default (the merged
+    // rubric above checks both). Only run the standalone styling pass
+    // when the user has explicitly supplied a stylingVerificationPrompt
+    // override — otherwise we'd be making a wasted API call that just
+    // echoes back an ACK to the trivial no-op prompt.
     let stylingVerificationResponse = "";
-    if (!options.skipStylingVerification) {
+    const hasStylingOverride = Boolean(
+        options.overridePrompt?.stylingVerificationPrompt,
+    );
+
+    if (!options.skipStylingVerification && hasStylingOverride) {
         stylingVerificationResponse = await verifyStyling(
             chats.verifyStylingChat,
             inputLanguage,
             outputLanguage,
             input,
             text,
-            options.overridePrompt,
+            {
+                context: options.context,
+                overridePrompt: options.overridePrompt,
+            },
         );
     }
 

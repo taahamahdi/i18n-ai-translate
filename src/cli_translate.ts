@@ -81,6 +81,7 @@ export default function buildTranslateCommand(): Command {
         .option("--dry-run", CLI_HELP.DryRun, false)
         .option("--no-continue-on-error", CLI_HELP.NoContinueOnError)
         .option("--concurrency <concurrency>", CLI_HELP.Concurrency)
+        .option("--context <context>", CLI_HELP.Context)
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
             // The commander options object carries CLI-only booleans that
@@ -88,6 +89,7 @@ export default function buildTranslateCommand(): Command {
             // the subset the translate*() wrappers actually consume.
             const sharedOptions = {
                 ...modelArgs,
+                context: options.context,
                 continueOnError: options.continueOnError,
                 ensureChangedTranslation: options.ensureChangedTranslation,
                 skipStylingVerification: options.skipStylingVerification,
