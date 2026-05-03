@@ -21,7 +21,7 @@
     "zod-to-json-schema": "^3.24.1"
   },
   "name": "i18n-ai-translate",
-  "version": "4.1.2",
+  "version": "5.0.0",
   "main": "./build/index.js",
   "types": "./build/types/index.d.ts",
   "bin": {
