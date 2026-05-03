@@ -56,6 +56,7 @@ export async function check(options: CheckOptions): Promise<CheckReport> {
     const rateLimiter = new RateLimiter(
         options.rateLimitMs,
         options.verbose as boolean,
+        options.tokensPerMinute,
     );
 
     const pool = ChatPool.create({

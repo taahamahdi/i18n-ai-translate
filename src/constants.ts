@@ -30,6 +30,8 @@ export const CLI_HELP = {
         "Product or domain context to steer translations (e.g. 'a music trivia game for Discord'). Injected into both the generation and verification prompts",
     ExcludeLanguages:
         "Language codes to skip (e.g. 'fr de'). Useful when some locales are maintained manually and shouldn't be machine-translated over",
+    TokensPerMinute:
+        "Cap on tokens-per-minute across all concurrent workers. Disabled by default — opt in with your provider's TPM limit to avoid burst-failing when your TPM tier is stricter than your RPM tier. Reference values: OpenAI Tier-1 ~200000, Anthropic Tier-1 40000 (free 20000), Gemini 2.5 Flash paid ~250000.",
     DryRun: "Show the translations without writing to files, and store them in a temporary directory",
     Engine: "Engine to use (chatgpt, gemini, ollama, or claude)",
     EnsureChangedTranslation:

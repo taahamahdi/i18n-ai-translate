@@ -27,6 +27,7 @@ export type ModelArgs = {
     batchSize: number;
     batchMaxTokens: number;
     concurrency: number;
+    tokensPerMinute?: number;
 };
 
 export type GenerateStateCSV = {

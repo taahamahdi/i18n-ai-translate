@@ -840,4 +840,64 @@ describe("RateLimiter", () => {
         // Next caller should still wait the full 3 * delayBetweenCallsMs gap.
         expect(mockedDelay).toHaveBeenCalledWith(delayBetweenCallsMs * 3);
     });
+
+    it("no TPM cap means acquire() returns immediately regardless of tokens", async () => {
+        const start = 400_000;
+        jest.spyOn(Date, "now").mockReturnValue(start);
+
+        const rl = new RateLimiter(0, false); // no RPM cap, no TPM cap
+        await rl.acquire(1_000_000);
+        expect(mockedDelay).not.toHaveBeenCalled();
+    });
+
+    it("acquire(tokens) tracks usage and sleeps when TPM cap is reached", async () => {
+        const start = 500_000;
+        let clock = start;
+        jest.spyOn(Date, "now").mockImplementation(() => clock);
+
+        const rl = new RateLimiter(0, false, 100);
+
+        // Consume 80 tokens; still under cap.
+        await rl.acquire(80);
+        expect(mockedDelay).not.toHaveBeenCalled();
+
+        // Next call wants 50 more tokens; 80 + 50 > 100, so it must wait
+        // for the first entry to fall out of the 60s window.
+        mockedDelay.mockImplementationOnce(async (ms: number) => {
+            // Simulate time passing while the limiter awaits.
+            clock += ms;
+            return Promise.resolve();
+        });
+
+        await rl.acquire(50);
+        expect(mockedDelay).toHaveBeenCalledTimes(1);
+    });
+
+    it("TPM window prunes entries older than 60 seconds", async () => {
+        let clock = 600_000;
+        jest.spyOn(Date, "now").mockImplementation(() => clock);
+
+        const rl = new RateLimiter(0, false, 100);
+        await rl.acquire(80);
+
+        // Advance the clock past the 60s window.
+        clock += 61_000;
+
+        // Now the 80-token entry is stale, so an 80-token call should
+        // fit immediately without sleeping.
+        mockedDelay.mockClear();
+        await rl.acquire(80);
+        expect(mockedDelay).not.toHaveBeenCalled();
+    });
+
+    it("a single call larger than the TPM cap fires anyway (no deadlock)", async () => {
+        jest.spyOn(Date, "now").mockReturnValue(700_000);
+        const rl = new RateLimiter(0, false, 100);
+
+        // 500 tokens > 100 TPM; we can't satisfy this, but neither
+        // should we hang. Fire it and let the provider 429 if it
+        // actually cares.
+        await rl.acquire(500);
+        expect(mockedDelay).not.toHaveBeenCalled();
+    });
 });

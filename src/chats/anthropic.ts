@@ -47,7 +47,10 @@ export default class Anthropic extends ChatInterface {
             this.history = this.history.slice(this.history.length - 2);
         }
 
-        await this.rateLimiter.acquire();
+        // Cheap ~4-chars-per-token estimate; the limiter no-ops the TPM
+        // check when no cap is configured. Double to account for the
+        // response tokens we'll also be billed for.
+        await this.rateLimiter.acquire(Math.ceil(message.length / 2));
         this.history.push({ content: message, role: Role.User });
 
         try {

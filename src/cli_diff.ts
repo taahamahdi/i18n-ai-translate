@@ -77,6 +77,7 @@ export default function buildDiffCommand(): Command {
             "--exclude-languages [language codes...]",
             CLI_HELP.ExcludeLanguages,
         )
+        .option("--tokens-per-minute <tpm>", CLI_HELP.TokensPerMinute)
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
             const sharedOptions = {
