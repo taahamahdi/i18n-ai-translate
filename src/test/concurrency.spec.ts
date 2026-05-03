@@ -45,7 +45,9 @@ function parseCsvInput(message: string): string[] {
         .map((line) => line.replace(/^"|"$/g, ""));
 }
 
-function parseJsonItems(message: string): Array<{ id: number; original: string }> {
+function parseJsonItems(
+    message: string,
+): Array<{ id: number; original: string }> {
     const backtickBlock = message.match(/```json\n([\s\S]*?)\n```/);
     if (!backtickBlock) return [];
     try {
@@ -98,7 +100,9 @@ function makeFakeChat(): {
 
                 const shouldReject = inputs.some((i) => failKeys?.has(i));
                 if (shouldReject) {
-                    throw new Error(`simulated failure for: ${inputs.join(",")}`);
+                    throw new Error(
+                        `simulated failure for: ${inputs.join(",")}`,
+                    );
                 }
 
                 if (inputs.some((i) => rejectOn429Once?.has(i))) {
@@ -188,7 +192,6 @@ jest.mock("../chats/chat_factory", () => ({
         ),
     },
 }));
-
 
 // delay() in utils.ts is used by the rate limiter and retry code; short-circuit
 // it so tests don't actually sleep.
@@ -404,5 +407,76 @@ describe("CSV styling verification", () => {
 
         expect(stylingCalls).toHaveLength(0);
     });
+});
 
+describe("shared pool across translate() invocations", () => {
+    it("reuses the same Chats instances across multiple translate() calls when a pool is supplied", async () => {
+        // This is what --language-concurrency relies on: building one
+        // pool up front and passing it into every language's translate
+        // call, so all languages share one rate-limit / TPM budget
+        // instead of each language spinning up its own.
+        const ChatPool = (await import("../chat_pool")).default;
+        const RateLimiter = (await import("../rate_limiter")).default;
+
+        const rateLimiter = new RateLimiter(0, false);
+        const pool = ChatPool.create({
+            apiKey: "test",
+            chatParams: {} as any,
+            concurrency: 2,
+            engine: Engine_.ChatGPT,
+            model: "gpt-4.1",
+            rateLimiter,
+        });
+
+        const chatIdsBefore = new Set(
+            pool
+                .all()
+                .map(
+                    (triple) => (triple.generateTranslationChat as any).chatId,
+                ),
+        );
+
+        // Two back-to-back translate() calls that reuse the same pool.
+        await translate({
+            ...baseOptions,
+            concurrency: 2,
+            inputJSON: { a: "A" },
+            pool,
+            promptMode: PromptMode.CSV,
+            rateLimiter,
+        } as any);
+
+        await translate({
+            ...baseOptions,
+            concurrency: 2,
+            inputJSON: { b: "B" },
+            outputLanguageCode: "es",
+            pool,
+            promptMode: PromptMode.CSV,
+            rateLimiter,
+        } as any);
+
+        const chatIdsAfter = new Set(
+            pool
+                .all()
+                .map(
+                    (triple) => (triple.generateTranslationChat as any).chatId,
+                ),
+        );
+
+        // Same instances — no fresh pool was created on the second
+        // translate call.
+        expect(chatIdsAfter).toEqual(chatIdsBefore);
+
+        // And every generate call went through one of the N chats in
+        // the pool (no orphan fresh chats that somehow weren't
+        // registered with the pool).
+        const generateCallChatIds = new Set(
+            chatCalls.filter((c) => c.format === "csv").map((c) => c.chatId),
+        );
+
+        for (const id of generateCallChatIds) {
+            expect(chatIdsBefore.has(id)).toBe(true);
+        }
+    });
 });

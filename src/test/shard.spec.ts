@@ -33,10 +33,7 @@ describe("buildGroupShards", () => {
     });
 
     it("drops empty shards when groups < concurrency", () => {
-        const groups: Array<Record<string, string>> = [
-            { a: "1" },
-            { b: "2" },
-        ];
+        const groups: Array<Record<string, string>> = [{ a: "1" }, { b: "2" }];
 
         const shards = buildGroupShards(groups, 5);
         expect(shards).toHaveLength(2);

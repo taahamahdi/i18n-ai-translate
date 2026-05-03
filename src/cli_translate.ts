@@ -14,8 +14,11 @@ import {
     resolveOutputPath,
 } from "./utils";
 import { processModelArgs, processOverridePromptFile } from "./cli_helpers";
+import { runWithConcurrency } from "./semaphore";
 import { translateDirectory } from "./translate_directory";
 import { translateFile } from "./translate_file";
+import ChatPool from "./chat_pool";
+import RateLimiter from "./rate_limiter";
 import fs, { mkdtempSync } from "fs";
 import path from "path";
 import type DryRun from "./interfaces/dry_run";
@@ -87,8 +90,34 @@ export default function buildTranslateCommand(): Command {
             CLI_HELP.ExcludeLanguages,
         )
         .option("--tokens-per-minute <tpm>", CLI_HELP.TokensPerMinute)
+        .option("--language-concurrency <n>", CLI_HELP.LanguageConcurrency)
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
+            const languageConcurrency = Math.max(
+                1,
+                Number(options.languageConcurrency) || 1,
+            );
+
+            // Build a single pool + limiter up front. Every language
+            // runs against these shared instances, so concurrent
+            // languages share one RPM budget and one TPM cap — raising
+            // --language-concurrency doesn't multiply provider traffic.
+            const sharedRateLimiter = new RateLimiter(
+                modelArgs.rateLimitMs,
+                Boolean(options.verbose),
+                modelArgs.tokensPerMinute,
+            );
+
+            const sharedPool = ChatPool.create({
+                apiKey: modelArgs.apiKey,
+                chatParams: modelArgs.chatParams,
+                concurrency: Math.max(1, modelArgs.concurrency),
+                engine: options.engine,
+                host: modelArgs.host,
+                model: modelArgs.model,
+                rateLimiter: sharedRateLimiter,
+            });
+
             // The commander options object carries CLI-only booleans that
             // processModelArgs doesn't re-expose; forward them by spreading
             // the subset the translate*() wrappers actually consume.
@@ -96,10 +125,13 @@ export default function buildTranslateCommand(): Command {
                 ...modelArgs,
                 context: options.context,
                 continueOnError: options.continueOnError,
-                excludeLanguages: options.excludeLanguages,
                 ensureChangedTranslation: options.ensureChangedTranslation,
+                excludeLanguages: options.excludeLanguages,
+                pool: sharedPool,
+                rateLimiter: sharedRateLimiter,
                 skipStylingVerification: options.skipStylingVerification,
-                skipTranslationVerification: options.skipTranslationVerification,
+                skipTranslationVerification:
+                    options.skipTranslationVerification,
                 templatedStringPrefix: options.templatedStringPrefix,
                 templatedStringSuffix: options.templatedStringSuffix,
                 verbose: options.verbose,
@@ -165,78 +197,79 @@ export default function buildTranslateCommand(): Command {
                 const inputPath = resolveInputPath(options.input);
 
                 if (fs.statSync(inputPath).isFile()) {
-                    let i = 0;
-                    for (const languageCode of options.outputLanguages) {
-                        i++;
-                        if (options.verbose) {
-                            printInfo(
-                                `Translating ${i}/${options.outputLanguages.length} languages...`,
+                    await runWithConcurrency(
+                        options.outputLanguages as string[],
+                        languageConcurrency,
+                        async (languageCode, idx) => {
+                            if (options.verbose) {
+                                printInfo(
+                                    `Translating ${idx + 1}/${options.outputLanguages.length} languages...`,
+                                );
+                            }
+
+                            const output = getOutputPathFromInputPath(
+                                inputPath,
+                                languageCode,
                             );
-                        }
 
-                        const output = getOutputPathFromInputPath(
-                            inputPath,
-                            languageCode,
-                        );
+                            if (options.input === output) return;
 
-                        if (options.input === output) {
-                            continue;
-                        }
+                            const outputPath = resolveOutputPath(output);
 
-                        const outputPath = resolveOutputPath(output);
-
-                        try {
-                            // eslint-disable-next-line no-await-in-loop
-                            await translateFile({
-                                ...sharedOptions,
-                                dryRun,
-                                engine: options.engine,
-                                inputFilePath: inputPath,
-                                outputFilePath: outputPath,
-                                overridePrompt,
-                            });
-                        } catch (err) {
-                            printError(
-                                `Failed to translate file to ${languageCode}: ${err}`,
-                            );
-                        }
-                    }
+                            try {
+                                await translateFile({
+                                    ...sharedOptions,
+                                    dryRun,
+                                    engine: options.engine,
+                                    inputFilePath: inputPath,
+                                    outputFilePath: outputPath,
+                                    overridePrompt,
+                                });
+                            } catch (err) {
+                                printError(
+                                    `Failed to translate file to ${languageCode}: ${err}`,
+                                );
+                            }
+                        },
+                    );
                 } else {
-                    let i = 0;
-                    for (const languageCode of options.outputLanguages) {
-                        i++;
-                        if (options.verbose) {
-                            printInfo(
-                                `Translating ${i}/${options.outputLanguages.length} languages...`,
+                    await runWithConcurrency(
+                        options.outputLanguages as string[],
+                        languageConcurrency,
+                        async (languageCode, idx) => {
+                            if (options.verbose) {
+                                printInfo(
+                                    `Translating ${idx + 1}/${options.outputLanguages.length} languages...`,
+                                );
+                            }
+
+                            const output = getOutputPathFromInputPath(
+                                inputPath,
+                                languageCode,
                             );
-                        }
 
-                        const output = getOutputPathFromInputPath(
-                            inputPath,
-                            languageCode,
-                        );
+                            if (options.input === output) return;
 
-                        if (options.input === output) {
-                            continue;
-                        }
-
-                        try {
-                            // eslint-disable-next-line no-await-in-loop
-                            await translateDirectory({
-                                ...sharedOptions,
-                                baseDirectory: path.resolve(inputPath, ".."),
-                                dryRun,
-                                engine: options.engine,
-                                inputLanguageCode: path.basename(inputPath),
-                                outputLanguageCode: languageCode,
-                                overridePrompt,
-                            });
-                        } catch (err) {
-                            printError(
-                                `Failed to translate directory to ${languageCode}: ${err}`,
-                            );
-                        }
-                    }
+                            try {
+                                await translateDirectory({
+                                    ...sharedOptions,
+                                    baseDirectory: path.resolve(
+                                        inputPath,
+                                        "..",
+                                    ),
+                                    dryRun,
+                                    engine: options.engine,
+                                    inputLanguageCode: path.basename(inputPath),
+                                    outputLanguageCode: languageCode,
+                                    overridePrompt,
+                                });
+                            } catch (err) {
+                                printError(
+                                    `Failed to translate directory to ${languageCode}: ${err}`,
+                                );
+                            }
+                        },
+                    );
                 }
             } else {
                 if (options.forceLanguageName) {
@@ -258,72 +291,64 @@ export default function buildTranslateCommand(): Command {
                     (code) => !excludedSet.has(code),
                 );
 
-                let i = 0;
-                for (const languageCode of allLanguages) {
-                    i++;
-                    if (options.verbose) {
-                        printInfo(
-                            `Translating ${i}/${allLanguages.length} languages...`,
-                        );
-                    }
+                const inputPath = resolveInputPath(options.input);
+                const isFile = fs.statSync(inputPath).isFile();
 
-                    const inputPath = resolveInputPath(options.input);
+                await runWithConcurrency(
+                    allLanguages,
+                    languageConcurrency,
+                    async (languageCode, idx) => {
+                        if (options.verbose) {
+                            printInfo(
+                                `Translating ${idx + 1}/${allLanguages.length} languages...`,
+                            );
+                        }
 
-                    if (fs.statSync(inputPath).isFile()) {
                         const output = getOutputPathFromInputPath(
                             inputPath,
                             languageCode,
                         );
 
-                        if (options.input === output) {
-                            continue;
-                        }
+                        if (options.input === output) return;
 
-                        const outputPath = resolveOutputPath(output);
-
-                        try {
-                            // eslint-disable-next-line no-await-in-loop
-                            await translateFile({
-                                ...sharedOptions,
-                                dryRun,
-                                engine: options.engine,
-                                inputFilePath: inputPath,
-                                outputFilePath: outputPath,
-                                overridePrompt,
-                            });
-                        } catch (err) {
-                            printError(
-                                `Failed to translate to ${languageCode}: ${err}`,
-                            );
+                        if (isFile) {
+                            const outputPath = resolveOutputPath(output);
+                            try {
+                                await translateFile({
+                                    ...sharedOptions,
+                                    dryRun,
+                                    engine: options.engine,
+                                    inputFilePath: inputPath,
+                                    outputFilePath: outputPath,
+                                    overridePrompt,
+                                });
+                            } catch (err) {
+                                printError(
+                                    `Failed to translate to ${languageCode}: ${err}`,
+                                );
+                            }
+                        } else {
+                            try {
+                                await translateDirectory({
+                                    ...sharedOptions,
+                                    baseDirectory: path.resolve(
+                                        inputPath,
+                                        "..",
+                                    ),
+                                    dryRun,
+                                    engine: options.engine,
+                                    inputLanguageCode: path.basename(inputPath),
+                                    outputLanguageCode: languageCode,
+                                    overridePrompt,
+                                });
+                            } catch (err) {
+                                printError(
+                                    `Failed to translate directory to ${languageCode}: ${err}`,
+                                );
+                            }
                         }
-                    } else {
-                        const output = getOutputPathFromInputPath(
-                            inputPath,
-                            languageCode,
-                        );
-
-                        if (options.input === output) {
-                            continue;
-                        }
-
-                        try {
-                            // eslint-disable-next-line no-await-in-loop
-                            await translateDirectory({
-                                ...sharedOptions,
-                                baseDirectory: path.resolve(inputPath, ".."),
-                                dryRun,
-                                engine: options.engine,
-                                inputLanguageCode: path.basename(inputPath),
-                                outputLanguageCode: languageCode,
-                                overridePrompt,
-                            });
-                        } catch (err) {
-                            printError(
-                                `Failed to translate directory to ${languageCode}: ${err}`,
-                            );
-                        }
-                    }
-                }
+                    },
+                );
             }
         });
 }

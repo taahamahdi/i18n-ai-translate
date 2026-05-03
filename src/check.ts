@@ -53,21 +53,25 @@ export async function check(options: CheckOptions): Promise<CheckReport> {
         );
     }
 
-    const rateLimiter = new RateLimiter(
-        options.rateLimitMs,
-        options.verbose as boolean,
-        options.tokensPerMinute,
-    );
-
-    const pool = ChatPool.create({
-        apiKey: options.apiKey,
-        chatParams: options.chatParams,
-        concurrency: Math.max(1, options.concurrency ?? 1),
-        engine: options.engine,
-        host: options.host,
-        model: options.model,
-        rateLimiter,
-    });
+    // Reuse caller-supplied pool/limiter when provided; see the
+    // symmetric comment in translate.ts::getPool.
+    const pool =
+        options.pool ??
+        ChatPool.create({
+            apiKey: options.apiKey,
+            chatParams: options.chatParams,
+            concurrency: Math.max(1, options.concurrency ?? 1),
+            engine: options.engine,
+            host: options.host,
+            model: options.model,
+            rateLimiter:
+                options.rateLimiter ??
+                new RateLimiter(
+                    options.rateLimitMs,
+                    options.verbose as boolean,
+                    options.tokensPerMinute,
+                ),
+        });
 
     const flatSource = flatten(options.inputJSON, {
         delimiter: FLATTEN_DELIMITER,

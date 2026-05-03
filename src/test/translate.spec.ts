@@ -4,8 +4,7 @@ const fr = (v: string): string => `${v}_fr`;
 const es = (v: string): string => `${v}_es`;
 
 function fakeTranslateCtx(ctx: TranslationContext): Object {
-    const translateFn =
-        ctx.options.outputLanguageCode === "fr" ? fr : es;
+    const translateFn = ctx.options.outputLanguageCode === "fr" ? fr : es;
     return Object.fromEntries(
         Object.entries(ctx.flatInput).map(([k, v]) => [
             k,
@@ -794,9 +793,7 @@ describe("RateLimiter", () => {
         const callers = 5;
 
         // Kick off N acquires in the same synchronous turn.
-        await Promise.all(
-            Array.from({ length: callers }, () => rl.acquire()),
-        );
+        await Promise.all(Array.from({ length: callers }, () => rl.acquire()));
 
         // Caller 0 fires immediately; callers 1..N-1 each wait delayBetweenCallsMs
         // more than the previous one.

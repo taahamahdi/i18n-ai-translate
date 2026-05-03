@@ -8,6 +8,8 @@ import { printError, resolveInputPath } from "./utils";
 import { processModelArgs, processOverridePromptFile } from "./cli_helpers";
 import { translateDirectoryDiff } from "./translate_directory";
 import { translateFileDiff } from "./translate_file";
+import ChatPool from "./chat_pool";
+import RateLimiter from "./rate_limiter";
 import fs, { mkdtempSync } from "fs";
 import path from "path";
 import type DryRun from "./interfaces/dry_run";
@@ -80,14 +82,39 @@ export default function buildDiffCommand(): Command {
         .option("--tokens-per-minute <tpm>", CLI_HELP.TokensPerMinute)
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
+
+            // Shared pool + limiter mirroring cli_translate.ts. Diff
+            // currently has a single run per invocation (no language
+            // fan-out here), but plumbing it through keeps the option
+            // shape symmetric and prevents surprises if diff grows a
+            // --language-concurrency later.
+            const sharedRateLimiter = new RateLimiter(
+                modelArgs.rateLimitMs,
+                Boolean(options.verbose),
+                modelArgs.tokensPerMinute,
+            );
+
+            const sharedPool = ChatPool.create({
+                apiKey: modelArgs.apiKey,
+                chatParams: modelArgs.chatParams,
+                concurrency: Math.max(1, modelArgs.concurrency),
+                engine: options.engine,
+                host: modelArgs.host,
+                model: modelArgs.model,
+                rateLimiter: sharedRateLimiter,
+            });
+
             const sharedOptions = {
                 ...modelArgs,
                 context: options.context,
                 continueOnError: options.continueOnError,
-                excludeLanguages: options.excludeLanguages,
                 ensureChangedTranslation: options.ensureChangedTranslation,
+                excludeLanguages: options.excludeLanguages,
+                pool: sharedPool,
+                rateLimiter: sharedRateLimiter,
                 skipStylingVerification: options.skipStylingVerification,
-                skipTranslationVerification: options.skipTranslationVerification,
+                skipTranslationVerification:
+                    options.skipTranslationVerification,
                 templatedStringPrefix: options.templatedStringPrefix,
                 templatedStringSuffix: options.templatedStringSuffix,
                 verbose: options.verbose,

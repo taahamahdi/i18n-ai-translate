@@ -1,7 +1,9 @@
 import type { ChatParams, Model } from "../types";
+import type ChatPool from "../chat_pool";
 import type Engine from "../enums/engine";
 import type OverridePrompt from "./override_prompt";
 import type PromptMode from "../enums/prompt_mode";
+import type RateLimiter from "../rate_limiter";
 
 export default interface Options {
     engine: Engine;
@@ -40,4 +42,14 @@ export default interface Options {
      * the TPM budget are available. 0 / undefined disables the check.
      */
     tokensPerMinute?: number;
+    /**
+     * When set, translate() / check() skip their internal ChatPool +
+     * RateLimiter construction and use the provided ones instead. Used
+     * by the CLI at `--language-concurrency > 1` to share one pool and
+     * one rate-limit budget across every target language — otherwise
+     * each language would get its own budget and the TPM cap wouldn't
+     * actually constrain parallel language fan-out.
+     */
+    pool?: ChatPool;
+    rateLimiter?: RateLimiter;
 }

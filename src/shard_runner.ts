@@ -2,7 +2,10 @@ import { buildGroupShards } from "./sharding";
 import type ChatPool from "./chat_pool";
 import type Chats from "./interfaces/chats";
 
-type ShardWorker<T> = (shard: { [key: string]: string }, chats: Chats) => Promise<T>;
+type ShardWorker<T> = (
+    shard: { [key: string]: string },
+    chats: Chats,
+) => Promise<T>;
 
 /**
  * Share the "build shards, assign a pool triple, run in parallel"

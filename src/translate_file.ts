@@ -194,8 +194,7 @@ export async function translateFileDiff(
             onLanguageComplete: options.dryRun
                 ? undefined
                 : (languageCode, translated) => {
-                      const outputPath =
-                          languageCodeToOutputPath[languageCode];
+                      const outputPath = languageCodeToOutputPath[languageCode];
                       if (!outputPath) return;
                       const text = JSON.stringify(translated, null, 4);
                       fs.writeFileSync(outputPath, `${text}\n`);

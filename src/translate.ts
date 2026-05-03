@@ -24,11 +24,20 @@ import type TranslateOptions from "./interfaces/translate_options";
 import type TranslationContext from "./interfaces/translation_context";
 
 function getPool(options: TranslateOptions): ChatPool {
-    const rateLimiter = new RateLimiter(
-        options.rateLimitMs,
-        options.verbose as boolean,
-        options.tokensPerMinute,
-    );
+    // When the caller (typically cli_translate.ts in language-concurrent
+    // mode) supplies its own pool, reuse it. This is what makes the
+    // shared TPM budget actually shared across parallel languages — a
+    // fresh pool here would give each language its own limiter and
+    // defeat the cap.
+    if (options.pool) return options.pool;
+
+    const rateLimiter =
+        options.rateLimiter ??
+        new RateLimiter(
+            options.rateLimitMs,
+            options.verbose as boolean,
+            options.tokensPerMinute,
+        );
 
     return ChatPool.create({
         apiKey: options.apiKey,
@@ -112,7 +121,6 @@ function groupSimilarValues(flatInput: { [key: string]: string }): {
 
     return { flatInput, groups };
 }
-
 
 function startTranslationStatsItem(): TranslationStatsItem {
     return {
@@ -390,7 +398,9 @@ export async function translateDiff(
             // deleted upstream) so unchanged translations are preserved.
             // Without this the accumulator would hold only the delta and
             // writing it to disk would wipe every pre-existing key.
-            translatedJSONs[languageCode] = { ...flatToUpdateJSONs[languageCode] };
+            translatedJSONs[languageCode] = {
+                ...flatToUpdateJSONs[languageCode],
+            };
             const addedAndModifiedTranslations: { [key: string]: string } = {};
             for (const key of addedKeys) {
                 addedAndModifiedTranslations[key] = flatInputAfter[key];

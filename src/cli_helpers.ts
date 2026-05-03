@@ -39,7 +39,9 @@ export function processModelArgs(options: any): ModelArgs {
     if (options.tokensPerMinute !== undefined) {
         const parsed = Number(options.tokensPerMinute);
         if (!Number.isFinite(parsed) || parsed < 0) {
-            throw new Error("--tokens-per-minute must be a non-negative number");
+            throw new Error(
+                "--tokens-per-minute must be a non-negative number",
+            );
         }
 
         tokensPerMinute = parsed === 0 ? undefined : parsed;

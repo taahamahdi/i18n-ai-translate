@@ -13,6 +13,8 @@ import {
     resolveInputPath,
 } from "./utils";
 import { processModelArgs, processOverridePromptFile } from "./cli_helpers";
+import ChatPool from "./chat_pool";
+import RateLimiter from "./rate_limiter";
 import fs from "fs";
 import path from "path";
 import type OverridePrompt from "./interfaces/override_prompt";
@@ -67,6 +69,25 @@ export default function buildCheckCommand(): Command {
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
 
+            // Share one pool + limiter across every target file we
+            // check, so the RPM/TPM budgets are honoured across the
+            // batch instead of being reset per target.
+            const sharedRateLimiter = new RateLimiter(
+                modelArgs.rateLimitMs,
+                Boolean(options.verbose),
+                modelArgs.tokensPerMinute,
+            );
+
+            const sharedPool = ChatPool.create({
+                apiKey: modelArgs.apiKey,
+                chatParams: modelArgs.chatParams,
+                concurrency: Math.max(1, modelArgs.concurrency),
+                engine: options.engine,
+                host: modelArgs.host,
+                model: modelArgs.model,
+                rateLimiter: sharedRateLimiter,
+            });
+
             let overridePrompt: OverridePrompt | undefined;
             if (options.overridePrompt) {
                 overridePrompt = processOverridePromptFile(
@@ -95,10 +116,7 @@ export default function buildCheckCommand(): Command {
             } else {
                 targetFiles = fs
                     .readdirSync(sourceDir)
-                    .filter(
-                        (f) =>
-                            f.endsWith(".json") && f !== inputBase,
-                    )
+                    .filter((f) => f.endsWith(".json") && f !== inputBase)
                     .map((f) => path.join(sourceDir, f));
             }
 
@@ -126,7 +144,9 @@ export default function buildCheckCommand(): Command {
                         fs.readFileSync(targetFile, "utf-8"),
                     );
                 } catch (e) {
-                    printError(`Skipping invalid target JSON ${targetFile}: ${e}`);
+                    printError(
+                        `Skipping invalid target JSON ${targetFile}: ${e}`,
+                    );
                     continue;
                 }
 
@@ -145,6 +165,8 @@ export default function buildCheckCommand(): Command {
                     inputLanguageCode,
                     outputLanguageCode,
                     overridePrompt,
+                    pool: sharedPool,
+                    rateLimiter: sharedRateLimiter,
                     targetJSON,
                     templatedStringPrefix: options.templatedStringPrefix,
                     templatedStringSuffix: options.templatedStringSuffix,
