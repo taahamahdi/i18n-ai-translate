@@ -4021,10 +4021,10 @@ onetime@^5.1.2:
   dependencies:
     mimic-fn "^2.1.0"
 
-openai@^5.6.0:
-  version "5.19.1"
-  resolved "https://registry.yarnpkg.com/openai/-/openai-5.19.1.tgz#093e91e9bd5a7da5525706aefece73ff6bc2781f"
-  integrity sha512-zSqnUF7oR9ksmpusKkpUgkNrj8Sl57U+OyzO8jzc7LUjTMg4DRfR3uCm+EIMA6iw06sRPNp4t7ojp3sCpEUZRQ==
+openai@^6.35.0:
+  version "6.35.0"
+  resolved "https://registry.yarnpkg.com/openai/-/openai-6.35.0.tgz#3f3fdf2a03b9009b3c85d1b386f41ad0284d4b5d"
+  integrity sha512-L/skwIGnt5xQZHb0UfTu9uAUKbis3ehKypOuJKi20QvG7UStV6C8IC3myGYHcdiF4kms/bAvOJ9UqqNWqi8x/Q==
 
 optionator@^0.9.3:
   version "0.9.4"
