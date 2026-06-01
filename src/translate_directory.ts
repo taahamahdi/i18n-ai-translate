@@ -1,18 +1,21 @@
-import { FLATTEN_DELIMITER } from "./constants";
-import { createPatch, diffJson } from "diff";
-import { flatten, unflatten } from "flat";
 import {
     DIRECTORY_KEY_DELIMITER,
     getAllFilesInPath,
     getTranslationDirectoryKey,
+    getTranslationDirectoryPath,
     printError,
     printInfo,
     resolveInputPath,
 } from "./utils";
+import { FLATTEN_DELIMITER } from "./constants";
+import { createPatch, diffJson } from "diff";
+import { flatten } from "flat";
+import { getAdapterByName, getAdapterForFile } from "./formats/registry";
 import { translate, translateDiff } from "./translate";
 import colors from "colors/safe";
 import fs from "fs";
 import path, { dirname } from "path";
+import type FormatAdapter from "./formats/format_adapter";
 import type TranslateDirectoryDiffOptions from "./interfaces/translate_directory_diff_options";
 import type TranslateDirectoryOptions from "./interfaces/translate_directory_options";
 
@@ -39,17 +42,41 @@ export async function translateDirectory(
 
     const sourceFilePaths = getAllFilesInPath(sourceLanguagePath);
     const inputJSON: { [key: string]: string } = {};
-    for (const sourceFilePath of sourceFilePaths) {
-        const fileContents = fs.readFileSync(sourceFilePath, "utf-8");
-        const fileJSON = JSON.parse(fileContents);
-        const flatJSON = flatten(fileJSON, {
-            delimiter: FLATTEN_DELIMITER,
-        }) as {
-            [key: string]: string;
+    // Per source file, remember the adapter that handled it and the
+    // sidecar from its read, keyed by the *output* path that
+    // getTranslationDirectoryKey embeds. The write loop recovers the
+    // same path by splitting the compound key, then uses these to
+    // reconstruct each file in its own format.
+    const fileAdapters: {
+        [outputPath: string]: {
+            adapter: FormatAdapter<unknown>;
+            sidecar: unknown;
         };
+    } = {};
 
-        for (const key in flatJSON) {
-            if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+    for (const sourceFilePath of sourceFilePaths) {
+        const adapter = options.format
+            ? getAdapterByName(options.format)
+            : getAdapterForFile(sourceFilePath);
+
+        if (!adapter) {
+            throw new Error(`Unknown format: ${options.format}`);
+        }
+
+        const { flat, sidecar } = adapter.read(
+            fs.readFileSync(sourceFilePath, "utf-8"),
+        );
+
+        fileAdapters[
+            getTranslationDirectoryPath(
+                sourceFilePath,
+                options.inputLanguageCode,
+                options.outputLanguageCode,
+            )
+        ] = { adapter, sidecar };
+
+        for (const key in flat) {
+            if (Object.prototype.hasOwnProperty.call(flat, key)) {
                 inputJSON[
                     getTranslationDirectoryKey(
                         sourceFilePath,
@@ -57,7 +84,7 @@ export async function translateDirectory(
                         options.inputLanguageCode,
                         options.outputLanguageCode,
                     )
-                ] = flatJSON[key];
+                ] = flat[key];
             }
         }
     }
@@ -77,9 +104,14 @@ export async function translateDirectory(
             inputJSON,
             inputLanguageCode: inputLanguage,
             outputLanguageCode: outputLanguage,
-        })) as { [filePathKey: string]: string };
+        })) as { [filePathKey: string]: unknown };
 
-        const filesToJSON: { [filePath: string]: { [key: string]: string } } =
+        // Regroup the flat compound-keyed output back into per-file
+        // objects. A value may be a nested object (JSON, which translate
+        // re-nests on the FLATTEN_DELIMITER) or a string (formats whose
+        // keys carry no delimiter); re-flattening below normalises both
+        // back to each adapter's flat-map contract.
+        const filesToObj: { [filePath: string]: { [key: string]: unknown } } =
             {};
 
         for (const pathWithKey in outputJSON) {
@@ -88,100 +120,111 @@ export async function translateDirectory(
                     .split(DIRECTORY_KEY_DELIMITER)
                     .slice(0, -1)
                     .join(DIRECTORY_KEY_DELIMITER);
-                if (!filesToJSON[filePath]) {
-                    filesToJSON[filePath] = {};
+
+                if (!filesToObj[filePath]) {
+                    filesToObj[filePath] = {};
                 }
 
                 const key = pathWithKey.split(DIRECTORY_KEY_DELIMITER).pop()!;
-                filesToJSON[filePath][key] = outputJSON[pathWithKey];
+                filesToObj[filePath][key] = outputJSON[pathWithKey];
             }
         }
 
-        for (const perFileJSON in filesToJSON) {
+        for (const perFilePath in filesToObj) {
             if (
-                Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)
+                !Object.prototype.hasOwnProperty.call(filesToObj, perFilePath)
             ) {
-                const unflattenedOutput = unflatten(filesToJSON[perFileJSON], {
-                    delimiter: FLATTEN_DELIMITER,
-                });
+                continue;
+            }
 
-                const outputText = JSON.stringify(unflattenedOutput, null, 4);
-                if (!options.dryRun) {
-                    fs.mkdirSync(dirname(perFileJSON), { recursive: true });
-                    fs.writeFileSync(perFileJSON, `${outputText}\n`);
-                } else {
-                    // TODO: find a cleaner way to get the input file from here
-                    // Might lead to a bug if the path has the language code multiple times
-                    const relativeOutputPath = path.relative(
-                        options.baseDirectory,
-                        perFileJSON,
-                    );
+            const { adapter, sidecar } = fileAdapters[perFilePath];
+            const perFileFlat = flatten(filesToObj[perFilePath], {
+                delimiter: FLATTEN_DELIMITER,
+            }) as { [key: string]: string };
 
-                    const input = fs.readFileSync(
-                        perFileJSON.replace(
-                            `/${outputLanguage}/`,
-                            `/${inputLanguage}/`,
-                        ),
-                        "utf-8",
-                    );
+            const outputText = adapter.write(
+                perFileFlat,
+                sidecar,
+                inputLanguage,
+                outputLanguage,
+            );
 
-                    const translationDiff = diffJson(input, outputText);
-                    fs.mkdirSync(
-                        dirname(
-                            `${options.dryRun.basePath}/${relativeOutputPath}`,
-                        ),
-                        { recursive: true },
-                    );
+            if (!options.dryRun) {
+                fs.mkdirSync(dirname(perFilePath), { recursive: true });
+                fs.writeFileSync(perFilePath, outputText);
+            } else {
+                // TODO: find a cleaner way to get the input file from here
+                // Might lead to a bug if the path has the language code multiple times
+                const relativeOutputPath = path.relative(
+                    options.baseDirectory,
+                    perFilePath,
+                );
 
-                    fs.writeFileSync(
-                        `${options.dryRun.basePath}/${relativeOutputPath}`,
-                        outputText,
-                    );
+                const inputRaw = fs.readFileSync(
+                    perFilePath.replace(
+                        `/${outputLanguage}/`,
+                        `/${inputLanguage}/`,
+                    ),
+                    "utf-8",
+                );
 
-                    const patch = createPatch(
-                        perFileJSON, // Use the absolute path for the patch header
-                        input,
-                        outputText,
-                    );
+                fs.mkdirSync(
+                    dirname(`${options.dryRun.basePath}/${relativeOutputPath}`),
+                    { recursive: true },
+                );
 
-                    fs.writeFileSync(
-                        `${options.dryRun.basePath}/${relativeOutputPath}.patch`,
-                        patch,
-                    );
+                fs.writeFileSync(
+                    `${options.dryRun.basePath}/${relativeOutputPath}`,
+                    outputText,
+                );
 
-                    printInfo(
-                        `Wrote new JSON to ${options.dryRun.basePath}/${relativeOutputPath}`,
-                    );
+                const patch = createPatch(
+                    perFilePath, // Use the absolute path for the patch header
+                    inputRaw,
+                    outputText,
+                );
 
-                    printInfo(
-                        `Wrote patch to ${options.dryRun.basePath}/${relativeOutputPath}.patch`,
-                    );
-                    if (options.verbose) {
-                        for (const part of translationDiff) {
-                            const colorFns = {
-                                green: colors.green,
-                                grey: colors.grey,
-                                red: colors.red,
-                            } as const;
+                fs.writeFileSync(
+                    `${options.dryRun.basePath}/${relativeOutputPath}.patch`,
+                    patch,
+                );
 
-                            type ColorKey = keyof typeof colorFns;
+                printInfo(
+                    `Wrote new ${adapter.name} to ${options.dryRun.basePath}/${relativeOutputPath}`,
+                );
 
-                            let color: ColorKey;
+                printInfo(
+                    `Wrote patch to ${options.dryRun.basePath}/${relativeOutputPath}.patch`,
+                );
 
-                            if (part.added) {
-                                color = "green";
-                            } else if (part.removed) {
-                                color = "red";
-                            } else {
-                                color = "grey";
-                            }
+                // The colored inline diff is JSON-aware; other adapters
+                // still emit the patch file but skip the terminal diff.
+                if (options.verbose && adapter.name === "json") {
+                    const translationDiff = diffJson(inputRaw, outputText);
+                    for (const part of translationDiff) {
+                        const colorFns = {
+                            green: colors.green,
+                            grey: colors.grey,
+                            red: colors.red,
+                        } as const;
 
-                            process.stderr.write(colorFns[color](part.value));
+                        type ColorKey = keyof typeof colorFns;
+
+                        let color: ColorKey;
+
+                        if (part.added) {
+                            color = "green";
+                        } else if (part.removed) {
+                            color = "red";
+                        } else {
+                            color = "grey";
                         }
-                    }
 
-                    console.log();
+                        process.stderr.write(colorFns[color](part.value));
+                    }
                 }
+
+                console.log();
             }
         }
     } catch (err) {
@@ -224,54 +267,79 @@ export async function translateDirectoryDiff(
         );
     }
 
+    const resolveAdapter = (file: string): FormatAdapter<unknown> => {
+        const adapter = options.format
+            ? getAdapterByName(options.format)
+            : getAdapterForFile(file);
+
+        if (!adapter) {
+            throw new Error(`Unknown format: ${options.format}`);
+        }
+
+        return adapter;
+    };
+
     // TODO: abstract to fn
     const sourceFilePathsBefore = getAllFilesInPath(sourceLanguagePathBefore);
     const inputJSONBefore: { [key: string]: string } = {};
     for (const sourceFilePath of sourceFilePathsBefore) {
-        const fileContents = fs.readFileSync(sourceFilePath, "utf-8");
-        const fileJSON = JSON.parse(fileContents);
-        const flatJSON = flatten(fileJSON, {
-            delimiter: FLATTEN_DELIMITER,
-        }) as {
-            [key: string]: string;
-        };
+        const { flat } = resolveAdapter(sourceFilePath).read(
+            fs.readFileSync(sourceFilePath, "utf-8"),
+        );
 
-        for (const key in flatJSON) {
-            if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+        for (const key in flat) {
+            if (Object.prototype.hasOwnProperty.call(flat, key)) {
                 inputJSONBefore[
                     getTranslationDirectoryKey(
                         sourceFilePath,
                         key,
                         options.inputLanguageCode,
                     )
-                ] = flatJSON[key];
+                ] = flat[key];
             }
         }
     }
 
+    // The *after* catalogue is what every target file is rebuilt from,
+    // so keep each file's adapter + sidecar keyed by the before-folder
+    // path that the compound keys carry (writeLanguageOutput recovers
+    // the same path by splitting the key).
+    const fileAdapters: {
+        [beforePath: string]: {
+            adapter: FormatAdapter<unknown>;
+            sidecar: unknown;
+        };
+    } = {};
+
     const sourceFilePathsAfter = getAllFilesInPath(sourceLanguagePathAfter);
     const inputJSONAfter: { [key: string]: string } = {};
     for (const sourceFilePath of sourceFilePathsAfter) {
-        const fileContents = fs.readFileSync(sourceFilePath, "utf-8");
-        const fileJSON = JSON.parse(fileContents);
-        const flatJSON = flatten(fileJSON, {
-            delimiter: FLATTEN_DELIMITER,
-        }) as {
-            [key: string]: string;
-        };
+        const adapter = resolveAdapter(sourceFilePath);
+        const { flat, sidecar } = adapter.read(
+            fs.readFileSync(sourceFilePath, "utf-8"),
+        );
 
-        for (const key in flatJSON) {
-            if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+        const beforeEquivalentPath = sourceFilePath.replace(
+            options.inputFolderNameAfter,
+            options.inputFolderNameBefore,
+        );
+
+        fileAdapters[
+            getTranslationDirectoryPath(
+                beforeEquivalentPath,
+                options.inputLanguageCode,
+            )
+        ] = { adapter, sidecar };
+
+        for (const key in flat) {
+            if (Object.prototype.hasOwnProperty.call(flat, key)) {
                 inputJSONAfter[
                     getTranslationDirectoryKey(
-                        sourceFilePath.replace(
-                            options.inputFolderNameAfter,
-                            options.inputFolderNameBefore,
-                        ),
+                        beforeEquivalentPath,
                         key,
                         options.inputLanguageCode,
                     )
-                ] = flatJSON[key];
+                ] = flat[key];
             }
         }
     }
@@ -293,13 +361,13 @@ export async function translateDirectoryDiff(
     for (const outputLanguagePath of outputLanguagePaths) {
         const files = getAllFilesInPath(outputLanguagePath);
         for (const file of files) {
-            const fileContents = fs.readFileSync(file, "utf-8");
-            const fileJSON = JSON.parse(fileContents);
-            const flatJSON = flatten(fileJSON, {
-                delimiter: FLATTEN_DELIMITER,
-            }) as {
-                [key: string]: string;
-            };
+            const adapter = resolveAdapter(file);
+            const raw = fs.readFileSync(file, "utf-8");
+            // Existing target translations: read msgstr-style slots when
+            // the format separates source from target, else fall back.
+            const flat = adapter.readTranslated
+                ? adapter.readTranslated(raw).flat
+                : adapter.read(raw).flat;
 
             const relative = path.relative(
                 options.baseDirectory,
@@ -312,8 +380,8 @@ export async function translateDirectoryDiff(
                 toUpdateJSONs[language] = {};
             }
 
-            for (const key in flatJSON) {
-                if (Object.prototype.hasOwnProperty.call(flatJSON, key)) {
+            for (const key in flat) {
+                if (Object.prototype.hasOwnProperty.call(flat, key)) {
                     toUpdateJSONs[language][
                         getTranslationDirectoryKey(
                             `${fullBasePath}/${file.replace(
@@ -323,7 +391,7 @@ export async function translateDirectoryDiff(
                             key,
                             options.inputLanguageCode,
                         )
-                    ] = flatJSON[key];
+                    ] = flat[key];
                 }
             }
         }
@@ -338,13 +406,17 @@ export async function translateDirectoryDiff(
         outputLanguage: string,
         flatOutputJSON: { [key: string]: string },
     ): void => {
-        const filesToJSON: {
-            [filePath: string]: { [key: string]: string };
-        } = {};
-
         const beforeBaseName = path.basename(
             path.resolve(options.baseDirectory, options.inputFolderNameBefore),
         );
+
+        // Regroup the flat compound-keyed output per source file. In diff
+        // mode translateDiff re-flattens, so each value is already a
+        // string keyed by the adapter's own flat key — no per-file
+        // unflatten is needed before handing it back to the adapter.
+        const filesToFlat: {
+            [beforePath: string]: { [key: string]: string };
+        } = {};
 
         for (const pathWithKey in flatOutputJSON) {
             if (
@@ -356,46 +428,49 @@ export async function translateDirectoryDiff(
                 continue;
             }
 
-            const filePath = pathWithKey
+            const beforePath = pathWithKey
                 .split(DIRECTORY_KEY_DELIMITER)
                 .slice(0, -1)
-                .join(DIRECTORY_KEY_DELIMITER)
-                .replace(`/${beforeBaseName}/`, `/${outputLanguage}/`);
+                .join(DIRECTORY_KEY_DELIMITER);
 
-            if (!filesToJSON[filePath]) filesToJSON[filePath] = {};
+            if (!filesToFlat[beforePath]) filesToFlat[beforePath] = {};
             const key = pathWithKey.split(DIRECTORY_KEY_DELIMITER).pop()!;
-            filesToJSON[filePath][key] = flatOutputJSON[pathWithKey];
+            filesToFlat[beforePath][key] = flatOutputJSON[pathWithKey];
         }
 
-        for (const perFileJSON in filesToJSON) {
-            if (
-                !Object.prototype.hasOwnProperty.call(filesToJSON, perFileJSON)
-            ) {
+        for (const beforePath in filesToFlat) {
+            if (!Object.prototype.hasOwnProperty.call(filesToFlat, beforePath)) {
                 continue;
             }
 
-            const unflattenedOutput = unflatten(filesToJSON[perFileJSON], {
-                delimiter: FLATTEN_DELIMITER,
-            });
+            const meta = fileAdapters[beforePath];
+            if (!meta) continue;
 
-            const outputText = JSON.stringify(unflattenedOutput, null, 4);
+            const outputFilePath = beforePath.replace(
+                `/${beforeBaseName}/`,
+                `/${outputLanguage}/`,
+            );
+
+            const outputText = meta.adapter.write(
+                filesToFlat[beforePath],
+                meta.sidecar,
+                inputLanguage,
+                outputLanguage,
+            );
 
             if (!options.dryRun) {
-                fs.mkdirSync(dirname(perFileJSON), { recursive: true });
-                fs.writeFileSync(perFileJSON, `${outputText}\n`);
+                fs.mkdirSync(dirname(outputFilePath), { recursive: true });
+                fs.writeFileSync(outputFilePath, outputText);
             } else {
-                // TODO: find a cleaner way to get the input file from here
-                // Might lead to a bug if the path has the language code multiple times
                 const relativeOutputPath = path.relative(
                     options.baseDirectory,
-                    perFileJSON.replace(
-                        `/${inputLanguage}/`,
-                        `/${outputLanguage}/`,
-                    ),
+                    outputFilePath,
                 );
 
-                const input = fs.readFileSync(perFileJSON, "utf-8");
-                const translationDiff = diffJson(input, outputText);
+                const rawBefore = fs.existsSync(outputFilePath)
+                    ? fs.readFileSync(outputFilePath, "utf-8")
+                    : "";
+
                 fs.mkdirSync(
                     dirname(`${options.dryRun.basePath}/${relativeOutputPath}`),
                     { recursive: true },
@@ -407,11 +482,8 @@ export async function translateDirectoryDiff(
                 );
 
                 const patch = createPatch(
-                    perFileJSON.replace(
-                        `/${inputLanguage}/`,
-                        `/${outputLanguage}/`,
-                    ), // Use the absolute path for the patch header
-                    input,
+                    outputFilePath, // Use the absolute path for the patch header
+                    rawBefore,
                     outputText,
                 );
 
@@ -421,13 +493,21 @@ export async function translateDirectoryDiff(
                 );
 
                 printInfo(
-                    `Wrote new JSON to ${options.dryRun.basePath}/${relativeOutputPath}`,
+                    `Wrote new ${meta.adapter.name} to ${options.dryRun.basePath}/${relativeOutputPath}`,
                 );
 
                 printInfo(
                     `Wrote patch to ${options.dryRun.basePath}/${relativeOutputPath}.patch`,
                 );
-                if (options.verbose) {
+
+                // Colored inline diff is JSON-aware; other adapters still
+                // emit the patch file but skip the terminal diff.
+                if (
+                    options.verbose &&
+                    meta.adapter.name === "json" &&
+                    rawBefore
+                ) {
+                    const translationDiff = diffJson(rawBefore, outputText);
                     for (const part of translationDiff) {
                         const colorFns = {
                             green: colors.green,

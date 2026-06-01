@@ -56,9 +56,27 @@ import Engine from "../enums/engine";
 import PromptMode from "../enums/prompt_mode";
 // eslint-disable-next-line import/first
 import RateLimiter from "../rate_limiter";
+// eslint-disable-next-line import/first
+import { po } from "gettext-parser";
 
 const mkCaseDir = (): string =>
     fs.mkdtempSync(path.join(os.tmpdir(), "i18n-case-"));
+
+// Minimal PO file: a header plus one msgid/msgstr per pair. Source
+// files pass "" for the msgstr; target files carry existing values.
+const poFile = (lang: string, pairs: Array<[string, string]>): string =>
+    [
+        "msgid \"\"",
+        "msgstr \"\"",
+        "\"Content-Type: text/plain; charset=UTF-8\\n\"",
+        `"Language: ${lang}\\n"`,
+        "",
+        ...pairs.flatMap(([id, str]) => [
+            `msgid "${id}"`,
+            `msgstr "${str}"`,
+            "",
+        ]),
+    ].join("\n");
 
 describe.each(Object.values(PromptMode))(
     "translate (promptMode=%s)",
@@ -531,10 +549,12 @@ describe.each(Object.values(PromptMode))(
                 path.join(enBefore, "app.json"),
                 JSON.stringify({ keepA: "A", keepB: "B" }),
             );
+
             fs.writeFileSync(
                 path.join(enAfter, "app.json"),
                 JSON.stringify({ added: "New", keepA: "A", keepB: "B" }),
             );
+
             fs.writeFileSync(
                 path.join(frDir, "app.json"),
                 JSON.stringify({
@@ -721,6 +741,144 @@ describe.each(Object.values(PromptMode))(
         });
     },
 );
+
+describe("PO format end-to-end (mocked pipeline)", () => {
+    it("translateFile writes a translated .po sibling", async () => {
+        const dir = mkCaseDir();
+        const inputPath = path.join(dir, "en.po");
+        const outputPath = path.join(dir, "fr.po");
+
+        fs.writeFileSync(
+            inputPath,
+            poFile("en", [
+                ["Cat", ""],
+                ["Dog", ""],
+            ]),
+        );
+
+        await translateFile({
+            engine: Engine.ChatGPT,
+            forceLanguageName: "fr",
+            inputFilePath: inputPath,
+            inputLanguageCode: "en",
+            model: "gpt-4o",
+            outputFilePath: outputPath,
+            promptMode: PromptMode.JSON,
+            rateLimitMs: 0,
+        } as any);
+
+        const parsed = po.parse(fs.readFileSync(outputPath, "utf-8"));
+        expect(parsed.translations[""].Cat.msgstr[0]).toBe(fr("Cat"));
+        expect(parsed.translations[""].Dog.msgstr[0]).toBe(fr("Dog"));
+    });
+
+    it("translateFileDiff updates changed keys and preserves existing msgstr", async () => {
+        const dir = mkCaseDir();
+        const beforePath = path.join(dir, "before_en.po");
+        const afterPath = path.join(dir, "after_en.po");
+        const frPath = path.join(dir, "fr.po");
+
+        fs.writeFileSync(beforePath, poFile("en", [["Cat", ""]]));
+        fs.writeFileSync(
+            afterPath,
+            poFile("en", [
+                ["Cat", ""],
+                ["Dog", ""],
+            ]),
+        );
+        fs.writeFileSync(frPath, poFile("fr", [["Cat", "Chat"]]));
+
+        await translateFileDiff({
+            engine: Engine.ChatGPT,
+            inputAfterFileOrPath: afterPath,
+            inputBeforeFileOrPath: beforePath,
+            inputLanguageCode: "en",
+            model: "gpt-4o",
+            promptMode: PromptMode.JSON,
+            rateLimitMs: 0,
+        } as any);
+
+        const parsed = po.parse(fs.readFileSync(frPath, "utf-8"));
+        // 'Cat' was unchanged in the source, so its existing translation
+        // survives; 'Dog' is new and gets translated.
+        expect(parsed.translations[""].Cat.msgstr[0]).toBe("Chat");
+        expect(parsed.translations[""].Dog.msgstr[0]).toBe(fr("Dog"));
+    });
+
+    it("translateDirectory replicates a .po file for the target language", async () => {
+        const dir = mkCaseDir();
+        const enDir = path.join(dir, "en");
+        fs.mkdirSync(enDir, { recursive: true });
+
+        fs.writeFileSync(
+            path.join(enDir, "app.po"),
+            poFile("en", [["Cat", ""]]),
+        );
+
+        await translateDirectory({
+            baseDirectory: dir,
+            engine: Engine.ChatGPT,
+            inputLanguageCode: "en",
+            model: "gpt-4o",
+            outputLanguageCode: "fr",
+            promptMode: PromptMode.JSON,
+            rateLimitMs: 0,
+        } as any);
+
+        const parsed = po.parse(
+            fs.readFileSync(path.join(dir, "fr", "app.po"), "utf-8"),
+        );
+
+        expect(parsed.translations[""].Cat.msgstr[0]).toBe(fr("Cat"));
+    });
+
+    it("translateDirectoryDiff preserves existing .po msgstr and adds new keys", async () => {
+        const dir = mkCaseDir();
+        const enBefore = path.join(dir, "en_before");
+        const enAfter = path.join(dir, "en_after");
+        const frDir = path.join(dir, "fr");
+
+        fs.mkdirSync(enBefore, { recursive: true });
+        fs.mkdirSync(enAfter, { recursive: true });
+        fs.mkdirSync(frDir, { recursive: true });
+
+        fs.writeFileSync(
+            path.join(enBefore, "app.po"),
+            poFile("en", [["Cat", ""]]),
+        );
+
+        fs.writeFileSync(
+            path.join(enAfter, "app.po"),
+            poFile("en", [
+                ["Cat", ""],
+                ["Dog", ""],
+            ]),
+        );
+
+        fs.writeFileSync(
+            path.join(frDir, "app.po"),
+            poFile("fr", [["Cat", "Chat"]]),
+        );
+
+        await translateDirectoryDiff({
+            baseDirectory: dir,
+            engine: Engine.ChatGPT,
+            inputFolderNameAfter: "en_after",
+            inputFolderNameBefore: "en_before",
+            inputLanguageCode: "en",
+            model: "gpt-4o",
+            promptMode: PromptMode.JSON,
+            rateLimitMs: 0,
+        } as any);
+
+        const parsed = po.parse(
+            fs.readFileSync(path.join(frDir, "app.po"), "utf-8"),
+        );
+
+        expect(parsed.translations[""].Cat.msgstr[0]).toBe("Chat");
+        expect(parsed.translations[""].Dog.msgstr[0]).toBe(fr("Dog"));
+    });
+});
 
 describe("RateLimiter", () => {
     const mockedDelay = utils.delay as jest.MockedFunction<typeof utils.delay>;

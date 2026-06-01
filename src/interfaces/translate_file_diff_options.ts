@@ -6,4 +6,6 @@ export default interface TranslateFileDiffOptions extends Options {
     inputBeforeFileOrPath: string;
     inputAfterFileOrPath: string;
     dryRun?: DryRun;
+    /** Format adapter name; inferred from extension when unset. */
+    format?: string;
 }

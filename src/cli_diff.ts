@@ -80,6 +80,7 @@ export default function buildDiffCommand(): Command {
             CLI_HELP.ExcludeLanguages,
         )
         .option("--tokens-per-minute <tpm>", CLI_HELP.TokensPerMinute)
+        .option("--file-format <format>", CLI_HELP.FileFormat)
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
 
@@ -110,6 +111,7 @@ export default function buildDiffCommand(): Command {
                 continueOnError: options.continueOnError,
                 ensureChangedTranslation: options.ensureChangedTranslation,
                 excludeLanguages: options.excludeLanguages,
+                format: options.fileFormat,
                 pool: sharedPool,
                 rateLimiter: sharedRateLimiter,
                 skipStylingVerification: options.skipStylingVerification,
