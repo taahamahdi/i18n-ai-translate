@@ -38,6 +38,8 @@ export const CLI_HELP = {
     Engine: "Engine to use (chatgpt, gemini, ollama, or claude)",
     EnsureChangedTranslation:
         "Each generated translation key must differ from the input (for keys longer than 4)",
+    Format:
+        "File format adapter to use (default: inferred from extension). Supported: json, po.",
     MaxTokens: "The maximum token size of a request",
     Model: `Model to use (e.g. ${Object.values(DEFAULT_MODEL).join(", ")})`,
     NoContinueOnError:

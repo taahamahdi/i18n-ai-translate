@@ -1,4 +1,10 @@
+import { FLATTEN_DELIMITER } from "./constants";
 import { createPatch, diffJson } from "diff";
+import { flatten, unflatten } from "flat";
+import {
+    getAdapterByName,
+    getAdapterForFile,
+} from "./formats/registry";
 import {
     getLanguageCodeFromFilename,
     isValidLanguageCode,
@@ -21,12 +27,29 @@ import type TranslateFileOptions from "./interfaces/translate_file_options";
 export async function translateFile(
     options: TranslateFileOptions,
 ): Promise<void> {
-    let inputJSON = {};
+    const adapter = options.format
+        ? getAdapterByName(options.format)
+        : getAdapterForFile(options.inputFilePath);
+
+    if (!adapter) {
+        printError(`Unknown format: ${options.format}`);
+        return;
+    }
+
+    let rawInput: string;
     try {
-        const inputFile = fs.readFileSync(options.inputFilePath, "utf-8");
-        inputJSON = JSON.parse(inputFile);
+        rawInput = fs.readFileSync(options.inputFilePath, "utf-8");
     } catch (e) {
-        printError(`Invalid input JSON: ${e}`);
+        printError(`Failed to read input file: ${e}`);
+        return;
+    }
+
+    let flatInput: Record<string, string>;
+    let sidecar: unknown;
+    try {
+        ({ flat: flatInput, sidecar } = adapter.read(rawInput));
+    } catch (e) {
+        printError(`Invalid input (${adapter.name}): ${e}`);
         return;
     }
 
@@ -41,24 +64,36 @@ export async function translateFile(
     try {
         const outputJSON = await translate({
             ...options,
-            inputJSON,
+            inputJSON: flatInput,
             inputLanguageCode: inputLanguage,
             outputLanguageCode: outputLanguage,
         });
 
-        const outputText = JSON.stringify(outputJSON, null, 4);
+        // translate() returns an unflattened object; the adapter
+        // contract takes a flat map. Re-flattening is cheap and keeps
+        // the adapter agnostic of the pipeline's internal shape.
+        const flatOutput = flatten(outputJSON, {
+            delimiter: FLATTEN_DELIMITER,
+        }) as Record<string, string>;
+
+        const outputText = adapter.write(
+            flatOutput,
+            sidecar,
+            inputLanguage,
+            outputLanguage,
+        );
+
         if (!options.dryRun) {
-            fs.writeFileSync(options.outputFilePath, `${outputText}\n`);
+            fs.writeFileSync(options.outputFilePath, outputText);
         } else {
-            const translationDiff = diffJson(inputJSON, outputJSON);
             fs.writeFileSync(
-                `${options.dryRun.basePath}/${path.basename(options.outputFilePath)}.new.json`,
+                `${options.dryRun.basePath}/${path.basename(options.outputFilePath)}.new.${adapter.name}`,
                 outputText,
             );
 
             const patch = createPatch(
                 options.outputFilePath,
-                JSON.stringify(inputJSON, null, 4),
+                rawInput,
                 outputText,
             );
 
@@ -68,13 +103,25 @@ export async function translateFile(
             );
 
             printInfo(
-                `Wrote new JSON to ${options.dryRun.basePath}/${path.basename(options.outputFilePath)}.new.json`,
+                `Wrote new ${adapter.name} to ${options.dryRun.basePath}/${path.basename(options.outputFilePath)}.new.${adapter.name}`,
             );
 
             printInfo(
                 `Wrote patch to ${options.dryRun.basePath}/${path.basename(options.outputFilePath)}.patch`,
             );
-            if (options.verbose) {
+
+            // Colored inline diff is JSON-aware today; future adapters
+            // can bring their own formatter if this limits them.
+            if (options.verbose && adapter.name === "json") {
+                const unflattenedOutput = unflatten(flatOutput, {
+                    delimiter: FLATTEN_DELIMITER,
+                }) as object;
+
+                const translationDiff = diffJson(
+                    JSON.parse(rawInput),
+                    unflattenedOutput,
+                );
+
                 for (const part of translationDiff) {
                     const colorFns = {
                         green: colors.green,
