@@ -7,4 +7,6 @@ export default interface TranslateDirectoryDiffOptions extends Options {
     inputFolderNameBefore: string;
     inputFolderNameAfter: string;
     dryRun?: DryRun;
+    /** Format adapter name; inferred per file from extension when unset. */
+    format?: string;
 }

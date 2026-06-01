@@ -187,6 +187,68 @@ const POAdapter: FormatAdapter<POSidecar> = {
         };
     },
 
+    readTranslated(raw: string): {
+        flat: Record<string, string>;
+        sidecar: POSidecar;
+    } {
+        // Diff mode: read an existing *target* catalogue, exposing the
+        // translated `msgstr` values (not `msgid`) keyed exactly as
+        // `read` keys the source, so unchanged keys line up and survive.
+        // Values are kept verbatim (placeholders not normalized): on
+        // write they pass through restorePlaceholders, which is a no-op
+        // when no `{{argN}}` tokens are present.
+        const parsed = po.parse(raw);
+        const sourceCategories = inferSourceCategories(parsed.headers);
+        const oneIndex = Math.max(0, sourceCategories.indexOf("one"));
+        const otherIndex = sourceCategories.findIndex((c) => c !== "one");
+
+        const flat: Record<string, string> = {};
+        const metaByKey: Record<string, POEntryMeta> = {};
+
+        for (const ctx of Object.keys(parsed.translations)) {
+            const bucket = parsed.translations[ctx];
+            for (const msgid of Object.keys(bucket)) {
+                const entry = bucket[msgid];
+                if (ctx === "" && msgid === "") continue;
+
+                if (entry.msgid_plural) {
+                    const oneKey = makeKey(entry.msgctxt, entry.msgid, "_one");
+                    const otherKey = makeKey(
+                        entry.msgctxt,
+                        entry.msgid,
+                        "_other",
+                    );
+
+                    flat[oneKey] = entry.msgstr[oneIndex] ?? "";
+                    flat[otherKey] =
+                        entry.msgstr[otherIndex >= 0 ? otherIndex : 0] ?? "";
+
+                    metaByKey[oneKey] = {
+                        comments: entry.comments,
+                        isPlural: true,
+                        msgctxt: entry.msgctxt,
+                        msgid: entry.msgid,
+                    };
+                    metaByKey[otherKey] = metaByKey[oneKey];
+                } else {
+                    const key = makeKey(entry.msgctxt, entry.msgid);
+                    flat[key] = entry.msgstr[0] ?? "";
+                    metaByKey[key] = {
+                        comments: entry.comments,
+                        isPlural: false,
+                        msgctxt: entry.msgctxt,
+                        msgid: entry.msgid,
+                    };
+                }
+            }
+        }
+
+        return {
+            flat,
+            sidecar: { kind: "po", metaByKey, parsed, sourceCategories },
+        };
+    },
+
     write(
         translated: Record<string, string>,
         sidecar: POSidecar,

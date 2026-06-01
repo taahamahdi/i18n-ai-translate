@@ -28,18 +28,16 @@ export const CLI_HELP = {
         "How many batches to run in parallel (default: 2). Each worker holds its own chat history, sharing one rate limiter. Tune upward together with --rate-limit-ms to use more of your API tier",
     Context:
         "Product or domain context to steer translations (e.g. 'a music trivia game for Discord'). Injected into both the generation and verification prompts",
-    ExcludeLanguages:
-        "Language codes to skip (e.g. 'fr de'). Useful when some locales are maintained manually and shouldn't be machine-translated over",
-    TokensPerMinute:
-        "Cap on tokens-per-minute across all concurrent workers. Disabled by default — opt in with your provider's TPM limit to avoid burst-failing when your TPM tier is stricter than your RPM tier. Reference values: OpenAI Tier-1 ~200000, Anthropic Tier-1 40000 (free 20000), Gemini 2.5 Flash paid ~250000.",
-    LanguageConcurrency:
-        "How many target languages to translate in parallel (default 1). Each language shares the same pool and rate limiter, so raising this does not multiply provider traffic — pair with --concurrency and --tokens-per-minute to tune overall throughput.",
     DryRun: "Show the translations without writing to files, and store them in a temporary directory",
     Engine: "Engine to use (chatgpt, gemini, ollama, or claude)",
     EnsureChangedTranslation:
         "Each generated translation key must differ from the input (for keys longer than 4)",
-    Format:
-        "File format adapter to use (default: inferred from extension). Supported: json, po.",
+    ExcludeLanguages:
+        "Language codes to skip (e.g. 'fr de'). Useful when some locales are maintained manually and shouldn't be machine-translated over",
+    FileFormat:
+        "Input/output file format (default: inferred from extension). Supported: json, po.",
+    LanguageConcurrency:
+        "How many target languages to translate in parallel (default 1). Each language shares the same pool and rate limiter, so raising this does not multiply provider traffic — pair with --concurrency and --tokens-per-minute to tune overall throughput.",
     MaxTokens: "The maximum token size of a request",
     Model: `Model to use (e.g. ${Object.values(DEFAULT_MODEL).join(", ")})`,
     NoContinueOnError:
@@ -55,5 +53,7 @@ export const CLI_HELP = {
         "Skip validating the resulting translation's formatting through another query, only for 'csv' mode",
     SkipTranslationVerification:
         "Skip validating the resulting translation through another query",
+    TokensPerMinute:
+        "Cap on tokens-per-minute across all concurrent workers. Disabled by default — opt in with your provider's TPM limit to avoid burst-failing when your TPM tier is stricter than your RPM tier. Reference values: OpenAI Tier-1 ~200000, Anthropic Tier-1 40000 (free 20000), Gemini 2.5 Flash paid ~250000.",
     Verbose: "Print logs about progress",
 };

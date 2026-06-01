@@ -7,4 +7,6 @@ export default interface TranslateDirectoryOptions extends Options {
     outputLanguageCode: string;
     dryRun?: DryRun;
     forceLanguageName?: string;
+    /** Format adapter name; inferred per file from extension when unset. */
+    format?: string;
 }

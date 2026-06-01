@@ -171,6 +171,31 @@ export function getAllFilesInPath(directory: string): Array<string> {
 export const DIRECTORY_KEY_DELIMITER = "\x1f";
 
 /**
+ * Swap the input-language segment of a source file path for the output
+ * language, normalising separators. This is the path half of
+ * {@link getTranslationDirectoryKey}; the directory wrappers key
+ * per-file adapter state (sidecar, chosen adapter) by it so the write
+ * loop can recover that state after translation. Normalizing to forward
+ * slashes keeps the language-segment match working on Windows (where
+ * path.resolve returns backslash paths) and POSIX alike.
+ * @param sourceFilePath - the source file's path
+ * @param inputLanguageCode - the source language code
+ * @param outputLanguageCode - the target language code (defaults to input)
+ * @returns the output file path with forward slashes
+ */
+export function getTranslationDirectoryPath(
+    sourceFilePath: string,
+    inputLanguageCode: string,
+    outputLanguageCode?: string,
+): string {
+    const normalized = sourceFilePath.replace(/\\/g, "/");
+    return normalized.replace(
+        `/${inputLanguageCode}/`,
+        `/${outputLanguageCode ?? inputLanguageCode}/`,
+    );
+}
+
+/**
  * @param sourceFilePath - the source file's path
  * @param key - the key associated with the translation
  * @param inputLanguageCode - the language code of the source language
@@ -184,15 +209,10 @@ export function getTranslationDirectoryKey(
     inputLanguageCode: string,
     outputLanguageCode?: string,
 ): string {
-    // Normalize to forward slashes for the language-segment match so
-    // the swap works on Windows (where path.resolve returns backslash
-    // paths) and POSIX alike. Callers treat the returned string as an
-    // opaque compound key; consumers that split on DIRECTORY_KEY_DELIMITER
-    // use path utilities rather than depending on separator style.
-    const normalized = sourceFilePath.replace(/\\/g, "/");
-    const outputPath = normalized.replace(
-        `/${inputLanguageCode}/`,
-        `/${outputLanguageCode ?? inputLanguageCode}/`,
+    const outputPath = getTranslationDirectoryPath(
+        sourceFilePath,
+        inputLanguageCode,
+        outputLanguageCode,
     );
 
     return `${outputPath}${DIRECTORY_KEY_DELIMITER}${key}`;

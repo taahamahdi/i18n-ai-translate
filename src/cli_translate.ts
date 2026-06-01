@@ -91,7 +91,7 @@ export default function buildTranslateCommand(): Command {
         )
         .option("--tokens-per-minute <tpm>", CLI_HELP.TokensPerMinute)
         .option("--language-concurrency <n>", CLI_HELP.LanguageConcurrency)
-        .option("--format <format>", CLI_HELP.Format)
+        .option("--file-format <format>", CLI_HELP.FileFormat)
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
             const languageConcurrency = Math.max(
@@ -128,7 +128,7 @@ export default function buildTranslateCommand(): Command {
                 continueOnError: options.continueOnError,
                 ensureChangedTranslation: options.ensureChangedTranslation,
                 excludeLanguages: options.excludeLanguages,
-                format: options.format,
+                format: options.fileFormat,
                 pool: sharedPool,
                 rateLimiter: sharedRateLimiter,
                 skipStylingVerification: options.skipStylingVerification,
