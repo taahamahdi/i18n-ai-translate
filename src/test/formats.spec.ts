@@ -183,4 +183,221 @@ describe("POAdapter", () => {
             "%d items",
         ]);
     });
+
+    it("leaves a %% literal untouched on read and write", () => {
+        const fixture = [
+            "msgid \"\"",
+            "msgstr \"\"",
+            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
+            "\"Language: en\\n\"",
+            "",
+            // `%%` is an escaped literal percent, not an arg slot; the
+            // adjacent `%s` is the only real placeholder (→ {{arg1}}).
+            "msgid \"100%% done with %s\"",
+            "msgstr \"\"",
+            "",
+        ].join("\n");
+
+        const { flat, sidecar } = POAdapter.read(fixture);
+        expect(flat[`${SEP}100%% done with %s`]).toBe(
+            "100%% done with {{arg1}}",
+        );
+
+        const output = POAdapter.write(flat, sidecar, "en", "en");
+        const reparsed = po.parse(output);
+        expect(
+            reparsed.translations[""]["100%% done with %s"].msgstr[0],
+        ).toBe("100%% done with %s");
+    });
+
+    it("preserves width / precision specifiers across the round-trip", () => {
+        const fixture = [
+            "msgid \"\"",
+            "msgstr \"\"",
+            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
+            "\"Language: en\\n\"",
+            "",
+            "msgid \"%.2f kg at %3d items\"",
+            "msgstr \"\"",
+            "",
+        ].join("\n");
+
+        const { flat, sidecar } = POAdapter.read(fixture);
+        expect(flat[`${SEP}%.2f kg at %3d items`]).toBe(
+            "{{arg1}} kg at {{arg2}} items",
+        );
+
+        const output = POAdapter.write(flat, sidecar, "en", "en");
+        const reparsed = po.parse(output);
+        expect(
+            reparsed.translations[""]["%.2f kg at %3d items"].msgstr[0],
+        ).toBe("%.2f kg at %3d items");
+    });
+
+    it("leaves a model-invented arg reference literal instead of dropping it", () => {
+        const fixture = [
+            "msgid \"\"",
+            "msgstr \"\"",
+            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
+            "\"Language: en\\n\"",
+            "",
+            "msgid \"Hi %s\"",
+            "msgstr \"\"",
+            "",
+        ].join("\n");
+
+        const { sidecar } = POAdapter.read(fixture);
+        const key = `${SEP}Hi %s`;
+
+        // The model hallucinated a second placeholder the source never
+        // had; arg1 restores to %s, arg2 has no token so it stays as the
+        // literal {{arg2}} rather than silently vanishing.
+        const output = POAdapter.write(
+            { [key]: "{{arg1}} plus {{arg2}}" },
+            sidecar,
+            "en",
+            "en",
+        );
+
+        const reparsed = po.parse(output);
+        expect(reparsed.translations[""]["Hi %s"].msgstr[0]).toBe(
+            "%s plus {{arg2}}",
+        );
+    });
+
+    it("writes empty msgstr slots when the translation map omits keys", () => {
+        // The model dropped every key from its response — write must
+        // degrade to empty msgstrs (both singular and plural slots)
+        // rather than throwing on the missing lookups.
+        const { sidecar } = POAdapter.read(PO_FIXTURE);
+        const reparsed = po.parse(POAdapter.write({}, sidecar, "en", "fr"));
+
+        expect(reparsed.translations[""]["Hello %s"].msgstr[0]).toBe("");
+        expect(reparsed.translations["menu"]["Save"].msgstr[0]).toBe("");
+        expect(reparsed.translations[""]["One item"].msgstr).toEqual(["", ""]);
+    });
+
+    it("preserves untouched entry metadata byte-for-byte through compile", () => {
+        const original = po.parse(PO_FIXTURE);
+        const { flat, sidecar } = POAdapter.read(PO_FIXTURE);
+
+        // Identity write — nothing material changes, so every source
+        // entry's structural metadata must survive po.compile intact.
+        const reparsed = po.parse(POAdapter.write(flat, sidecar, "en", "en"));
+
+        for (const ctx of Object.keys(original.translations)) {
+            for (const msgid of Object.keys(original.translations[ctx])) {
+                if (ctx === "" && msgid === "") continue;
+                const before = original.translations[ctx][msgid];
+                const after = reparsed.translations[ctx][msgid];
+                expect(after.msgid).toBe(before.msgid);
+                expect(after.msgctxt).toBe(before.msgctxt);
+                expect(after.msgid_plural).toBe(before.msgid_plural);
+                expect(after.comments).toEqual(before.comments);
+            }
+        }
+    });
+});
+
+describe("POAdapter.readTranslated", () => {
+    it("exposes singular msgstr values keyed exactly as read()", () => {
+        const target = [
+            "msgid \"\"",
+            "msgstr \"\"",
+            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
+            "\"Language: fr\\n\"",
+            "",
+            "msgctxt \"menu\"",
+            "msgid \"Save\"",
+            "msgstr \"Enregistrer\"",
+            "",
+        ].join("\n");
+
+        const { flat } = POAdapter.readTranslated!(target);
+        // Same key shape as read(): msgctxt folds into the first segment.
+        expect(flat[`menu${SEP}Save`]).toBe("Enregistrer");
+    });
+
+    it("maps a 2-form target's msgstr[] back onto _one / _other", () => {
+        const target = [
+            "msgid \"\"",
+            "msgstr \"\"",
+            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
+            "\"Plural-Forms: nplurals=2; plural=(n > 1);\\n\"",
+            "\"Language: fr\\n\"",
+            "",
+            "msgid \"One item\"",
+            "msgid_plural \"%d items\"",
+            "msgstr[0] \"Un élément\"",
+            "msgstr[1] \"%d éléments\"",
+            "",
+        ].join("\n");
+
+        const { flat } = POAdapter.readTranslated!(target);
+        // Values are kept verbatim — placeholders are NOT normalized on
+        // the translated-read path (write's restore is then a no-op).
+        expect(flat[`${SEP}One item${SEP}_one`]).toBe("Un élément");
+        expect(flat[`${SEP}One item${SEP}_other`]).toBe("%d éléments");
+    });
+
+    it("collapses a 3-form target onto _one / _other via the source header", () => {
+        const target = [
+            "msgid \"\"",
+            "msgstr \"\"",
+            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
+            "\"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\\n\"",
+            "\"Language: pl\\n\"",
+            "",
+            "msgid \"One item\"",
+            "msgid_plural \"%d items\"",
+            "msgstr[0] \"jeden element\"",
+            "msgstr[1] \"%d elementy\"",
+            "msgstr[2] \"%d elementów\"",
+            "",
+        ].join("\n");
+
+        const { flat } = POAdapter.readTranslated!(target);
+        // pl categories are [one, few, many]: index 0 → _one, and the
+        // first non-"one" slot (few, index 1) → _other.
+        expect(flat[`${SEP}One item${SEP}_one`]).toBe("jeden element");
+        expect(flat[`${SEP}One item${SEP}_other`]).toBe("%d elementy");
+    });
+
+    it("yields empty strings for a target plural with missing msgstr slots", () => {
+        const target = [
+            "msgid \"\"",
+            "msgstr \"\"",
+            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
+            "\"Language: fr\\n\"",
+            "",
+            // A half-finished target: msgstr[1] was never filled in.
+            "msgid \"One item\"",
+            "msgid_plural \"%d items\"",
+            "msgstr[0] \"Un élément\"",
+            "msgstr[1] \"\"",
+            "",
+        ].join("\n");
+
+        const { flat } = POAdapter.readTranslated!(target);
+        expect(flat[`${SEP}One item${SEP}_one`]).toBe("Un élément");
+        expect(flat[`${SEP}One item${SEP}_other`]).toBe("");
+    });
+
+    it("falls back to 2-form indices when the Language header is missing", () => {
+        const target = [
+            "msgid \"\"",
+            "msgstr \"\"",
+            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
+            "",
+            "msgid \"One item\"",
+            "msgid_plural \"%d items\"",
+            "msgstr[0] \"first\"",
+            "msgstr[1] \"second\"",
+            "",
+        ].join("\n");
+
+        const { flat } = POAdapter.readTranslated!(target);
+        expect(flat[`${SEP}One item${SEP}_one`]).toBe("first");
+        expect(flat[`${SEP}One item${SEP}_other`]).toBe("second");
+    });
 });
