@@ -1,6 +1,6 @@
 # i18n‑ai‑translate
 
-AI‑powered localization for your **i18next‑style** JSON files. Automate translating single files or entire directories with ChatGPT, Gemini, Claude, or local Ollama models — while keeping translations accurate, formatting consistent, and `{{variables}}` intact.
+AI‑powered localization for your translation catalogues. Automate translating single files or entire directories with ChatGPT, Gemini, Claude, or local Ollama models — while keeping translations accurate, formatting consistent, and placeholders intact. Works with **i18next‑style** JSON out of the box, plus Gettext `.po`, Java `.properties`, and iOS `.strings`.
 
 _For a detailed walkthrough and advanced tips, see [ADVANCED_GUIDE.md](ADVANCED_GUIDE.md)._
 
@@ -15,6 +15,7 @@ _For a detailed walkthrough and advanced tips, see [ADVANCED_GUIDE.md](ADVANCED_
 | **Safe**              | Translations verified against the source before being written                           |
 | **Diff‑aware**        | Only re‑translate keys you changed; existing translations are preserved                 |
 | **Check mode**        | Audit existing translations for drift, missing placeholders, or quality regressions     |
+| **Format‑aware**      | i18next JSON, Gettext `.po`, Java `.properties`, iOS `.strings` — round‑tripped intact  |
 | **Context-aware**     | `--context` flag injects product info so the model picks domain-appropriate terminology |
 | **Dry‑run**           | Preview updates before touching disk                                                    |
 | **Everywhere**        | Use as a CLI, GitHub Action, or Node library                                            |
@@ -39,7 +40,7 @@ i18n-ai-translate translate -i i18n/en.json -o fr \
 
 Need more languages? Pass multiple codes (`-o fr es de`) or `-A` for **all** 180+. Filenames like `es-ES.json` / `pt-BR.json` are accepted too — the language subtag is extracted automatically. Skip specific locales with `--exclude-languages fr de` (handy for locales you maintain by hand).
 
-**Other formats:** besides i18next JSON, Gettext `.po` and Java `.properties` files work too — the format is inferred from the file extension (override with `--file-format json|po|properties`). Non-translatable structure round-trips losslessly: PO comments, `msgctxt`, and plural forms; `.properties` comments, separators, and line continuations. Native placeholders (`printf` `%s`/`%1$s`, MessageFormat `{0}`/`{1}`) are preserved across the translation. Works across `translate` (file + folder), `diff`, and `check`.
+**Other formats:** besides i18next JSON, Gettext `.po`, Java `.properties`, and iOS `.strings` files work too — the format is inferred from the file extension (override with `--file-format json|po|properties|strings`). Non-translatable structure round-trips losslessly: PO comments, `msgctxt`, and plural forms; `.properties` comments, separators, and line continuations; `.strings` `/* */` and `//` comments and quoting. Native placeholders (`printf` `%s`/`%1$s`/`%@`, MessageFormat `{0}`/`{1}`) are preserved across the translation. Works across `translate` (file + folder), `diff`, and `check`.
 
 ### 3 · Translate a folder
 
@@ -105,7 +106,7 @@ Common flags (all subcommands accept these unless noted):
 | `--exclude-languages`     | —               | Locales to skip (for manually‑maintained targets)                               |
 | `--no-continue-on-error`  | continue        | Abort on first key/batch failure instead of skipping                            |
 | `--dry-run`               | false           | Don't write files, preview instead (translate/diff only)                        |
-| `--file-format`           | from extension  | Input/output file format: `json`, `po`, or `properties` (translate/diff/check)  |
+| `--file-format`           | from extension  | File format: `json`, `po`, `properties`, `strings` (translate/diff/check)       |
 | `--format`                | table           | `table` or `json` report output (check only)                                    |
 
 Full flag list: `i18n-ai-translate <subcommand> --help`.
