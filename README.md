@@ -1,5 +1,10 @@
 # i18n‑ai‑translate
 
+[![npm version](https://img.shields.io/npm/v/i18n-ai-translate.svg)](https://www.npmjs.com/package/i18n-ai-translate)
+[![npm downloads](https://img.shields.io/npm/dw/i18n-ai-translate.svg)](https://www.npmjs.com/package/i18n-ai-translate)
+[![Build](https://img.shields.io/github/actions/workflow/status/taahamahdi/i18n-ai-translate/build.yml?branch=master)](https://github.com/taahamahdi/i18n-ai-translate/actions/workflows/build.yml)
+[![License: GPL‑3.0](https://img.shields.io/npm/l/i18n-ai-translate.svg)](https://github.com/taahamahdi/i18n-ai-translate/blob/master/LICENSE)
+
 AI‑powered localization for your translation catalogues. Automate translating single files or entire directories with ChatGPT, Gemini, Claude, or local Ollama models — while keeping translations accurate, formatting consistent, and placeholders intact. Works with **i18next‑style** JSON out of the box, plus Gettext `.po`, Java `.properties`, and iOS `.strings`.
 
 _For a detailed walkthrough and advanced tips, see [ADVANCED_GUIDE.md](ADVANCED_GUIDE.md)._

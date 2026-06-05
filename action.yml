@@ -1,5 +1,5 @@
 name: i18n-ai-translate
-description: Use ChatGPT or Google Gemini to automatically translate your i18n JSON on every PR
+description: Automatically translate your i18n files (JSON, PO, .properties, .strings) on every PR with ChatGPT, Claude, Gemini, or Ollama
 author: Taaha Mahdi
 
 inputs:
