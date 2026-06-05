@@ -89,8 +89,13 @@ import Engine_ from "../enums/engine";
 import PromptMode from "../enums/prompt_mode";
 // eslint-disable-next-line import/first
 import { check } from "../check";
+// eslint-disable-next-line import/first
+import POAdapter from "../formats/po_adapter";
 
 process.env.OPENAI_API_KEY = "test";
+
+// ASCII Record Separator — must match KEY_DELIMITER in po_adapter.ts.
+const SEP = "\x1e";
 
 const baseCheckOptions = {
     apiKey: "test",
@@ -137,8 +142,8 @@ describe("check mode", () => {
 
         const report = await check({
             ...baseCheckOptions,
-            inputJSON: { good: "Good", bad: "Bad_source" },
-            targetJSON: { good: "Bien", bad: "Bad" },
+            inputJSON: { bad: "Bad_source", good: "Good" },
+            targetJSON: { bad: "Bad", good: "Bien" },
         } as any);
 
         expect(report.issues).toHaveLength(1);
@@ -204,5 +209,86 @@ describe("check mode", () => {
         } as any);
 
         expect(report.issues.map((i) => i.key).sort()).toEqual(["k2", "k4"]);
+    });
+});
+
+// cli_check routes PO files through the adapter: the source is read via
+// `read` (keyed by msgid) and each target via `readTranslated` (keyed by
+// the same msgid, valued by msgstr). These tests feed check() the exact
+// flat maps that wiring produces, exercising the key-alignment contract.
+describe("check mode with PO adapter input", () => {
+    const sourcePO = [
+        "msgid \"\"",
+        "msgstr \"\"",
+        "\"Content-Type: text/plain; charset=UTF-8\\n\"",
+        "\"Language: en\\n\"",
+        "",
+        "msgid \"Hello\"",
+        "msgstr \"\"",
+        "",
+        "msgctxt \"menu\"",
+        "msgid \"Save\"",
+        "msgstr \"\"",
+        "",
+    ].join("\n");
+
+    const targetPO = (saveTranslation: string): string =>
+        [
+            "msgid \"\"",
+            "msgstr \"\"",
+            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
+            "\"Language: fr\\n\"",
+            "",
+            "msgid \"Hello\"",
+            "msgstr \"Bonjour\"",
+            "",
+            "msgctxt \"menu\"",
+            "msgid \"Save\"",
+            `msgstr "${saveTranslation}"`,
+            "",
+        ].join("\n");
+
+    it("aligns source msgid with target msgstr across the report", async () => {
+        const sourceFlat = POAdapter.read(sourcePO).flat;
+        const targetFlat = POAdapter.readTranslated!(targetPO("Sauvegarder"))
+            .flat;
+
+        const report = await check({
+            ...baseCheckOptions,
+            inputJSON: sourceFlat,
+            targetJSON: targetFlat,
+        } as any);
+
+        // Both entries are present and keyed by the adapter's msgid keys.
+        expect(report.totalKeys).toBe(2);
+        expect(report.issues).toEqual([]);
+    });
+
+    it("flags a bad msgstr against its source msgid", async () => {
+        // The verifier rejects the (deliberately wrong) Save translation.
+        verdicts.set("Sauvegarder_wrong", {
+            fixedTranslation: "Enregistrer",
+            issue: "wrong word for the menu action",
+            valid: false,
+        });
+
+        const sourceFlat = POAdapter.read(sourcePO).flat;
+        const targetFlat = POAdapter.readTranslated!(
+            targetPO("Sauvegarder_wrong"),
+        ).flat;
+
+        const report = await check({
+            ...baseCheckOptions,
+            inputJSON: sourceFlat,
+            targetJSON: targetFlat,
+        } as any);
+
+        expect(report.issues).toHaveLength(1);
+        expect(report.issues[0]).toMatchObject({
+            key: `menu${SEP}Save`,
+            original: "Save",
+            suggestion: "Enregistrer",
+            translated: "Sauvegarder_wrong",
+        });
     });
 });

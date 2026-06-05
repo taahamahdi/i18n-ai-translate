@@ -5,6 +5,7 @@ import {
 } from "./constants";
 import { Command } from "commander";
 import { check } from "./check";
+import { getAdapterByName, getAdapterForFile } from "./formats/registry";
 import {
     getLanguageCodeFromFilename,
     printError,
@@ -66,6 +67,7 @@ export default function buildCheckCommand(): Command {
             "Output format: 'table' (default, human-readable) or 'json' (for CI consumption)",
             "table",
         )
+        .option("--file-format <format>", CLI_HELP.FileFormat)
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
 
@@ -101,22 +103,41 @@ export default function buildCheckCommand(): Command {
                 process.exit(2);
             }
 
-            const inputLanguageCode = getLanguageCodeFromFilename(inputPath);
-            const sourceJSON = JSON.parse(fs.readFileSync(inputPath, "utf-8"));
+            // Resolve the format adapter from --file-format, else infer
+            // it from the source extension (JSON by default).
+            const adapter = options.fileFormat
+                ? getAdapterByName(options.fileFormat)
+                : getAdapterForFile(inputPath);
 
-            // Determine which target files to check.
+            if (!adapter) {
+                printError(`Unknown format: ${options.fileFormat}`);
+                process.exit(2);
+            }
+
+            const inputLanguageCode = getLanguageCodeFromFilename(inputPath);
+            const sourceFlat = adapter.read(
+                fs.readFileSync(inputPath, "utf-8"),
+            ).flat;
+
+            // Determine which target files to check. Siblings are matched
+            // by the adapter's extension(s), not a hardcoded .json.
             const sourceDir = path.dirname(inputPath);
             const inputBase = path.basename(inputPath);
+            const targetExtension = adapter.extensions[0];
+            const matchesFormat = (file: string): boolean =>
+                adapter.extensions.some((ext) =>
+                    file.toLowerCase().endsWith(ext.toLowerCase()),
+                );
 
             let targetFiles: string[];
             if (options.targetLanguages && options.targetLanguages.length > 0) {
                 targetFiles = options.targetLanguages.map((code: string) =>
-                    path.join(sourceDir, `${code}.json`),
+                    path.join(sourceDir, `${code}${targetExtension}`),
                 );
             } else {
                 targetFiles = fs
                     .readdirSync(sourceDir)
-                    .filter((f) => f.endsWith(".json") && f !== inputBase)
+                    .filter((f) => matchesFormat(f) && f !== inputBase)
                     .map((f) => path.join(sourceDir, f));
             }
 
@@ -138,14 +159,18 @@ export default function buildCheckCommand(): Command {
                     path.basename(targetFile),
                 );
 
-                let targetJSON: Object;
+                let targetFlat: { [key: string]: string };
                 try {
-                    targetJSON = JSON.parse(
-                        fs.readFileSync(targetFile, "utf-8"),
-                    );
+                    const raw = fs.readFileSync(targetFile, "utf-8");
+                    // Formats that separate source from target (PO:
+                    // msgstr vs msgid) expose the translated values via
+                    // readTranslated, keyed identically to the source.
+                    targetFlat = adapter.readTranslated
+                        ? adapter.readTranslated(raw).flat
+                        : adapter.read(raw).flat;
                 } catch (e) {
                     printError(
-                        `Skipping invalid target JSON ${targetFile}: ${e}`,
+                        `Skipping unreadable target ${targetFile}: ${e}`,
                     );
                     continue;
                 }
@@ -161,13 +186,13 @@ export default function buildCheckCommand(): Command {
                     ...modelArgs,
                     context: options.context,
                     engine: options.engine,
-                    inputJSON: sourceJSON,
+                    inputJSON: sourceFlat,
                     inputLanguageCode,
                     outputLanguageCode,
                     overridePrompt,
                     pool: sharedPool,
                     rateLimiter: sharedRateLimiter,
-                    targetJSON,
+                    targetJSON: targetFlat,
                     templatedStringPrefix: options.templatedStringPrefix,
                     templatedStringSuffix: options.templatedStringSuffix,
                     verbose: options.verbose,
