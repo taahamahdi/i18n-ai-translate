@@ -8,6 +8,7 @@ import { po } from "gettext-parser";
 import JSONAdapter from "../formats/json_adapter";
 import POAdapter from "../formats/po_adapter";
 import PropertiesAdapter from "../formats/properties_adapter";
+import StringsAdapter from "../formats/strings_adapter";
 
 // ASCII Record Separator — must match KEY_DELIMITER in po_adapter.ts.
 const SEP = "\x1e";
@@ -69,8 +70,19 @@ describe("format registry", () => {
         );
     });
 
+    it("resolves the strings adapter by name and extension", () => {
+        expect(getAdapterByName("strings")).toBe(StringsAdapter);
+        expect(getAdapterByExtension(".strings")).toBe(StringsAdapter);
+        expect(getAdapterForFile("Localizable.strings")).toBe(StringsAdapter);
+    });
+
     it("lists registered format names", () => {
-        expect(listFormatNames()).toEqual(["json", "po", "properties"]);
+        expect(listFormatNames()).toEqual([
+            "json",
+            "po",
+            "properties",
+            "strings",
+        ]);
     });
 });
 
@@ -562,5 +574,130 @@ describe("PropertiesAdapter", () => {
         const input = "a=one\nb=two";
         const { flat, sidecar } = PropertiesAdapter.read(input);
         expect(PropertiesAdapter.write(flat, sidecar, "en", "en")).toBe(input);
+    });
+});
+
+describe("StringsAdapter", () => {
+    it("reads quoted key/value pairs and ignores comments", () => {
+        const input =
+            "/* Greeting */\n" +
+            "\"greeting\" = \"Hello\";\n" +
+            "\"menu.save\" = \"Save\";\n";
+
+        const { flat } = StringsAdapter.read(input);
+        expect(flat).toEqual({ "greeting": "Hello", "menu.save": "Save" });
+    });
+
+    it("round-trips a fixture with comments and blanks byte-for-byte", () => {
+        const input = `/* File header
+   multi-line */
+
+// inline note
+"greeting" = "Hello, %@!";
+"count" = "%d items";
+`;
+
+        const { flat, sidecar } = StringsAdapter.read(input);
+        const output = StringsAdapter.write(flat, sidecar, "en", "en");
+        expect(output).toBe(input);
+    });
+
+    it("normalizes %@ and %d placeholders to {{argN}}", () => {
+        const { flat } = StringsAdapter.read(
+            "\"k\" = \"Hi %@, you have %d new\";",
+        );
+
+        expect(flat.k).toBe("Hi {{arg1}}, you have {{arg2}} new");
+    });
+
+    it("restores positional placeholders on a changed value", () => {
+        const input = "\"k\" = \"%1$@ sent %2$@\";";
+        const { flat, sidecar } = StringsAdapter.read(input);
+        expect(flat.k).toBe("{{arg1}} sent {{arg2}}");
+
+        const output = StringsAdapter.write(
+            { k: "{{arg2}} reçu de {{arg1}}" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toBe("\"k\" = \"%2$@ reçu de %1$@\";");
+    });
+
+    it("leaves a %% literal intact while normalizing a real %@", () => {
+        const { flat } = StringsAdapter.read("\"k\" = \"100%% sure %@\";");
+        expect(flat.k).toBe("100%% sure {{arg1}}");
+    });
+
+    it("decodes escapes and round-trips them byte-for-byte", () => {
+        const input = "\"k\" = \"Line1\\nQuote: \\\"hi\\\" \\\\ end\";";
+        const { flat, sidecar } = StringsAdapter.read(input);
+        expect(flat.k).toBe("Line1\nQuote: \"hi\" \\ end");
+        expect(StringsAdapter.write(flat, sidecar, "en", "en")).toBe(input);
+    });
+
+    it("decodes \\Uxxxx escapes into their characters", () => {
+        const { flat } = StringsAdapter.read("\"k\" = \"caf\\U00e9\";");
+        expect(flat.k).toBe("café");
+    });
+
+    it("round-trips \\t and \\r escapes both ways", () => {
+        const { flat } = StringsAdapter.read("\"k\" = \"a\\tb\\rc\";");
+        expect(flat.k).toBe("a\tb\rc");
+
+        const { sidecar } = StringsAdapter.read("\"k\" = \"v\";");
+        const output = StringsAdapter.write(
+            { k: "a\tb\rc\\d" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toBe("\"k\" = \"a\\tb\\rc\\\\d\";");
+    });
+
+    it("re-escapes quotes, newlines, and backslashes for changed values", () => {
+        const { sidecar } = StringsAdapter.read("\"k\" = \"v\";");
+        const output = StringsAdapter.write(
+            { k: "say \"hi\"\nbye" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toBe("\"k\" = \"say \\\"hi\\\"\\nbye\";");
+    });
+
+    it("keeps = and ; that appear inside a value", () => {
+        const input = "\"k\" = \"a=b; c\";";
+        const { flat, sidecar } = StringsAdapter.read(input);
+        expect(flat.k).toBe("a=b; c");
+        expect(StringsAdapter.write(flat, sidecar, "en", "en")).toBe(input);
+    });
+
+    it("re-emits the original value for keys missing from the translation", () => {
+        const input = "\"a\" = \"one\";\n\"b\" = \"two\";";
+        const { sidecar } = StringsAdapter.read(input);
+        const output = StringsAdapter.write({ a: "un" }, sidecar, "en", "fr");
+        expect(output).toBe("\"a\" = \"un\";\n\"b\" = \"two\";");
+    });
+
+    it("leaves a model-invented placeholder literal on write", () => {
+        const { sidecar } = StringsAdapter.read("\"k\" = \"Value %@\";");
+        const output = StringsAdapter.write(
+            { k: "{{arg1}} et {{arg9}}" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toBe("\"k\" = \"%@ et {{arg9}}\";");
+    });
+
+    it("preserves a block comment and a file with no trailing newline", () => {
+        const input = "/* c */\n\"k\" = \"v\";";
+        const { flat, sidecar } = StringsAdapter.read(input);
+        expect(StringsAdapter.write(flat, sidecar, "en", "en")).toBe(input);
     });
 });
