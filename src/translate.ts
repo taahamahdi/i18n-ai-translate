@@ -7,6 +7,7 @@ import {
 } from "./constants";
 import { distance } from "fastest-levenshtein";
 import { flatten, unflatten } from "flat";
+import { getCachedTranslation, setCachedTranslation } from "./cache";
 import {
     isValidLanguageCode,
     printExecutionTime,
@@ -271,12 +272,46 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         }
     }
 
+    // Translation memory: pull any source string already in the cache
+    // out of the work set so only misses reach the model. This extends
+    // the in-file de-duplication above across runs and files. Hits are
+    // merged back into the output below; misses are recorded after.
+    const { cache } = options;
+    const cachedOutput: Record<string, string> = {};
+    const missSourceByKey: Record<string, string> = {};
+    if (cache) {
+        for (const [key, source] of Object.entries(flatInput)) {
+            const hit = getCachedTranslation(
+                cache,
+                options.inputLanguageCode,
+                options.outputLanguageCode,
+                options.context ?? "",
+                source,
+            );
+
+            if (hit !== undefined) {
+                cachedOutput[key] = hit;
+                delete flatInput[key];
+            } else {
+                missSourceByKey[key] = source;
+            }
+        }
+
+        if (options.verbose) {
+            printInfo(
+                `Cache: ${Object.keys(cachedOutput).length} hit(s), ${
+                    Object.keys(missSourceByKey).length
+                } miss(es)`,
+            );
+        }
+    }
+
     const grouped = groupSimilarValues(flatInput);
     flatInput = grouped.flatInput;
 
     const translationStats = startTranslationStats();
 
-    const output = await getTranslation({
+    const translated = await getTranslation({
         flatInput,
         groups: grouped.groups,
         options,
@@ -284,10 +319,29 @@ export async function translate(options: TranslateOptions): Promise<Object> {
         stats: translationStats,
     });
 
+    // Record freshly translated strings so the next run can reuse them.
+    if (cache) {
+        for (const [key, source] of Object.entries(missSourceByKey)) {
+            const value = translated[key];
+            if (value !== undefined) {
+                setCachedTranslation(
+                    cache,
+                    options.inputLanguageCode,
+                    options.outputLanguageCode,
+                    options.context ?? "",
+                    source,
+                    value,
+                );
+            }
+        }
+    }
+
+    const output = { ...cachedOutput, ...translated };
+
     for (const [canonical, dupes] of Object.entries(canonicalToDupes)) {
-        const translated = output[canonical];
+        const canonicalTranslation = output[canonical];
         for (const k of dupes) {
-            output[k] = translated;
+            output[k] = canonicalTranslation;
         }
     }
 
@@ -446,6 +500,7 @@ export async function translateDiff(
                 const unflattened = unflatten(translatedJSONs[languageCode], {
                     delimiter: FLATTEN_DELIMITER,
                 }) as Object;
+
                 options.onLanguageComplete(
                     languageCode,
                     unflattened,

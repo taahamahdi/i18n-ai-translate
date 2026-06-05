@@ -4,6 +4,7 @@ import {
     DEFAULT_TEMPLATED_STRING_SUFFIX,
 } from "./constants";
 import { Command } from "commander";
+import { DEFAULT_CACHE_PATH, loadCache, saveCache } from "./cache";
 import {
     getAllLanguageCodes,
     getOutputPathFromInputPath,
@@ -21,6 +22,7 @@ import ChatPool from "./chat_pool";
 import RateLimiter from "./rate_limiter";
 import fs, { mkdtempSync } from "fs";
 import path from "path";
+import type { TranslationCache } from "./cache";
 import type DryRun from "./interfaces/dry_run";
 import type OverridePrompt from "./interfaces/override_prompt";
 
@@ -92,6 +94,7 @@ export default function buildTranslateCommand(): Command {
         .option("--tokens-per-minute <tpm>", CLI_HELP.TokensPerMinute)
         .option("--language-concurrency <n>", CLI_HELP.LanguageConcurrency)
         .option("--file-format <format>", CLI_HELP.FileFormat)
+        .option("--cache [path]", CLI_HELP.Cache)
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
             const languageConcurrency = Math.max(
@@ -119,11 +122,27 @@ export default function buildTranslateCommand(): Command {
                 rateLimiter: sharedRateLimiter,
             });
 
+            // Load the translation memory once up front (if --cache was
+            // given) and share the in-memory object across every language
+            // and file in this run; it's written back to disk at the end.
+            let cachePath: string | undefined;
+            let cache: TranslationCache | undefined;
+            if (options.cache) {
+                const resolvedPath =
+                    typeof options.cache === "string"
+                        ? options.cache
+                        : DEFAULT_CACHE_PATH;
+
+                cachePath = resolvedPath;
+                cache = loadCache(resolvedPath);
+            }
+
             // The commander options object carries CLI-only booleans that
             // processModelArgs doesn't re-expose; forward them by spreading
             // the subset the translate*() wrappers actually consume.
             const sharedOptions = {
                 ...modelArgs,
+                cache,
                 context: options.context,
                 continueOnError: options.continueOnError,
                 ensureChangedTranslation: options.ensureChangedTranslation,
@@ -351,6 +370,15 @@ export default function buildTranslateCommand(): Command {
                         }
                     },
                 );
+            }
+
+            // Persist the translation memory once every language is done.
+            // Dry-run is a no-write preview, so leave the cache untouched.
+            if (cache && cachePath && !options.dryRun) {
+                saveCache(cachePath, cache);
+                if (options.verbose) {
+                    printInfo(`Wrote translation cache to ${cachePath}`);
+                }
             }
         });
 }

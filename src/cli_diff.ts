@@ -4,7 +4,8 @@ import {
     DEFAULT_TEMPLATED_STRING_SUFFIX,
 } from "./constants";
 import { Command } from "commander";
-import { printError, resolveInputPath } from "./utils";
+import { DEFAULT_CACHE_PATH, loadCache, saveCache } from "./cache";
+import { printError, printInfo, resolveInputPath } from "./utils";
 import { processModelArgs, processOverridePromptFile } from "./cli_helpers";
 import { translateDirectoryDiff } from "./translate_directory";
 import { translateFileDiff } from "./translate_file";
@@ -12,6 +13,7 @@ import ChatPool from "./chat_pool";
 import RateLimiter from "./rate_limiter";
 import fs, { mkdtempSync } from "fs";
 import path from "path";
+import type { TranslationCache } from "./cache";
 import type DryRun from "./interfaces/dry_run";
 import type OverridePrompt from "./interfaces/override_prompt";
 
@@ -81,6 +83,7 @@ export default function buildDiffCommand(): Command {
         )
         .option("--tokens-per-minute <tpm>", CLI_HELP.TokensPerMinute)
         .option("--file-format <format>", CLI_HELP.FileFormat)
+        .option("--cache [path]", CLI_HELP.Cache)
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
 
@@ -105,8 +108,21 @@ export default function buildDiffCommand(): Command {
                 rateLimiter: sharedRateLimiter,
             });
 
+            let cachePath: string | undefined;
+            let cache: TranslationCache | undefined;
+            if (options.cache) {
+                const resolvedPath =
+                    typeof options.cache === "string"
+                        ? options.cache
+                        : DEFAULT_CACHE_PATH;
+
+                cachePath = resolvedPath;
+                cache = loadCache(resolvedPath);
+            }
+
             const sharedOptions = {
                 ...modelArgs,
+                cache,
                 context: options.context,
                 continueOnError: options.continueOnError,
                 ensureChangedTranslation: options.ensureChangedTranslation,
@@ -181,6 +197,15 @@ export default function buildDiffCommand(): Command {
                     inputLanguageCode: options.inputLanguage,
                     overridePrompt,
                 });
+            }
+
+            // Persist the translation memory after the diff completes.
+            // Dry-run is a no-write preview, so leave the cache untouched.
+            if (cache && cachePath && !options.dryRun) {
+                saveCache(cachePath, cache);
+                if (options.verbose) {
+                    printInfo(`Wrote translation cache to ${cachePath}`);
+                }
             }
         });
 }

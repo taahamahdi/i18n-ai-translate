@@ -1,4 +1,5 @@
 import type { ChatParams, Model } from "../types";
+import type { TranslationCache } from "../cache";
 import type ChatPool from "../chat_pool";
 import type Engine from "../enums/engine";
 import type OverridePrompt from "./override_prompt";
@@ -52,4 +53,12 @@ export default interface Options {
      */
     pool?: ChatPool;
     rateLimiter?: RateLimiter;
+    /**
+     * Optional translation memory. When provided, translate() skips any
+     * source string already present (keyed by source text + input/output
+     * language + context, deliberately model-agnostic) and records newly
+     * translated strings into it for reuse on later runs. The CLI wires
+     * this up behind `--cache`; library callers may pass their own.
+     */
+    cache?: TranslationCache;
 }
