@@ -7,6 +7,7 @@ import {
 import { po } from "gettext-parser";
 import JSONAdapter from "../formats/json_adapter";
 import POAdapter from "../formats/po_adapter";
+import PropertiesAdapter from "../formats/properties_adapter";
 
 // ASCII Record Separator — must match KEY_DELIMITER in po_adapter.ts.
 const SEP = "\x1e";
@@ -60,8 +61,16 @@ describe("format registry", () => {
         expect(getAdapterByName("nope")).toBeUndefined();
     });
 
+    it("resolves the properties adapter by name and extension", () => {
+        expect(getAdapterByName("properties")).toBe(PropertiesAdapter);
+        expect(getAdapterByExtension(".properties")).toBe(PropertiesAdapter);
+        expect(getAdapterForFile("messages.properties")).toBe(
+            PropertiesAdapter,
+        );
+    });
+
     it("lists registered format names", () => {
-        expect(listFormatNames()).toEqual(["json", "po"]);
+        expect(listFormatNames()).toEqual(["json", "po", "properties"]);
     });
 });
 
@@ -399,5 +408,159 @@ describe("POAdapter.readTranslated", () => {
         const { flat } = POAdapter.readTranslated!(target);
         expect(flat[`${SEP}One item${SEP}_one`]).toBe("first");
         expect(flat[`${SEP}One item${SEP}_other`]).toBe("second");
+    });
+});
+
+describe("PropertiesAdapter", () => {
+    it("reads keys, comments, and blank lines into a flat map", () => {
+        const input = [
+            "# a comment",
+            "! also a comment",
+            "",
+            "greeting=Hello",
+            "menu.save=Save",
+        ].join("\n");
+
+        const { flat } = PropertiesAdapter.read(input);
+        expect(flat).toEqual({ "greeting": "Hello", "menu.save": "Save" });
+    });
+
+    it("round-trips a fixture byte-for-byte when nothing changes", () => {
+        const input = [
+            "# Localized strings",
+            "",
+            "greeting = Hello, {0}!",
+            "menu.save:Save",
+            "spaced   value with spaces",
+            "",
+        ].join("\n");
+
+        const { flat, sidecar } = PropertiesAdapter.read(input);
+        const output = PropertiesAdapter.write(flat, sidecar, "en", "en");
+        expect(output).toBe(input);
+    });
+
+    it("accepts =, :, and whitespace separators", () => {
+        const { flat } = PropertiesAdapter.read(
+            ["a=one", "b:two", "c three"].join("\n"),
+        );
+
+        expect(flat).toEqual({ a: "one", b: "two", c: "three" });
+    });
+
+    it("normalizes MessageFormat placeholders to {{argN}}", () => {
+        const { flat } = PropertiesAdapter.read(
+            "welcome=Hi {0}, you have {1} messages",
+        );
+
+        expect(flat.welcome).toBe("Hi {{arg0}}, you have {{arg1}} messages");
+    });
+
+    it("preserves typed MessageFormat tokens through a translation", () => {
+        const input = "count=You have {0,number,integer} items";
+        const { flat, sidecar } = PropertiesAdapter.read(input);
+        expect(flat.count).toBe("You have {{arg0}} items");
+
+        const output = PropertiesAdapter.write(
+            { count: "Vous avez {{arg0}} articles" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toBe("count=Vous avez {0,number,integer} articles");
+    });
+
+    it("leaves a model-invented placeholder literal on write", () => {
+        const { sidecar } = PropertiesAdapter.read("k=Value {0}");
+        const output = PropertiesAdapter.write(
+            { k: "{{arg0}} et {{arg5}}" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toBe("k={0} et {{arg5}}");
+    });
+
+    it("decodes and re-encodes escapes for changed values", () => {
+        const input = "path=C\\:\\\\temp";
+        const { flat, sidecar } = PropertiesAdapter.read(input);
+        expect(flat.path).toBe("C:\\temp");
+
+        // Unchanged: original bytes are preserved verbatim.
+        expect(PropertiesAdapter.write(flat, sidecar, "en", "en")).toBe(input);
+
+        // Changed: a literal newline and backslash are re-escaped.
+        const output = PropertiesAdapter.write(
+            { path: "D:\\data\nnext" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toBe("path=D:\\\\data\\nnext");
+    });
+
+    it("decodes \\uXXXX escapes into their characters", () => {
+        const { flat } = PropertiesAdapter.read("cafe=caf\\u00e9");
+        expect(flat.cafe).toBe("café");
+    });
+
+    it("round-trips \\t \\n \\r \\f whitespace escapes both ways", () => {
+        const { flat } = PropertiesAdapter.read("k=a\\tb\\nc\\rd\\fe");
+        expect(flat.k).toBe("a\tb\nc\rd\fe");
+
+        const { sidecar } = PropertiesAdapter.read("k=v");
+        const output = PropertiesAdapter.write(
+            { k: "a\tb\nc\rd\fe" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toBe("k=a\\tb\\nc\\rd\\fe");
+    });
+
+    it("keeps an escaped separator as part of the key", () => {
+        const { flat, sidecar } = PropertiesAdapter.read("a\\:b=value");
+        expect(flat["a:b"]).toBe("value");
+        expect(PropertiesAdapter.write(flat, sidecar, "en", "en")).toBe(
+            "a\\:b=value",
+        );
+    });
+
+    it("joins line-continuation values into one entry", () => {
+        const input = ["msg=line one \\", "    and line two"].join("\n");
+        const { flat, sidecar } = PropertiesAdapter.read(input);
+        expect(flat.msg).toBe("line one and line two");
+        // Unchanged values keep the original multi-line layout.
+        expect(PropertiesAdapter.write(flat, sidecar, "en", "en")).toBe(input);
+    });
+
+    it("escapes a leading space when a value changes", () => {
+        const { sidecar } = PropertiesAdapter.read("k=v");
+        const output = PropertiesAdapter.write(
+            { k: " leading" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toBe("k=\\ leading");
+    });
+
+    it("re-emits the original bytes for keys missing from the translation", () => {
+        const input = ["a=one", "b=two"].join("\n");
+        const { sidecar } = PropertiesAdapter.read(input);
+        // Only `a` is translated; `b` must survive untouched.
+        const output = PropertiesAdapter.write({ a: "un" }, sidecar, "en", "fr");
+        expect(output).toBe(["a=un", "b=two"].join("\n"));
+    });
+
+    it("preserves a file with no trailing newline", () => {
+        const input = "a=one\nb=two";
+        const { flat, sidecar } = PropertiesAdapter.read(input);
+        expect(PropertiesAdapter.write(flat, sidecar, "en", "en")).toBe(input);
     });
 });

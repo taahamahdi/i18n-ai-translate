@@ -1,12 +1,17 @@
 import JSONAdapter from "./json_adapter";
 import POAdapter from "./po_adapter";
+import PropertiesAdapter from "./properties_adapter";
 import path from "path";
 import type FormatAdapter from "./format_adapter";
 
 // Sidecar types are adapter-private; the registry holds adapters with
 // the sidecar type erased so we can dispatch on extension or name
 // without leaking each format's internal shape.
-const ADAPTERS: readonly FormatAdapter<unknown>[] = [JSONAdapter, POAdapter];
+const ADAPTERS: readonly FormatAdapter<unknown>[] = [
+    JSONAdapter,
+    POAdapter,
+    PropertiesAdapter,
+];
 
 /**
  * Look up an adapter by its `--format <name>` identifier.
