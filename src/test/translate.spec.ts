@@ -58,6 +58,12 @@ import PromptMode from "../enums/prompt_mode";
 import RateLimiter from "../rate_limiter";
 // eslint-disable-next-line import/first
 import { po } from "gettext-parser";
+// eslint-disable-next-line import/first
+import {
+    createCache,
+    getCachedTranslation,
+    setCachedTranslation,
+} from "../cache";
 
 const mkCaseDir = (): string =>
     fs.mkdtempSync(path.join(os.tmpdir(), "i18n-case-"));
@@ -130,6 +136,54 @@ describe.each(Object.values(PromptMode))(
         });
     },
 );
+
+describe("translate with a cache", () => {
+    it("serves cached hits without calling the model and records misses", async () => {
+        const cache = createCache();
+        // Seed a value the fake pipeline would otherwise render as
+        // "Hello_fr"; a sentinel proves the cache short-circuited it.
+        setCachedTranslation(cache, "en", "fr", "", "Hello", "CACHED_HELLO");
+
+        const result = await translate({
+            cache,
+            engine: Engine.ChatGPT,
+            inputJSON: { greeting: "Hello", other: "World" },
+            inputLanguageCode: "en",
+            model: "gpt-4o",
+            outputLanguageCode: "fr",
+            promptMode: PromptMode.JSON,
+            rateLimitMs: 0,
+        } as any);
+
+        // greeting came from the cache; other went through the model.
+        expect(result).toEqual({ greeting: "CACHED_HELLO", other: fr("World") });
+
+        // The freshly translated miss is now cached for next time.
+        expect(getCachedTranslation(cache, "en", "fr", "", "World")).toBe(
+            fr("World"),
+        );
+    });
+
+    it("does not reuse a cached entry across a different context", async () => {
+        const cache = createCache();
+        setCachedTranslation(cache, "en", "fr", "", "Hello", "CACHED_HELLO");
+
+        const result = await translate({
+            cache,
+            context: "a formal banking app",
+            engine: Engine.ChatGPT,
+            inputJSON: { greeting: "Hello" },
+            inputLanguageCode: "en",
+            model: "gpt-4o",
+            outputLanguageCode: "fr",
+            promptMode: PromptMode.JSON,
+            rateLimitMs: 0,
+        } as any);
+
+        // Different context → cache miss → model translation, not the sentinel.
+        expect(result).toEqual({ greeting: fr("Hello") });
+    });
+});
 
 describe.each(Object.values(PromptMode))(
     "translateDiff (promptMode=%s)",

@@ -24,6 +24,7 @@ export const DEFAULT_CONCURRENCY = 2;
 export const CLI_HELP = {
     BatchSize:
         "How many keys to process at a time, 32 by default for chatgpt, 16 otherwise",
+    Cache: "Reuse a translation memory across runs to skip re-translating unchanged strings. Optionally takes a path (default: .i18n-ai-translate-cache.json). Keyed by source text + languages + context, independent of engine/model",
     Concurrency:
         "How many batches to run in parallel (default: 2). Each worker holds its own chat history, sharing one rate limiter. Tune upward together with --rate-limit-ms to use more of your API tier",
     Context:
