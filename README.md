@@ -39,7 +39,7 @@ i18n-ai-translate translate -i i18n/en.json -o fr \
 
 Need more languages? Pass multiple codes (`-o fr es de`) or `-A` for **all** 180+. Filenames like `es-ES.json` / `pt-BR.json` are accepted too — the language subtag is extracted automatically. Skip specific locales with `--exclude-languages fr de` (handy for locales you maintain by hand).
 
-**Other formats:** Gettext `.po` files work too — the format is inferred from the file extension (override with `--file-format json|po`). Comments, `msgctxt`, plural forms, and `printf` placeholders round-trip losslessly. Works across `translate` (file + folder), `diff`, and `check`.
+**Other formats:** besides i18next JSON, Gettext `.po` and Java `.properties` files work too — the format is inferred from the file extension (override with `--file-format json|po|properties`). Non-translatable structure round-trips losslessly: PO comments, `msgctxt`, and plural forms; `.properties` comments, separators, and line continuations. Native placeholders (`printf` `%s`/`%1$s`, MessageFormat `{0}`/`{1}`) are preserved across the translation. Works across `translate` (file + folder), `diff`, and `check`.
 
 ### 3 · Translate a folder
 
@@ -105,7 +105,7 @@ Common flags (all subcommands accept these unless noted):
 | `--exclude-languages`     | —               | Locales to skip (for manually‑maintained targets)                               |
 | `--no-continue-on-error`  | continue        | Abort on first key/batch failure instead of skipping                            |
 | `--dry-run`               | false           | Don't write files, preview instead (translate/diff only)                        |
-| `--file-format`           | from extension  | Input/output file format: `json` or `po` (translate/diff/check)                 |
+| `--file-format`           | from extension  | Input/output file format: `json`, `po`, or `properties` (translate/diff/check)  |
 | `--format`                | table           | `table` or `json` report output (check only)                                    |
 
 Full flag list: `i18n-ai-translate <subcommand> --help`.
