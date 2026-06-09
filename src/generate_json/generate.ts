@@ -181,6 +181,7 @@ export default class GenerateTranslationJSON {
                 this.generateVerifyItemsInput(batch),
                 {
                     context: options.context,
+                    glossary: options.glossary,
                     overridePrompt: options.overridePrompt,
                     templatedStringPrefix: options.templatedStringPrefix,
                     templatedStringSuffix: options.templatedStringSuffix,
@@ -297,6 +298,7 @@ export default class GenerateTranslationJSON {
                 [],
                 {
                     context: options.context,
+                    glossary: options.glossary,
                     overridePrompt: options.overridePrompt,
                     templatedStringPrefix: options.templatedStringPrefix,
                     templatedStringSuffix: options.templatedStringSuffix,
@@ -350,6 +352,7 @@ export default class GenerateTranslationJSON {
                 [],
                 {
                     context: options.context,
+                    glossary: options.glossary,
                     overridePrompt: options.overridePrompt,
                     templatedStringPrefix: options.templatedStringPrefix,
                     templatedStringSuffix: options.templatedStringSuffix,
@@ -480,6 +483,7 @@ export default class GenerateTranslationJSON {
                 context: options.context,
                 ensureChangedTranslation:
                     options.ensureChangedTranslation as boolean,
+                glossary: options.glossary,
                 inputLanguageCode: options.inputLanguageCode,
                 outputLanguageCode: options.outputLanguageCode,
                 overridePrompt: options.overridePrompt,
@@ -608,6 +612,7 @@ export default class GenerateTranslationJSON {
                 context: options.context,
                 ensureChangedTranslation:
                     options.ensureChangedTranslation as boolean,
+                glossary: options.glossary,
                 inputLanguageCode: options.inputLanguageCode,
                 outputLanguageCode: options.outputLanguageCode,
                 overridePrompt: options.overridePrompt,
@@ -836,6 +841,7 @@ export default class GenerateTranslationJSON {
             this.generateTranslateItemsInput(options.translateItems),
             {
                 context: options.context,
+                glossary: options.glossary,
                 keys: options.translateItems.map((it) => it.key),
                 overridePrompt: options.overridePrompt,
                 templatedStringPrefix: options.templatedStringPrefix,
@@ -889,6 +895,7 @@ export default class GenerateTranslationJSON {
             this.generateVerifyItemsInput(options.translateItems),
             {
                 context: options.context,
+                glossary: options.glossary,
                 overridePrompt: options.overridePrompt,
                 templatedStringPrefix: options.templatedStringPrefix,
                 templatedStringSuffix: options.templatedStringSuffix,

@@ -1,5 +1,6 @@
 import type { TranslateItem } from "../generate_json/types";
 import type Chats from "./chats";
+import type Glossary from "./glossary";
 import type OverridePrompt from "./override_prompt";
 import type RateLimiter from "../rate_limiter";
 
@@ -17,4 +18,5 @@ export default interface GenerateTranslationOptionsJSON {
     overridePrompt?: OverridePrompt;
     rateLimiter?: RateLimiter;
     context?: string;
+    glossary?: Glossary;
 }

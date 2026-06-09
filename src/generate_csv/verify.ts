@@ -4,6 +4,7 @@ import {
     translationVerificationPrompt,
 } from "./prompts";
 import type ChatInterface from "../chats/chat_interface";
+import type Glossary from "../interfaces/glossary";
 import type OverridePrompt from "../interfaces/override_prompt";
 
 /**
@@ -24,6 +25,7 @@ export async function verifyTranslation(
     options?: {
         overridePrompt?: OverridePrompt;
         context?: string;
+        glossary?: Glossary;
     },
 ): Promise<string> {
     const translationVerificationPromptText = translationVerificationPrompt(
@@ -56,6 +58,7 @@ export async function verifyStyling(
     options?: {
         overridePrompt?: OverridePrompt;
         context?: string;
+        glossary?: Glossary;
     },
 ): Promise<string> {
     const stylingVerificationPromptText = stylingVerificationPrompt(

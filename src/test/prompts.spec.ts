@@ -52,6 +52,38 @@ describe("prompt builders", () => {
         });
     });
 
+    describe("glossary injection", () => {
+        const glossary = {
+            doNotTranslate: ["Acme"],
+            terms: { es: { Account: "Cuenta" }, fr: { Account: "Compte" } },
+        };
+
+        it("injects do-not-translate and the matching language's terms (JSON generation)", () => {
+            const out = translationPromptJSON("en", "fr", [], { glossary });
+            expect(out).toContain("Glossary (follow strictly):");
+            expect(out).toContain("\"Acme\"");
+            expect(out).toContain("\"Account\" → \"Compte\"");
+            // The Spanish forced term must not leak into a French prompt.
+            expect(out).not.toContain("Cuenta");
+        });
+
+        it("injects the glossary into the JSON verification prompt", () => {
+            const out = verificationPromptJSON("en", "fr", [], { glossary });
+            expect(out).toContain("\"Account\" → \"Compte\"");
+        });
+
+        it("injects the glossary into CSV generation", () => {
+            const out = csvGenerationPrompt("en", "fr", '"hello"', { glossary });
+            expect(out).toContain("Glossary (follow strictly):");
+            expect(out).toContain("\"Account\" → \"Compte\"");
+        });
+
+        it("omits the glossary block when none is provided", () => {
+            const out = translationPromptJSON("en", "fr", []);
+            expect(out).not.toContain("Glossary (follow strictly):");
+        });
+    });
+
     describe("plural-suffix hints", () => {
         it("fires when any key ends in a CLDR plural suffix", () => {
             const out = translationPromptJSON("en", "fr", [], {

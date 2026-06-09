@@ -34,6 +34,7 @@ async function generateTranslation(
         input,
         {
             context: options.context,
+            glossary: options.glossary,
             overridePrompt: options.overridePrompt,
         },
     );
@@ -138,6 +139,7 @@ async function runShard(
             context: options.context,
             ensureChangedTranslation:
                 options.ensureChangedTranslation as boolean,
+            glossary: options.glossary,
             input,
             inputLanguageCode: options.inputLanguageCode,
             keys,
@@ -372,6 +374,7 @@ async function generate(
             text,
             {
                 context: options.context,
+                glossary: options.glossary,
                 overridePrompt: options.overridePrompt,
             },
         );
@@ -401,6 +404,7 @@ async function generate(
             text,
             {
                 context: options.context,
+                glossary: options.glossary,
                 overridePrompt: options.overridePrompt,
             },
         );

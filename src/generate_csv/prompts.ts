@@ -1,4 +1,6 @@
+import { buildGlossaryInstructions } from "../glossary";
 import { getLanguageName } from "../utils";
+import type Glossary from "../interfaces/glossary";
 import type OverridePrompt from "../interfaces/override_prompt";
 
 function buildContextPreamble(context?: string): string {
@@ -21,6 +23,7 @@ export function generationPrompt(
     options?: {
         overridePrompt?: OverridePrompt;
         context?: string;
+        glossary?: Glossary;
     },
 ): string {
     const inputLanguage = getLanguageName(inputLanguageCode);
@@ -37,6 +40,10 @@ export function generationPrompt(
 
         const argumentToValue: { [key: string]: string } = {
             context: options?.context ?? "",
+            glossary: buildGlossaryInstructions(
+                options?.glossary,
+                outputLanguageCode,
+            ),
             input,
             inputLanguage,
             outputLanguage,
@@ -48,8 +55,12 @@ export function generationPrompt(
     }
 
     const contextPreamble = buildContextPreamble(options?.context);
+    const glossaryBlock = buildGlossaryInstructions(
+        options?.glossary,
+        outputLanguageCode,
+    );
 
-    return `${contextPreamble}You are a professional translator.
+    return `${contextPreamble}${glossaryBlock}You are a professional translator.
 
 Translate each line from ${inputLanguage} to ${outputLanguage}.
 
@@ -127,6 +138,7 @@ export function translationVerificationPrompt(
     options?: {
         overridePrompt?: OverridePrompt;
         context?: string;
+        glossary?: Glossary;
     },
 ): string {
     const inputLanguage = getLanguageName(inputLanguageCode);
@@ -152,6 +164,10 @@ export function translationVerificationPrompt(
 
         const argumentToValue: { [key: string]: string } = {
             context: options?.context ?? "",
+            glossary: buildGlossaryInstructions(
+                options?.glossary,
+                outputLanguageCode,
+            ),
             inputLanguage,
             mergedCSV,
             outputLanguage,
@@ -163,8 +179,12 @@ export function translationVerificationPrompt(
     }
 
     const contextPreamble = buildContextPreamble(options?.context);
+    const glossaryBlock = buildGlossaryInstructions(
+        options?.glossary,
+        outputLanguageCode,
+    );
 
-    return `${contextPreamble}You are a translation reviewer checking a ${inputLanguage}-to-${outputLanguage} batch in CSV form.
+    return `${contextPreamble}${glossaryBlock}You are a translation reviewer checking a ${inputLanguage}-to-${outputLanguage} batch in CSV form.
 
 Reply with NAK if ANY translation has a problem, including:
 - Inaccurate meaning, wrong tone, or grammar errors
