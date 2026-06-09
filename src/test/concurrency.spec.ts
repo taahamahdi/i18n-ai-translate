@@ -25,6 +25,9 @@ const chatCalls: ChatCall[] = [];
 let nextChatId = 1;
 let failKeys: Set<string> | null = null;
 let rejectOn429Once: Set<string> | null = null;
+// When true, the fake appends blank lines to the CSV response to
+// simulate a model padding its output with a trailing newline (Bug 6).
+let csvTrailingBlank = false;
 
 function mintChatId(): number {
     const id = nextChatId;
@@ -115,7 +118,11 @@ function makeFakeChat(): {
                     throw err;
                 }
 
-                return inputs.map((s) => `"${fakeTranslate(s)}"`).join("\n");
+                const body = inputs
+                    .map((s) => `"${fakeTranslate(s)}"`)
+                    .join("\n");
+
+                return csvTrailingBlank ? `${body}\n\n` : body;
             }
 
             if (fmt === "json-translate") {
@@ -241,6 +248,7 @@ beforeEach(() => {
     nextChatId = 1;
     failKeys = null;
     rejectOn429Once = null;
+    csvTrailingBlank = false;
 });
 
 const toyInput = (): Record<string, string> => ({
@@ -406,6 +414,27 @@ describe("CSV styling verification", () => {
         );
 
         expect(stylingCalls).toHaveLength(0);
+    });
+});
+
+describe("CSV blank-line tolerance (Bug 6)", () => {
+    it("still translates every key when the model pads the response with blank lines", async () => {
+        // Before the fix, a trailing blank line made the response line
+        // count exceed keys.length; the batch was rejected on every
+        // retry and the keys were silently dropped from the output.
+        csvTrailingBlank = true;
+
+        const result = (await translate({
+            ...baseOptions,
+            concurrency: 1,
+            inputJSON: { greeting: "Hello", parting: "Bye" },
+            promptMode: PromptMode.CSV,
+        } as any)) as Record<string, string>;
+
+        expect(result).toEqual({
+            greeting: fakeTranslate("Hello"),
+            parting: fakeTranslate("Bye"),
+        });
     });
 });
 
