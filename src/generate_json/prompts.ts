@@ -1,5 +1,7 @@
+import { buildGlossaryInstructions } from "../glossary";
 import { getLanguageName } from "../utils";
 import type { TranslateItemInput, VerifyItemInput } from "./types";
+import type Glossary from "../interfaces/glossary";
 import type OverridePrompt from "../interfaces/override_prompt";
 
 // CLDR plural suffixes used by i18next keys. When a key ends in one of
@@ -42,6 +44,7 @@ export function translationPromptJSON(
     options?: {
         overridePrompt?: OverridePrompt;
         context?: string;
+        glossary?: Glossary;
         templatedStringPrefix?: string;
         templatedStringSuffix?: string;
         keys?: string[];
@@ -62,6 +65,10 @@ export function translationPromptJSON(
 
         const argumentToValue: { [key: string]: string } = {
             context: options?.context ?? "",
+            glossary: buildGlossaryInstructions(
+                options?.glossary,
+                outputLanguageCode,
+            ),
             input,
             inputLanguage,
             outputLanguage,
@@ -75,10 +82,15 @@ export function translationPromptJSON(
     const prefix = options?.templatedStringPrefix ?? "{{";
     const suffix = options?.templatedStringSuffix ?? "}}";
     const contextPreamble = buildContextPreamble(options?.context);
+    const glossaryBlock = buildGlossaryInstructions(
+        options?.glossary,
+        outputLanguageCode,
+    );
+
     const plural = pluralHint(options?.keys);
     const placeholderLine = buildPlaceholderLine(prefix, suffix);
 
-    return `${contextPreamble}You are a professional translator.
+    return `${contextPreamble}${glossaryBlock}You are a professional translator.
 
 Translate from ${inputLanguage} to ${outputLanguage}.
 
@@ -116,6 +128,7 @@ export function verificationPromptJSON(
     options?: {
         overridePrompt?: OverridePrompt;
         context?: string;
+        glossary?: Glossary;
         templatedStringPrefix?: string;
         templatedStringSuffix?: string;
     },
@@ -135,6 +148,10 @@ export function verificationPromptJSON(
 
         const argumentToValue: { [key: string]: string } = {
             context: options?.context ?? "",
+            glossary: buildGlossaryInstructions(
+                options?.glossary,
+                outputLanguageCode,
+            ),
             input,
             inputLanguage,
             outputLanguage,
@@ -148,9 +165,14 @@ export function verificationPromptJSON(
     const prefix = options?.templatedStringPrefix ?? "{{";
     const suffix = options?.templatedStringSuffix ?? "}}";
     const contextPreamble = buildContextPreamble(options?.context);
+    const glossaryBlock = buildGlossaryInstructions(
+        options?.glossary,
+        outputLanguageCode,
+    );
+
     const placeholderLine = buildPlaceholderLine(prefix, suffix);
 
-    return `${contextPreamble}You are a professional translator.
+    return `${contextPreamble}${glossaryBlock}You are a professional translator.
 
 Check translations from ${inputLanguage} to ${outputLanguage}.
 

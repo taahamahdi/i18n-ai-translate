@@ -5,6 +5,7 @@ import {
 } from "./constants";
 import { Command } from "commander";
 import { DEFAULT_CACHE_PATH, loadCache, saveCache } from "./cache";
+import { loadGlossary } from "./glossary";
 import {
     getAllLanguageCodes,
     getOutputPathFromInputPath,
@@ -24,6 +25,7 @@ import fs, { mkdtempSync } from "fs";
 import path from "path";
 import type { TranslationCache } from "./cache";
 import type DryRun from "./interfaces/dry_run";
+import type Glossary from "./interfaces/glossary";
 import type OverridePrompt from "./interfaces/override_prompt";
 
 /**
@@ -95,6 +97,7 @@ export default function buildTranslateCommand(): Command {
         .option("--language-concurrency <n>", CLI_HELP.LanguageConcurrency)
         .option("--file-format <format>", CLI_HELP.FileFormat)
         .option("--cache [path]", CLI_HELP.Cache)
+        .option("--glossary <path>", CLI_HELP.Glossary)
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
             const languageConcurrency = Math.max(
@@ -137,6 +140,16 @@ export default function buildTranslateCommand(): Command {
                 cache = loadCache(resolvedPath);
             }
 
+            let glossary: Glossary | undefined;
+            if (options.glossary) {
+                try {
+                    glossary = loadGlossary(options.glossary);
+                } catch (e) {
+                    printError(`${e}`);
+                    process.exit(2);
+                }
+            }
+
             // The commander options object carries CLI-only booleans that
             // processModelArgs doesn't re-expose; forward them by spreading
             // the subset the translate*() wrappers actually consume.
@@ -148,6 +161,7 @@ export default function buildTranslateCommand(): Command {
                 ensureChangedTranslation: options.ensureChangedTranslation,
                 excludeLanguages: options.excludeLanguages,
                 format: options.fileFormat,
+                glossary,
                 pool: sharedPool,
                 rateLimiter: sharedRateLimiter,
                 skipStylingVerification: options.skipStylingVerification,

@@ -2,6 +2,7 @@ import type { ChatParams, Model } from "../types";
 import type { TranslationCache } from "../cache";
 import type ChatPool from "../chat_pool";
 import type Engine from "../enums/engine";
+import type Glossary from "./glossary";
 import type OverridePrompt from "./override_prompt";
 import type PromptMode from "../enums/prompt_mode";
 import type RateLimiter from "../rate_limiter";
@@ -61,4 +62,11 @@ export default interface Options {
      * this up behind `--cache`; library callers may pass their own.
      */
     cache?: TranslationCache;
+    /**
+     * Optional glossary steering terminology: terms to keep verbatim
+     * (brand/product names) and forced per-language translations. Injected
+     * into the generation and verification prompts. The CLI wires this up
+     * behind `--glossary`; library callers may pass their own.
+     */
+    glossary?: Glossary;
 }

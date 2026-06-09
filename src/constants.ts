@@ -37,6 +37,8 @@ export const CLI_HELP = {
         "Language codes to skip (e.g. 'fr de'). Useful when some locales are maintained manually and shouldn't be machine-translated over",
     FileFormat:
         "Input/output file format (default: inferred from extension). Supported: json, po, properties, strings.",
+    Glossary:
+        "Path to a glossary JSON file steering terminology: { \"doNotTranslate\": [\"Acme\"], \"terms\": { \"fr\": { \"Account\": \"Compte\" } } }. Injected into the generation and verification prompts",
     LanguageConcurrency:
         "How many target languages to translate in parallel (default 1). Each language shares the same pool and rate limiter, so raising this does not multiply provider traffic — pair with --concurrency and --tokens-per-minute to tune overall throughput.",
     MaxTokens: "The maximum token size of a request",

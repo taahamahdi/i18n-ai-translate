@@ -5,6 +5,7 @@ import {
 } from "./constants";
 import { Command } from "commander";
 import { DEFAULT_CACHE_PATH, loadCache, saveCache } from "./cache";
+import { loadGlossary } from "./glossary";
 import { printError, printInfo, resolveInputPath } from "./utils";
 import { processModelArgs, processOverridePromptFile } from "./cli_helpers";
 import { translateDirectoryDiff } from "./translate_directory";
@@ -15,6 +16,7 @@ import fs, { mkdtempSync } from "fs";
 import path from "path";
 import type { TranslationCache } from "./cache";
 import type DryRun from "./interfaces/dry_run";
+import type Glossary from "./interfaces/glossary";
 import type OverridePrompt from "./interfaces/override_prompt";
 
 /**
@@ -84,6 +86,7 @@ export default function buildDiffCommand(): Command {
         .option("--tokens-per-minute <tpm>", CLI_HELP.TokensPerMinute)
         .option("--file-format <format>", CLI_HELP.FileFormat)
         .option("--cache [path]", CLI_HELP.Cache)
+        .option("--glossary <path>", CLI_HELP.Glossary)
         .action(async (options: any) => {
             const modelArgs = processModelArgs(options);
 
@@ -120,6 +123,16 @@ export default function buildDiffCommand(): Command {
                 cache = loadCache(resolvedPath);
             }
 
+            let glossary: Glossary | undefined;
+            if (options.glossary) {
+                try {
+                    glossary = loadGlossary(options.glossary);
+                } catch (e) {
+                    printError(`${e}`);
+                    process.exit(2);
+                }
+            }
+
             const sharedOptions = {
                 ...modelArgs,
                 cache,
@@ -128,6 +141,7 @@ export default function buildDiffCommand(): Command {
                 ensureChangedTranslation: options.ensureChangedTranslation,
                 excludeLanguages: options.excludeLanguages,
                 format: options.fileFormat,
+                glossary,
                 pool: sharedPool,
                 rateLimiter: sharedRateLimiter,
                 skipStylingVerification: options.skipStylingVerification,

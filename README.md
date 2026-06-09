@@ -108,6 +108,7 @@ Common flags (all subcommands accept these unless noted):
 | `--language-concurrency`  | 1               | Target languages to translate in parallel (shares pool + rate limit)            |
 | `--tokens-per-minute`     | off             | Extra TPM cap across all workers; pair with `--concurrency` to stay under tier  |
 | `--context <string>`      | —               | Product/domain context, e.g. `"a B2B invoicing SaaS"`                           |
+| `--glossary <path>`       | —               | JSON file: keep-verbatim terms + forced per-language translations               |
 | `--exclude-languages`     | —               | Locales to skip (for manually‑maintained targets)                               |
 | `--no-continue-on-error`  | continue        | Abort on first key/batch failure instead of skipping                            |
 | `--dry-run`               | false           | Don't write files, preview instead (translate/diff only)                        |
@@ -154,6 +155,7 @@ const report = await check({
 * **Prompt modes**: `csv` (faster, GPT‑class models only) vs `json` (structured output, works with weaker models too)
 * **Custom prompts**: swap in your own generation/verification prompts via `--override-prompt`
 * **Translation memory**: `--cache [path]` stores translations in a JSON file (default `.i18n-ai-translate-cache.json`) and reuses them on later runs, so unchanged strings are never re-sent to the model. The key is the source text + languages + `--context` — independent of engine/model, so the cache survives a provider switch. Library callers can pass their own `cache` object.
+* **Glossary**: `--glossary <path>` points to a JSON file that steers terminology — `doNotTranslate` keeps brand/product names verbatim, and `terms` forces exact per-language translations: `{ "doNotTranslate": ["Acme"], "terms": { "fr": { "Account": "Compte" } } }`. The rules are injected into both the generation and verification prompts; only the run's target language is applied (with BCP-47 base-subtag fallback, so `pt` covers `pt-BR`).
 * **Plural awareness**: keys ending in `_one`/`_other`/`_few`/`_many` get a CLDR plural hint in JSON mode
 * **Placeholders**: `{{variables}}` are preserved; customise delimiters with `-p`/`-s`
 * **Rate-limit handling**: per-engine defaults + exponential backoff; `--tokens-per-minute` adds TPM cap
