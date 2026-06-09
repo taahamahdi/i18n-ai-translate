@@ -180,6 +180,21 @@ async function runShard(
     }
 }
 
+/**
+ * Split a model's CSV translation response into one entry per line,
+ * dropping blank lines. The model often pads the response with a
+ * trailing newline or blank separator lines; a genuine CSV translation
+ * is always a quoted string, so an empty line is never valid output —
+ * only noise. Filtering it here keeps the downstream line-count check
+ * from rejecting (and ultimately dropping) the whole batch over a stray
+ * blank line. See Bug 6.
+ * @param text - the raw model response
+ * @returns the non-empty lines
+ */
+export function splitTranslationLines(text: string): string[] {
+    return text.split("\n").filter((line) => line.trim() !== "");
+}
+
 async function generate(
     options: GenerateTranslationOptionsCSV,
     generationPromptText: string,
@@ -233,12 +248,17 @@ async function generate(
         text = text.slice(4, -4);
     }
 
-    // Response length matches
-    const splitText = text.split("\n");
+    // Response length matches. Blank lines (a trailing newline, stray
+    // separators) are dropped first so they don't trip the strict
+    // count check and cause an otherwise-valid batch to be retried into
+    // oblivion and silently skipped. See Bug 6.
+    const splitText = splitTranslationLines(text);
     if (splitText.length !== keys.length) {
         chats.generateTranslationChat.rollbackLastMessage();
         return Promise.reject(
-            new Error(`Invalid number of lines. text = ${text}`),
+            new Error(
+                `Invalid number of lines: expected ${keys.length}, got ${splitText.length}. text = ${text}`,
+            ),
         );
     }
 
