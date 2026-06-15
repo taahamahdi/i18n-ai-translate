@@ -48,7 +48,7 @@
     "eslint-plugin-tsdoc": "^0.4.0",
     "jest": "^30.0.4",
     "prettier": "^3.2.5",
-    "ts-jest": "^29.4.0"
+    "ts-jest": "^29.4.11"
   },
   "scripts": {
     "build": "npx tsc",
