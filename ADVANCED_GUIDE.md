@@ -34,8 +34,11 @@ Every format goes through the same pipeline: an adapter parses the file into the
 | `po` | `.po` | Comments, `msgctxt`, plural forms, headers | `%s`, `%d`, `%1$s` |
 | `properties` | `.properties` | Comments, separators, line continuations, escapes | `{0}`, `{1,date,short}` |
 | `strings` | `.strings` | `/* */` and `//` comments, quoting, escapes | `%@`, `%1$@`, `%d` |
+| `yaml` | `.yml`, `.yaml` | Comments, key order, quoting/block style | `%{name}`, `%<name>s` |
 
 The format is inferred from the file extension; pass `--file-format` to override. All formats work across `translate` (file and directory), `diff`, and `check`.
+
+**Rails YAML.** A locale-rooted file (`en:` as the single top-level key) has that root held out of the translation keys and retargeted to the output language on write, so `en.yml` → `fr.yml` comes back rooted at `fr:`. Files without a locale root are treated as a plain catalogue. Non-string scalars (numbers, booleans, dates) are left alone.
 
 https://github.com/user-attachments/assets/4909bf01-3e7a-464a-9c6e-2d1b82cc47d0
 
@@ -160,7 +163,7 @@ Options:
   --exclude-languages [language codes...]     Language codes to skip
   --tokens-per-minute <tpm>                   Cap tokens-per-minute across all concurrent workers (disabled by default)
   --language-concurrency <n>                  How many target languages to translate in parallel (default: 1)
-  --file-format <format>                      json, po, properties, strings (default: inferred from extension)
+  --file-format <format>                      json, po, properties, strings, yaml (default: inferred from extension)
   --cache [path]                              Reuse a translation memory across runs (default: .i18n-ai-translate-cache.json)
   --glossary <path>                           Path to a glossary JSON file steering terminology
   --help                                      display help for command
@@ -224,7 +227,7 @@ Options:
   --context <context>                       Domain context
   --exclude-languages [language codes...]   Locales to skip
   --tokens-per-minute <tpm>                 TPM cap
-  --file-format <format>                    json, po, properties, strings (default: from extension)
+  --file-format <format>                    json, po, properties, strings, yaml (default: from extension)
   --cache [path]                            Reuse a translation memory across runs
   --glossary <path>                         Glossary JSON file steering terminology
   --help                                    display help for command
@@ -270,7 +273,7 @@ Options:
   --context <context>                         Domain context
   --tokens-per-minute <tpm>                   TPM cap
   --format <format>                           'table' (default) or 'json'
-  --file-format <format>                      json, po, properties, strings (default: from extension)
+  --file-format <format>                      json, po, properties, strings, yaml (default: from extension)
   --help                                      display help for command
 ```
 

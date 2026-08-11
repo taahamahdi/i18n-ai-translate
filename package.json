@@ -18,6 +18,7 @@
     "ollama": "^0.5.12",
     "openai": "^5.6.0",
     "typescript": "^5.1.6",
+    "yaml": "^2.9.0",
     "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.1"
   },
@@ -81,12 +82,13 @@
     "llama",
     "gettext",
     "po",
+    "yaml",
     "cli",
     "github-action"
   ],
   "author": "Taaha Mahdi",
   "license": "GPL-3.0",
-  "description": "AI-powered localization CLI, Node library, and GitHub Action. Translate i18next JSON, Gettext PO, Java .properties, and iOS .strings with ChatGPT, Claude, Gemini, or local Ollama models.",
+  "description": "AI-powered localization CLI, Node library, and GitHub Action. Translate i18next JSON, Gettext PO, Java .properties, iOS .strings, and Rails YAML with ChatGPT, Claude, Gemini, or local Ollama models.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/taahamahdi/i18n-ai-translate.git"

@@ -2,6 +2,7 @@ import JSONAdapter from "./json_adapter";
 import POAdapter from "./po_adapter";
 import PropertiesAdapter from "./properties_adapter";
 import StringsAdapter from "./strings_adapter";
+import YAMLAdapter from "./yaml_adapter";
 import path from "path";
 import type FormatAdapter from "./format_adapter";
 
@@ -13,6 +14,7 @@ const ADAPTERS: readonly FormatAdapter<unknown>[] = [
     POAdapter,
     PropertiesAdapter,
     StringsAdapter,
+    YAMLAdapter,
 ];
 
 /**
