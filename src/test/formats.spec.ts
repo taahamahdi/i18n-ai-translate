@@ -9,6 +9,9 @@ import JSONAdapter from "../formats/json_adapter";
 import POAdapter from "../formats/po_adapter";
 import PropertiesAdapter from "../formats/properties_adapter";
 import StringsAdapter from "../formats/strings_adapter";
+import TypeScriptAdapter, {
+    JavaScriptAdapter,
+} from "../formats/module_adapter";
 import YAMLAdapter from "../formats/yaml_adapter";
 
 // ASCII Record Separator — must match KEY_DELIMITER in po_adapter.ts.
@@ -84,6 +87,15 @@ describe("format registry", () => {
         expect(getAdapterForFile("en.yml")).toBe(YAMLAdapter);
     });
 
+    it("resolves the module adapters by name and extension", () => {
+        expect(getAdapterByName("ts")).toBe(TypeScriptAdapter);
+        expect(getAdapterByName("js")).toBe(JavaScriptAdapter);
+        expect(getAdapterForFile("en.ts")).toBe(TypeScriptAdapter);
+        expect(getAdapterForFile("en.mts")).toBe(TypeScriptAdapter);
+        expect(getAdapterForFile("en.js")).toBe(JavaScriptAdapter);
+        expect(getAdapterForFile("en.cjs")).toBe(JavaScriptAdapter);
+    });
+
     it("lists registered format names", () => {
         expect(listFormatNames()).toEqual([
             "json",
@@ -91,6 +103,8 @@ describe("format registry", () => {
             "properties",
             "strings",
             "yaml",
+            "ts",
+            "js",
         ]);
     });
 });
@@ -883,5 +897,164 @@ describe("YAMLAdapter", () => {
 
     it("throws on malformed YAML", () => {
         expect(() => YAMLAdapter.read("en:\n  a: [1, 2\n")).toThrow();
+    });
+});
+
+const TS_FIXTURE = [
+    "import type { Translations } from \"./types\";",
+    "",
+    "// Locale catalogue",
+    "export const enTranslations = {",
+    "    TimeSignatureModal: {",
+    "        header: \"Time Signature\",",
+    "        hint: 'Pick a value',",
+    "    },",
+    "    counts: [\"one\", \"two\"],",
+    "    total: 3,",
+    "    dynamic: `${1} items`,",
+    "} satisfies Translations;",
+    "",
+].join("\n");
+
+describe("module adapter (.ts / .js)", () => {
+    it("extracts strings from an exported const, skipping non-literals", () => {
+        const { flat } = TypeScriptAdapter.read(TS_FIXTURE);
+
+        expect(flat).toEqual({
+            "TimeSignatureModal*header": "Time Signature",
+            "TimeSignatureModal*hint": "Pick a value",
+            "counts*0": "one",
+            "counts*1": "two",
+        });
+    });
+
+    it("round-trips unchanged content byte-for-byte", () => {
+        const { flat, sidecar } = TypeScriptAdapter.read(TS_FIXTURE);
+        expect(TypeScriptAdapter.write(flat, sidecar, "en", "en")).toBe(
+            TS_FIXTURE,
+        );
+    });
+
+    it("preserves imports, comments, types, and quote style", () => {
+        const { flat, sidecar } = TypeScriptAdapter.read(TS_FIXTURE);
+        const output = TypeScriptAdapter.write(
+            {
+                ...flat,
+                "TimeSignatureModal*header": "Signature rythmique",
+                "TimeSignatureModal*hint": "Choisissez une valeur",
+            },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toContain("import type { Translations }");
+        expect(output).toContain("// Locale catalogue");
+        expect(output).toContain("satisfies Translations");
+        expect(output).toContain("header: \"Signature rythmique\"");
+        // The single-quoted entry stays single-quoted.
+        expect(output).toContain("hint: 'Choisissez une valeur'");
+        // Untouched non-literals survive verbatim.
+        expect(output).toContain("total: 3");
+        expect(output).toContain("dynamic: `${1} items`");
+    });
+
+    it("escapes quotes and newlines in the original quote style", () => {
+        const { flat, sidecar } = TypeScriptAdapter.read(TS_FIXTURE);
+        const output = TypeScriptAdapter.write(
+            {
+                ...flat,
+                "TimeSignatureModal*header": "L\"un\"\nsuite\\fin",
+                "TimeSignatureModal*hint": "L'un",
+            },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toContain("header: \"L\\\"un\\\"\\nsuite\\\\fin\"");
+        expect(output).toContain("hint: 'L\\'un'");
+        // The re-parsed file yields exactly what we put in.
+        const { flat: reread } = TypeScriptAdapter.read(output);
+        expect(reread["TimeSignatureModal*header"]).toBe("L\"un\"\nsuite\\fin");
+        expect(reread["TimeSignatureModal*hint"]).toBe("L'un");
+    });
+
+    it("finds a CommonJS module.exports catalogue", () => {
+        const input = "module.exports = { greeting: \"Hello\" };\n";
+        const { flat, sidecar } = JavaScriptAdapter.read(input);
+
+        expect(flat).toEqual({ greeting: "Hello" });
+        expect(
+            JavaScriptAdapter.write(
+                { greeting: "Bonjour" },
+                sidecar,
+                "en",
+                "fr",
+            ),
+        ).toBe("module.exports = { greeting: \"Bonjour\" };\n");
+    });
+
+    it("prefers a default export over other object literals", () => {
+        const input = [
+            "const helper = { ignored: \"nope\" };",
+            "export default { greeting: \"Hello\" };",
+            "",
+        ].join("\n");
+
+        expect(TypeScriptAdapter.read(input).flat).toEqual({
+            greeting: "Hello",
+        });
+    });
+
+    it("handles `export default {...} as const`", () => {
+        const input = "export default { greeting: \"Hello\" } as const;\n";
+        expect(TypeScriptAdapter.read(input).flat).toEqual({
+            greeting: "Hello",
+        });
+    });
+
+    it("reads quoted and dotted keys", () => {
+        const input = "export default { \"foo.bar\": \"x\", 'a b': \"y\" };\n";
+        expect(TypeScriptAdapter.read(input).flat).toEqual({
+            "a b": "y",
+            "foo.bar": "x",
+        });
+    });
+
+    it("falls back to a lone bare const", () => {
+        const input = "const translations = { greeting: \"Hello\" };\n";
+        expect(TypeScriptAdapter.read(input).flat).toEqual({
+            greeting: "Hello",
+        });
+    });
+
+    it("skips computed keys and spreads it cannot address", () => {
+        const input = [
+            "const base = { a: \"A\" };",
+            "export default { ...base, [key]: \"skipped\", kept: \"Kept\" };",
+            "",
+        ].join("\n");
+
+        expect(TypeScriptAdapter.read(input).flat).toEqual({ kept: "Kept" });
+    });
+
+    it("re-emits a template-literal value as a template literal", () => {
+        const input = "export default { greeting: `Hello` };\n";
+        const { sidecar } = TypeScriptAdapter.read(input);
+        expect(
+            TypeScriptAdapter.write(
+                { greeting: "Bonjour `le` ${monde}" },
+                sidecar,
+                "en",
+                "fr",
+            ),
+        ).toBe("export default { greeting: `Bonjour \\`le\\` \\${monde}` };\n");
+    });
+
+    it("throws when no catalogue object can be found", () => {
+        expect(() =>
+            TypeScriptAdapter.read("export function f() {}\n"),
+        ).toThrow(/No translation object found/);
     });
 });
