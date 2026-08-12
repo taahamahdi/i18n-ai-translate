@@ -1,6 +1,6 @@
 # `i18n-ai-translate`
 
-Leverage ChatGPT, Gemini, Ollama, or Claude for seamless translation of localization files. Supports directories of nested translation files. Requires [i18next-style](https://github.com/i18next/i18next) JSON files.
+Leverage ChatGPT, Gemini, Ollama, or Claude for seamless translation of localization files. Supports directories of nested translation files. [i18next-style](https://github.com/i18next/i18next) JSON is the default, with several other catalogue formats supported — see [File formats](#file-formats).
 
 ## Pipelines
 
@@ -23,6 +23,19 @@ Chat history is retained across batches inside one worker so the model builds co
 ### Parallelism
 
 Batches run in parallel inside one language (`--concurrency`, default 2). Multiple target languages can run concurrently too (`--language-concurrency`, default 1). All workers share one `RateLimiter` — a 429 on any worker backs off every worker via `Retry-After`, and `--tokens-per-minute` enforces a cross-worker TPM cap when the provider's TPM tier is tighter than its RPM tier. Similar-valued strings are grouped and sharded across workers so each worker's chat history stays topically coherent.
+
+### File formats
+
+Every format goes through the same pipeline: an adapter parses the file into the flat `key → string` map the pipeline works on, and holds everything else — comments, ordering, metadata, native placeholder syntax — in a sidecar used to rebuild the file on write. Untouched entries come back byte-for-byte.
+
+| `--file-format` | Extensions | Structure preserved | Placeholders normalized |
+|---|---|---|---|
+| `json` (default) | `.json` | Nesting, key order | `{{var}}` (native) |
+| `po` | `.po` | Comments, `msgctxt`, plural forms, headers | `%s`, `%d`, `%1$s` |
+| `properties` | `.properties` | Comments, separators, line continuations, escapes | `{0}`, `{1,date,short}` |
+| `strings` | `.strings` | `/* */` and `//` comments, quoting, escapes | `%@`, `%1$@`, `%d` |
+
+The format is inferred from the file extension; pass `--file-format` to override. All formats work across `translate` (file and directory), `diff`, and `check`.
 
 https://github.com/user-attachments/assets/4909bf01-3e7a-464a-9c6e-2d1b82cc47d0
 
@@ -115,7 +128,7 @@ Relative input paths begin from the `jsons/` directory.
 
 ### `translate`
 
-Converts a local i18n JSON file (or a directory of them) into any target language.
+Converts a local i18n file (or a directory of them) into any target language.
 
 ```
 Usage: i18n-ai-translate translate [options]
@@ -147,6 +160,9 @@ Options:
   --exclude-languages [language codes...]     Language codes to skip
   --tokens-per-minute <tpm>                   Cap tokens-per-minute across all concurrent workers (disabled by default)
   --language-concurrency <n>                  How many target languages to translate in parallel (default: 1)
+  --file-format <format>                      json, po, properties, strings (default: inferred from extension)
+  --cache [path]                              Reuse a translation memory across runs (default: .i18n-ai-translate-cache.json)
+  --glossary <path>                           Path to a glossary JSON file steering terminology
   --help                                      display help for command
 ```
 
@@ -208,6 +224,9 @@ Options:
   --context <context>                       Domain context
   --exclude-languages [language codes...]   Locales to skip
   --tokens-per-minute <tpm>                 TPM cap
+  --file-format <format>                    json, po, properties, strings (default: from extension)
+  --cache [path]                            Reuse a translation memory across runs
+  --glossary <path>                         Glossary JSON file steering terminology
   --help                                    display help for command
 ```
 
@@ -234,7 +253,7 @@ Usage: i18n-ai-translate check [options]
 
 Options:
   -i, --input <input>                         Source i18n file
-  -o, --target-languages [language codes...]  Language codes to check; if omitted, every sibling JSON in the source's directory
+  -o, --target-languages [language codes...]  Language codes to check; if omitted, every sibling locale file in the source's directory
   -e, --engine <engine>                       Engine to use
   -m, --model <model>                         Model to use
   -r, --rate-limit-ms <rateLimitMs>           Gap between requests
@@ -251,6 +270,7 @@ Options:
   --context <context>                         Domain context
   --tokens-per-minute <tpm>                   TPM cap
   --format <format>                           'table' (default) or 'json'
+  --file-format <format>                      json, po, properties, strings (default: from extension)
   --help                                      display help for command
 ```
 
@@ -363,7 +383,7 @@ All prompts are defined in English regardless of target language — this is int
 
 Batches of the input are passed in. Each output line is expected to be wrapped in ASCII quotes.
 
-```
+````
 Product context: ${context}           ← only included when --context is supplied
 
 You are a professional translator.
@@ -381,13 +401,13 @@ All lines should start and end with an ASCII quotation mark (").
 ```
 ${input}
 ```
-```
+````
 
 ### CSV verification prompt
 
 The previous two-prompt chain (accuracy + styling) has been merged into a single rubric that flags NAK on any translation issue. The standalone styling prompt is only invoked when the user has supplied a `stylingVerificationPrompt` override, which saves a round-trip in the default case.
 
-```
+````
 Product context: ${context}
 
 You are a translation reviewer checking a ${inputLanguage}-to-${outputLanguage} batch in CSV form.
@@ -405,13 +425,13 @@ Reply with ACK or NAK only — no explanation.
 ${inputLanguage},${outputLanguage}
 ${mergedCSV}
 ```
-```
+````
 
 ### JSON translation prompt
 
 Batches use structured-output validation via Zod schemas.
 
-```
+````
 Product context: ${context}
 
 You are a professional translator.
@@ -435,13 +455,13 @@ Return the translation as JSON.
 ```json
 ${input}
 ```
-```
+````
 
 ### JSON verification prompt
 
 Per-item verify with a schema returning `{ valid, issue, fixedTranslation }`. The prompt explicitly asks the model not to revise correct translations (a common failure mode).
 
-```
+````
 Product context: ${context}
 
 You are a professional translator.
@@ -468,7 +488,7 @@ Return the verified output as JSON.
 ```json
 ${input}
 ```
-```
+````
 
 ## Prompt overriding
 
