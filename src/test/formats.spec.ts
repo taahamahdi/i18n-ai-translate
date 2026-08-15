@@ -9,6 +9,7 @@ import JSONAdapter from "../formats/json_adapter";
 import POAdapter from "../formats/po_adapter";
 import PropertiesAdapter from "../formats/properties_adapter";
 import StringsAdapter from "../formats/strings_adapter";
+import YAMLAdapter from "../formats/yaml_adapter";
 
 // ASCII Record Separator — must match KEY_DELIMITER in po_adapter.ts.
 const SEP = "\x1e";
@@ -76,12 +77,20 @@ describe("format registry", () => {
         expect(getAdapterForFile("Localizable.strings")).toBe(StringsAdapter);
     });
 
+    it("resolves the YAML adapter by name and both extensions", () => {
+        expect(getAdapterByName("yaml")).toBe(YAMLAdapter);
+        expect(getAdapterByExtension(".yml")).toBe(YAMLAdapter);
+        expect(getAdapterByExtension(".yaml")).toBe(YAMLAdapter);
+        expect(getAdapterForFile("en.yml")).toBe(YAMLAdapter);
+    });
+
     it("lists registered format names", () => {
         expect(listFormatNames()).toEqual([
             "json",
             "po",
             "properties",
             "strings",
+            "yaml",
         ]);
     });
 });
@@ -699,5 +708,180 @@ describe("StringsAdapter", () => {
         const input = "/* c */\n\"k\" = \"v\";";
         const { flat, sidecar } = StringsAdapter.read(input);
         expect(StringsAdapter.write(flat, sidecar, "en", "en")).toBe(input);
+    });
+});
+
+const YAML_FIXTURE = [
+    "# Rails locale file",
+    "en:",
+    "  greeting: Hello",
+    "  inbox:",
+    "    # how many unread",
+    "    unread: \"You have %{count} messages\"",
+    "    price: '%<amount>.2f owing'",
+    "  day_names:",
+    "    - Monday",
+    "    - Tuesday",
+    "  retries: 3",
+    "",
+].join("\n");
+
+describe("YAMLAdapter", () => {
+    it("strips the locale root so source and target keys line up", () => {
+        const { flat } = YAMLAdapter.read(YAML_FIXTURE);
+
+        expect(flat).toEqual({
+            "day_names*0": "Monday",
+            "day_names*1": "Tuesday",
+            greeting: "Hello",
+            "inbox*price": "{{amount}} owing",
+            "inbox*unread": "You have {{count}} messages",
+        });
+
+        // The same catalogue under a different locale root reads
+        // identically — this is what makes diff mode line up.
+        const french = YAML_FIXTURE.replace("en:", "fr:");
+        expect(Object.keys(YAMLAdapter.read(french).flat).sort()).toEqual(
+            Object.keys(flat).sort(),
+        );
+    });
+
+    it("round-trips unchanged content, comments included", () => {
+        const { flat, sidecar } = YAMLAdapter.read(YAML_FIXTURE);
+        expect(YAMLAdapter.write(flat, sidecar, "en", "en")).toBe(YAML_FIXTURE);
+    });
+
+    it("retargets the locale root to the output language", () => {
+        const { flat, sidecar } = YAMLAdapter.read(YAML_FIXTURE);
+        const output = YAMLAdapter.write(
+            { ...flat, greeting: "Bonjour" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toContain("fr:");
+        expect(output).not.toContain("en:");
+        expect(output).toContain("greeting: Bonjour");
+        expect(output).toContain("# Rails locale file");
+        expect(output).toContain("# how many unread");
+        // Untranslated scalars keep their original type and value.
+        expect(output).toContain("retries: 3");
+    });
+
+    it("restores Rails interpolation in both syntaxes", () => {
+        const { flat, sidecar } = YAMLAdapter.read(YAML_FIXTURE);
+        const output = YAMLAdapter.write(
+            {
+                ...flat,
+                "inbox*price": "{{amount}} dû",
+                "inbox*unread": "Vous avez {{count}} messages",
+            },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toContain("%{count} messages");
+        expect(output).toContain("%<amount>.2f dû");
+    });
+
+    it("leaves a model-invented placeholder literal on write", () => {
+        const { flat, sidecar } = YAMLAdapter.read(YAML_FIXTURE);
+        const output = YAMLAdapter.write(
+            { ...flat, "inbox*unread": "{{count}} et {{bogus}}" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toContain("%{count} et {{bogus}}");
+    });
+
+    it("re-quotes a value whose original plain style can no longer hold it", () => {
+        const { flat, sidecar } = YAMLAdapter.read(YAML_FIXTURE);
+        const output = YAMLAdapter.write(
+            { ...flat, greeting: "Bonjour: le monde" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        // Emitted plainly this would parse as a nested mapping.
+        expect(YAMLAdapter.read(output).flat.greeting).toBe(
+            "Bonjour: le monde",
+        );
+    });
+
+    it("does not mutate the sidecar between target languages", () => {
+        const { flat, sidecar } = YAMLAdapter.read(YAML_FIXTURE);
+        YAMLAdapter.write(
+            { ...flat, greeting: "Bonjour" },
+            sidecar,
+            "en",
+            "fr",
+        );
+        const second = YAMLAdapter.write(
+            { ...flat, greeting: "Hallo" },
+            sidecar,
+            "en",
+            "de",
+        );
+
+        expect(second).toContain("de:");
+        expect(second).toContain("greeting: Hallo");
+        expect(second).not.toContain("Bonjour");
+    });
+
+    it("treats a file with no locale root as a plain catalogue", () => {
+        const input = "greeting: Hello\nfarewell: Bye\n";
+        const { flat, sidecar } = YAMLAdapter.read(input);
+
+        expect(flat).toEqual({ farewell: "Bye", greeting: "Hello" });
+        expect(YAMLAdapter.write(flat, sidecar, "en", "fr")).toBe(input);
+    });
+
+    it("recognises a BCP-47 locale root", () => {
+        const { flat, sidecar } = YAMLAdapter.read("pt-BR:\n  greeting: Oi\n");
+        expect(flat).toEqual({ greeting: "Oi" });
+        expect(YAMLAdapter.write(flat, sidecar, "pt", "fr")).toBe(
+            "fr:\n  greeting: Oi\n",
+        );
+    });
+
+    it("does not treat a non-locale single root as a wrapper", () => {
+        const { flat } = YAMLAdapter.read("messages:\n  greeting: Hello\n");
+        expect(flat).toEqual({ "messages*greeting": "Hello" });
+    });
+
+    it("adds a key the source catalogue did not contain", () => {
+        const { flat, sidecar } = YAMLAdapter.read("en:\n  greeting: Hello\n");
+        const output = YAMLAdapter.write(
+            { ...flat, "inbox*unread": "Nouveau" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(YAMLAdapter.read(output).flat).toEqual({
+            greeting: "Hello",
+            "inbox*unread": "Nouveau",
+        });
+    });
+
+    it("assumes Rails %{} form for a key the source never had", () => {
+        const { flat, sidecar } = YAMLAdapter.read("en:\n  greeting: Hello\n");
+        const output = YAMLAdapter.write(
+            { ...flat, legacy: "{{count}} restants" },
+            sidecar,
+            "en",
+            "fr",
+        );
+
+        expect(output).toContain("%{count} restants");
+    });
+
+    it("throws on malformed YAML", () => {
+        expect(() => YAMLAdapter.read("en:\n  a: [1, 2\n")).toThrow();
     });
 });
