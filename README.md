@@ -101,9 +101,13 @@ Runs the verification pipeline against your existing translations without writin
 Add a one-liner GitHub Action to auto-translate whenever `en.json` changes:
 
 ```yaml
+permissions:
+  contents: write   # the Action commits translations back to the PR
+
+# ...
 - uses: taahamahdi/i18n-ai-translate@master
   with:
-    json-file-path: i18n/en.json
+    file-path: i18n/en.json
     api-key: ${{ secrets.OPENAI_API_KEY }}
 ```
 
