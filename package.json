@@ -23,7 +23,14 @@
     "zod-to-json-schema": "^3.24.1"
   },
   "name": "i18n-ai-translate",
-  "version": "5.1.0",
+  "version": "5.2.0",
+  "files": [
+    "build",
+    "!build/test",
+    "!build/types/test",
+    "src",
+    "!src/test"
+  ],
   "main": "./build/index.js",
   "types": "./build/types/index.d.ts",
   "bin": {
@@ -53,7 +60,7 @@
   },
   "scripts": {
     "build": "npx tsc",
-    "prepare": "npm run build && npx esbuild src/cli.ts --bundle --platform=node --outfile=build/i18n-ai-translate.js --banner:js='#!/usr/bin/env node'",
+    "prepare": "npm run build && npx esbuild src/cli.ts --bundle --platform=node --outfile=build/i18n-ai-translate.js --external:typescript --banner:js='#!/usr/bin/env node'",
     "i18n-ai-translate": "npm run build && node build/cli.js",
     "clean": "rm -r build/ && rm tsconfig.tsbuildinfo",
     "clean-build": "npm run clean && npm run build",
