@@ -85,11 +85,19 @@
     "yaml",
     "typescript",
     "cli",
-    "github-action"
+    "github-action",
+    "auto-translate",
+    "machine-translation",
+    "translate-json",
+    "locale",
+    "localisation",
+    "json",
+    "translation-automation",
+    "i18n-tools"
   ],
   "author": "Taaha Mahdi",
   "license": "GPL-3.0",
-  "description": "AI-powered localization CLI, Node library, and GitHub Action. Translate i18next JSON, Gettext PO, Java .properties, iOS .strings, Rails YAML, and JS/TS locale modules with ChatGPT, Claude, Gemini, or local Ollama models.",
+  "description": "Auto-translate i18n locale files with AI. Translate i18next JSON, Gettext PO, Java .properties, iOS .strings, Rails YAML, and TS/JS catalogues using ChatGPT, Claude, Gemini, or local Ollama models. CLI, Node library, and GitHub Action.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/taahamahdi/i18n-ai-translate.git"

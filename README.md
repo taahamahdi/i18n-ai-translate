@@ -1,11 +1,13 @@
-# i18n‑ai‑translate
+# i18n-ai-translate — AI translation for your i18n locale files
 
 [![npm version](https://img.shields.io/npm/v/i18n-ai-translate.svg)](https://www.npmjs.com/package/i18n-ai-translate)
 [![npm downloads](https://img.shields.io/npm/dw/i18n-ai-translate.svg)](https://www.npmjs.com/package/i18n-ai-translate)
 [![Build](https://img.shields.io/github/actions/workflow/status/taahamahdi/i18n-ai-translate/build.yml?branch=master)](https://github.com/taahamahdi/i18n-ai-translate/actions/workflows/build.yml)
-[![License: GPL‑3.0](https://img.shields.io/npm/l/i18n-ai-translate.svg)](https://github.com/taahamahdi/i18n-ai-translate/blob/master/LICENSE)
+[![License: GPL-3.0](https://img.shields.io/npm/l/i18n-ai-translate.svg)](https://github.com/taahamahdi/i18n-ai-translate/blob/master/LICENSE)
 
-AI‑powered localization for your translation catalogues. Automate translating single files or entire directories with ChatGPT, Gemini, Claude, or local Ollama models — while keeping translations accurate, formatting consistent, and placeholders intact. Works with **i18next‑style** JSON out of the box, plus Gettext `.po`, Java `.properties`, iOS `.strings`, Rails YAML, and JS/TS locale modules.
+**Auto-translate i18n JSON and other locale files using AI.** Point it at one file or a whole directory and it machine-translates your app into any language with ChatGPT, Gemini, Claude, or local Ollama models — keeping translations accurate, formatting consistent, and placeholders intact.
+
+Works with **i18next-style JSON** out of the box, plus Gettext `.po`, Java `.properties`, iOS `.strings`, Rails YAML, and JS/TS locale modules. Use it as a **CLI**, a **Node library**, or a **GitHub Action** that translates every pull request automatically.
 
 _For a detailed walkthrough and advanced tips, see [ADVANCED_GUIDE.md](ADVANCED_GUIDE.md)._
 
@@ -15,14 +17,14 @@ _For a detailed walkthrough and advanced tips, see [ADVANCED_GUIDE.md](ADVANCED_
 
 | Feature               | What it means                                                                           |
 | --------------------- | --------------------------------------------------------------------------------------- |
-| **Multi‑engine**      | Choose OpenAI, Google, Anthropic, or your own Ollama models                             |
+| **Multi-engine**      | Choose OpenAI, Google, Anthropic, or your own Ollama models                             |
 | **Fast**              | Parallel per-batch workers share one rate limiter; translate 20 locales concurrently    |
 | **Safe**              | Translations verified against the source before being written                           |
-| **Diff‑aware**        | Only re‑translate keys you changed; existing translations are preserved                 |
+| **Diff-aware**        | Only re-translate keys you changed; existing translations are preserved                 |
 | **Check mode**        | Audit existing translations for drift, missing placeholders, or quality regressions     |
-| **Format‑aware**      | i18next JSON, Gettext `.po`, Java `.properties`, iOS `.strings`, Rails `.yml`, JS/TS modules — round‑tripped intact |
+| **Format-aware**      | i18next JSON, Gettext `.po`, Java `.properties`, iOS `.strings`, Rails `.yml`, JS/TS modules — round-tripped intact |
 | **Context-aware**     | `--context` flag injects product info so the model picks domain-appropriate terminology |
-| **Dry‑run**           | Preview updates before touching disk                                                    |
+| **Dry-run**           | Preview updates before touching disk                                                    |
 | **Everywhere**        | Use as a CLI, GitHub Action, or Node library                                            |
 
 ---
@@ -85,9 +87,9 @@ i18n-ai-translate check -i i18n/en.json -o fr de \
 
 Runs the verification pipeline against your existing translations without writing anything. Emits a structured report of keys the model flagged. Exits non-zero if any issue is found, so you can gate CI on it.
 
-### 6 · Keep PRs up‑to‑date
+### 6 · Keep PRs up-to-date
 
-Add a one‑liner GitHub Action to auto‑translate whenever `en.json` changes:
+Add a one-liner GitHub Action to auto-translate whenever `en.json` changes:
 
 ```yaml
 - uses: taahamahdi/i18n-ai-translate@master
@@ -98,11 +100,11 @@ Add a one‑liner GitHub Action to auto‑translate whenever `en.json` changes:
 
 ---
 
-## CLI cheat‑sheet
+## CLI cheat-sheet
 
 ```bash
 translate  -i <src>      -o <lang…>   [options]   # Translate a file or folder
-diff       -b <before>   -a <after>   [options]   # Re‑translate only edited keys
+diff       -b <before>   -a <after>   [options]   # Re-translate only edited keys
 check      -i <src>      -o <lang…>   [options]   # Verify existing translations (no writes)
 ```
 
@@ -111,15 +113,15 @@ Common flags (all subcommands accept these unless noted):
 | Flag                      | Default         | Description                                                                     |
 | ------------------------- | --------------- | ------------------------------------------------------------------------------- |
 | `-e, --engine`            | chatgpt         | chatgpt · gemini · claude · ollama                                              |
-| `-m, --model`             | gpt‑5.2         | e.g. `gemini‑2.5‑flash`, `claude‑sonnet‑4‑6`, `llama3.3`                        |
-| `-l, --input-language`    | from filename   | ISO‑639‑1 code or English name (`en`, `French`) — BCP‑47 tags like `pt-BR` OK   |
-| `-r, --rate-limit-ms`     | engine‑specific | Minimum gap between requests                                                    |
+| `-m, --model`             | gpt-5.2         | e.g. `gemini-2.5-flash`, `claude-sonnet-4-6`, `llama3.3`                        |
+| `-l, --input-language`    | from filename   | ISO-639-1 code or English name (`en`, `French`) — BCP-47 tags like `pt-BR` OK   |
+| `-r, --rate-limit-ms`     | engine-specific | Minimum gap between requests                                                    |
 | `--concurrency`           | 2               | Batches to run in parallel within one language                                  |
 | `--language-concurrency`  | 1               | Target languages to translate in parallel (shares pool + rate limit)            |
 | `--tokens-per-minute`     | off             | Extra TPM cap across all workers; pair with `--concurrency` to stay under tier  |
 | `--context <string>`      | —               | Product/domain context, e.g. `"a B2B invoicing SaaS"`                           |
 | `--glossary <path>`       | —               | JSON file: keep-verbatim terms + forced per-language translations               |
-| `--exclude-languages`     | —               | Locales to skip (for manually‑maintained targets)                               |
+| `--exclude-languages`     | —               | Locales to skip (for manually-maintained targets)                               |
 | `--no-continue-on-error`  | continue        | Abort on first key/batch failure instead of skipping                            |
 | `--dry-run`               | false           | Don't write files, preview instead (translate/diff only)                        |
 | `--cache [path]`          | off             | Reuse a translation memory across runs; skip unchanged strings (translate/diff) |
@@ -162,7 +164,7 @@ const report = await check({
 
 ## Advanced topics
 
-* **Prompt modes**: `csv` (faster, GPT‑class models only) vs `json` (structured output, works with weaker models too)
+* **Prompt modes**: `csv` (faster, GPT-class models only) vs `json` (structured output, works with weaker models too)
 * **Custom prompts**: swap in your own generation/verification prompts via `--override-prompt`
 * **Translation memory**: `--cache [path]` stores translations in a JSON file (default `.i18n-ai-translate-cache.json`) and reuses them on later runs, so unchanged strings are never re-sent to the model. The key is the source text + languages + `--context` — independent of engine/model, so the cache survives a provider switch. Library callers can pass their own `cache` object.
 * **Glossary**: `--glossary <path>` points to a JSON file that steers terminology — `doNotTranslate` keeps brand/product names verbatim, and `terms` forces exact per-language translations: `{ "doNotTranslate": ["Acme"], "terms": { "fr": { "Account": "Compte" } } }`. The rules are injected into both the generation and verification prompts; only the run's target language is applied (with BCP-47 base-subtag fallback, so `pt` covers `pt-BR`).
