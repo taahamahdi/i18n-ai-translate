@@ -91,6 +91,12 @@ on:
         paths:
             - "i18n/en.json"
 
+# The Action commits the new translations back to the PR branch, so the
+# job needs write access to repository contents. Repositories whose
+# default GITHUB_TOKEN is read-only will otherwise fail at the push.
+permissions:
+    contents: write
+
 jobs:
     build:
         runs-on: ubuntu-latest
@@ -98,9 +104,34 @@ jobs:
             - name: i18n-ai-translate
               uses: taahamahdi/i18n-ai-translate@master
               with:
-                  json-file-path: i18n/en.json
+                  file-path: i18n/en.json
                   api-key: ${{ secrets.OPENAI_API_KEY }}
 ```
+
+#### Inputs
+
+| Input | Default | Description |
+|---|---|---|
+| `file-path` | — | Source i18n file. Any supported format, not just JSON |
+| `api-key` | — | Provider API key; passed to the CLI through the engine's environment variable rather than the command line |
+| `host` | — | Ollama host and port, as an alternative to `api-key` |
+| `version` | `latest` | Which published version to run. Pin it for reproducible CI |
+| `language` | `en` | Language to translate from |
+| `engine` | `chatgpt` | `chatgpt`, `gemini`, `claude`, or `ollama` |
+| `model` | `gpt-5.2` | Model to use |
+| `file-format` | from extension | Override format detection |
+| `context` | — | Product/domain context, forwarded to `--context` |
+| `glossary` | — | Path to a glossary JSON file |
+| `batch-size` | `32` | Keys per request |
+| `templated-string-prefix` | `{{` | Opening placeholder delimiter |
+| `templated-string-suffix` | `}}` | Closing placeholder delimiter |
+| `node-version` | `22` | Node version used to run the CLI |
+| `commit-message` | `Update translations` | Message for the translation commit |
+| `author-name` / `author-email` | maintainer defaults | Attribution for the commit |
+
+`json-file-path` is the former name of `file-path`. It still works and emits a deprecation warning, since the Action handles more than JSON now.
+
+If neither `api-key` nor `host` is set, the Action logs a warning, restores the source file, and exits without committing — so an unconfigured secret produces a no-op rather than a failed job.
 
 ### Running directly
 
