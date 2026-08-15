@@ -36,7 +36,7 @@ export const CLI_HELP = {
     ExcludeLanguages:
         "Language codes to skip (e.g. 'fr de'). Useful when some locales are maintained manually and shouldn't be machine-translated over",
     FileFormat:
-        "Input/output file format (default: inferred from extension). Supported: json, po, properties, strings, yaml.",
+        "Input/output file format (default: inferred from extension). Supported: json, po, properties, strings, yaml, ts, js.",
     Glossary:
         "Path to a glossary JSON file steering terminology: { \"doNotTranslate\": [\"Acme\"], \"terms\": { \"fr\": { \"Account\": \"Compte\" } } }. Injected into the generation and verification prompts",
     LanguageConcurrency:

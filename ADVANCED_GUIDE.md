@@ -35,8 +35,12 @@ Every format goes through the same pipeline: an adapter parses the file into the
 | `properties` | `.properties` | Comments, separators, line continuations, escapes | `{0}`, `{1,date,short}` |
 | `strings` | `.strings` | `/* */` and `//` comments, quoting, escapes | `%@`, `%1$@`, `%d` |
 | `yaml` | `.yml`, `.yaml` | Comments, key order, quoting/block style | `%{name}`, `%<name>s` |
+| `ts` | `.ts`, `.mts`, `.cts` | Imports, comments, types, `satisfies`/`as const` | `{{var}}` (native) |
+| `js` | `.js`, `.mjs`, `.cjs` | Imports, comments, module shape | `{{var}}` (native) |
 
 The format is inferred from the file extension; pass `--file-format` to override. All formats work across `translate` (file and directory), `diff`, and `check`.
+
+**JS/TS locale modules.** The catalogue is located as `export default {…}`, `export = {…}`, `module.exports = {…}`, an exported `const` holding an object literal, or — if the file has exactly one — a bare top-level `const`. Only plain string literals are translated, in whatever quote style they were written; numbers, template literals containing `${…}`, function calls, and computed keys are skipped and their bytes preserved. The exported binding is *not* renamed, so a `fr.ts` produced from `en.ts` still exports `enTranslations` if that is what the source called it.
 
 **Rails YAML.** A locale-rooted file (`en:` as the single top-level key) has that root held out of the translation keys and retargeted to the output language on write, so `en.yml` → `fr.yml` comes back rooted at `fr:`. Files without a locale root are treated as a plain catalogue. Non-string scalars (numbers, booleans, dates) are left alone.
 
@@ -163,7 +167,7 @@ Options:
   --exclude-languages [language codes...]     Language codes to skip
   --tokens-per-minute <tpm>                   Cap tokens-per-minute across all concurrent workers (disabled by default)
   --language-concurrency <n>                  How many target languages to translate in parallel (default: 1)
-  --file-format <format>                      json, po, properties, strings, yaml (default: inferred from extension)
+  --file-format <format>                      json, po, properties, strings, yaml, ts, js (default: inferred from extension)
   --cache [path]                              Reuse a translation memory across runs (default: .i18n-ai-translate-cache.json)
   --glossary <path>                           Path to a glossary JSON file steering terminology
   --help                                      display help for command
@@ -227,7 +231,7 @@ Options:
   --context <context>                       Domain context
   --exclude-languages [language codes...]   Locales to skip
   --tokens-per-minute <tpm>                 TPM cap
-  --file-format <format>                    json, po, properties, strings, yaml (default: from extension)
+  --file-format <format>                    json, po, properties, strings, yaml, ts, js (default: from extension)
   --cache [path]                            Reuse a translation memory across runs
   --glossary <path>                         Glossary JSON file steering terminology
   --help                                    display help for command
@@ -273,7 +277,7 @@ Options:
   --context <context>                         Domain context
   --tokens-per-minute <tpm>                   TPM cap
   --format <format>                           'table' (default) or 'json'
-  --file-format <format>                      json, po, properties, strings, yaml (default: from extension)
+  --file-format <format>                      json, po, properties, strings, yaml, ts, js (default: from extension)
   --help                                      display help for command
 ```
 
