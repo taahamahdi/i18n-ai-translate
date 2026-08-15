@@ -1,17 +1,28 @@
 name: i18n-ai-translate
-description: Automatically translate your i18n files (JSON, PO, .properties, .strings) on every PR with ChatGPT, Claude, Gemini, or Ollama
+description: Automatically translate your i18n files (JSON, PO, .properties, .strings, YAML, TS/JS) on every PR with ChatGPT, Claude, Gemini, or Ollama
 author: Taaha Mahdi
 
+branding:
+  icon: globe
+  color: purple
+
 inputs:
+  file-path:
+    description: 'Path to the source i18n file (JSON, PO, .properties, .strings, .yml, .ts, .js)'
+    required: false
   json-file-path:
-    description: 'Path to the source i18n JSON file'
-    required: true
+    description: 'Deprecated alias for file-path, kept for backwards compatibility'
+    required: false
   api-key:
     description: 'The API key'
     required: false
   host:
     description: "The ollama host and port number"
     required: false
+  version:
+    description: 'Version of i18n-ai-translate to run. Defaults to latest; pin to a version for reproducible runs'
+    required: false
+    default: 'latest'
   author-email:
     description: 'The email of the person to attribute the i18n change to'
     required: false
@@ -44,74 +55,144 @@ inputs:
     description: 'How many keys to process at a time'
     required: false
     default: 32
+  file-format:
+    description: 'Override the file format instead of inferring it from the extension (json, po, properties, strings, yaml, ts, js)'
+    required: false
+  context:
+    description: 'Product or domain context to steer translations (e.g. "a B2B invoicing SaaS")'
+    required: false
+  glossary:
+    description: 'Path to a glossary JSON file steering terminology'
+    required: false
+  node-version:
+    description: 'Node.js version used to run the CLI'
+    required: false
+    default: '22'
+  commit-message:
+    description: 'Commit message used for the translation commit'
+    required: false
+    default: 'Update translations'
 
 runs:
   using: 'composite'
   steps:
     - name: Check out Repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
       with:
         ref: ${{ github.head_ref }}
         fetch-depth: 0
 
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v7
       with:
-        node-version: 18
+        node-version: ${{ inputs.node-version }}
+
+    # Inputs are passed through the environment rather than interpolated
+    # into the script body, so a value containing shell metacharacters
+    # cannot break out of the command.
+    - name: Resolve the input path
+      shell: bash
+      env:
+        FILE_PATH: ${{ inputs.file-path }}
+        LEGACY_FILE_PATH: ${{ inputs.json-file-path }}
+      run: |
+        resolved="${FILE_PATH:-$LEGACY_FILE_PATH}"
+        if [ -z "$resolved" ]; then
+          echo "::error::Set 'file-path' (or the deprecated 'json-file-path')."
+          exit 1
+        fi
+
+        if [ -n "$LEGACY_FILE_PATH" ] && [ -z "$FILE_PATH" ]; then
+          echo "::warning::'json-file-path' is deprecated; rename it to 'file-path'."
+        fi
+
+        if [ ! -f "$resolved" ]; then
+          echo "::error::No such file: $resolved"
+          exit 1
+        fi
+
+        echo "I18N_FILE_PATH=$resolved" >> "$GITHUB_ENV"
 
     - name: Fetch original translation
       shell: bash
       run: |
-        mv "${{ inputs.json-file-path }}" "${{ inputs.json-file-path }}-latest"
-        git checkout origin/${{ github.base_ref }} -- "${{ inputs.json-file-path }}"
+        mv "$I18N_FILE_PATH" "$I18N_FILE_PATH-latest"
+        git checkout "origin/$GITHUB_BASE_REF" -- "$I18N_FILE_PATH"
 
     - name: Translate the diff
       shell: bash
+      env:
+        API_KEY: ${{ inputs.api-key }}
+        HOST: ${{ inputs.host }}
+        VERSION: ${{ inputs.version }}
+        LANGUAGE: ${{ inputs.language }}
+        ENGINE: ${{ inputs.engine }}
+        MODEL: ${{ inputs.model }}
+        PREFIX: ${{ inputs.templated-string-prefix }}
+        SUFFIX: ${{ inputs.templated-string-suffix }}
+        BATCH_SIZE: ${{ inputs.batch-size }}
+        FILE_FORMAT: ${{ inputs.file-format }}
+        CONTEXT: ${{ inputs.context }}
+        GLOSSARY: ${{ inputs.glossary }}
       run: |
-        if [ -n "${{ inputs.api-key }}" ]; then
-          npx --yes i18n-ai-translate@latest diff \
-            -b "${{ inputs.json-file-path }}" \
-            -a "${{ inputs.json-file-path }}-latest" \
-            -l "${{ inputs.language }}" \
-            --verbose \
-            --engine "${{ inputs.engine }}" \
-            --model "${{ inputs.model }}" \
-            -p "${{ inputs.templated-string-prefix }}" \
-            -s "${{ inputs.templated-string-suffix }}" \
-            -n "${{ inputs.batch-size }}" \
-            -k "${{ inputs.api-key }}"
-        elif [ -n "${{ inputs.host }}" ]; then
-          npx --yes i18n-ai-translate@latest diff \
-            -b "${{ inputs.json-file-path }}" \
-            -a "${{ inputs.json-file-path }}-latest" \
-            -l "${{ inputs.language }}" \
-            --verbose \
-            --engine "${{ inputs.engine }}" \
-            --model "${{ inputs.model }}" \
-            -p "${{ inputs.templated-string-prefix }}" \
-            -s "${{ inputs.templated-string-suffix }}" \
-            -n "${{ inputs.batch-size }}" \
-            -h "${{ inputs.host }}"
-        else
-          echo "No API key or host specified; skipping automatic translation."
+        if [ -z "$API_KEY" ] && [ -z "$HOST" ]; then
+          echo "::warning::No API key or host specified; skipping automatic translation."
+          echo "I18N_SKIPPED=true" >> "$GITHUB_ENV"
+          exit 0
         fi
 
-        if [ $? -ne 0 ]; then
-          echo "Translation step failed" >&2
-          exit 1
-        fi
+        # The CLI reads the key from the environment, so it never appears
+        # in the process list or in a command echo.
+        case "$ENGINE" in
+          chatgpt) export OPENAI_API_KEY="$API_KEY" ;;
+          gemini) export GEMINI_API_KEY="$API_KEY" ;;
+          claude) export ANTHROPIC_API_KEY="$API_KEY" ;;
+        esac
 
-    - name: Configure Git
-      shell: bash
-      run: |
-        git config --global user.email "${{ inputs.author-email }}"
-        git config --global user.name "${{ inputs.author-name }}"
+        args=(diff
+          -b "$I18N_FILE_PATH"
+          -a "$I18N_FILE_PATH-latest"
+          -l "$LANGUAGE"
+          --verbose
+          --engine "$ENGINE"
+          --model "$MODEL"
+          -p "$PREFIX"
+          -s "$SUFFIX"
+          -n "$BATCH_SIZE"
+        )
+
+        if [ -n "$HOST" ]; then args+=(-h "$HOST"); fi
+        if [ -n "$FILE_FORMAT" ]; then args+=(--file-format "$FILE_FORMAT"); fi
+        if [ -n "$CONTEXT" ]; then args+=(--context "$CONTEXT"); fi
+        if [ -n "$GLOSSARY" ]; then args+=(--glossary "$GLOSSARY"); fi
+
+        # `shell: bash` runs with -e, so a non-zero exit here already
+        # fails the step.
+        npx --yes "i18n-ai-translate@$VERSION" "${args[@]}"
 
     - name: Commit the difference
       shell: bash
+      env:
+        AUTHOR_EMAIL: ${{ inputs.author-email }}
+        AUTHOR_NAME: ${{ inputs.author-name }}
+        COMMIT_MESSAGE: ${{ inputs.commit-message }}
       run: |
-        rm -r "${{ inputs.json-file-path }}"
-        mv "${{ inputs.json-file-path }}-latest" "${{ inputs.json-file-path }}"
+        rm -f "$I18N_FILE_PATH"
+        mv "$I18N_FILE_PATH-latest" "$I18N_FILE_PATH"
+
+        if [ "$I18N_SKIPPED" = "true" ]; then
+          echo "Translation was skipped; restored the source file without committing."
+          exit 0
+        fi
+
+        git config user.email "$AUTHOR_EMAIL"
+        git config user.name "$AUTHOR_NAME"
+
         git add --all
-        git commit -m "Update translations" || echo "No changes to commit"
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+
+        git commit -m "$COMMIT_MESSAGE"
         git push
