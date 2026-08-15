@@ -43,6 +43,15 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
+        env:
+          # setup-node's registry-url writes an .npmrc containing
+          # `_authToken=${NODE_AUTH_TOKEN}`. Yarn 1 expands env vars in
+          # .npmrc eagerly and errors when the variable is undefined --
+          # and with trusted publishing there is deliberately no token.
+          # Defining it empty satisfies the substitution; an empty token
+          # is falsy, so yarn sends no auth header and installs public
+          # packages normally.
+          NODE_AUTH_TOKEN: ""
 
       - name: Run lint
         run: npm run lint
