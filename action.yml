@@ -1,5 +1,5 @@
 name: i18n-ai-translate
-description: Automatically translate your i18n files (JSON, PO, .properties, .strings, YAML, TS/JS) on every PR with ChatGPT, Claude, Gemini, or Ollama
+description: Auto-translate i18n files on every PR with ChatGPT, Claude, Gemini, or Ollama - JSON, PO, YAML, TS/JS
 author: Taaha Mahdi
 
 branding:
