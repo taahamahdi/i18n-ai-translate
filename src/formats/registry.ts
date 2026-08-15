@@ -1,3 +1,4 @@
+import ICUAdapter from "./icu_adapter";
 import JSONAdapter from "./json_adapter";
 import POAdapter from "./po_adapter";
 import PropertiesAdapter from "./properties_adapter";
@@ -18,6 +19,7 @@ const ADAPTERS: readonly FormatAdapter<unknown>[] = [
     YAMLAdapter,
     TypeScriptAdapter,
     JavaScriptAdapter,
+    ICUAdapter,
 ];
 
 /**

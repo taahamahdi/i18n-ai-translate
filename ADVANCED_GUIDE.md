@@ -37,8 +37,15 @@ Every format goes through the same pipeline: an adapter parses the file into the
 | `yaml` | `.yml`, `.yaml` | Comments, key order, quoting/block style | `%{name}`, `%<name>s` |
 | `ts` | `.ts`, `.mts`, `.cts` | Imports, comments, types, `satisfies`/`as const` | `{{var}}` (native) |
 | `js` | `.js`, `.mjs`, `.cjs` | Imports, comments, module shape | `{{var}}` (native) |
+| `icu` | *(opt-in, no extension)* | Key order, non-string values, message structure | `{name}`, `{n, number, …}`, `#` |
 
 The format is inferred from the file extension; pass `--file-format` to override. All formats work across `translate` (file and directory), `diff`, and `check`.
+
+**ICU MessageFormat / next-intl.** Opt in with `--file-format icu`; it is deliberately *not* bound to `.json`, so existing i18next catalogues are unaffected. Arguments become `{{var}}` placeholders so the usual protection applies, and their original syntax — including number skeletons like `::currency/USD` — is restored verbatim on write. Rich-text tags such as `<link>…</link>` stay inline so the model translates a readable sentence.
+
+Plural and select messages are expanded into one **whole sentence per branch**, not fragments: `You have {count, plural, one {# item} other {# items}} left` is translated as *"You have {{#}} item left"* and *"You have {{#}} items left"*. That gives the model full context, and lets a target language order words differently in each plural form. On write the branches are re-assembled against the **target** language's CLDR categories, so an English `one`/`other` source produces `one`/`few`/`many`/`other` for Russian. Exact matches like `=0` are carried across untouched.
+
+Two limits worth knowing. Categories the source doesn't supply are filled from `other` — structurally valid but not correctly inflected, the same approximation the PO adapter makes; review those branches. And messages with nested or multiple plural/select blocks are passed through **untranslated** rather than risk mangling them. A rebuilt message that fails to re-parse is discarded in favour of the original, so a bad translation can never produce a catalogue that throws at runtime.
 
 **JS/TS locale modules.** The catalogue is located as `export default {…}`, `export = {…}`, `module.exports = {…}`, an exported `const` holding an object literal, or — if the file has exactly one — a bare top-level `const`. Only plain string literals are translated, in whatever quote style they were written; numbers, template literals containing `${…}`, function calls, and computed keys are skipped and their bytes preserved. The exported binding is *not* renamed, so a `fr.ts` produced from `en.ts` still exports `enTranslations` if that is what the source called it.
 
@@ -167,7 +174,7 @@ Options:
   --exclude-languages [language codes...]     Language codes to skip
   --tokens-per-minute <tpm>                   Cap tokens-per-minute across all concurrent workers (disabled by default)
   --language-concurrency <n>                  How many target languages to translate in parallel (default: 1)
-  --file-format <format>                      json, po, properties, strings, yaml, ts, js (default: inferred from extension)
+  --file-format <format>                      json, po, properties, strings, yaml, ts, js, icu (default: inferred from extension)
   --cache [path]                              Reuse a translation memory across runs (default: .i18n-ai-translate-cache.json)
   --glossary <path>                           Path to a glossary JSON file steering terminology
   --help                                      display help for command
@@ -231,7 +238,7 @@ Options:
   --context <context>                       Domain context
   --exclude-languages [language codes...]   Locales to skip
   --tokens-per-minute <tpm>                 TPM cap
-  --file-format <format>                    json, po, properties, strings, yaml, ts, js (default: from extension)
+  --file-format <format>                    json, po, properties, strings, yaml, ts, js, icu (default: from extension)
   --cache [path]                            Reuse a translation memory across runs
   --glossary <path>                         Glossary JSON file steering terminology
   --help                                    display help for command
@@ -277,7 +284,7 @@ Options:
   --context <context>                         Domain context
   --tokens-per-minute <tpm>                   TPM cap
   --format <format>                           'table' (default) or 'json'
-  --file-format <format>                      json, po, properties, strings, yaml, ts, js (default: from extension)
+  --file-format <format>                      json, po, properties, strings, yaml, ts, js, icu (default: from extension)
   --help                                      display help for command
 ```
 

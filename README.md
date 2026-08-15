@@ -7,7 +7,7 @@
 
 **Auto-translate i18n JSON and other locale files using AI.** Point it at one file or a whole directory and it machine-translates your app into any language with ChatGPT, Gemini, Claude, or local Ollama models — keeping translations accurate, formatting consistent, and placeholders intact.
 
-Works with **i18next-style JSON** out of the box, plus Gettext `.po`, Java `.properties`, iOS `.strings`, Rails YAML, and JS/TS locale modules. Use it as a **CLI**, a **Node library**, or a **GitHub Action** that translates every pull request automatically.
+Works with **i18next-style JSON** out of the box, plus Gettext `.po`, Java `.properties`, iOS `.strings`, Rails YAML, JS/TS locale modules, and ICU MessageFormat (next-intl). Use it as a **CLI**, a **Node library**, or a **GitHub Action** that translates every pull request automatically.
 
 _For a detailed walkthrough and advanced tips, see [ADVANCED_GUIDE.md](ADVANCED_GUIDE.md)._
 
@@ -22,7 +22,7 @@ _For a detailed walkthrough and advanced tips, see [ADVANCED_GUIDE.md](ADVANCED_
 | **Safe**              | Translations verified against the source before being written                           |
 | **Diff-aware**        | Only re-translate keys you changed; existing translations are preserved                 |
 | **Check mode**        | Audit existing translations for drift, missing placeholders, or quality regressions     |
-| **Format-aware**      | i18next JSON, Gettext `.po`, Java `.properties`, iOS `.strings`, Rails `.yml`, JS/TS modules — round-tripped intact |
+| **Format-aware**      | i18next JSON, Gettext `.po`, Java `.properties`, iOS `.strings`, Rails `.yml`, JS/TS modules, ICU/next-intl — round-tripped intact |
 | **Context-aware**     | `--context` flag injects product info so the model picks domain-appropriate terminology |
 | **Dry-run**           | Preview updates before touching disk                                                    |
 | **Everywhere**        | Use as a CLI, GitHub Action, or Node library                                            |
@@ -47,7 +47,7 @@ i18n-ai-translate translate -i i18n/en.json -o fr \
 
 Need more languages? Pass multiple codes (`-o fr es de`) or `-A` for **all** 180+. Filenames like `es-ES.json` / `pt-BR.json` are accepted too — the language subtag is extracted automatically. Skip specific locales with `--exclude-languages fr de` (handy for locales you maintain by hand).
 
-**Other formats:** besides i18next JSON, Gettext `.po`, Java `.properties`, iOS `.strings`, Rails `.yml`/`.yaml`, and JavaScript/TypeScript locale modules (`.ts`, `.js`, `.mjs`, `.cjs`, `.mts`, `.cts`) work too — the format is inferred from the file extension (override with `--file-format json|po|properties|strings|yaml|ts|js`). Non-translatable structure round-trips losslessly: PO comments, `msgctxt`, and plural forms; `.properties` comments, separators, and line continuations; `.strings` `/* */` and `//` comments and quoting; YAML comments, key order, and quoting style; JS/TS imports, comments, type annotations, and `satisfies`/`as const` clauses. Native placeholders (`printf` `%s`/`%1$s`/`%@`, MessageFormat `{0}`/`{1}`, Rails `%{name}`/`%<name>s`) are preserved across the translation. Works across `translate` (file + folder), `diff`, and `check`.
+**Other formats:** besides i18next JSON, Gettext `.po`, Java `.properties`, iOS `.strings`, Rails `.yml`/`.yaml`, and JavaScript/TypeScript locale modules (`.ts`, `.js`, `.mjs`, `.cjs`, `.mts`, `.cts`) work too — the format is inferred from the file extension (override with `--file-format json|po|properties|strings|yaml|ts|js|icu`). Non-translatable structure round-trips losslessly: PO comments, `msgctxt`, and plural forms; `.properties` comments, separators, and line continuations; `.strings` `/* */` and `//` comments and quoting; YAML comments, key order, and quoting style; JS/TS imports, comments, type annotations, and `satisfies`/`as const` clauses. Native placeholders (`printf` `%s`/`%1$s`/`%@`, MessageFormat `{0}`/`{1}`, Rails `%{name}`/`%<name>s`) are preserved across the translation. Works across `translate` (file + folder), `diff`, and `check`.
 
 For a JS/TS module, the catalogue is found as `export default {…}`, `module.exports = {…}`, or an exported `const` holding an object literal, and only plain string literals are translated — numbers, template literals with `${…}` substitutions, and computed keys are left exactly as written. Rails YAML files may be locale-rooted (`en:` at the top level); the root key is retargeted to the output language on write, so `en.yml` → `fr.yml` gets `fr:`.
 
@@ -57,6 +57,15 @@ en:                               fr:
   greeting: Hello                   greeting: Bonjour
   inbox:                            inbox:
     unread: "%{count} unread"         unread: "%{count} non lus"
+```
+
+**ICU MessageFormat / next-intl:** pass `--file-format icu` (it is not bound to `.json`, so i18next catalogues are untouched). Plural and select messages are translated as whole sentences per branch and re-assembled against the target language's CLDR categories, so English `one`/`other` becomes `one`/`few`/`many`/`other` in Russian:
+
+```json
+// en.json                                          fr.json, after --file-format icu -o fr
+"items": "You have {count, plural,                  "items": "{count, plural,
+  one {# item} other {# items}} left"                 one {Il reste # article}
+                                                      other {Il reste # articles}}"
 ```
 
 ### 3 · Translate a folder
@@ -125,7 +134,7 @@ Common flags (all subcommands accept these unless noted):
 | `--no-continue-on-error`  | continue        | Abort on first key/batch failure instead of skipping                            |
 | `--dry-run`               | false           | Don't write files, preview instead (translate/diff only)                        |
 | `--cache [path]`          | off             | Reuse a translation memory across runs; skip unchanged strings (translate/diff) |
-| `--file-format`           | from extension  | File format: `json`, `po`, `properties`, `strings`, `yaml`, `ts`, `js` (translate/diff/check) |
+| `--file-format`           | from extension  | File format: `json`, `po`, `properties`, `strings`, `yaml`, `ts`, `js`, `icu` (translate/diff/check) |
 | `--format`                | table           | `table` or `json` report output (check only)                                    |
 
 Full flag list: `i18n-ai-translate <subcommand> --help`.
