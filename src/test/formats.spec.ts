@@ -8,6 +8,7 @@ import { po } from "gettext-parser";
 import JSONAdapter from "../formats/json_adapter";
 import POAdapter from "../formats/po_adapter";
 import PropertiesAdapter from "../formats/properties_adapter";
+import ICUAdapter from "../formats/icu_adapter";
 import StringsAdapter from "../formats/strings_adapter";
 import TypeScriptAdapter, {
     JavaScriptAdapter,
@@ -18,27 +19,27 @@ import YAMLAdapter from "../formats/yaml_adapter";
 const SEP = "\x1e";
 
 const PO_FIXTURE = [
-    "msgid \"\"",
-    "msgstr \"\"",
-    "\"Content-Type: text/plain; charset=UTF-8\\n\"",
-    "\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"",
-    "\"Language: en\\n\"",
+    'msgid ""',
+    'msgstr ""',
+    '"Content-Type: text/plain; charset=UTF-8\\n"',
+    '"Plural-Forms: nplurals=2; plural=(n != 1);\\n"',
+    '"Language: en\\n"',
     "",
     "# translator comment",
     "#. extracted comment",
     "#: src/app.js:42",
     "#, javascript-format",
-    "msgid \"Hello %s\"",
-    "msgstr \"\"",
+    'msgid "Hello %s"',
+    'msgstr ""',
     "",
-    "msgctxt \"menu\"",
-    "msgid \"Save\"",
-    "msgstr \"\"",
+    'msgctxt "menu"',
+    'msgid "Save"',
+    'msgstr ""',
     "",
-    "msgid \"One item\"",
-    "msgid_plural \"%d items\"",
-    "msgstr[0] \"\"",
-    "msgstr[1] \"\"",
+    'msgid "One item"',
+    'msgid_plural "%d items"',
+    'msgstr[0] ""',
+    'msgstr[1] ""',
     "",
 ].join("\n");
 
@@ -96,6 +97,14 @@ describe("format registry", () => {
         expect(getAdapterForFile("en.cjs")).toBe(JavaScriptAdapter);
     });
 
+    it("resolves the ICU adapter by name only, never by extension", () => {
+        expect(getAdapterByName("icu")).toBe(ICUAdapter);
+        // Critical: .json must keep resolving to the i18next adapter so
+        // existing users are unaffected. ICU is opt-in.
+        expect(getAdapterForFile("en.json")).toBe(JSONAdapter);
+        expect(getAdapterByExtension(".json")).toBe(JSONAdapter);
+    });
+
     it("lists registered format names", () => {
         expect(listFormatNames()).toEqual([
             "json",
@@ -105,6 +114,7 @@ describe("format registry", () => {
             "yaml",
             "ts",
             "js",
+            "icu",
         ]);
     });
 });
@@ -153,13 +163,13 @@ describe("POAdapter", () => {
 
     it("normalizes positional placeholders and restores them on write", () => {
         const fixture = [
-            "msgid \"\"",
-            "msgstr \"\"",
-            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
-            "\"Language: en\\n\"",
+            'msgid ""',
+            'msgstr ""',
+            '"Content-Type: text/plain; charset=UTF-8\\n"',
+            '"Language: en\\n"',
             "",
-            "msgid \"%1$s sent %2$s\"",
-            "msgstr \"\"",
+            'msgid "%1$s sent %2$s"',
+            'msgstr ""',
             "",
         ].join("\n");
 
@@ -168,9 +178,9 @@ describe("POAdapter", () => {
 
         const output = POAdapter.write(flat, sidecar, "en", "en");
         const reparsed = po.parse(output);
-        expect(
-            reparsed.translations[""]["%1$s sent %2$s"].msgstr[0],
-        ).toBe("%1$s sent %2$s");
+        expect(reparsed.translations[""]["%1$s sent %2$s"].msgstr[0]).toBe(
+            "%1$s sent %2$s",
+        );
     });
 
     it("round-trips through write: fills msgstr, restores placeholders, preserves comments", () => {
@@ -230,15 +240,15 @@ describe("POAdapter", () => {
 
     it("leaves a %% literal untouched on read and write", () => {
         const fixture = [
-            "msgid \"\"",
-            "msgstr \"\"",
-            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
-            "\"Language: en\\n\"",
+            'msgid ""',
+            'msgstr ""',
+            '"Content-Type: text/plain; charset=UTF-8\\n"',
+            '"Language: en\\n"',
             "",
             // `%%` is an escaped literal percent, not an arg slot; the
             // adjacent `%s` is the only real placeholder (→ {{arg1}}).
-            "msgid \"100%% done with %s\"",
-            "msgstr \"\"",
+            'msgid "100%% done with %s"',
+            'msgstr ""',
             "",
         ].join("\n");
 
@@ -249,20 +259,20 @@ describe("POAdapter", () => {
 
         const output = POAdapter.write(flat, sidecar, "en", "en");
         const reparsed = po.parse(output);
-        expect(
-            reparsed.translations[""]["100%% done with %s"].msgstr[0],
-        ).toBe("100%% done with %s");
+        expect(reparsed.translations[""]["100%% done with %s"].msgstr[0]).toBe(
+            "100%% done with %s",
+        );
     });
 
     it("preserves width / precision specifiers across the round-trip", () => {
         const fixture = [
-            "msgid \"\"",
-            "msgstr \"\"",
-            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
-            "\"Language: en\\n\"",
+            'msgid ""',
+            'msgstr ""',
+            '"Content-Type: text/plain; charset=UTF-8\\n"',
+            '"Language: en\\n"',
             "",
-            "msgid \"%.2f kg at %3d items\"",
-            "msgstr \"\"",
+            'msgid "%.2f kg at %3d items"',
+            'msgstr ""',
             "",
         ].join("\n");
 
@@ -280,13 +290,13 @@ describe("POAdapter", () => {
 
     it("leaves a model-invented arg reference literal instead of dropping it", () => {
         const fixture = [
-            "msgid \"\"",
-            "msgstr \"\"",
-            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
-            "\"Language: en\\n\"",
+            'msgid ""',
+            'msgstr ""',
+            '"Content-Type: text/plain; charset=UTF-8\\n"',
+            '"Language: en\\n"',
             "",
-            "msgid \"Hi %s\"",
-            "msgstr \"\"",
+            'msgid "Hi %s"',
+            'msgstr ""',
             "",
         ].join("\n");
 
@@ -346,14 +356,14 @@ describe("POAdapter", () => {
 describe("POAdapter.readTranslated", () => {
     it("exposes singular msgstr values keyed exactly as read()", () => {
         const target = [
-            "msgid \"\"",
-            "msgstr \"\"",
-            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
-            "\"Language: fr\\n\"",
+            'msgid ""',
+            'msgstr ""',
+            '"Content-Type: text/plain; charset=UTF-8\\n"',
+            '"Language: fr\\n"',
             "",
-            "msgctxt \"menu\"",
-            "msgid \"Save\"",
-            "msgstr \"Enregistrer\"",
+            'msgctxt "menu"',
+            'msgid "Save"',
+            'msgstr "Enregistrer"',
             "",
         ].join("\n");
 
@@ -364,16 +374,16 @@ describe("POAdapter.readTranslated", () => {
 
     it("maps a 2-form target's msgstr[] back onto _one / _other", () => {
         const target = [
-            "msgid \"\"",
-            "msgstr \"\"",
-            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
-            "\"Plural-Forms: nplurals=2; plural=(n > 1);\\n\"",
-            "\"Language: fr\\n\"",
+            'msgid ""',
+            'msgstr ""',
+            '"Content-Type: text/plain; charset=UTF-8\\n"',
+            '"Plural-Forms: nplurals=2; plural=(n > 1);\\n"',
+            '"Language: fr\\n"',
             "",
-            "msgid \"One item\"",
-            "msgid_plural \"%d items\"",
-            "msgstr[0] \"Un élément\"",
-            "msgstr[1] \"%d éléments\"",
+            'msgid "One item"',
+            'msgid_plural "%d items"',
+            'msgstr[0] "Un élément"',
+            'msgstr[1] "%d éléments"',
             "",
         ].join("\n");
 
@@ -386,17 +396,17 @@ describe("POAdapter.readTranslated", () => {
 
     it("collapses a 3-form target onto _one / _other via the source header", () => {
         const target = [
-            "msgid \"\"",
-            "msgstr \"\"",
-            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
-            "\"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\\n\"",
-            "\"Language: pl\\n\"",
+            'msgid ""',
+            'msgstr ""',
+            '"Content-Type: text/plain; charset=UTF-8\\n"',
+            '"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\\n"',
+            '"Language: pl\\n"',
             "",
-            "msgid \"One item\"",
-            "msgid_plural \"%d items\"",
-            "msgstr[0] \"jeden element\"",
-            "msgstr[1] \"%d elementy\"",
-            "msgstr[2] \"%d elementów\"",
+            'msgid "One item"',
+            'msgid_plural "%d items"',
+            'msgstr[0] "jeden element"',
+            'msgstr[1] "%d elementy"',
+            'msgstr[2] "%d elementów"',
             "",
         ].join("\n");
 
@@ -409,16 +419,16 @@ describe("POAdapter.readTranslated", () => {
 
     it("yields empty strings for a target plural with missing msgstr slots", () => {
         const target = [
-            "msgid \"\"",
-            "msgstr \"\"",
-            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
-            "\"Language: fr\\n\"",
+            'msgid ""',
+            'msgstr ""',
+            '"Content-Type: text/plain; charset=UTF-8\\n"',
+            '"Language: fr\\n"',
             "",
             // A half-finished target: msgstr[1] was never filled in.
-            "msgid \"One item\"",
-            "msgid_plural \"%d items\"",
-            "msgstr[0] \"Un élément\"",
-            "msgstr[1] \"\"",
+            'msgid "One item"',
+            'msgid_plural "%d items"',
+            'msgstr[0] "Un élément"',
+            'msgstr[1] ""',
             "",
         ].join("\n");
 
@@ -429,14 +439,14 @@ describe("POAdapter.readTranslated", () => {
 
     it("falls back to 2-form indices when the Language header is missing", () => {
         const target = [
-            "msgid \"\"",
-            "msgstr \"\"",
-            "\"Content-Type: text/plain; charset=UTF-8\\n\"",
+            'msgid ""',
+            'msgstr ""',
+            '"Content-Type: text/plain; charset=UTF-8\\n"',
             "",
-            "msgid \"One item\"",
-            "msgid_plural \"%d items\"",
-            "msgstr[0] \"first\"",
-            "msgstr[1] \"second\"",
+            'msgid "One item"',
+            'msgid_plural "%d items"',
+            'msgstr[0] "first"',
+            'msgstr[1] "second"',
             "",
         ].join("\n");
 
@@ -457,7 +467,7 @@ describe("PropertiesAdapter", () => {
         ].join("\n");
 
         const { flat } = PropertiesAdapter.read(input);
-        expect(flat).toEqual({ "greeting": "Hello", "menu.save": "Save" });
+        expect(flat).toEqual({ greeting: "Hello", "menu.save": "Save" });
     });
 
     it("round-trips a fixture byte-for-byte when nothing changes", () => {
@@ -589,7 +599,12 @@ describe("PropertiesAdapter", () => {
         const input = ["a=one", "b=two"].join("\n");
         const { sidecar } = PropertiesAdapter.read(input);
         // Only `a` is translated; `b` must survive untouched.
-        const output = PropertiesAdapter.write({ a: "un" }, sidecar, "en", "fr");
+        const output = PropertiesAdapter.write(
+            { a: "un" },
+            sidecar,
+            "en",
+            "fr",
+        );
         expect(output).toBe(["a=un", "b=two"].join("\n"));
     });
 
@@ -604,11 +619,11 @@ describe("StringsAdapter", () => {
     it("reads quoted key/value pairs and ignores comments", () => {
         const input =
             "/* Greeting */\n" +
-            "\"greeting\" = \"Hello\";\n" +
-            "\"menu.save\" = \"Save\";\n";
+            '"greeting" = "Hello";\n' +
+            '"menu.save" = "Save";\n';
 
         const { flat } = StringsAdapter.read(input);
-        expect(flat).toEqual({ "greeting": "Hello", "menu.save": "Save" });
+        expect(flat).toEqual({ greeting: "Hello", "menu.save": "Save" });
     });
 
     it("round-trips a fixture with comments and blanks byte-for-byte", () => {
@@ -626,15 +641,13 @@ describe("StringsAdapter", () => {
     });
 
     it("normalizes %@ and %d placeholders to {{argN}}", () => {
-        const { flat } = StringsAdapter.read(
-            "\"k\" = \"Hi %@, you have %d new\";",
-        );
+        const { flat } = StringsAdapter.read('"k" = "Hi %@, you have %d new";');
 
         expect(flat.k).toBe("Hi {{arg1}}, you have {{arg2}} new");
     });
 
     it("restores positional placeholders on a changed value", () => {
-        const input = "\"k\" = \"%1$@ sent %2$@\";";
+        const input = '"k" = "%1$@ sent %2$@";';
         const { flat, sidecar } = StringsAdapter.read(input);
         expect(flat.k).toBe("{{arg1}} sent {{arg2}}");
 
@@ -645,31 +658,31 @@ describe("StringsAdapter", () => {
             "fr",
         );
 
-        expect(output).toBe("\"k\" = \"%2$@ reçu de %1$@\";");
+        expect(output).toBe('"k" = "%2$@ reçu de %1$@";');
     });
 
     it("leaves a %% literal intact while normalizing a real %@", () => {
-        const { flat } = StringsAdapter.read("\"k\" = \"100%% sure %@\";");
+        const { flat } = StringsAdapter.read('"k" = "100%% sure %@";');
         expect(flat.k).toBe("100%% sure {{arg1}}");
     });
 
     it("decodes escapes and round-trips them byte-for-byte", () => {
-        const input = "\"k\" = \"Line1\\nQuote: \\\"hi\\\" \\\\ end\";";
+        const input = '"k" = "Line1\\nQuote: \\"hi\\" \\\\ end";';
         const { flat, sidecar } = StringsAdapter.read(input);
-        expect(flat.k).toBe("Line1\nQuote: \"hi\" \\ end");
+        expect(flat.k).toBe('Line1\nQuote: "hi" \\ end');
         expect(StringsAdapter.write(flat, sidecar, "en", "en")).toBe(input);
     });
 
     it("decodes \\Uxxxx escapes into their characters", () => {
-        const { flat } = StringsAdapter.read("\"k\" = \"caf\\U00e9\";");
+        const { flat } = StringsAdapter.read('"k" = "caf\\U00e9";');
         expect(flat.k).toBe("café");
     });
 
     it("round-trips \\t and \\r escapes both ways", () => {
-        const { flat } = StringsAdapter.read("\"k\" = \"a\\tb\\rc\";");
+        const { flat } = StringsAdapter.read('"k" = "a\\tb\\rc";');
         expect(flat.k).toBe("a\tb\rc");
 
-        const { sidecar } = StringsAdapter.read("\"k\" = \"v\";");
+        const { sidecar } = StringsAdapter.read('"k" = "v";');
         const output = StringsAdapter.write(
             { k: "a\tb\rc\\d" },
             sidecar,
@@ -677,37 +690,37 @@ describe("StringsAdapter", () => {
             "fr",
         );
 
-        expect(output).toBe("\"k\" = \"a\\tb\\rc\\\\d\";");
+        expect(output).toBe('"k" = "a\\tb\\rc\\\\d";');
     });
 
     it("re-escapes quotes, newlines, and backslashes for changed values", () => {
-        const { sidecar } = StringsAdapter.read("\"k\" = \"v\";");
+        const { sidecar } = StringsAdapter.read('"k" = "v";');
         const output = StringsAdapter.write(
-            { k: "say \"hi\"\nbye" },
+            { k: 'say "hi"\nbye' },
             sidecar,
             "en",
             "fr",
         );
 
-        expect(output).toBe("\"k\" = \"say \\\"hi\\\"\\nbye\";");
+        expect(output).toBe('"k" = "say \\"hi\\"\\nbye";');
     });
 
     it("keeps = and ; that appear inside a value", () => {
-        const input = "\"k\" = \"a=b; c\";";
+        const input = '"k" = "a=b; c";';
         const { flat, sidecar } = StringsAdapter.read(input);
         expect(flat.k).toBe("a=b; c");
         expect(StringsAdapter.write(flat, sidecar, "en", "en")).toBe(input);
     });
 
     it("re-emits the original value for keys missing from the translation", () => {
-        const input = "\"a\" = \"one\";\n\"b\" = \"two\";";
+        const input = '"a" = "one";\n"b" = "two";';
         const { sidecar } = StringsAdapter.read(input);
         const output = StringsAdapter.write({ a: "un" }, sidecar, "en", "fr");
-        expect(output).toBe("\"a\" = \"un\";\n\"b\" = \"two\";");
+        expect(output).toBe('"a" = "un";\n"b" = "two";');
     });
 
     it("leaves a model-invented placeholder literal on write", () => {
-        const { sidecar } = StringsAdapter.read("\"k\" = \"Value %@\";");
+        const { sidecar } = StringsAdapter.read('"k" = "Value %@";');
         const output = StringsAdapter.write(
             { k: "{{arg1}} et {{arg9}}" },
             sidecar,
@@ -715,11 +728,11 @@ describe("StringsAdapter", () => {
             "fr",
         );
 
-        expect(output).toBe("\"k\" = \"%@ et {{arg9}}\";");
+        expect(output).toBe('"k" = "%@ et {{arg9}}";');
     });
 
     it("preserves a block comment and a file with no trailing newline", () => {
-        const input = "/* c */\n\"k\" = \"v\";";
+        const input = '/* c */\n"k" = "v";';
         const { flat, sidecar } = StringsAdapter.read(input);
         expect(StringsAdapter.write(flat, sidecar, "en", "en")).toBe(input);
     });
@@ -731,7 +744,7 @@ const YAML_FIXTURE = [
     "  greeting: Hello",
     "  inbox:",
     "    # how many unread",
-    "    unread: \"You have %{count} messages\"",
+    '    unread: "You have %{count} messages"',
     "    price: '%<amount>.2f owing'",
     "  day_names:",
     "    - Monday",
@@ -901,15 +914,15 @@ describe("YAMLAdapter", () => {
 });
 
 const TS_FIXTURE = [
-    "import type { Translations } from \"./types\";",
+    'import type { Translations } from "./types";',
     "",
     "// Locale catalogue",
     "export const enTranslations = {",
     "    TimeSignatureModal: {",
-    "        header: \"Time Signature\",",
+    '        header: "Time Signature",',
     "        hint: 'Pick a value',",
     "    },",
-    "    counts: [\"one\", \"two\"],",
+    '    counts: ["one", "two"],',
     "    total: 3,",
     "    dynamic: `${1} items`,",
     "} satisfies Translations;",
@@ -951,7 +964,7 @@ describe("module adapter (.ts / .js)", () => {
         expect(output).toContain("import type { Translations }");
         expect(output).toContain("// Locale catalogue");
         expect(output).toContain("satisfies Translations");
-        expect(output).toContain("header: \"Signature rythmique\"");
+        expect(output).toContain('header: "Signature rythmique"');
         // The single-quoted entry stays single-quoted.
         expect(output).toContain("hint: 'Choisissez une valeur'");
         // Untouched non-literals survive verbatim.
@@ -964,7 +977,7 @@ describe("module adapter (.ts / .js)", () => {
         const output = TypeScriptAdapter.write(
             {
                 ...flat,
-                "TimeSignatureModal*header": "L\"un\"\nsuite\\fin",
+                "TimeSignatureModal*header": 'L"un"\nsuite\\fin',
                 "TimeSignatureModal*hint": "L'un",
             },
             sidecar,
@@ -972,16 +985,16 @@ describe("module adapter (.ts / .js)", () => {
             "fr",
         );
 
-        expect(output).toContain("header: \"L\\\"un\\\"\\nsuite\\\\fin\"");
+        expect(output).toContain('header: "L\\"un\\"\\nsuite\\\\fin"');
         expect(output).toContain("hint: 'L\\'un'");
         // The re-parsed file yields exactly what we put in.
         const { flat: reread } = TypeScriptAdapter.read(output);
-        expect(reread["TimeSignatureModal*header"]).toBe("L\"un\"\nsuite\\fin");
+        expect(reread["TimeSignatureModal*header"]).toBe('L"un"\nsuite\\fin');
         expect(reread["TimeSignatureModal*hint"]).toBe("L'un");
     });
 
     it("finds a CommonJS module.exports catalogue", () => {
-        const input = "module.exports = { greeting: \"Hello\" };\n";
+        const input = 'module.exports = { greeting: "Hello" };\n';
         const { flat, sidecar } = JavaScriptAdapter.read(input);
 
         expect(flat).toEqual({ greeting: "Hello" });
@@ -992,13 +1005,13 @@ describe("module adapter (.ts / .js)", () => {
                 "en",
                 "fr",
             ),
-        ).toBe("module.exports = { greeting: \"Bonjour\" };\n");
+        ).toBe('module.exports = { greeting: "Bonjour" };\n');
     });
 
     it("prefers a default export over other object literals", () => {
         const input = [
-            "const helper = { ignored: \"nope\" };",
-            "export default { greeting: \"Hello\" };",
+            'const helper = { ignored: "nope" };',
+            'export default { greeting: "Hello" };',
             "",
         ].join("\n");
 
@@ -1008,14 +1021,14 @@ describe("module adapter (.ts / .js)", () => {
     });
 
     it("handles `export default {...} as const`", () => {
-        const input = "export default { greeting: \"Hello\" } as const;\n";
+        const input = 'export default { greeting: "Hello" } as const;\n';
         expect(TypeScriptAdapter.read(input).flat).toEqual({
             greeting: "Hello",
         });
     });
 
     it("reads quoted and dotted keys", () => {
-        const input = "export default { \"foo.bar\": \"x\", 'a b': \"y\" };\n";
+        const input = 'export default { "foo.bar": "x", \'a b\': "y" };\n';
         expect(TypeScriptAdapter.read(input).flat).toEqual({
             "a b": "y",
             "foo.bar": "x",
@@ -1023,7 +1036,7 @@ describe("module adapter (.ts / .js)", () => {
     });
 
     it("falls back to a lone bare const", () => {
-        const input = "const translations = { greeting: \"Hello\" };\n";
+        const input = 'const translations = { greeting: "Hello" };\n';
         expect(TypeScriptAdapter.read(input).flat).toEqual({
             greeting: "Hello",
         });
@@ -1031,8 +1044,8 @@ describe("module adapter (.ts / .js)", () => {
 
     it("skips computed keys and spreads it cannot address", () => {
         const input = [
-            "const base = { a: \"A\" };",
-            "export default { ...base, [key]: \"skipped\", kept: \"Kept\" };",
+            'const base = { a: "A" };',
+            'export default { ...base, [key]: "skipped", kept: "Kept" };',
             "",
         ].join("\n");
 
@@ -1056,5 +1069,267 @@ describe("module adapter (.ts / .js)", () => {
         expect(() =>
             TypeScriptAdapter.read("export function f() {}\n"),
         ).toThrow(/No translation object found/);
+    });
+});
+
+const ICU_FIXTURE = `${JSON.stringify(
+    {
+        HomePage: {
+            items: "You have {count, plural, one {# item} other {# items}} left",
+            price: "Costs {amount, number, ::currency/USD}",
+            rich: "Read <link>the docs</link>",
+            title: "Hello {name}!",
+            who: "{gender, select, male {He} female {She} other {They}} replied",
+        },
+        retries: 3,
+    },
+    null,
+    4,
+)}\n`;
+
+describe("ICUAdapter", () => {
+    it("normalizes ICU arguments into the pipeline's placeholder convention", () => {
+        const { flat } = ICUAdapter.read(ICU_FIXTURE);
+        expect(flat["HomePage*title"]).toBe("Hello {{name}}!");
+        expect(flat["HomePage*price"]).toBe("Costs {{amount}}");
+    });
+
+    it("keeps rich-text tags inline so the sentence stays readable", () => {
+        const { flat } = ICUAdapter.read(ICU_FIXTURE);
+        expect(flat["HomePage*rich"]).toBe("Read <link>the docs</link>");
+    });
+
+    it("expands a plural into whole sentences, not fragments", () => {
+        const { flat } = ICUAdapter.read(ICU_FIXTURE);
+        // The literals around the plural are repeated into each branch so
+        // the model translates a full sentence and target languages can
+        // reorder words per plural form.
+        expect(flat["HomePage*items_one"]).toBe("You have {{#}} item left");
+        expect(flat["HomePage*items_other"]).toBe("You have {{#}} items left");
+        expect(flat["HomePage*items"]).toBeUndefined();
+    });
+
+    it("expands select branches under a distinct suffix", () => {
+        const { flat } = ICUAdapter.read(ICU_FIXTURE);
+        expect(flat["HomePage*who_select_male"]).toBe("He replied");
+        expect(flat["HomePage*who_select_female"]).toBe("She replied");
+        expect(flat["HomePage*who_select_other"]).toBe("They replied");
+    });
+
+    it("does not offer non-string values for translation", () => {
+        const { flat } = ICUAdapter.read(ICU_FIXTURE);
+        expect(flat.retries).toBeUndefined();
+    });
+
+    it("round-trips an untouched catalogue byte-for-byte", () => {
+        const { flat, sidecar } = ICUAdapter.read(ICU_FIXTURE);
+        expect(ICUAdapter.write(flat, sidecar, "en", "en")).toBe(ICU_FIXTURE);
+    });
+
+    it("preserves a number skeleton exactly", () => {
+        const { flat, sidecar } = ICUAdapter.read(ICU_FIXTURE);
+        const out = JSON.parse(
+            ICUAdapter.write(
+                { ...flat, "HomePage*price": "Coûte {{amount}}" },
+                sidecar,
+                "en",
+                "fr",
+            ),
+        );
+        expect(out.HomePage.price).toBe(
+            "Coûte {amount, number, ::currency/USD}",
+        );
+    });
+
+    it("rebuilds a plural with the target language's categories", () => {
+        const { flat, sidecar } = ICUAdapter.read(ICU_FIXTURE);
+        const translated = {
+            ...flat,
+            "HomePage*items_one": "Il reste {{#}} article",
+            "HomePage*items_other": "Il reste {{#}} articles",
+        };
+
+        const fr = JSON.parse(
+            ICUAdapter.write(translated, sidecar, "en", "fr"),
+        );
+        expect(fr.HomePage.items).toBe(
+            "{count, plural, one {Il reste # article} other {Il reste # articles}}",
+        );
+    });
+
+    it("emits an `other` branch even when the plural table omits it", () => {
+        // Gettext's table is index-based and gives Russian one/few/many.
+        // ICU *requires* `other`; without it the message is invalid and
+        // would be silently rejected, leaving the entry untranslated.
+        const { flat, sidecar } = ICUAdapter.read(ICU_FIXTURE);
+        const translated = {
+            ...flat,
+            "HomePage*items_one": "one-form",
+            "HomePage*items_other": "other-form",
+        };
+
+        const ru = JSON.parse(
+            ICUAdapter.write(translated, sidecar, "en", "ru"),
+        );
+        expect(ru.HomePage.items).toContain("one {one-form}");
+        expect(ru.HomePage.items).toContain("few {other-form}");
+        expect(ru.HomePage.items).toContain("many {other-form}");
+        expect(ru.HomePage.items).toContain("other {other-form}");
+    });
+
+    it("collapses to a single branch for languages without plurals", () => {
+        const { flat, sidecar } = ICUAdapter.read(ICU_FIXTURE);
+        const translated = {
+            ...flat,
+            "HomePage*items_one": "one-form",
+            "HomePage*items_other": "other-form",
+        };
+
+        const ja = JSON.parse(
+            ICUAdapter.write(translated, sidecar, "en", "ja"),
+        );
+        expect(ja.HomePage.items).toBe("{count, plural, other {other-form}}");
+    });
+
+    it("rebuilds a select with its original categories", () => {
+        const { flat, sidecar } = ICUAdapter.read(ICU_FIXTURE);
+        const translated = {
+            ...flat,
+            "HomePage*who_select_female": "Elle a répondu",
+            "HomePage*who_select_male": "Il a répondu",
+            "HomePage*who_select_other": "Iel a répondu",
+        };
+
+        const fr = JSON.parse(
+            ICUAdapter.write(translated, sidecar, "en", "fr"),
+        );
+        expect(fr.HomePage.who).toBe(
+            "{gender, select, male {Il a répondu} female {Elle a répondu} other {Iel a répondu}}",
+        );
+    });
+
+    it("keeps the source when a translation would produce invalid ICU", () => {
+        const { flat, sidecar } = ICUAdapter.read(ICU_FIXTURE);
+        const out = JSON.parse(
+            ICUAdapter.write(
+                { ...flat, "HomePage*title": "Bonjour {name!" },
+                sidecar,
+                "en",
+                "fr",
+            ),
+        );
+        // Better an untranslated string than a catalogue that throws at
+        // runtime in the user's app.
+        expect(out.HomePage.title).toBe("Hello {name}!");
+    });
+
+    it("passes through messages too complex to split safely", () => {
+        const nested = `${JSON.stringify(
+            {
+                hard: "{a, plural, one {{b, plural, one {x} other {y}}} other {z}}",
+            },
+            null,
+            4,
+        )}\n`;
+
+        const { flat, sidecar } = ICUAdapter.read(nested);
+        expect(Object.keys(flat)).toHaveLength(0);
+        expect(ICUAdapter.write(flat, sidecar, "en", "fr")).toBe(nested);
+    });
+
+    it("treats a non-ICU string as plain text", () => {
+        const raw = `${JSON.stringify({ odd: "100% done" }, null, 4)}\n`;
+        const { flat, sidecar } = ICUAdapter.read(raw);
+        expect(flat.odd).toBe("100% done");
+        expect(ICUAdapter.write(flat, sidecar, "en", "en")).toBe(raw);
+    });
+
+    it("preserves a plural offset and selectordinal", () => {
+        const raw = `${JSON.stringify(
+            {
+                ordinal: "{n, selectordinal, one {#st} other {#th}}",
+                withOffset:
+                    "{n, plural, offset:1 one {# other} other {# others}}",
+            },
+            null,
+            4,
+        )}\n`;
+
+        const { flat, sidecar } = ICUAdapter.read(raw);
+        const out = JSON.parse(
+            ICUAdapter.write(
+                {
+                    ...flat,
+                    ordinal_one: "#er",
+                    ordinal_other: "#e",
+                    withOffset_one: "{{#}} autre",
+                    withOffset_other: "{{#}} autres",
+                },
+                sidecar,
+                "en",
+                "fr",
+            ),
+        );
+        expect(out.withOffset).toContain("offset:1");
+        expect(out.ordinal).toContain("selectordinal");
+    });
+
+    it("carries exact `=0` matches across languages", () => {
+        const raw = `${JSON.stringify(
+            { n: "{c, plural, =0 {none} one {# item} other {# items}}" },
+            null,
+            4,
+        )}\n`;
+
+        const { flat, sidecar } = ICUAdapter.read(raw);
+        expect(flat["n_=0"]).toBe("none");
+
+        const out = JSON.parse(
+            ICUAdapter.write(
+                {
+                    ...flat,
+                    "n_=0": "aucun",
+                    n_one: "{{#}} article",
+                    n_other: "{{#}} articles",
+                },
+                sidecar,
+                "en",
+                "ru",
+            ),
+        );
+        // `=0` is a literal match, not a CLDR category: it survives even
+        // though Russian's category list never mentions it.
+        expect(out.n).toContain("=0 {aucun}");
+        expect(out.n).toContain("many {");
+    });
+
+    it("keeps the source when only some select branches were translated", () => {
+        const { flat, sidecar } = ICUAdapter.read(ICU_FIXTURE);
+        const partial = { ...flat };
+        delete partial["HomePage*who_select_other"];
+        partial["HomePage*who_select_male"] = "Il a r\u00e9pondu";
+
+        const out = JSON.parse(ICUAdapter.write(partial, sidecar, "en", "fr"));
+        expect(out.HomePage.who).toBe(
+            "{gender, select, male {He} female {She} other {They}} replied",
+        );
+    });
+
+    it("does not mutate the sidecar between target languages", () => {
+        const { flat, sidecar } = ICUAdapter.read(ICU_FIXTURE);
+        const translated = {
+            ...flat,
+            "HomePage*items_one": "one-form",
+            "HomePage*items_other": "other-form",
+        };
+
+        const first = ICUAdapter.write(translated, sidecar, "en", "ru");
+        const second = ICUAdapter.write(translated, sidecar, "en", "ru");
+        expect(second).toBe(first);
+        // And a different language still starts from the same source.
+        expect(
+            JSON.parse(ICUAdapter.write(translated, sidecar, "en", "ja"))
+                .HomePage.items,
+        ).toBe("{count, plural, other {other-form}}");
     });
 });

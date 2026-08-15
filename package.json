@@ -2,6 +2,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
     "@google/generative-ai": "^0.24.0",
+    "@messageformat/parser": "^5.1.1",
     "@types/flat": "^5.0.5",
     "@types/node": "^24.0.3",
     "ansi-colors": "^4.1.3",
