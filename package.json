@@ -21,7 +21,7 @@
     "typescript": "^5.1.6",
     "yaml": "^2.9.0",
     "zod": "^3.24.2",
-    "zod-to-json-schema": "^3.24.1"
+    "zod-to-json-schema": "^3.25.2"
   },
   "name": "i18n-ai-translate",
   "version": "5.3.0",
