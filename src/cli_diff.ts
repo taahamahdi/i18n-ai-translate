@@ -84,6 +84,8 @@ export default function buildDiffCommand(): Command {
             CLI_HELP.ExcludeLanguages,
         )
         .option("--tokens-per-minute <tpm>", CLI_HELP.TokensPerMinute)
+        .option("--reasoning-effort <effort>", CLI_HELP.ReasoningEffort)
+        .option("--max-output-tokens <tokens>", CLI_HELP.MaxOutputTokens)
         .option("--file-format <format>", CLI_HELP.FileFormat)
         .option("--cache [path]", CLI_HELP.Cache)
         .option("--glossary <path>", CLI_HELP.Glossary)
@@ -106,6 +108,7 @@ export default function buildDiffCommand(): Command {
                 chatParams: modelArgs.chatParams,
                 concurrency: Math.max(1, modelArgs.concurrency),
                 engine: options.engine,
+                generationOptions: modelArgs.generationOptions,
                 host: modelArgs.host,
                 model: modelArgs.model,
                 rateLimiter: sharedRateLimiter,

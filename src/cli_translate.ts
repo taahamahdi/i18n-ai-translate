@@ -5,7 +5,6 @@ import {
 } from "./constants";
 import { Command } from "commander";
 import { DEFAULT_CACHE_PATH, loadCache, saveCache } from "./cache";
-import { loadGlossary } from "./glossary";
 import {
     getAllLanguageCodes,
     getOutputPathFromInputPath,
@@ -15,6 +14,7 @@ import {
     resolveInputPath,
     resolveOutputPath,
 } from "./utils";
+import { loadGlossary } from "./glossary";
 import { processModelArgs, processOverridePromptFile } from "./cli_helpers";
 import { runWithConcurrency } from "./semaphore";
 import { translateDirectory } from "./translate_directory";
@@ -94,6 +94,8 @@ export default function buildTranslateCommand(): Command {
             CLI_HELP.ExcludeLanguages,
         )
         .option("--tokens-per-minute <tpm>", CLI_HELP.TokensPerMinute)
+        .option("--reasoning-effort <effort>", CLI_HELP.ReasoningEffort)
+        .option("--max-output-tokens <tokens>", CLI_HELP.MaxOutputTokens)
         .option("--language-concurrency <n>", CLI_HELP.LanguageConcurrency)
         .option("--file-format <format>", CLI_HELP.FileFormat)
         .option("--cache [path]", CLI_HELP.Cache)
@@ -120,6 +122,7 @@ export default function buildTranslateCommand(): Command {
                 chatParams: modelArgs.chatParams,
                 concurrency: Math.max(1, modelArgs.concurrency),
                 engine: options.engine,
+                generationOptions: modelArgs.generationOptions,
                 host: modelArgs.host,
                 model: modelArgs.model,
                 rateLimiter: sharedRateLimiter,

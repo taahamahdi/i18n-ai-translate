@@ -1,4 +1,4 @@
-import type { ChatParams, Model } from "../types";
+import type { ChatParams, GenerationOptions, Model } from "../types";
 import type { TranslationCache } from "../cache";
 import type ChatPool from "../chat_pool";
 import type Engine from "../enums/engine";
@@ -11,6 +11,11 @@ export default interface Options {
     engine: Engine;
     model: Model;
     chatParams: ChatParams;
+    /**
+     * Engine-agnostic reasoning effort and output token limit. Each chat
+     * adapter maps them to its provider's request parameters.
+     */
+    generationOptions?: GenerationOptions;
     rateLimitMs: number;
     apiKey?: string;
     host?: string;

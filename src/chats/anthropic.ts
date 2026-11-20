@@ -1,6 +1,8 @@
+import { DEFAULT_CLAUDE_MAX_TOKENS } from "../constants";
 import { printError } from "../utils";
 import ChatInterface, { type InvalidKind } from "./chat_interface";
 import Role from "../enums/role";
+import type { GenerationOptions } from "../types";
 import type { Anthropic as InternalAnthropic } from "@anthropic-ai/sdk";
 import type {
     MessageCreateParams,
@@ -19,12 +21,19 @@ export default class Anthropic extends ChatInterface {
 
     rateLimiter: RateLimiter;
 
-    constructor(model: InternalAnthropic, rateLimiter: RateLimiter) {
+    generationOptions: GenerationOptions;
+
+    constructor(
+        model: InternalAnthropic,
+        rateLimiter: RateLimiter,
+        generationOptions: GenerationOptions = {},
+    ) {
         super();
         this.model = model;
         this.chatParams = null;
         this.history = [];
         this.rateLimiter = rateLimiter;
+        this.generationOptions = generationOptions;
     }
 
     startChat(params: MessageCreateParams): void {
@@ -57,7 +66,10 @@ export default class Anthropic extends ChatInterface {
         try {
             const response = await this.model.messages.create({
                 ...this.chatParams,
-                max_tokens: 1024,
+                ...this.reasoningParams(),
+                max_tokens:
+                    this.generationOptions.maxOutputTokens ??
+                    DEFAULT_CLAUDE_MAX_TOKENS,
                 messages: this.history,
                 stream: false,
             });
@@ -70,7 +82,7 @@ export default class Anthropic extends ChatInterface {
             if (!textBlock) {
                 if (response.stop_reason === "max_tokens") {
                     printError(
-                        "Claude used its whole output budget for thinking and returned no translation.",
+                        "Claude used its whole output budget for thinking and returned no translation. Pass --reasoning-effort none or raise --max-output-tokens.",
                     );
                 }
 
@@ -110,5 +122,28 @@ export default class Anthropic extends ChatInterface {
             content: this.invalidMessage(kind),
             role: Role.User,
         });
+    }
+
+    private reasoningParams(): Pick<
+        MessageCreateParams,
+        "output_config" | "thinking"
+    > {
+        const effort = this.generationOptions.reasoningEffort;
+        switch (effort) {
+            case undefined:
+                return {};
+            case "none":
+                return { thinking: { type: "disabled" } };
+            case "minimal":
+                return {
+                    output_config: { effort: "low" },
+                    thinking: { type: "adaptive" },
+                };
+            default:
+                return {
+                    output_config: { effort },
+                    thinking: { type: "adaptive" },
+                };
+        }
     }
 }

@@ -62,6 +62,8 @@ export default function buildCheckCommand(): Command {
         .option("--concurrency <concurrency>", CLI_HELP.Concurrency)
         .option("--context <context>", CLI_HELP.Context)
         .option("--tokens-per-minute <tpm>", CLI_HELP.TokensPerMinute)
+        .option("--reasoning-effort <effort>", CLI_HELP.ReasoningEffort)
+        .option("--max-output-tokens <tokens>", CLI_HELP.MaxOutputTokens)
         .option(
             "--format <format>",
             "Output format: 'table' (default, human-readable) or 'json' (for CI consumption)",
@@ -85,6 +87,7 @@ export default function buildCheckCommand(): Command {
                 chatParams: modelArgs.chatParams,
                 concurrency: Math.max(1, modelArgs.concurrency),
                 engine: options.engine,
+                generationOptions: modelArgs.generationOptions,
                 host: modelArgs.host,
                 model: modelArgs.model,
                 rateLimiter: sharedRateLimiter,

@@ -1,12 +1,59 @@
-import { DEFAULT_CONCURRENCY, DEFAULT_MODEL } from "./constants";
+import {
+    DEFAULT_CONCURRENCY,
+    DEFAULT_MODEL,
+    REASONING_EFFORTS,
+} from "./constants";
 import { OVERRIDE_PROMPT_KEYS } from "./interfaces/override_prompt";
 import { printWarn } from "./utils";
 import Engine from "./enums/engine";
 import PromptMode from "./enums/prompt_mode";
 import fs from "fs";
 import path from "path";
-import type { ChatParams, Model, ModelArgs } from "./types";
+import type {
+    ChatParams,
+    GenerationOptions,
+    Model,
+    ModelArgs,
+    ReasoningEffort,
+} from "./types";
 import type OverridePrompt from "./interfaces/override_prompt";
+
+function isReasoningEffort(value: unknown): value is ReasoningEffort {
+    return REASONING_EFFORTS.some((effort) => effort === value);
+}
+
+/**
+ * Parses the engine-agnostic --reasoning-effort and --max-output-tokens options.
+ * @param options - The command line options object.
+ * @returns the generation options for the chat adapters.
+ */
+export function processGenerationOptions(options: {
+    reasoningEffort?: unknown;
+    maxOutputTokens?: unknown;
+}): GenerationOptions {
+    const generationOptions: GenerationOptions = {};
+
+    if (options.reasoningEffort !== undefined) {
+        if (!isReasoningEffort(options.reasoningEffort)) {
+            throw new Error(
+                `--reasoning-effort must be one of: ${REASONING_EFFORTS.join(", ")}`,
+            );
+        }
+
+        generationOptions.reasoningEffort = options.reasoningEffort;
+    }
+
+    if (options.maxOutputTokens !== undefined) {
+        const maxOutputTokens = Number(options.maxOutputTokens);
+        if (!Number.isInteger(maxOutputTokens) || maxOutputTokens < 1) {
+            throw new Error("--max-output-tokens must be a positive integer");
+        }
+
+        generationOptions.maxOutputTokens = maxOutputTokens;
+    }
+
+    return generationOptions;
+}
 
 /**
  * Processes the command line arguments to extract model parameters.
@@ -46,6 +93,8 @@ export function processModelArgs(options: any): ModelArgs {
 
         tokensPerMinute = parsed === 0 ? undefined : parsed;
     }
+
+    const generationOptions = processGenerationOptions(options);
 
     switch (options.engine) {
         case Engine.Gemini:
@@ -217,6 +266,7 @@ export function processModelArgs(options: any): ModelArgs {
         batchSize,
         chatParams,
         concurrency,
+        generationOptions,
         host,
         model: options.model || DEFAULT_MODEL[options.engine as Engine],
         promptMode,

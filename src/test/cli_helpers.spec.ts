@@ -1,12 +1,12 @@
 // Focused coverage for processModelArgs — exercises the per-engine
 // defaults and the --tokens-per-minute parser in isolation.
 
+import { processModelArgs } from "../cli_helpers";
+import Engine from "../enums/engine";
+
 process.env.OPENAI_API_KEY = "test";
 process.env.ANTHROPIC_API_KEY = "test";
 process.env.GEMINI_API_KEY = "test";
-
-import Engine from "../enums/engine";
-import { processModelArgs } from "../cli_helpers";
 
 describe("processModelArgs tokensPerMinute", () => {
     it("defaults to undefined (no cap) for every engine", () => {
@@ -57,5 +57,58 @@ describe("processModelArgs tokensPerMinute", () => {
                 tokensPerMinute: "lots",
             }),
         ).toThrow(/non-negative/);
+    });
+});
+
+describe("processModelArgs generation options", () => {
+    it("defaults to no generation options for every engine", () => {
+        for (const engine of [
+            Engine.ChatGPT,
+            Engine.Claude,
+            Engine.Gemini,
+            Engine.Ollama,
+        ]) {
+            expect(processModelArgs({ engine }).generationOptions).toEqual({});
+        }
+    });
+
+    it("parses --reasoning-effort and --max-output-tokens for every engine", () => {
+        for (const engine of [
+            Engine.ChatGPT,
+            Engine.Claude,
+            Engine.Gemini,
+            Engine.Ollama,
+        ]) {
+            const args = processModelArgs({
+                engine,
+                maxOutputTokens: "4096",
+                reasoningEffort: "none",
+            });
+
+            expect(args.generationOptions).toEqual({
+                maxOutputTokens: 4096,
+                reasoningEffort: "none",
+            });
+        }
+    });
+
+    it("does not add provider params to chatParams", () => {
+        const args = processModelArgs({
+            engine: Engine.Claude,
+            maxOutputTokens: "4096",
+            reasoningEffort: "none",
+        });
+
+        expect(args.chatParams).toEqual({ messages: [], model: args.model });
+    });
+
+    it.each([
+        [{ maxOutputTokens: "0" }, /--max-output-tokens/],
+        [{ maxOutputTokens: "many" }, /--max-output-tokens/],
+        [{ reasoningEffort: "extreme" }, /--reasoning-effort must be one of/],
+    ])("rejects invalid values %p", (extra, error) => {
+        expect(() =>
+            processModelArgs({ engine: Engine.Claude, ...extra }),
+        ).toThrow(error);
     });
 });

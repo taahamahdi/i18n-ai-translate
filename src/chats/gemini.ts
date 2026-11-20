@@ -1,4 +1,4 @@
-import { printError } from "../utils";
+import { printError, printWarnOnce } from "../utils";
 import { toGeminiSchema } from "gemini-zod";
 import ChatInterface, { type InvalidKind } from "./chat_interface";
 import Role from "../enums/role";
@@ -8,6 +8,7 @@ import type {
     GenerativeModel,
     StartChatParams,
 } from "@google/generative-ai";
+import type { GenerationOptions } from "../types";
 import type { ZodType, ZodTypeDef } from "zod";
 import type RateLimiter from "../rate_limiter";
 
@@ -27,13 +28,28 @@ export default class Gemini extends ChatInterface {
 
     rateLimiter: RateLimiter;
 
-    constructor(model: GenerativeModel, rateLimiter: RateLimiter) {
+    constructor(
+        model: GenerativeModel,
+        rateLimiter: RateLimiter,
+        generationOptions: GenerationOptions = {},
+    ) {
         super();
         this.model = model;
         this.chat = null;
         this.history = [];
         this.params = null;
         this.rateLimiter = rateLimiter;
+
+        if (generationOptions.maxOutputTokens) {
+            this.model.generationConfig.maxOutputTokens =
+                generationOptions.maxOutputTokens;
+        }
+
+        if (generationOptions.reasoningEffort) {
+            printWarnOnce(
+                "--reasoning-effort is not supported for gemini yet and is ignored",
+            );
+        }
     }
 
     startChat(params: StartChatParams): void {

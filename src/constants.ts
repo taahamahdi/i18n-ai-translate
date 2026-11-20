@@ -20,6 +20,16 @@ export const DEFAULT_MODEL = {
 // on a genuinely bad key.
 export const RETRY_ATTEMPTS = 5;
 export const DEFAULT_CONCURRENCY = 2;
+export const DEFAULT_CLAUDE_MAX_TOKENS = 8192;
+export const REASONING_EFFORTS = [
+    "none",
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+] as const;
 
 export const CLI_HELP = {
     BatchSize:
@@ -41,6 +51,8 @@ export const CLI_HELP = {
         "Path to a glossary JSON file steering terminology: { \"doNotTranslate\": [\"Acme\"], \"terms\": { \"fr\": { \"Account\": \"Compte\" } } }. Injected into the generation and verification prompts",
     LanguageConcurrency:
         "How many target languages to translate in parallel (default 1). Each language shares the same pool and rate limiter, so raising this does not multiply provider traffic — pair with --concurrency and --tokens-per-minute to tune overall throughput.",
+    MaxOutputTokens:
+        "Maximum tokens per response, reasoning included (default: provider default, 8192 for claude)",
     MaxTokens: "The maximum token size of a request",
     Model: `Model to use (e.g. ${Object.values(DEFAULT_MODEL).join(", ")})`,
     NoContinueOnError:
@@ -52,6 +64,8 @@ export const CLI_HELP = {
         "Chose the prompting mode, between 'csv' mode (better performance but will only work with advanced models like GPT-4o) or 'json' mode (compatible with less advanced models, like llama3.1:8b, but translations take 50% longer on average)",
     RateLimit:
         "How many milliseconds between requests (defaults to 1s for Gemini, 120ms (at 500RPM) for ChatGPT, 1200ms for Claude)",
+    ReasoningEffort:
+        "How much the model reasons before answering: none, minimal, low, medium, high, xhigh or max (default: model default). 'none' turns reasoning off, which is faster and cheaper for translations. Ignored with a warning where the engine does not support it",
     SkipStylingVerification:
         "Skip validating the resulting translation's formatting through another query, only for 'csv' mode",
     SkipTranslationVerification:

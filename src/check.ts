@@ -10,8 +10,8 @@ import { isValidLanguageCode, printInfo, resolveLanguageCode } from "./utils";
 import ChatPool from "./chat_pool";
 import GenerateTranslationJSON from "./generate_json/generate";
 import RateLimiter from "./rate_limiter";
-import type CheckOptions from "./interfaces/check_options";
 import type { CheckReport } from "./interfaces/check_options";
+import type CheckOptions from "./interfaces/check_options";
 
 function setDefaults(options: CheckOptions): void {
     if (!options.templatedStringPrefix)
@@ -62,6 +62,7 @@ export async function check(options: CheckOptions): Promise<CheckReport> {
             chatParams: options.chatParams,
             concurrency: Math.max(1, options.concurrency ?? 1),
             engine: options.engine,
+            generationOptions: options.generationOptions,
             host: options.host,
             model: options.model,
             rateLimiter:

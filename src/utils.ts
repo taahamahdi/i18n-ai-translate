@@ -26,6 +26,18 @@ export function printWarn(warn: string): void {
     console.warn(ansiColors.yellowBright(warn));
 }
 
+const printedWarnings = new Set<string>();
+
+/**
+ * Prints a warning only the first time it is seen in this process.
+ * @param warn - the warning message
+ */
+export function printWarnOnce(warn: string): void {
+    if (printedWarnings.has(warn)) return;
+    printedWarnings.add(warn);
+    printWarn(warn);
+}
+
 /**
  * @param info - the message
  */
