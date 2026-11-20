@@ -7,9 +7,15 @@ import type { MessageCreateParams } from "@anthropic-ai/sdk/resources";
 function makeChat(
     response: object,
     generationOptions: GenerationOptions = {},
-): { chat: Anthropic; create: jest.Mock } {
-    const create = jest.fn().mockResolvedValue(response);
-    const client = { messages: { create } } as unknown as InternalAnthropic;
+): { chat: Anthropic; stream: jest.Mock } {
+    const stream = jest.fn(() => ({
+        finalMessage: () => Promise.resolve(response),
+    }));
+
+    const client = {
+        messages: { stream },
+    } as unknown as InternalAnthropic;
+
     const chat = new Anthropic(
         client,
         new RateLimiter(0, false),
@@ -21,7 +27,7 @@ function makeChat(
         model: "claude-test",
     } as unknown as MessageCreateParams);
 
-    return { chat, create };
+    return { chat, stream };
 }
 
 describe("Anthropic chat", () => {
@@ -53,12 +59,12 @@ describe("Anthropic chat", () => {
     });
 
     it("defaults max_tokens to 8192 and sends no reasoning params", async () => {
-        const { chat, create } = makeChat({
+        const { chat, stream } = makeChat({
             content: [{ text: "ok", type: "text" }],
         });
 
         await chat.sendMessage("Hello");
-        const request = create.mock.calls[0][0];
+        const request = stream.mock.calls[0][0];
         expect(request.max_tokens).toBe(8192);
         expect(request.thinking).toBeUndefined();
         expect(request.output_config).toBeUndefined();
@@ -84,23 +90,23 @@ describe("Anthropic chat", () => {
     ] as const)(
         "maps reasoning effort %s",
         async (reasoningEffort, expected) => {
-            const { chat, create } = makeChat(
+            const { chat, stream } = makeChat(
                 { content: [{ text: "ok", type: "text" }] },
                 { reasoningEffort },
             );
 
             await chat.sendMessage("Hello");
-            expect(create.mock.calls[0][0]).toMatchObject(expected);
+            expect(stream.mock.calls[0][0]).toMatchObject(expected);
         },
     );
 
     it("uses maxOutputTokens as max_tokens", async () => {
-        const { chat, create } = makeChat(
+        const { chat, stream } = makeChat(
             { content: [{ text: "ok", type: "text" }] },
             { maxOutputTokens: 4096 },
         );
 
         await chat.sendMessage("Hello");
-        expect(create.mock.calls[0][0].max_tokens).toBe(4096);
+        expect(stream.mock.calls[0][0].max_tokens).toBe(4096);
     });
 });

@@ -64,15 +64,17 @@ export default class Anthropic extends ChatInterface {
         this.history.push({ content: message, role: Role.User });
 
         try {
-            const response = await this.model.messages.create({
-                ...this.chatParams,
-                ...this.reasoningParams(),
-                max_tokens:
-                    this.generationOptions.maxOutputTokens ??
-                    DEFAULT_CLAUDE_MAX_TOKENS,
-                messages: this.history,
-                stream: false,
-            });
+            // Streaming: the SDK rejects non-streaming requests with a large max_tokens
+            const response = await this.model.messages
+                .stream({
+                    ...this.chatParams,
+                    ...this.reasoningParams(),
+                    max_tokens:
+                        this.generationOptions.maxOutputTokens ??
+                        DEFAULT_CLAUDE_MAX_TOKENS,
+                    messages: this.history,
+                })
+                .finalMessage();
 
             // Thinking models can return thinking blocks before the text
             const textBlock = response.content?.find(
