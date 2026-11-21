@@ -3,13 +3,16 @@ import type TranslationContext from "../interfaces/translation_context";
 const fr = (v: string): string => `${v}_fr`;
 const es = (v: string): string => `${v}_es`;
 
+// Values the fake pipeline leaves out, like the real pipelines do
+// for keys that exhausted their retries.
+const SKIPPED_VALUE = "__skipped__";
+
 function fakeTranslateCtx(ctx: TranslationContext): Object {
     const translateFn = ctx.options.outputLanguageCode === "fr" ? fr : es;
     return Object.fromEntries(
-        Object.entries(ctx.flatInput).map(([k, v]) => [
-            k,
-            translateFn(v as string),
-        ]),
+        Object.entries(ctx.flatInput)
+            .filter(([, v]) => v !== SKIPPED_VALUE)
+            .map(([k, v]) => [k, translateFn(v as string)]),
     );
 }
 
@@ -132,6 +135,30 @@ describe.each(Object.values(PromptMode))(
                 a: fr("Hello"),
                 b: fr("Hello"),
                 c: { d: fr("Hello") },
+            });
+        });
+
+        it("keeps the other keys when a de-duplicated key is skipped", async () => {
+            const input = {
+                a: SKIPPED_VALUE,
+                b: SKIPPED_VALUE,
+                c: "Hello",
+                d: "Line one\nLine two",
+            };
+
+            const result = await translate({
+                engine: Engine.ChatGPT,
+                inputJSON: input,
+                inputLanguageCode: "en",
+                model: "gpt-4o",
+                outputLanguageCode: "fr",
+                promptMode,
+                rateLimitMs: 0,
+            } as any);
+
+            expect(result).toEqual({
+                c: fr("Hello"),
+                d: fr("Line one\nLine two"),
             });
         });
     },

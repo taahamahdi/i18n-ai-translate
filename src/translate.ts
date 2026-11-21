@@ -340,6 +340,9 @@ export async function translate(options: TranslateOptions): Promise<Object> {
 
     for (const [canonical, dupes] of Object.entries(canonicalToDupes)) {
         const canonicalTranslation = output[canonical];
+        // A skipped canonical key leaves its duplicates untranslated too,
+        // instead of writing undefined values that break the whole file.
+        if (canonicalTranslation === undefined) continue;
         for (const k of dupes) {
             output[k] = canonicalTranslation;
         }
