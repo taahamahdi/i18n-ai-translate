@@ -5,6 +5,7 @@ import type { Anthropic as InternalAnthropic } from "@anthropic-ai/sdk";
 import type {
     MessageCreateParams,
     MessageParam,
+    TextBlock,
 } from "@anthropic-ai/sdk/resources";
 import type { ZodType, ZodTypeDef } from "zod";
 import type RateLimiter from "../rate_limiter";
@@ -61,16 +62,22 @@ export default class Anthropic extends ChatInterface {
                 stream: false,
             });
 
-            const responseBlock = response.content;
-            if (
-                !responseBlock ||
-                responseBlock.length < 1 ||
-                responseBlock[0].type !== "text"
-            ) {
+            // Thinking models can return thinking blocks before the text
+            const textBlock = response.content?.find(
+                (block): block is TextBlock => block.type === "text",
+            );
+
+            if (!textBlock) {
+                if (response.stop_reason === "max_tokens") {
+                    printError(
+                        "Claude used its whole output budget for thinking and returned no translation.",
+                    );
+                }
+
                 return "";
             }
 
-            const responseText = responseBlock[0].text;
+            const responseText = textBlock.text;
             this.history.push({ content: responseText, role: Role.Assistant });
             return responseText;
         } catch (err) {
