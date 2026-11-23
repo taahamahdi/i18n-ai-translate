@@ -1,5 +1,5 @@
 import ChatFactory from "./chats/chat_factory";
-import type { ChatParams, Model } from "./types";
+import type { ChatParams, GenerationOptions, Model } from "./types";
 import type Chats from "./interfaces/chats";
 import type Engine from "./enums/engine";
 import type RateLimiter from "./rate_limiter";
@@ -11,6 +11,7 @@ type PoolOptions = {
     apiKey?: string;
     host?: string;
     chatParams?: ChatParams;
+    generationOptions?: GenerationOptions;
     concurrency: number;
 };
 
@@ -41,6 +42,7 @@ export default class ChatPool {
                     options.apiKey,
                     options.host,
                     options.chatParams,
+                    options.generationOptions,
                 ),
                 verifyStylingChat: ChatFactory.newChat(
                     options.engine,
@@ -49,6 +51,7 @@ export default class ChatPool {
                     options.apiKey,
                     options.host,
                     options.chatParams,
+                    options.generationOptions,
                 ),
                 verifyTranslationChat: ChatFactory.newChat(
                     options.engine,
@@ -57,6 +60,7 @@ export default class ChatPool {
                     options.apiKey,
                     options.host,
                     options.chatParams,
+                    options.generationOptions,
                 ),
             });
         }

@@ -7,7 +7,7 @@ import Engine from "../enums/engine";
 import Gemini from "./gemini";
 import Ollama from "./ollama";
 import OpenAI from "openai";
-import type { ChatParams, Model } from "../types";
+import type { ChatParams, GenerationOptions, Model } from "../types";
 import type { ChatRequest } from "ollama";
 import type { MessageCreateParams } from "@anthropic-ai/sdk/resources";
 import type { StartChatParams } from "@google/generative-ai";
@@ -22,6 +22,7 @@ export default class ChatFactory {
         apiKey?: string,
         host?: string,
         chatParams?: ChatParams,
+        generationOptions: GenerationOptions = {},
     ): ChatInterface {
         let chat: ChatInterface;
         let params: ChatParams;
@@ -29,7 +30,7 @@ export default class ChatFactory {
             case Engine.Gemini: {
                 const genAI = new GoogleGenerativeAI(apiKey!);
                 const geminiModel = genAI.getGenerativeModel({ model });
-                chat = new Gemini(geminiModel, rateLimiter);
+                chat = new Gemini(geminiModel, rateLimiter, generationOptions);
                 params = {
                     ...(chatParams as StartChatParams),
                 };
@@ -38,7 +39,7 @@ export default class ChatFactory {
 
             case Engine.ChatGPT: {
                 const openAI = new OpenAI({ apiKey: apiKey! });
-                chat = new ChatGPT(openAI, rateLimiter);
+                chat = new ChatGPT(openAI, rateLimiter, generationOptions);
                 params = {
                     ...(chatParams as OpenAI.ChatCompletionCreateParamsNonStreaming),
                     model,
@@ -48,7 +49,7 @@ export default class ChatFactory {
 
             case Engine.Ollama: {
                 const llama = new InternalOllama({ host });
-                chat = new Ollama(llama);
+                chat = new Ollama(llama, generationOptions);
                 params = {
                     ...(chatParams as ChatRequest),
                     model,
@@ -59,7 +60,7 @@ export default class ChatFactory {
 
             case Engine.Claude: {
                 const anthropic = new InternalAnthropic({ apiKey: apiKey! });
-                chat = new Anthropic(anthropic, rateLimiter);
+                chat = new Anthropic(anthropic, rateLimiter, generationOptions);
                 params = {
                     ...(chatParams as MessageCreateParams),
                     model,

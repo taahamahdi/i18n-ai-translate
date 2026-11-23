@@ -1,6 +1,7 @@
 import type { ChatRequest } from "ollama";
 import type { ChatSession, StartChatParams } from "@google/generative-ai";
 import type { MessageCreateParams } from "@anthropic-ai/sdk/resources";
+import type { REASONING_EFFORTS } from "./constants";
 import type OpenAI from "openai";
 import type PromptMode from "./enums/prompt_mode";
 
@@ -20,6 +21,7 @@ export type Model =
 export type ModelArgs = {
     model: Model;
     chatParams: ChatParams;
+    generationOptions: GenerationOptions;
     rateLimitMs: number;
     apiKey: string | undefined;
     host: string | undefined;
@@ -28,6 +30,13 @@ export type ModelArgs = {
     batchMaxTokens: number;
     concurrency: number;
     tokensPerMinute?: number;
+};
+
+export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
+
+export type GenerationOptions = {
+    reasoningEffort?: ReasoningEffort;
+    maxOutputTokens?: number;
 };
 
 export type GenerateStateCSV = {

@@ -132,6 +132,8 @@ Common flags (all subcommands accept these unless noted):
 | `--concurrency`           | 2               | Batches to run in parallel within one language                                  |
 | `--language-concurrency`  | 1               | Target languages to translate in parallel (shares pool + rate limit)            |
 | `--tokens-per-minute`     | off             | Extra TPM cap across all workers; pair with `--concurrency` to stay under tier  |
+| `--reasoning-effort`      | model default   | `none` · `minimal` · `low` · `medium` · `high` · `xhigh` · `max`; `none` is fastest |
+| `--max-output-tokens`     | engine default  | Max tokens per response, reasoning included (claude: 8192)                      |
 | `--context <string>`      | —               | Product/domain context, e.g. `"a B2B invoicing SaaS"`                           |
 | `--glossary <path>`       | —               | JSON file: keep-verbatim terms + forced per-language translations               |
 | `--exclude-languages`     | —               | Locales to skip (for manually-maintained targets)                               |

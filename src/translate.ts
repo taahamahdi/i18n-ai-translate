@@ -45,6 +45,7 @@ function getPool(options: TranslateOptions): ChatPool {
         chatParams: options.chatParams,
         concurrency: Math.max(1, options.concurrency ?? 1),
         engine: options.engine,
+        generationOptions: options.generationOptions,
         host: options.host,
         model: options.model,
         rateLimiter,

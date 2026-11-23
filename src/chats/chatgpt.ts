@@ -2,6 +2,7 @@ import { printError } from "../utils";
 import { zodResponseFormat } from "openai/helpers/zod";
 import ChatInterface, { type InvalidKind } from "./chat_interface";
 import Role from "../enums/role";
+import type { GenerationOptions } from "../types";
 import type { ZodType, ZodTypeDef } from "zod";
 import type OpenAI from "openai";
 import type RateLimiter from "../rate_limiter";
@@ -15,12 +16,19 @@ export default class ChatGPT extends ChatInterface {
 
     rateLimiter: RateLimiter;
 
-    constructor(model: OpenAI, rateLimiter: RateLimiter) {
+    generationOptions: GenerationOptions;
+
+    constructor(
+        model: OpenAI,
+        rateLimiter: RateLimiter,
+        generationOptions: GenerationOptions = {},
+    ) {
         super();
         this.model = model;
         this.chatParams = null;
         this.history = [];
         this.rateLimiter = rateLimiter;
+        this.generationOptions = generationOptions;
     }
 
     startChat(params: OpenAI.ChatCompletionCreateParamsNonStreaming): void {
@@ -54,6 +62,13 @@ export default class ChatGPT extends ChatInterface {
         try {
             const response = await this.model.chat.completions.create({
                 ...this.chatParams,
+                ...(this.generationOptions.reasoningEffort && {
+                    reasoning_effort: this.generationOptions.reasoningEffort,
+                }),
+                ...(this.generationOptions.maxOutputTokens && {
+                    max_completion_tokens:
+                        this.generationOptions.maxOutputTokens,
+                }),
                 messages: this.history,
                 response_format: formatSchema,
             });

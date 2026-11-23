@@ -204,6 +204,8 @@ Options:
   --context <context>                         Product or domain context to steer translations
   --exclude-languages [language codes...]     Language codes to skip
   --tokens-per-minute <tpm>                   Cap tokens-per-minute across all concurrent workers (disabled by default)
+  --reasoning-effort <effort>                 none, minimal, low, medium, high, xhigh or max (default: model default)
+  --max-output-tokens <tokens>                Max tokens per response, reasoning included (default: engine default)
   --language-concurrency <n>                  How many target languages to translate in parallel (default: 1)
   --file-format <format>                      json, po, properties, strings, yaml, ts, js, icu (default: inferred from extension)
   --cache [path]                              Reuse a translation memory across runs (default: .i18n-ai-translate-cache.json)
@@ -269,6 +271,8 @@ Options:
   --context <context>                       Domain context
   --exclude-languages [language codes...]   Locales to skip
   --tokens-per-minute <tpm>                 TPM cap
+  --reasoning-effort <effort>               Reasoning effort (none … max)
+  --max-output-tokens <tokens>              Max tokens per response
   --file-format <format>                    json, po, properties, strings, yaml, ts, js, icu (default: from extension)
   --cache [path]                            Reuse a translation memory across runs
   --glossary <path>                         Glossary JSON file steering terminology
@@ -314,6 +318,8 @@ Options:
   --concurrency <concurrency>                 Parallel batches
   --context <context>                         Domain context
   --tokens-per-minute <tpm>                   TPM cap
+  --reasoning-effort <effort>                 Reasoning effort (none … max)
+  --max-output-tokens <tokens>                Max tokens per response
   --format <format>                           'table' (default) or 'json'
   --file-format <format>                      json, po, properties, strings, yaml, ts, js, icu (default: from extension)
   --help                                      display help for command
@@ -419,6 +425,23 @@ The shared `RateLimiter` enforces:
 | OpenAI Tier-1                  | 4               | 4                        | 150000                |
 | Anthropic Tier-1               | 2               | 2                        | 30000                 |
 | Self-hosted Ollama             | 4-8             | 2-4                      | off                   |
+
+# Reasoning & output tokens
+
+Current models from most providers reason before answering. For translations that mostly costs time and tokens, and reasoning counts against the output token limit. Two engine-agnostic options control it:
+
+- **`--reasoning-effort <none|minimal|low|medium|high|xhigh|max>`**: unset keeps the model default. `none` turns reasoning off.
+- **`--max-output-tokens <n>`**: maximum tokens per response, reasoning included.
+
+Each engine maps them to its own request parameters:
+
+| Option                | claude                                                    | chatgpt                  | ollama                                   | gemini                              |
+| --------------------- | --------------------------------------------------------- | ------------------------ | ---------------------------------------- | ----------------------------------- |
+| `none`                | `thinking: { type: "disabled" }`                          | `reasoning_effort: none` | `think: false`                           | not supported yet (warning)         |
+| other levels          | `thinking: { type: "adaptive" }` + `output_config.effort` (`minimal` → `low`) | `reasoning_effort`       | `think: low/medium/high` (nearest level) | not supported yet (warning)         |
+| `--max-output-tokens` | `max_tokens` (default 8192)                               | `max_completion_tokens`  | `options.num_predict`                    | `generationConfig.maxOutputTokens`  |
+
+Whether a model accepts a value is up to the provider. For example, adaptive thinking needs a current Claude model, and older OpenAI models do not accept `none`.
 
 # Prompt reference
 

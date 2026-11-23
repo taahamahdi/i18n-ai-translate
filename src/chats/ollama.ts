@@ -3,7 +3,27 @@ import ChatInterface, { type InvalidKind } from "./chat_interface";
 import Role from "../enums/role";
 import zodToJsonSchema from "zod-to-json-schema";
 import type { ChatRequest, Ollama as InternalOllama, Message } from "ollama";
+import type { GenerationOptions, ReasoningEffort } from "../types";
 import type { ZodType, ZodTypeDef } from "zod";
+
+/**
+ * Ollama accepts true/false or low/medium/high; other levels map to the nearest one.
+ * @param effort - the reasoning effort
+ * @returns the value for the `think` request parameter.
+ */
+function toThink(effort: ReasoningEffort): ChatRequest["think"] {
+    switch (effort) {
+        case "none":
+            return false;
+        case "minimal":
+        case "low":
+            return "low";
+        case "medium":
+            return "medium";
+        default:
+            return "high";
+    }
+}
 
 export default class Ollama extends ChatInterface {
     model: InternalOllama;
@@ -16,15 +36,29 @@ export default class Ollama extends ChatInterface {
 
     history: Message[];
 
-    constructor(model: InternalOllama) {
+    generationOptions: GenerationOptions;
+
+    constructor(
+        model: InternalOllama,
+        generationOptions: GenerationOptions = {},
+    ) {
         super();
         this.model = model;
         this.chatParams = null;
         this.history = [];
+        this.generationOptions = generationOptions;
     }
 
     startChat(params: ChatRequest): void {
-        this.chatParams = { ...params, stream: false };
+        const { maxOutputTokens, reasoningEffort } = this.generationOptions;
+        this.chatParams = {
+            ...params,
+            ...(reasoningEffort && { think: toThink(reasoningEffort) }),
+            ...(maxOutputTokens && {
+                options: { ...params.options, num_predict: maxOutputTokens },
+            }),
+            stream: false,
+        };
         if (params.messages && params.messages.length > 0) {
             this.history = params.messages;
         }
